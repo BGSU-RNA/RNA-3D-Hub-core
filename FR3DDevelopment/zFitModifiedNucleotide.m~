@@ -1,0 +1,27 @@
+% zFitModifiedNucleotide(NT) identifies correspondence between atoms of modified nucleotide NT and its parent and uses those correspondences to find the rotation matrix that puts the modified base into standard orientation
+
+% function NT = zFitModifiedNucleotide(NT)
+
+X = [[0 0 0]; [0 1 0]; [-1 0 0]];            % triangle in xy plane
+Y = NT(n).Loc(1:3,:);                        % 3 points on modified base
+
+switch NT.Base,
+
+case '1MA',
+  Parent = 1;                   % adenosine is the parent
+
+
+
+end
+
+
+
+
+
+
+[r, sc, sh] = zBestTransformation(X,Y);      % find best rotation, shift
+NT(n).Rot = r;                               % save the rotation matrix
+NT(n).Fit = NT(n).Loc;
+NT(n).Syn = 0;
+
+return

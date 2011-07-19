@@ -1,0 +1,58 @@
+
+Put all motifs (.mat files) in a folder called MotifLibrary.
+
+loopType = 'IL';
+
+This tells JAR3D that you are interested in Internal loops.  Or use HL.
+
+pMakeModelsFromLibrary
+
+This will make JAR3D models and write them in the Models folder.
+The folder will be created if it doesn't already exist.
+It will write out .fasta files in a Sequences folder.
+
+pEstAllModelScoreDistrs
+
+This will generate 100,000 random sequences for each model, using the right
+length distribution, score these sequences against the model, and write out
+data to be used to calculate quantiles.
+
+Separated = 0;
+
+This tells JAR3D to run group-group comparisons.
+
+pJAR3DAllVersusAll
+
+This will parse the .fasta files with all sequences for each motif against
+all models.  
+
+pDisplayModelScores
+
+This will illustrate how well each model recognizes its own sequences.
+
+pSeparateSearches
+
+This will write .fasta files for each individual sequence.
+
+Separated = 1;
+
+This tells JAR3D to run individual-group comparisons.
+
+pJAR3DAllVersusAll
+
+This will parse the .fasta files with all individual sequences for each
+motif against all models.
+
+pDisplayModelScores
+
+Diagnostics for individual-group
+
+pCompareTopQuantiles
+
+This takes a long time to run.  It seeks to compare the degree of overlap
+between the high quantiles of different models.
+
+
+% Example:
+% Scores = JAR3DMatlab.MotifParseSingle(pwd,'IL_225_test2.fasta','IL_225_05_cWW-cWW-cSH');
+% S = JAR3DMatlab.MotifTestGeneral(pwd,'IL','IL_test.txt','IL_test.txt');

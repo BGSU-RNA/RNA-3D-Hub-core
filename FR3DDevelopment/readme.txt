@@ -1,0 +1,1 @@
+The folder FR3DDevelopment contains the Matlab .m that Craig Zirbel and others are developing for FR3D.  If you are developing .m files for FR3D, it would probably be best to keep them in a separate folder.  Thus, Ryan Rahrig can put R3D Align files in a folder called R3D Align.
