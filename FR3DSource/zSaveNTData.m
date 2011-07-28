@@ -36,7 +36,7 @@ for f=1:length(Files),
        path(path,destination);
    end   
    
-   save([destination filesep name '.mat'],'File');  % Anton 5/30/2010 
+   save([destination filesep name '.mat'],'File','-v6');  % Anton 5/30/2010, Anton 7/21/2011
 %    save([pwd filesep 'PrecomputedData' filesep name '.mat'],'File'); %    Anton 5/30/2010
    if Verbose > 0,
      fprintf('Saved %s\n', [File.Filename '.mat']);

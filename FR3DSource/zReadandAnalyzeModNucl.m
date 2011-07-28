@@ -183,6 +183,9 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Center = mean(Loc(1:10,1:3));         % mean of heavy base atoms
     NT(n).Code   = 1;                           % A is 1, C is 2, etc.
     NT(n).AtomName = [];
+    NT(n).Rot    = [];
+    NT(n).Fit    = [];
+    NT(n).Syn    = [];
     UnitType = 1;                              % RNA nucleotide
     n = n + 1;
   elseif strcmp(NTBase,'C') || strcmp(NTBase,'C+'),
@@ -221,6 +224,9 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Center = mean(Loc(1:8,1:3));
     NT(n).Code   = 2;                          % A is 1, C is 2, etc.
     NT(n).AtomName = [];
+    NT(n).Rot    = [];
+    NT(n).Fit    = [];
+    NT(n).Syn    = [];
     UnitType = 1;                              % RNA nucleotide
     n = n + 1;
   elseif strcmp(NTBase,'G'),
@@ -259,6 +265,9 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Center = mean(Loc(1:11,1:3));
     NT(n).Code   = 3;                          % A is 1, C is 2, etc.
     NT(n).AtomName = [];
+    NT(n).Rot    = [];
+    NT(n).Fit    = [];
+    NT(n).Syn    = [];
     UnitType = 1;                              % RNA nucleotide
     n = n + 1;
   elseif strcmp(NTBase,'U') || strcmp(NTBase,'+U'),
@@ -297,6 +306,9 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Center = mean(Loc(1:8,1:3));
     NT(n).Code   = 4;                          % A is 1, C is 2, etc.
     NT(n).AtomName = [];
+    NT(n).Rot    = [];
+    NT(n).Fit    = [];
+    NT(n).Syn    = [];
     UnitType = 1;                              % RNA nucleotide
     n = n + 1;
   elseif ModRes == 1 || strcmp(NTBase,'N'),
@@ -337,6 +349,9 @@ while i <= length(NTNUMBER),                 % go through all atoms
       NT(n).Code = 6;
     end
     NT(n).AtomName = AtomName;                 % store atom names
+    NT(n).Rot    = [];
+    NT(n).Fit    = [];
+    NT(n).Syn    = [];
     UnitType = 1;                              % RNA nucleotide
 
 n
@@ -441,7 +456,12 @@ for n=1:NumNT,                                   % analyze all nucleotides
     NT(n).Syn         = 0;                       % classify syn and anti later
   elseif NT(n).Code == 5 && length(NT(n).Loc(:,1)) >= 3,
 
-    NT(n) = zFitModifiedNucleotide(NT(n));
+NT(max(1,n-1))
+
+    NNN = zFitModifiedNucleotide(NT(n));
+NNN
+
+NT(n) = NNN;
 
   else
     NT(n).Rot = eye(3);

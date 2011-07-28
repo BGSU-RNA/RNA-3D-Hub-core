@@ -1,4 +1,5 @@
-% zExemplarFrequencyCalculation retrieves every exemplar combination and calculates the IDI between it and every other pair in the family, saving the IDIs in the variable ExemplarIDI in PairExemplars.mat
+% zExemplarFrequencyCalculation retrieves every exemplar combination in the family, saving the counts of each base combination in the variable ExemplarIDI in PairExemplars.mat
+% This could easily just be done in zFindExemplars, but this works.
 
 Letters = 'ACGU';
 
@@ -9,7 +10,7 @@ end
 clear ExemplarFreq
 
 for Class = [1:15],
-fprintf('Calculating basepair frequencies for %s\n', zEdgeText(Class));
+  fprintf('Calculating basepair frequencies for %s\n', zEdgeText(Class));
   for Code1 = 1:4,
     for Code2 = 1:4,
 
@@ -22,7 +23,7 @@ fprintf('Calculating basepair frequencies for %s\n', zEdgeText(Class));
     end
   end
 
-Count
+  Count
 
   ExemplarFreq{Class} = Count;
 

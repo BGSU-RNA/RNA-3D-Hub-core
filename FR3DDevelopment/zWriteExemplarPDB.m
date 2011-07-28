@@ -1,14 +1,16 @@
 % zWriteExemplarPDB reads the file of pair exemplars and writes them out to a single PDB file, spaced 20 Angstroms apart in a plane (using Separate = 0) or to individual PDB files, using Separate = 1.
 
-function [void] = zWriteExemplarPDB(Separate)
+function [void] = zWriteExemplarPDB(Exemplar,Separate)
 
-if nargin < 1,
+if nargin < 2,
   Separate = 0;
 end
 
-% load exemplars -------------------------------------
+if nargin < 1,
+  load PairExemplars
+end
 
-load('PairExemplars','Exemplar');
+%  -------------------------------------
 
 if Separate == 0,                        % write all in one single file
 
@@ -44,7 +46,7 @@ if Separate == 0,                        % write all in one single file
 
 else                                       % write to separate PDB files
 
- load(['FR3DSource' filesep 'PDBInfo.mat'],'n','t','-mat');
+ load(['PDBInfo.mat'],'n','t','-mat');
 
  efid = fopen(['Exemplars' filesep 'Exemplar_list.txt'],'w');
 

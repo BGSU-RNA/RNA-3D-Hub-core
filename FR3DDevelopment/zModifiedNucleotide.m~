@@ -1,4 +1,45 @@
 
+% preliminary work on getting a rotation matrix for modified nucleotide
+
+% F = zReadandAnalyzeModNucl('1S72.pdb',1);
+
+Code = cat(1,F.NT.Code);
+
+mn = find(Code == 5);
+
+VP.Sugar = 1;
+VP.AtOrigin = 1;
+
+for i = 1:length(mn),
+
+  NT = F.NT(mn(i));
+  NT = zFitModifiedNucleotide(NT,1);
+  F.NT(mn(i)) = NT;
+
+  figure(1)
+  clf
+  zDisplayNT(F,mn(i),VP);
+  view(2)
+  
+  if VP.AtOrigin == 0,
+    L = NT.Loc;
+    for j = 1:length(L(:,1)),         % loop over atoms
+      text(L(j,1),L(j,2),L(j,3),NT.AtomName(j));
+    end
+  end
+
+  figure(2)
+  clf
+  zPlotStandardBase(4,1)
+
+  pause
+end
+
+break
+
+% ---------------------- Read NR files to build collection of known
+%                        modified NTs
+
 Filenames = zReadPDBList('Nonredundant_4A_2011-06-18_list',1);
 
 VP.Sugar = 1;
@@ -115,5 +156,8 @@ break
 for f = 231:length(Filenames),
   F = zReadandAnalyzeModNucl([Filenames{f} '.pdb'],1);
 end
+
+
+break
 
 

@@ -169,12 +169,34 @@ case 5,
 end
 
 if GlycoAtomSize > 0,
-  scatter3(X(1,1),X(1,2),X(1,3),GlycoAtomSize,col,'filled');   % glycosidic atom
+  if NT.Code <= 4,
+    scatter3(X(1,1),X(1,2),X(1,3),GlycoAtomSize,col,'filled');% glycosidic atom
+  end
 end
 
 if Sugar == 1,
+ if NT.Code <= 4,                 % standard base
+   Z = [NT.Sugar; NT.Fit(1,:)];
+ elseif NT.Code == 5,             % modified base
+   j = 1;
+   for jj = length(NT.AtomName):-1:1,
+     if strcmp(NT.AtomName{jj},'N1') || strcmp(NT.AtomName{jj},'N9'),
+       j = jj;
+     end
+   end
+   
+%   D = zDistance(NT.Sugar,NT.Fit);
+%   [i,j] = find(D == min(min(D)));% indices of nearest atoms
+
+   Z = [NT.Sugar; NT.Fit(j,:)];
+   if GlycoAtomSize > 0,
+    scatter3(X(j,1),X(j,2),X(j,3),GlycoAtomSize,col,'filled');% glycosidic atom
+   end
+ else
+   Z = [NT.Sugar; NT.Sugar(end,:)];
+ end
+
  if length(NT.Sugar(:,1)) == 13,   % for some reason, some have 9
-  Z = [NT.Sugar; NT.Fit(1,:)];
 
   k = [14 1 7 6 8 9 10 12]; 
   plot3(Z(k,1),Z(k,2),Z(k,3),'Color',bc,'LineWidth',LT,'LineStyle',LS);
@@ -201,7 +223,6 @@ if Sugar == 1,
     end
   end
  elseif length(NT.Sugar(:,1)) == 12,   % for some reason, some have 9
-  Z = [NT.Sugar; NT.Fit(1,:)];
 
   k = [13 1 7 6 8 9 10 12]; 
   plot3(Z(k,1),Z(k,2),Z(k,3),'Color',bc,'LineWidth',LT,'LineStyle',LS);

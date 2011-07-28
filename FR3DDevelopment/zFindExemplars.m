@@ -1,11 +1,20 @@
 % zFindExemplars finds the best representative for each category of pairs.
-% For basepairing, 
 
 NRList = 'Nonredundant_4A_2010-05-19_list';
 NRList = 'Nonredundant_4A_2011-01-07_list';
+NRList = 'Nonredundant_4A_2011-07-23_list';
+
+% Curated pairs are stored in PDBFiles and listed in Curated_list.pdb
+% Every year or so, someone should set ViewCurated = 1 and run zFindExemplars
+% It will display the curated exemplar in Figure 2 and show instances in
+% the NR dataset in Figures 1 and 8.  Use xDisplayCandidates to view the
+% top candidates.  If they are as satisfactory as the curated exemplar,
+% remove the curated exemplar from Curated_list.pdb.
+% CLZ did this on 2011-07-26.
 
 Verbose = 1;               % Verbose = 1 tells it to show distance graphs
-LMax    = 500;             % maximum number of pairs to consider in each class
+ViewCurated = 0;           % ViewCurated = 1 stops to review each curated pair
+LMax    = 600;             % maximum number of pairs to consider in each class
 
 % Pair codes:  1-AA 5-AC 6-CC 7-GC 9-AG 11-GG 13-AU 14-CU 15-GU 16-UU
 
@@ -21,7 +30,7 @@ load('PairExemplars','Exemplar');       % load previous exemplars
 
 OldExemplar = Exemplar;                 % for when no instances are found
 
-clear Exemplar                          % start fresh
+Exemplar = [];                          % start fresh
 
 CL = zClassLimits;                      % load basepair classification limits
 
@@ -46,6 +55,14 @@ else
   File = File(SIndex);
 end                       
 
+%whos
+
+if isfield(File,'AA'),
+  File = rmfield(File,'AA');                     % removed 700 MB in July 2011!
+end
+
+%whos
+
 for f = 1:length(File),
   if ~isempty(File(f).Info.Resolution),
     Res(f) = File(f).Info.Resolution;
@@ -53,11 +70,12 @@ for f = 1:length(File),
     Res(f) = 10;
   end
 
-  S(f) = length(File(f).NT);
+  S(f) = length(File(f).NT);                   % size of each file
 end
 
 [y,i] = sort(Res);                             % sort files by resolution
 File = File(i);
+Res = Res(i);
 S = S(i);
 
 % ------------------------------------------ Load modeled basepairs
@@ -73,9 +91,9 @@ ModelFile = ModelFile(SIndex);
 % ------------------------------------------ Load curated exemplars
 
 if ~exist('CuratedFile'),                      % if no molecule data is loaded,
-  [CuratedFile,SIndex] = zAddNTData('Curated_list',1,[],1);   % load PDB data
+  [CuratedFile,SIndex] = zAddNTData('Curated_list',0,[],1);   % load PDB data
 else
-  [CuratedFile,SIndex] = zAddNTData('Curated_list',1,CuratedFile,1);
+  [CuratedFile,SIndex] = zAddNTData('Curated_list',0,CuratedFile,1);
 end                       
 
 CuratedFile = CuratedFile(SIndex);
@@ -89,7 +107,7 @@ end
 % loop through paircodes and computer classifications ----------------------
 
 for j = 1:length(pcodes),            % run through all pair codes specified
- pc = pcodes(j);
+ pc = pcodes(j);                     % current paircode
 
  CLE = CL(:,1,pc);                   % class limits for this paircode
  CLE = CLE(find(CLE));               % leave out empty entries
@@ -117,8 +135,6 @@ for j = 1:length(pcodes),            % run through all pair codes specified
 
     fprintf('Using a curated pair for %2s %4s class %5.1f\n', Pairs{pc}, zEdgeText(CLE(row),1), CLE(row));
 
-%xDisplayCandidates(CuratedFile,List);
-
     f  = List(1,3);                       % file number
     Exemplar(row,pc).Filename   = CuratedFile(f).Filename;
     Exemplar(row,pc).Class      = CLE(row);
@@ -126,52 +142,71 @@ for j = 1:length(pcodes),            % run through all pair codes specified
     Exemplar(row,pc).NT2        = CuratedFile(f).NT(List(1,2));
     Exemplar(row,pc).Resolution = 0;
 
-    CList = zFindPairs(File,Param,Decimal);   % search the non-redundant list
-
-    Exemplar(row,pc).Count      = length(CList(:,1));
-
     List = zFindPairs(File,Param,Decimal);   % search the non-redundant list
+
+    Exemplar(row,pc).Count      = length(List(:,1));
 
     if length(List) > 0,               % instances of this category are found
       fprintf('FYI, found %5d instances of %2s %4s class %5.1f\n', length(List), Pairs{pc}, zEdgeText(CLE(row),Decimal,pc), CLE(row));
 
       [PD,ID,i] = zOrderPairs(File,List,LMax,Verbose);
 
-    if 0 > 1,
-      if (length(List(:,1)) > 2) && (Verbose > 0),
-        zFindExemplarsPlot
-      end
-      figure(2)
-      close
-      figure(2)
-      VP.Sugar = 1;
-      VP.AtOrigin = 1;
-      VP.LabelBases = 10;
-      zPlotOneNT(Exemplar(row,pc).NT1,VP);
-      hold on
-      zPlotOneNT(Exemplar(row,pc).NT2,VP);
-      axis equal
-      rotate3d on
+      disp('Top-ranking candidates, last column is the overall criterion')
 
-      figure(1)
-      close
-      figure(1)
-      xDisplayCandidates(File,List(i,:));
-      rotate3d on
-    end
+      rs = sum(PD);
+      gg = Res(List(i(1:min(end,80)),3))';
+      hh = rs(i(1:min(end,80)))';
+      kk = 1+((1:length(rs))/length(rs))';             % 1 + rank among instances
+
+      disp('Chosen candidate')
+
+      [gg(1:min(end,20)) hh(1:min(end,20)) kk(1:min(end,20)) gg(1:min(end,20)).*hh(1:min(end,20)).*kk(1:min(end,20))]
+
+      [y,w] = sort(gg.*hh.*kk);
+
+      [gg(w(1)) hh(w(1)) gg(w(1))*hh(w(1))*kk(w(1))]
+
+      i = i(w);
 
       NT1 = Exemplar(row,pc).NT1;
       NT2 = Exemplar(row,pc).NT2;
       f   = List(i(1),3);
       NT3 = File(f).NT(List(i(1),1));
       NT4 = File(f).NT(List(i(1),2));
+      [File(f).Filename ' ' num2str(File(f).Info.Resolution) ' ' NT3.Base NT3.Number ' ' NT4.Base NT4.Number]
       d   = zIsoDiscrepancy(NT1,NT2,NT3,NT4);
       if Verbose > 0,
         fprintf('    IsoDiscrepancy between curated and best from search is %7.4f\n',d);
       end
+
+      if ViewCurated > 0,
+        if (length(List(:,1)) > 2) && (Verbose > 0),
+          zFindExemplarsPlot
+        end
+        figure(2)
+        close
+        figure(2)
+        VP.Sugar = 1;
+        VP.AtOrigin = 1;
+        VP.LabelBases = 10;
+        FFF.NT(1) = Exemplar(row,pc).NT1;
+        FFF.NT(2) = Exemplar(row,pc).NT2;
+        zDisplayNT(FFF,1:2,VP);
+        view(2)
+        xlabel(['Curated pair from ' strrep(Exemplar(row,pc).Filename,'_','-')]);
+        axis equal
+        rotate3d on
+
+        figure(1)
+        close
+        figure(1)
+        xDisplayCandidates(File,List(i,:));
+        rotate3d on
+      end
+
     end
 
-  else                                      % not a curated basepair
+  elseif ViewCurated == 0,                  % not a curated basepair
 
    List = zFindPairs(File,Param,Decimal);   % search the non-redundant list
 
@@ -180,6 +215,20 @@ for j = 1:length(pcodes),            % run through all pair codes specified
     fprintf('Found %5d instances of %2s %4s class %5.1f ', length(List), Pairs{pc}, zEdgeText(CLE(row),Decimal,pc), CLE(row));
 
     [PD,ID,i,k] = zOrderPairs(File,List,LMax,Verbose); % order by centrality
+
+    % disp('Resolutions of the most central instances:');
+    rs = sum(PD);
+    gg = Res(List(i(1:min(end,80)),3))';
+    hh = rs(i(1:min(end,80)))';
+    kk = 1+(((1:length(hh)))/length(rs))';          % rank among instances
+
+    [gg(1:min(end,20)) hh(1:min(end,20)) kk(1:min(end,20)) gg(1:min(end,20)).*hh(1:min(end,20)).*kk(1:min(end,20))]
+
+    [y,w] = sort(gg.*hh.*kk);
+
+    [gg(w(1)) hh(w(1)) gg(w(1))*hh(w(1))*kk(w(1))]
+
+    i = i(w);
 
     if (length(List(:,1)) > 2) && (Verbose > 0),
       zFindExemplarsPlot                          % display mutual discreps
@@ -228,7 +277,9 @@ for j = 1:length(pcodes),            % run through all pair codes specified
 
         [N1,N2,E] = zGetExemplar(CLE(row),Code1,Code2,OldExemplar);
 
-        if ~isempty(E.Filename),
+        opc = 4*(N2.Code-1) + N1.Code;        % verify old paircode!!
+
+        if ~isempty(E.Filename) && opc == pc,
           Exemplar(row,pc).Filename   = E.Filename;
           Exemplar(row,pc).Class      = E.Class;
           Exemplar(row,pc).NT1        = E.NT1;
@@ -239,7 +290,7 @@ for j = 1:length(pcodes),            % run through all pair codes specified
           fprintf('Using previous exemplar for this class\n');
 E
         else
-          fprintf('***** No previous exemplar found, time to make a new one.\n')
+          fprintf('***** No previous exemplar found, may be time to make a new one.\n')
         end
 
       end
@@ -260,7 +311,7 @@ E
    end
   end 
 
-  if LMax >= 500,
+  if LMax >= 500 && ViewCurated == 0,
     save(['FR3DSource' filesep 'PairExemplars'],'Exemplar'); % Matlab version 7 only
     save PairExemplars_Version_6.mat Exemplar -V6 % for compatibility with older versions
   end
@@ -305,7 +356,7 @@ Exemplar = NewExemplar;
 zExemplarIDICalculation                    % calculate and store ExemplarIDI
 zExemplarFrequencyCalculation
 
-zWriteExemplarPDB(1)
+zWriteExemplarPDB(Exemplar,1)
 
 zExemplarTable(1,0,0,1);
 zExemplarTable(2,0,0,1);

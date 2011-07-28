@@ -13,58 +13,54 @@ Y = NT.Loc(1:3,:);                           % 3 points on modified base
 
 Corresp = [];
 
-switch NT.Base,
+[ModName,ModAtom,Parent,ParentAtom] = textread('ModifiedNucleotideAtomCorrespondence.txt','%s\t%s\t%s\t%s');
 
-case '1MA',
-  Parent = 1;                   % adenosine is the parent
-  Corresp{1}  = {'N9','N9'};
-  Corresp{2}  = {'C4','C4'};
-  Corresp{3}  = {'C5','C5'};
-  Corresp{4}  = {'N7','N7'};
-  Corresp{5}  = {'C8','C8'};
-  Corresp{6}  = {'N3','N3'};
-  Corresp{7}  = {'C2','C2'};
-  Corresp{8}  = {'N1','N1'};
-  Corresp{9}  = {'C6','C6'};
-  Corresp{10} = {'N6','N6'};
+r = find(ismember(ModName,NT.Base));
 
-end
+if ~isempty(r),
+  Parent = Parent{r(1)};
+  Parent = find(Parent == 'ACGU');
 
+  if ~isempty(Parent),
 
-if ~isempty(Corresp),
-  zStandardBases                % read in QM locations of atoms in 4 bases
+    MA = ModAtom(r);
+    PA = ParentAtom(r);
 
-  Lim(1,:) = [10 8 11 8];       % number of base atoms, excluding hydrogen
-  Lim(2,:) = [15 13 16 12];     % total number of atoms, including hydrogen
+    zStandardBases                % read in QM locations of atoms in 4 bases
 
-  clear X Y
+    Lim(1,:) = [10 8 11 8];       % number of base atoms, excluding hydrogen
+    Lim(2,:) = [15 13 16 12];     % total number of atoms, including hydrogen
 
-  for i = 1:length(Corresp),
-    j = find(ismember(NT.AtomName,Corresp{i}{1}));
-    k = find(ismember(AtomNames(1:Lim(1,Parent),Parent),Corresp{i}{2}));
-    if isempty(j),
-      fprintf('zFitModifiedNucleotide: %s is missing atom %s\n', NT.Base, Corresp{i}{1});
-    else
-      X(i,:) = StandardLoc(k(1),:,Parent);  % ideal base atom locations
-      Y(i,:) = NT.Loc(j(1),:);
+    clear X Y
+
+    for i = 1:length(MA),
+      j = find(ismember(NT.AtomName,MA{i}));
+      k = find(ismember(AtomNames(1:Lim(1,Parent),Parent),PA{i}));
+      if isempty(j),
+        fprintf('zFitModifiedNucleotide: %s is missing atom %s\n', NT.Base, MA{i});
+      else
+        X(i,:) = StandardLoc(k(1),:,Parent);  % ideal base atom locations
+        Y(i,:) = NT.Loc(j(1),:);
+      end
     end
   end
-
 end
 
-[r, sc, sh] = zBestTransformation(X,Y);      % find best rotation, shift
+[Rot, sc, sh] = zBestTransformation(X,Y);      % find best rotation, shift
 
-NT.Rot = r;                               % save the rotation matrix
+NT.Rot = Rot;                               % save the rotation matrix
 
 NT.Fit = NT.Loc;                          % could do better if there is a QM-optimized version of this modified nucleotide; could also add hydrogens
 NT.Syn = 0;
 
-if Verbose > 0 && ~isempty(Corresp),
+if Verbose > 0 && ~isempty(r),
   figure(83)
   clf
   zPlotStandardBase(Parent,1)
+  clear VP
   VP.Sugar = 1;
   VP.AtOrigin = 1;
+  clear F
   F.NT(1) = NT;
   zDisplayNT(F,1,VP);
   view(2)

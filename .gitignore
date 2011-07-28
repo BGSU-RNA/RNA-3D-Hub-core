@@ -1,0 +1,27 @@
+*.zip
+*.xls
+*.ppt
+*.m~
+*.exe
+*.jar
+*.txt
+.dropbox
+.metadata/
+JAR3D/
+Alignments/
+Pictures/
+Motifs/
+MutationRates/
+NIH*/
+2011 SCFG MRF motif talk and article/
+Data/
+MutationRatesDoc/
+Triple clashes/
+Zirbel meetings with students/
+Motif library paper/
+Secondary structures/
+FR3DSourceDoc/
+FR3DDevelopmentDoc/
+documentation.html
+documentation.html~
+TripleCoplanarDataSearch.mat

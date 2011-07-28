@@ -1,3 +1,4 @@
+% zOrderPairs calculates discrepancy between the first LMax pairs in List.  It gives a penalty for non-coplanar pairs.  It returns the "best" pairs, but a better method in zFindExemplars supersedes this choice.
 
 function [PD,ID,i,k] = zOrderPairs(File,List,LMax,Verbose)
 
@@ -16,8 +17,8 @@ function [PD,ID,i,k] = zOrderPairs(File,List,LMax,Verbose)
       NT2 = File(f1).NT(Model(2));
 
       if File(f1).Coplanar(Model(1),Model(2)) == 0,
-        PD(k,k) = 200;
-        ID(k,k) = 200;
+        PD(k,k) = 900;
+        ID(k,k) = 900;
       elseif File(f1).Coplanar(Model(1),Model(2)) < 0.5,
 %        PD(k,k) = 100;
 %        ID(k,k) = 100;
@@ -42,7 +43,7 @@ function [PD,ID,i,k] = zOrderPairs(File,List,LMax,Verbose)
 
     PD = sqrt(PD)/2;            % finish discrepancy calculation
 
-  if 0 > 1,
+  if 10 > 1,
     bigm = max(max(PD));
     if bigm > 1,
       fprintf('%6.2f maximum pair discrepancy\n',bigm);
@@ -59,7 +60,7 @@ function [PD,ID,i,k] = zOrderPairs(File,List,LMax,Verbose)
     ID = ID + ID';
 
     rs = sum(PD);
-    [y,i] = sort(rs);
+    [y,i] = sort(rs);                          % choose the one at the center
 
     qs = sum(ID);
     [z,k] = sort(qs);

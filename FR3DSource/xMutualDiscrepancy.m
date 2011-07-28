@@ -24,7 +24,7 @@ end
 
 if min(Search.DiscComputed(1,1:s)) == 0,             % some not computed
   for k=1:s,
-    if Search.DiscComputed(k) == 0,                  % k has never been done
+    if Search.DiscComputed(1,k) == 0,                  % k has never been done
       f1             = Candidates(k,N+1);
       c1.NumNT       = Query.NumNT;                  % set up c1 as "Model"
       c1.NT          = File(f1).NT(Candidates(k,1:N));
@@ -46,7 +46,7 @@ if min(Search.DiscComputed(1,1:s)) == 0,             % some not computed
         end
         Search.Disc(k,j) = Search.Disc(j,k);
       end
-      Search.DiscComputed(k) = 1;
+      Search.DiscComputed(1,k) = 1;
     end
   end
 end

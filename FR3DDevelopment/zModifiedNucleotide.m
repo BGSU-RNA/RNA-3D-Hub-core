@@ -10,7 +10,7 @@ mn = find(Code == 5);
 VP.Sugar = 1;
 VP.AtOrigin = 1;
 
-for i = 1:length(mn),
+for i = 16:length(mn),
 
   NT = F.NT(mn(i));
   NT = zFitModifiedNucleotide(NT,1);
@@ -21,14 +21,17 @@ for i = 1:length(mn),
   zDisplayNT(F,mn(i),VP);
   view(2)
   
-  L = NT.Loc;
-  for j = 1:length(L(:,1)),         % loop over atoms
-%    text(L(j,1),L(j,2),L(j,3),NT.AtomName(j));
+  if VP.AtOrigin == 0,
+    L = NT.Loc;
+    for j = 1:length(L(:,1)),         % loop over atoms
+      text(L(j,1),L(j,2),L(j,3),NT.AtomName(j));
+    end
   end
+
 
   figure(2)
   clf
-  zPlotStandardBase(1,1)
+  zPlotStandardBase(4,1)
 
   pause
 end
@@ -43,7 +46,7 @@ Filenames = zReadPDBList('Nonredundant_4A_2011-06-18_list',1);
 VP.Sugar = 1;
 VP.AtOrigin = 1;
 
-for f = 24:length(Filenames),               % 1S72 is the first!
+for f = 1:length(Filenames),               % 1S72 is the first!
   F = zReadandAnalyzeModNucl([Filenames{f} '.pdb'],1);
 
   c = cat(1,F.NT.Center);
@@ -66,6 +69,8 @@ for f = 24:length(Filenames),               % 1S72 is the first!
       view(2)
 
       saveas(gcf,[F.Filename '_' F.NT(i).Chain '_' F.NT(i).Base '_' F.NT(i).Number '.png']);
+
+      saveas(gcf,[F.Filename '_' F.NT(i).Chain '_' F.NT(i).Base '_' F.NT(i).Number '.fig']);
 
       fid = fopen([F.Filename '_' F.NT(i).Chain '_' F.NT(i).Base '_' F.NT(i).Number '.pdb'],'w');
 

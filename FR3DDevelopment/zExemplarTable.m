@@ -331,7 +331,7 @@ if length(Category) > 1,
   p = zClusterGraph(D, Lab, 12, 1:length(B), 0);
 else
   p = zClusterGraph(D, Lab, [12 2], [], Verbose);
-  if length(Category) == 1 && Category(1) == 1,
+  if length(Category) == 1 && Category(1) == 1 && length(D(:,1)) == 18,
     p = [9 18  4  16   8   7  14  13  15   3  17  10   12  11 1  6   5   2];
   end
   zClusterGraph(D, Lab, [12 2], p, Verbose);

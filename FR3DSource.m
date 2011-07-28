@@ -6,6 +6,7 @@
 %
 % NT        array of nucleotide structures
 % NumNT     the total number of distinct nucleotides found
+% Distance  sparse matrix of center-center distances, if less than 15
 
 % Each nucleotide has these fields:
 %  Base     Nucleotide letter A, C, G, U
@@ -23,9 +24,7 @@
 function [File] = zReadandAnalyze(PDBFilename,Verbose)
 
 i = strfind(PDBFilename,'.');
-if ~isempty(i),
-  Filename = PDBFilename(1:(i(end)-1));
-end
+Filename = PDBFilename(1:(i(end)-1));
 
 if nargin < 2,
   Verbose = 1;
@@ -33,33 +32,49 @@ end
 
 % read PDBFilename ----------------------------------------------------
 
-Stop = 0;
-
 if exist([pwd filesep 'PDBFiles' filesep 'Trouble reading']) == 7,
   if exist([pwd filesep 'PDBFiles' filesep 'Trouble reading' filesep PDBFilename]) == 2,
     Stop = 1;
-    fprintf('zReadandAnalyze is skipping %s because it appeared in FR3D/PDBFiles/Trouble Reading\n', PDBFilename);
+    if Verbose > 0,
+      fprintf('zReadandAnalyze is skipping %s because it appeared in FR3D/PDBFiles/Trouble Reading\n', PDBFilename);
+    end
+  else
+    Stop = 0;
+  end
+else
+  Stop = 0;
+end
+
+fid = fopen(PDBFilename,'r');
+
+if fid < 0,
+  NewPDBFilename = strrep(PDBFilename,'.pdb','.ent');
+  NewPDBFilename = ['pdb' NewPDBFilename];
+
+  fid = fopen(NewPDBFilename,'r');
+
+  if fid > 0,
+    PDBFilename = NewPDBFilename;
   end
 end
 
-[ATOM_TYPE, ATOMNUMBER, ATOMNAME, VERSION, NTLETTER, CHAIN, NTNUMBER, P, OCC, BETA, ModelNum, Readable] = zReadPDBTextReadNew(PDBFilename,Verbose);
 
-if length(ATOMNUMBER) > 0,
+if (fid > 0) && (Stop == 0),
 
-if Verbose > 1,
-  ATOMNUMBER(1:10)
-  ATOMNAME(1:10)
-  VERSION(1:10)
-  NTLETTER(1:10)
-  CHAIN(1:10)
-  NTNUMBER(1:10)
-end
+fclose(fid);
+
+a = 1000+round(8900*rand);
+
+TempFileName = ['##TempPDB' num2str(a)];
+
+Header = zExtractAtomsPDB(PDBFilename,TempFileName,Verbose);
+
+[ATOM_TYPE, ATOMNUMBER, ATOMNAME, VERSION, NTLETTER, CHAIN, NTNUMBER, P, OCC, BETA, Readable] = zReadPDBTextRead([TempFileName '.txt']);
 
 P = [P BETA];                           % include beta factors with positions
 
-if 0 > 1,
-  delete([TempFileName '.txt']);
-end
+delete([TempFileName '.txt']);
+delete([TempFileName '_het.txt']);
 
 if Readable == 0,
   fprintf('zReadandAnalyze was unable to read the PDB file %s\n',PDBFilename);
@@ -67,11 +82,19 @@ if Readable == 0,
 end
 
 % Move models in NMR file apart ---------------------------------------------
-% Otherwise they land right on top of one another and confuse basepairs
-% But don't do this with files like 3NJ6, which are x-ray and have 2 models
 
-if (max(ModelNum) > 4) && (PDBFilename(end) == 'b'),
-  P(:,1) = P(:,1) + 1000*(ModelNum - 1);  % move by 1000 Angstroms
+ModelNum = [];
+
+if isfield(Header,'Expdata') & (length(Header.ModelStart) > 1)
+  if ~isempty(strfind(Header.Expdata,'NMR')),
+    Header.ModelStart = [Header.ModelStart length(NTNUMBER)+1];
+    for m = 1:(length(Header.ModelStart)-1),
+      a = Header.ModelStart(m);
+      b = Header.ModelStart(m+1)-1;
+      P(a:b,1) = P(a:b,1) + (m-1)*1000;     % shift by 1000 for each model
+      ModelNum(a:b,1) = m;                  % record model number
+    end
+  end
 end
 
 % Read standard bases from Sponer QM calculations --------------------------
@@ -83,42 +106,19 @@ Lim(2,:) = [15 13 16 12];     % total number of atoms, including hydrogen
 
 % Extract locations of base and sugar atoms ---------------------------------
 
-NT  = [];                                    % nucleotide data structure
-n   = 1;                                     % current NT index
-AA  = [];                                    % amino acid data structure
-Het = [];                                    % HETATM data structure
-aa  = 1;                                     % current amino acid index
-i   = 1;                                     % current atom/row number
-hh  = 1;                                     % current HETATM number
+NT = [];                                    % nucleotide data structure
+n  = 1;                                     % current NT index
+AA = [];                                    % amino acid data structure
+aa = 1;                                     % current amino acid index
+i  = 1;                                     % current atom/row number
+unrec = 0;                                  % count unrecognized nucleotides
 
-while i <= length(NTNUMBER),                 % go through all atoms
-
-
-
-% for file 1EG0, this loop never ends
-
- while i <= length(NTNUMBER) && strcmp(ATOM_TYPE{i},'HETATM'),
-   Het(hh).AtomNumber = ATOMNUMBER(i);
-   Het(hh).Atom       = ATOMNAME{i};
-   Het(hh).Unit       = NTLETTER{i};
-   Het(hh).Chain      = CHAIN{i};
-   Het(hh).Number     = NTNUMBER{i};
-   Het(hh).Loc        = P(i,1:3);
-   Het(hh).Beta       = P(i,4);
-   Het(hh).Center     = P(i,1:3);
-   i  = i + 1;
-   hh = hh + 1;
- end
-
- if i <= length(NTNUMBER),
-
-  UnitType = 0;                             % RNA NT = 1, Amino acid = 2, etc.
+while i < length(NTNUMBER),                 % go through all atoms
+  Flag = 0;                                 % not a recognized nucleotide
   j = [];                                   % initialize rows of next nucleo.
   ntnum = NTNUMBER{i};                      % nucleotide number from pdb file
-  chnum = CHAIN{i}; %Anton 12/12/10
-%   while (i <= length(NTNUMBER)) & (strcmp(NTNUMBER{i},ntnum)) %Anton 12/12/10
-% to deal with consecutive nucleotides that differ only by chain
-  while (i <= length(NTNUMBER)) && (strcmp(NTNUMBER{i},ntnum)) && (strcmp(CHAIN{i},chnum))  %Anton 12/12/10
+
+  while (i <= length(NTNUMBER)) & (strcmp(NTNUMBER{i},ntnum)), 
                                             % pull out rows for this nucleotide
                                             % assumes they are continguous
     j = [j; i];                             % add rows for this nucleotide
@@ -130,29 +130,21 @@ while i <= length(NTNUMBER),                 % go through all atoms
 
   NTBase = NTLETTER{j(1)};                % one or three letter code
 
-  if length(NTBase) == 1,                 % looks like a nucleotide
-    NT(n).Base    = NTLETTER{j(1)};       % letter for this nucleotide
-    NT(n).Unit    = NTLETTER{j(1)};       % letter for this nucleotide
-    NT(n).Chain   = CHAIN{j(1)};          % what chain nucleotide is in
-    NT(n).Number  = NTNUMBER{j(1)};       % nucleotide number for this molecule
-    NT(n).ModelNum= ModelNum(j(1));       % model number, especially for NMR    
-            
-    V = [VERSION{min(j):max(j)}];
-    if isempty(V)
-        NT(n).AltLoc = ' ';
-    elseif strfind(V,'A')
-        NT(n).AltLoc = 'A';
-    else
-        
-    end
-    
+  if isempty(ModelNum),
+    NT(n).Model = 1;                      % default model number, not NMR
+  else
+    NT(n).Model = ModelNum(j(1));         % use current model number for NMR
   end
 
-  NTBackbone = 0;                         % distinguish AAs from modified NTs
+  if length(NTBase) == 1,                 % looks like a nucleotide
+    NT(n).Base    = NTLETTER{j(1)};       % letter for this nucleotide
+    NT(n).Chain   = CHAIN{j(1)};          % what chain nucleotide is in
+    NT(n).Number  = NTNUMBER{j(1)};       % nucleotide number for this molecule
+  end
 
   if strcmp(NTBase,'A'),
     for k = min(j):max(j),
-     if strcmp(VERSION{k},'A') || isempty(VERSION{k}),
+     if (VERSION{k}=='A') | (VERSION{k}==' '),
       switch ATOMNAME{k},
         case 'N9',      Loc( 1,:) = P(k,:);
         case 'C4',      Loc( 2,:) = P(k,:);
@@ -173,9 +165,9 @@ while i <= length(NTNUMBER),                 % go through all atoms
         case {'O4*','O4'''},     Sugar( 7,:) = P(k,:);
         case {'C5*','C5'''},     Sugar( 8,:) = P(k,:);
         case {'O5*','O5'''},     Sugar( 9,:) = P(k,:);
-        case 'P',                Sugar(10,:) = P(k,:);
-        case {'O1P','OP1'},      Sugar(11,:) = P(k,:);
-        case {'O2P','OP2'},      Sugar(12,:) = P(k,:);
+        case 'P',       Sugar(10,:) = P(k,:);
+        case {'O1P','OP1'},     Sugar(11,:) = P(k,:);
+        case {'O2P','OP2'},     Sugar(12,:) = P(k,:);
       end
      end
     end
@@ -183,13 +175,12 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Loc    = Loc(:,1:3);
     NT(n).Sugar  = Sugar(:,1:3);
     NT(n).Beta   = [Sugar(:,4); Loc(1:10,4)];   % sugar first, then base
-    NT(n).Center = mean(Loc(1:10,1:3));         % mean of heavy base atoms
-    NT(n).Code   = 1;                           % A is 1, C is 2, etc.
-    UnitType = 1;                              % RNA nucleotide               
+    NT(n).Center = mean(Loc(1:10,:));          % mean of heavy base atoms
+    NT(n).Code   = 1;                          % A is 1, C is 2, etc.
     n = n + 1;
-  elseif strcmp(NTBase,'C') || strcmp(NTBase,'C+'),
+  elseif strcmp(NTBase,'C') | strcmp(NTBase,'C+'),
     for k = min(j):max(j),
-     if strcmp(VERSION{k},'A') || isempty(VERSION{k}),
+     if (VERSION{k}=='A') | (VERSION{k}==' '),
       switch ATOMNAME{k},
         case 'N1',      Loc( 1,:) = P(k,:);
         case 'C2',      Loc( 2,:) = P(k,:);
@@ -220,13 +211,12 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Loc    = Loc(:,1:3);
     NT(n).Sugar  = Sugar(:,1:3);
     NT(n).Beta   = [Sugar(:,4); Loc(1:8,4)];   % sugar first, then base
-    NT(n).Center = mean(Loc(1:8,1:3));
+    NT(n).Center = mean(Loc(1:8,:));
     NT(n).Code   = 2;                          % A is 1, C is 2, etc.
-    UnitType = 1;                              % RNA nucleotide
     n = n + 1;
   elseif strcmp(NTBase,'G'),
     for k = min(j):max(j),
-     if strcmp(VERSION{k},'A') || isempty(VERSION{k}),
+     if (VERSION{k}=='A') | (VERSION{k}==' '),
       switch ATOMNAME{k},
         case 'N9',      Loc( 1,:) = P(k,:);
         case 'C4',      Loc( 2,:) = P(k,:);
@@ -257,13 +247,12 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Loc    = Loc(:,1:3);
     NT(n).Sugar  = Sugar(:,1:3);
     NT(n).Beta   = [Sugar(:,4); Loc(:,4)];   % sugar first, then base
-    NT(n).Center = mean(Loc(1:11,1:3));
+    NT(n).Center = mean(Loc(1:11,:));
     NT(n).Code   = 3;                          % A is 1, C is 2, etc.
-    UnitType = 1;                              % RNA nucleotide
     n = n + 1;
-  elseif strcmp(NTBase,'U') || strcmp(NTBase,'+U'),
+  elseif strcmp(NTBase,'U') | strcmp(NTBase,'+U'),
     for k = min(j):max(j),
-     if strcmp(VERSION{k},'A') || isempty(VERSION{k}),
+     if (VERSION{k}=='A') | (VERSION{k}==' '),
       switch ATOMNAME{k},
         case 'N1',      Loc( 1,:) = P(k,:);
         case 'C2',      Loc( 2,:) = P(k,:);
@@ -294,75 +283,37 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Loc    = Loc(:,1:3);
     NT(n).Sugar  = Sugar(:,1:3);
     NT(n).Beta   = [Sugar(:,4); Loc(1:8,4)];   % sugar first, then base
-    NT(n).Center = mean(Loc(1:8,1:3));
+    NT(n).Center = mean(Loc(1:8,:));
     NT(n).Code   = 4;                          % A is 1, C is 2, etc.
-    UnitType = 1;                              % RNA nucleotide
     n = n + 1;
-  elseif length(NTBase) == 3,                  % probably an amino acid
-
-    AA(aa).AtomNumber = ATOMNUMBER(j);
-    AA(aa).Atom       = ATOMNAME(j);        % store atom names
-    AA(aa).Unit       = NTLETTER{j(1)};
-    AA(aa).Chain      = CHAIN{j(1)};        % what chain the a.a. is in
-    AA(aa).Number     = NTNUMBER{j(1)};     % number for this a.a.
-    AA(aa).Loc        = P(j,1:3);
-    AA(aa).Beta       = P(j,4);
-    k = min(4,length(j));
-    AA(aa).Center     = mean(P(j(1:k),1:3),1); % backbone center
-
+  elseif length(NTBase) == 3,
+    AA(aa).Name   = NTLETTER{j(1)};
+    AA(aa).Loc    = P(j,1:3);
+    AA(aa).Beta   = P(j,4);
+    AA(aa).Chain  = CHAIN{j(1)};        % what chain the a.a. is in
+    AA(aa).Number = NTNUMBER{j(1)};     % number for this a.a.
+    AA(aa).Atom   = ATOMNAME(j);        % store atom names
     aa = aa + 1;
-    UnitType = 2;
-
-    % ------------------------- Might this be a nucleotide with 3 letter name?
-
-    for m = 1:length(AA(aa-1).Atom),
-      if ~isempty(strfind(AA(aa-1).Atom{m},'''')),
-        NTBackbone = 1;
-      end
-    end
+    Flag = 1;
   end                                         % end four if statements
 
-  if (UnitType == 0) || NTBackbone == 1,      % unrecognized nucleotide
-    fprintf('Unrecognized unit:  %s%4s_%s will be added as HETATM ========= \n',NTBase,NTNUMBER{j(1)},CHAIN{j(1)});
-    if NTBackbone == 1,
-      aa = aa - 1;                            % not an amino acid
-    end
-
-    for hhh = 1:length(j),
-      Het(hh+hhh-1).AtomNumber = ATOMNUMBER(j(hhh));
-      Het(hh+hhh-1).Atom       = ATOMNAME{j(hhh)};
-      Het(hh+hhh-1).Unit       = NTLETTER{j(hhh)};
-      Het(hh+hhh-1).Chain      = CHAIN{j(hhh)};
-      Het(hh+hhh-1).Number     = NTNUMBER{j(hhh)};
-      Het(hh+hhh-1).Loc        = P(j(hhh),1:3);
-      Het(hh+hhh-1).Beta       = P(j(hhh),4);
-      Het(hh+hhh-1).Center     = P(j(hhh),1:3);
-    end
-    hh = hh + length(j);
-
-  elseif (UnitType == 1),                     % standard RNA base
-
+  if (Flag < 1),
     if (max(max(Loc)) == Inf),                 % base atoms missing
-      n = n - 1;
       if Verbose > 0,
         NumGood = length(find((Loc(1,:) < Inf) .* (abs(Loc(1,:)) > 0)));
-        fprintf('Base %s%4s_%s has %d atoms, so it will be skipped\n',NTBase,NTNUMBER{j(1)},CHAIN{j(1)},NumGood);
+        fprintf('Base %s%s has %d atoms, so it will be skipped\n',NT(n).Base,NT(n).Number,NumGood);
       end
+      n = n - 1;
     elseif (max(max(Sugar)) == Inf),          % sugar atom missing
-      NumGood = 12;
       for k = 1:12,
         if Sugar(k,1) == Inf,
           Sugar(k,:) = Loc(1,:);              % use glycosidic atom
-          NumGood    = NumGood - 1;
         end
       end
-      NT(n-1).Sugar = Sugar(:,1:3);
-      if Verbose > 0,
-        fprintf('Base %s%4s_%s backbone has %d atoms, substituting glycosidic atom\n',NT(n-1).Base,NT(n-1).Number,NT(n-1).Chain,NumGood);
-      end
+      NT(n).Sugar = Sugar;
     end
   end
- end
+
 end                                           % end while i < ... loop
 
 NumNT = n - 1;                                % total number of nucleotides
@@ -406,10 +357,9 @@ File.Comment   = [];
 File.CI        = sparse(NumNT,NumNT);
 File.Edge      = sparse(NumNT,NumNT);
 File.Modified  = 1;
-File.Header    = [];
+File.Header    = Header;
 File.BasePhosphate = [];
 File.AA        = AA;
-File.Het       = Het;
 
 % Calculate configuration (syn or anti) -------------------------------------
 
@@ -449,7 +399,7 @@ else
   File.Info.Source      = '';
   File.BasePhosphate = sparse(NumNT,NumNT);
   File.AA               = [];
-  File.Het              = [];
+
 end
 
 File = orderfields(File);

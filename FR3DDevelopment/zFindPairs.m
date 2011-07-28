@@ -1,4 +1,4 @@
-% zSelectPairs(File,Param) returns a list of indices of selected bases and
+% zSelectPairs(File,Param) returns a list of indices of selected basepairs
 
 % Param(m,1) = interaction code for mth pair
 % Param(m,2) = paircode
@@ -6,7 +6,7 @@
 % 1-AA  2-CA  3-GA  4-UA  5-AC  6-CC  7-GC  8-UC 
 % 9-AG 10-CG 11-GG 12-UG 13-AU 14-CU 15-GU 16-UU
 
-function [List] = zFindPairs(File,Param,Decimal)
+function [List,Class] = zFindPairs(File,Param,Decimal)
 
 [s,t] = size(Param);
 
@@ -32,6 +32,7 @@ for m = 1:length(Param(:,1)),
 end
 
 List = [];
+Class = [];
 
 for f = 1:length(File),                   % Loop through each file
  if length(File(f).NT) > 0,
@@ -51,11 +52,17 @@ for f = 1:length(File),                   % Loop through each file
  N = length(File(f).NT);                     % Number of nucleotides in File
 
  for m = 1:length(Param(:,1)),
-   [i,j] = find(G == Param(m,1));
+   [i,j] = find(G == Param(m,1));            % correct classification
 
    k = find((Codes(i) == Param(m,3)) .* (Codes(j) == Param(m,4)));
 
-   List = [List; [i(k) j(k) f*ones(length(k),1)]];
+   if length(k) > 0,
+     List = [List; [i(k) j(k) f*ones(length(k),1)]];
+     for kk = 1:length(k),
+       Class = [Class; File(f).Edge(i(k(kk)),j(k(kk)))];   % slow way to increase size!
+     end
+   end
+
  end
 
 end

@@ -135,7 +135,18 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Unit    = NTLETTER{j(1)};       % letter for this nucleotide
     NT(n).Chain   = CHAIN{j(1)};          % what chain nucleotide is in
     NT(n).Number  = NTNUMBER{j(1)};       % nucleotide number for this molecule
-    NT(n).ModelNum= ModelNum(j(1));       % model number, especially for NMR
+    NT(n).ModelNum= ModelNum(j(1));       % model number, especially for NMR    
+            
+    % Anton 7/22/2011 To ensure compatibility with the NDB data model.
+    % need to add handling of other cases in the future
+    V = [VERSION{min(j):max(j)}];
+    if isempty(V)
+        NT(n).AltLoc = '';
+    elseif strfind(V,'A')
+        NT(n).AltLoc = 'A';           
+    end
+    % Anton 7/22/2011    
+    
   end
 
   NTBackbone = 0;                         % distinguish AAs from modified NTs
@@ -175,7 +186,7 @@ while i <= length(NTNUMBER),                 % go through all atoms
     NT(n).Beta   = [Sugar(:,4); Loc(1:10,4)];   % sugar first, then base
     NT(n).Center = mean(Loc(1:10,1:3));         % mean of heavy base atoms
     NT(n).Code   = 1;                           % A is 1, C is 2, etc.
-    UnitType = 1;                              % RNA nucleotide
+    UnitType = 1;                              % RNA nucleotide               
     n = n + 1;
   elseif strcmp(NTBase,'C') || strcmp(NTBase,'C+'),
     for k = min(j):max(j),
