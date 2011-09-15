@@ -38,8 +38,6 @@ function NormC = pClusterNorm(InterIndicesF,SubsProbF,LeftIndex,RightIndex)
             [numInter,dum] = size(InterIndices);
             % score codes[] according to the various interactions
             prob = 0;
-            i
-            code
             for j = 1:numInter,
                 i1 = find(Cols == InterIndices(j,1));
                 i2 = find(Cols == InterIndices(j,2));

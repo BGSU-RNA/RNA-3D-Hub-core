@@ -21,5 +21,6 @@
         Node(n).IBases(1,2) = 1;
         Node(n).SubsProb(:,:,1) = StarScore;
         Node(n).InteractionComment{1} = ' // Hairpin for truncation';
-
+        Node(n).NormCons = 1;
+        
         EndLoop = 1;

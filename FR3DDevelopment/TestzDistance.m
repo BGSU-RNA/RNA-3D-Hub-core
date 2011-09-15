@@ -36,7 +36,7 @@ toc
 
 % ---------- Test that they give the same distance matrix
 
-K = 18;
+K = 180;
 W = 40;
 
 clear dif
@@ -44,8 +44,8 @@ clear dif
 for n = 1:W,
   A = rand(K,3);
   B = rand(K,3);
-  D = zDistance(A,A);
-  E = zDistanceOld(A,A);
+  D = zDistance(A,B);
+  E = zDistanceOld(A,B);
 
   dif(n) = max(max(D-E));
 end

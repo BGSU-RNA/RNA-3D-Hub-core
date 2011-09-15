@@ -29,6 +29,11 @@ fprintf(' Chain ');
 for j=1:length(Indices),
   fprintf('%s',File.NT(Indices(j)).Chain);
 end
+if isfield(File,'Info'),
+  if isfield(File.Info,'Resolution'),
+    fprintf('Resolution %6.1f', File.Info.Resolution);
+  end
+end
 fprintf('\n');
 
 if nargin == 3,

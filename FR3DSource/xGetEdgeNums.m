@@ -455,7 +455,7 @@ for i=1:length(lim)-1                    % loop through tokens
 
     newRange = [];
 
-    if strcmpi(Token,'flank') || strcmpi(Token,'f') || strcmpi(Token,'flankss'),
+    if strcmpi(Token,'flank') || strcmpi(Token,'f') || strcmpi(Token,'flankss') || strcmpi(Token,'borderss'),
       Flank = 1 - Reverse;
     elseif strcmpi(Token,'coplanar') || strcmpi(Token,'cp'),
       CP = 1 - 2*Reverse;

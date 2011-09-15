@@ -46,8 +46,10 @@ Filenames = zReadPDBList('Nonredundant_4A_2011-06-18_list',1);
 VP.Sugar = 1;
 VP.AtOrigin = 1;
 
-for f = 1:length(Filenames),               % 1S72 is the first!
+for f = 38:length(Filenames),               % 1S72 is the first!
   F = zReadandAnalyzeModNucl([Filenames{f} '.pdb'],1);
+
+f
 
   c = cat(1,F.NT.Center);
   D = zMutualDistance(c,20); % compute distances < 16 Angstroms
@@ -85,7 +87,7 @@ for f = 1:length(Filenames),               % 1S72 is the first!
 
       fclose(fid);
       
-%pause
+pause
     end
   end
 

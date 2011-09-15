@@ -170,6 +170,7 @@ if Recolor > 0,
     case 13, Color(k) = p.Displ(1);
     case 14, Color(k) = p.Displ(2);
     case 15, Color(k) = p.Displ(3);
+    case 16, Color(k) = p.Resol;
     otherwise, Color(k) = 1;
   end
 
@@ -200,6 +201,7 @@ switch ViewParam.Color,
   case 13, ColorAxis =  [min(Color) max(Color)];
   case 14, ColorAxis =  [min(Color) max(Color)];
   case 15, ColorAxis =  [min(Color) max(Color)];
+  case 16, ColorAxis = [2 4];
   otherwise, ColorAxis =  [0 10];
 end
 
@@ -246,6 +248,9 @@ end
 
 % ------------------ Display class limits, if desired
 
+colorset = 'kbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbrkbr';
+colorset = 'kbrgcmkbrgcmkbrgcmkbrgcmkbrgcmkbrgcmkbrgcmkbrgcmkbrgcmkbrgcm';
+
 if isfield(ViewParam,'ClassLimits'),
  if ViewParam.ClassLimits == 1,                  % show all boxes
    B = CL(:,:,Paircodes(1));                     % use limits for this paircode
@@ -253,10 +258,10 @@ if isfield(ViewParam,'ClassLimits'),
    for row = 1:length(B(:,1)),
      hold on
      if (abs(B(row,1)) < 14) & (abs(B(row,1)) > 0),
-       zSquare([B(row,[2 4]) 0],[B(row,[3 5]) 0],'k');
+       zSquare([B(row,[2 4]) 0],[B(row,[3 5]) 0],colorset(row));
        tex = zEdgeText(B(row,1),1,Paircodes(1));
        tex = tex(1:4);
-       text(B(row,2)+0.1,B(row,4)+0.2,0,tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+       text(B(row,2)+0.1,B(row,4)+0.2,0,tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
      end
    end
  elseif ViewParam.ClassLimits == 2,              % just show one box
@@ -266,10 +271,10 @@ if isfield(ViewParam,'ClassLimits'),
    for row = 1:length(B(:,1)),
      hold on
      if any(fix(B(row,1)) == fix(Param.Category)),
-       zSquare([B(row,[2 4]) 0],[B(row,[3 5]) 0],'k');
+       zSquare([B(row,[2 4]) 0],[B(row,[3 5]) 0],colorset(row));
        tex = zEdgeText(B(row,1),1,Paircodes(1));
        tex = tex(1:4);
-       text(B(row,2)+0.1,B(row,4)+0.2,0,tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+       text(B(row,2)+0.1,B(row,4)+0.2,0,tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
      end
    end
  end
@@ -370,13 +375,13 @@ if isfield(ViewParam,'ClassLimits'),
         tex = zEdgeText(B(row,1),1,Paircodes(1));
         tex = tex(1:4);
         if (B(row,10) < B(row,11)),
-          zSquare([B(row,[10 8]) 0],[B(row,[11 9]) 0],'k');
-          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+          zSquare([B(row,[10 8]) 0],[B(row,[11 9]) 0],colorset(row));
+          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
         else
-          zSquare([B(row,[10 8]) 0],[270 B(row,9) 0],'k');
-          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+          zSquare([B(row,[10 8]) 0],[270 B(row,9) 0],colorset(row));
+          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
           zSquare([-90 B(row,8) 0],[B(row,[11 9]) 0],'k');
-          text(-86,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+          text(-86,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
         end
       end
     end
@@ -391,13 +396,13 @@ if isfield(ViewParam,'ClassLimits'),
         tex = zEdgeText(B(row,1),1,Paircodes(1));
         tex = tex(1:4);
         if (B(row,10) < B(row,11)),
-          zSquare([B(row,[10 8]) 0],[B(row,[11 9]) 0],'k');
-          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+          zSquare([B(row,[10 8]) 0],[B(row,[11 9]) 0],colorset(row));
+          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
         else
-          zSquare([B(row,[10 8]) 0],[270 B(row,9) 0],'k');
-          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+          zSquare([B(row,[10 8]) 0],[270 B(row,9) 0],colorset(row));
+          text(B(row,10)+4,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
           zSquare([-90 B(row,8) 0],[B(row,[11 9]) 0],'k');
-          text(-86,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8);
+          text(-86,B(row,8)+0.08,B(row,11),tex,'horizontalalignment','left','fontweight','bold','FontSize',8,'color',colorset(row));
         end
       end
     end
@@ -429,6 +434,7 @@ if ViewParam.Color > 1,
     case 13, title('Histogram of perpendicual displacement'); % Color(k) = p.Displ(1);
     case 14, title('Histogram of parallel displacement'); % Color(k) = p.Displ(2);
     case 15, title('Histogram of vertical displacement'); % Color(k) = p.Displ(3);
+    case 16, title('Histogram of resolution');
   end
 end
 
@@ -452,10 +458,11 @@ end
          'Color by position in list',...              % 12
          'Color by gap',...                           % 13
          'Color by third component of normal',...     % 14
-         'Toggle normal vector',...                   % 15
-         'Toggle category limits',...                 % 16
-         'List pair parameters',...                   % 17
-         'Quit');                                     % 18
+         'Color by resolution',...                    % 15
+         'Toggle normal vector',...                   % 16
+         'Toggle category limits',...                 % 17
+         'List pair parameters',...                   % 18
+         'Quit');                                     % 19
 
   switch k,
   case 1, N1 = N1 + 1;
@@ -508,13 +515,14 @@ end
   case 12, ViewParam.Color = 1;
   case 13, ViewParam.Color = 7;
   case 14, ViewParam.Color = 8;
-  case 15, ViewParam.Normal = 1 - ViewParam.Normal;
+  case 15, ViewParam.Color = 16;         % color by resolution
+  case 16, ViewParam.Normal = 1 - ViewParam.Normal;
            Recolor = 0;
-  case 16, ViewParam.ClassLimits = 1 - ViewParam.ClassLimits;
+  case 17, ViewParam.ClassLimits = 1 - ViewParam.ClassLimits;
            Recolor = 0;
-  case 17, xListPairs(Pair,ViewParam);
+  case 18, xListPairs(Pair,ViewParam);
            Replot = 0;
-  case 18, Stop = 1;
+  case 19, Stop = 1;
   end
 
   if (k >= 1) && (k <= 4) && (N == 2),     % switch order
@@ -523,7 +531,7 @@ end
     N2 = N3;
   end
 
-  if k < 17,
+  if k < 18,
     Replot  = 1;
   end
 

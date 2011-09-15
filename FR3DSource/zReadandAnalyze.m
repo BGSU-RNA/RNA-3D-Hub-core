@@ -35,8 +35,8 @@ end
 
 Stop = 0;
 
-if exist([pwd filesep 'PDBFiles' filesep 'Trouble reading']) == 7,
-  if exist([pwd filesep 'PDBFiles' filesep 'Trouble reading' filesep PDBFilename]) == 2,
+if exist([pwd filesep 'PDBFiles' filesep 'Trouble reading'], 'dir') == 7,
+  if exist([pwd filesep 'PDBFiles' filesep 'Trouble reading' filesep PDBFilename], 'file') == 2,
     Stop = 1;
     fprintf('zReadandAnalyze is skipping %s because it appeared in FR3D/PDBFiles/Trouble Reading\n', PDBFilename);
   end
@@ -44,7 +44,7 @@ end
 
 [ATOM_TYPE, ATOMNUMBER, ATOMNAME, VERSION, NTLETTER, CHAIN, NTNUMBER, P, OCC, BETA, ModelNum, Readable] = zReadPDBTextReadNew(PDBFilename,Verbose);
 
-if length(ATOMNUMBER) > 0,
+if ~isempty(ATOMNUMBER),
 
 if Verbose > 1,
   ATOMNUMBER(1:10)
@@ -106,6 +106,7 @@ while i <= length(NTNUMBER),                 % go through all atoms
    Het(hh).Loc        = P(i,1:3);
    Het(hh).Beta       = P(i,4);
    Het(hh).Center     = P(i,1:3);
+   Het(hh).ModelNum   = ModelNum(i);   % Anton 9/14/2011
    i  = i + 1;
    hh = hh + 1;
  end
@@ -310,7 +311,8 @@ while i <= length(NTNUMBER),                 % go through all atoms
     AA(aa).Beta       = P(j,4);
     k = min(4,length(j));
     AA(aa).Center     = mean(P(j(1:k),1:3),1); % backbone center
-
+    AA(aa).ModelNum   = ModelNum(j(1));     % Anton 9/14/2011
+    
     aa = aa + 1;
     UnitType = 2;
 
@@ -414,7 +416,7 @@ File.Het       = Het;
 
 % Calculate configuration (syn or anti) -------------------------------------
 
-if length(File.NT) > 0,
+if ~isempty(File.NT),
   SynList = mSynList(File);
 
   j = find(SynList);

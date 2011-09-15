@@ -157,7 +157,11 @@ for n=1:length(Node),
 
       Text = [Text sprintf(' | Left Index [%d]', LI)];
       Text = [Text sprintf(' | Right Index [%d]', RI)];
-      Text = [Text sprintf(' | Norm Constant [%0.15f]', Node(n).NormCons)];
+      if(isfield(Node(n),'NormCons')),
+        Text = [Text sprintf(' | Norm Constant [%0.15f]', Node(n).NormCons)];
+      else
+        Text = [Text sprintf(' | Norm Constant [%0.15f]', 1.0)];  
+      end
       Text = [Text Node(n).Comment sprintf('\n')];
 
       % add interactions between bases ------------------------------------

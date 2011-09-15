@@ -1,5 +1,9 @@
 % zSetBasepairCutoffs finds true and near instances of basepairs and provides diagnostics to help modify cutoffs
 
+
+%%% load NRTemp
+
+
 NRList = 'Nonredundant_4A_2010-05-19_list';
 NRList = 'Nonredundant_4A_2011-01-07_list';
 NRList = 'Nonredundant_4A_2011-07-23_list';
@@ -9,7 +13,7 @@ LMax    = 500;             % maximum number of pairs to consider in each class
 
 % Pair codes:  1-AA 5-AC 6-CC 7-GC 9-AG 11-GG 13-AU 14-CU 15-GU 16-UU
 
-pcodes = [ 5 6 7 9 11 13 14 15 16 1];    % pair codes to work on
+pcodes = [9 11 13 14 15 16 1 5 6 7];    % pair codes to work on
 
 load('PairExemplars','Exemplar');       % load previous exemplars
 
@@ -47,8 +51,10 @@ if ~exist('Search'),
 end
 
 if isfield(Search.File,'AA'),
-  Search.File = rmfield(Search.File,'AA');                     % removed 700 MB in July 2011!
+  Search.File = rmfield(Search.File,'AA');      % removed 700 MB in July 2011!
 end
+
+Search.SaveName = 'BasepairTemp';
 
 % loop through paircodes and computer classifications ----------------------
 
@@ -124,7 +130,7 @@ for j = 1:length(pcodes),            % run through all pair codes specified
     for i = 1:length(List(:,4)),        % use diagonal to tell near and subcategory
       if List(i,4) == 0,
         
-        PD(i,i) = abs(Class(i)) - fix(abs(Class(i)));
+        PD(i,i) = abs(abs(Class(i)) - fix(abs(Class(i))));
         if PD(i,i) > 0,
           PD(i,i) = PD(i,i) + 0.1;      % emphasize the color a bit more
         end

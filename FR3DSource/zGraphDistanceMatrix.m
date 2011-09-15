@@ -56,13 +56,13 @@ pcolor(real(DD))
 shading flat
 axis ij
 view(2)
-%colormap('default');
-%map = colormap;
-%map = map((end-8):-1:8,:);
-%map = map((end-8):-1:end,:);
-%colormap(map);
-%caxis([0 16]);
-%colorbar('location','eastoutside');
+% colormap('default');
+% map = colormap;
+% map = map((end-8):-1:8,:);
+% map = map((end-8):-1:end,:);
+% colormap(map);
+% caxis([0 16]);
+% colorbar('location','eastoutside');
 
 if Table > 0,
   for i = 1:s,

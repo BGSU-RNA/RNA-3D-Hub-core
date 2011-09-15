@@ -136,6 +136,7 @@ end
 % if NTList is a cell array of numbers, look up the indices
 
 if strcmp(class(NTList),'char'),
+  NTList = strrep(NTList,'/',' ');         % some people use this in papers
   NTList = {NTList};
 end
 
