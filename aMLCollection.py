@@ -68,7 +68,7 @@ class MotifCollectionMerger:
         self.new_ids     = []
         self.parents     = collections.defaultdict(list)
 
-        self.minOverlap = 2/3
+        self.minOverlap = float(2)/3
         
         self.compare_releases()
         self.show_report()
@@ -115,8 +115,8 @@ class MotifCollectionMerger:
                     # and the match is not perfect   
                     else:
                         self.parents[groupId].append(motifId)                    
-                        if self.overlap[groupId][motifId] <= self.minOverlap and \
-                           self.overlap[motifId][groupId] <= self.minOverlap:
+                        if self.overlap[groupId][motifId] >= self.minOverlap and \
+                           self.overlap[motifId][groupId] >= self.minOverlap:
                             self.correspond[groupId] = motifId
                             print 'Groups %s and motif %s match up with overlap' % (groupId, motifId)
                         else:
@@ -127,18 +127,17 @@ class MotifCollectionMerger:
                 elif len(match) > 2:
                     print 'Group %s has more than 2 parents' % groupId
                     self.new_ids.append(groupId)
-                    for motifId,v in match:
+                    for motifId,v in match.iteritems():
                         self.parents[groupId].append(motifId)
                 
                 # with one or two motifs
                 else:
                     success = False
-                    pdb.set_trace()
                     for motifId,v in match.iteritems():
                         self.parents[groupId].append(motifId)
                         # the overlap is big enough - assign the same id
-                        if self.overlap[groupId][motifId] <= self.minOverlap and \
-                           self.overlap[motifId][groupId] <= self.minOverlap:
+                        if self.overlap[groupId][motifId] >= self.minOverlap and \
+                           self.overlap[motifId][groupId] >= self.minOverlap:
                             success = True                              
                             self.correspond[groupId] = motifId
                             break
@@ -146,7 +145,8 @@ class MotifCollectionMerger:
                     if success == False:
                         self.new_ids.append(groupId)
                     else:
-                        print 'Unhandled case 2'
+                        # don't need to do anything because success==True
+                        pass
                         
             # if didn't intersect with anything
             else: 
@@ -169,11 +169,13 @@ class MotifCollectionMerger:
         if len(all_new) > 0:
             print len(all_new), ' entirely new groups'
             print [x for x in all_new]
-        else: print 'All groups matched some motifs in the database'      
+        else: 
+            print 'All groups matched some motifs in the database'      
               
         only_old = set(self.c2.groups) - set(self.intersection.keys())
         if len(only_old) > 0:
             print len(only_old), ' motifs only in the database'
             print [x for x in only_old]
-        else: print 'All motifs in the database matched some new groups'
+        else: 
+            print 'All motifs in the database matched some new groups'
             

@@ -2,12 +2,13 @@
 
 """
 
-import random, datetime, math, sys, pdb
+import random, datetime, math, sys, pdb, csv, os, shutil
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+import sqlalchemy.exc
 
 engine  = create_engine('mysql://root:bioinfo@localhost/MotifVersions')
 Session = sessionmaker(bind=engine)
@@ -146,12 +147,50 @@ class SetDiff(Base):
     motif_id2  = Column(String(11), primary_key=True)
     release_id = Column(String(4),  primary_key=True)
     intersection  = Column(Text)
-    overlap       = Column(String(4))
+    overlap       = Column(Float)
     one_minus_two = Column(Text)
     two_minus_one = Column(Text)
 
     def __repr__(self):
         return "<SetDiff('%s','%s','%s')>" % (self.motif_id1, self.motif_id2, self.release_id)        
+
+
+class LoopOrder(Base):
+    __tablename__ = 'loop_order'
+        
+    motif_id = Column(String(11), primary_key=True)
+    loop_id  = Column(String(11), primary_key=True)
+    release_id = Column(String(4), primary_key=True)
+    original_order = Column(Integer)
+    similarity_order = Column(Integer)
+
+    def __repr(self):
+        return "<LoopOrder('%s','%s','%i')>" % (self.motif_id, self.loop_id, self.original_order)
+
+
+class LoopPosition(Base):
+    __tablename__ = 'loop_positions'
+    
+    motif_id   = Column(String(11), primary_key=True)
+    loop_id    = Column(String(11), primary_key=True)
+    release_id = Column(String(4),  primary_key=True)
+    nt_id      = Column(String(30), primary_key=True)
+    position   = Column(Integer)
+    
+    def __repr__(self):
+        return "<LoopPosition('%s','%s','%i')>" % (self.loop_id, self.nt_id, self.position)
+
+
+class LoopDiscrepancy(Base):
+    __tablename__ = 'mutual_discrepancy'
+    
+    loop_id1 = Column(String(11), primary_key=True)
+    loop_id2 = Column(String(11), primary_key=True)
+    release_id = Column(String(4), primary_key=True)
+    discrepancy = Column(Float)
+    
+    def __repr__(self):
+        return "<LoopDiscrepancy('%s','%s','%f')>" % (self.loop_id1, self.loop_id2, self.discrepancy)
 
 
 class LoopCollection:
@@ -187,7 +226,7 @@ class LoopCollection:
 class Uploader:
     """
     """
-    def __init__(self, collections=None, mode='', description=''):
+    def __init__(self, collections=None, mode='', description='',files={}):
         self.c         = collections
         self.release   = Release(mode=mode, description=description)
         self.motifs    = []
@@ -195,11 +234,20 @@ class Uploader:
         self.history   = []
         self.intersection = []
         self.final_ids = dict()
-    
+        self.files = files
+
+        self.loop_order       = []
+        self.loop_positions   = []        
+        self.loop_discrepancy = []
+
         self.__finalize()
         self.__process_set_diff()
-        self.show_report()
+        self.__process_motif_loop_order()
+        self.__process_motif_loop_positions()
+        self.__process_mutual_discrepancy()
+        self.show_report()        
         self.__commit()
+        self.__rename_mat_files()
 
             
     def __finalize(self):
@@ -212,14 +260,17 @@ class Uploader:
                     parents = ','.join(self.c.parents[group_id])                
                 else:
                     parents = ''
+                print 'Group %s assigned new id %s' % (group_id, motif.id)
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
                 motif   = Motif(id=old_id, release_id=self.release.id, increment=True)
-                parents = ','.join([old_id] + self.c.parents[group_id])
+                parents = ','.join(set([old_id] + self.c.parents[group_id]))
+                print 'Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id)
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
                 motif = Motif(id=id, release_id=self.release.id)
                 parents = ''
+                print 'Group %s matches exactly motif %s' % (group_id, motif.id)
             else:
                 print 'Major problem'
 
@@ -229,6 +280,7 @@ class Uploader:
             self.final_ids[group_id] = motif.id
             for loop_id in self.c.c1.d[group_id]:
                 self.loops.append(Loop(id=loop_id, motif_id=motif.id, release_id=self.release.id))
+
                 
     def __process_set_diff(self):
         """
@@ -274,19 +326,92 @@ class Uploader:
         session.query(SetDiff).filter(SetDiff.release_id==release).delete()        
         session.query(Parents).filter(Parents.release_id==release).delete()        
     
-    def __commit(self):    
+    def __commit(self):
+        failed = False
         try:
             session.add(self.release)
             session.add_all(self.motifs)
             session.add_all(self.loops)
             session.add_all(self.history)
             session.add_all(self.intersection)
+            
+            session.add_all(self.loop_order)
+            session.add_all(self.loop_positions)
+            session.add_all(self.loop_discrepancy)
             session.commit()
+            print 'Successful update'
+        except sqlalchemy.exc.SQLAlchemyError, e:
+            print 'Update failed. Rolling back.'
+            print str(e)
+            # print sys.exc_info()[0]
+            session.rollback()
+            self.remove_release(self.release.id)            
+        except sqlalchemy.exc.DBAPIError, e:    
+            print 'Update failed. Rolling back.'
+            print str(e)
+            # print sys.exc_info()[0]
+            session.rollback()
+            self.remove_release(self.release.id)            
         except sys.exc_info()[0]:
             print 'Update failed. Rolling back.'
             print sys.exc_info()[0]
             session.rollback()
             self.remove_release(self.release.id)            
-            
+
+    def __process_motif_loop_order(self):
+        """
+        IL_017,IL_1O9M_003,1,1
+        """                
+        r = csv.reader(open(self.files['MotifLoopOrder']), delimiter=',', quotechar='"')
+        for row in r:
+            self.loop_order.append(LoopOrder(motif_id=self.final_ids[row[0]],
+                                        loop_id=row[1],
+                                        release_id=self.release.id,
+                                        original_order=row[2],
+                                        similarity_order=row[3]
+                                   ))
+
+
+    def __process_motif_loop_positions(self):
+        """
+        IL_017,IL_1O9M_003,1O9M_AU_1_A_1491_G_,1
+        """
+        r = csv.reader(open(self.files['MotifPositions']), delimiter=',', quotechar='"')
+        for row in r:
+            self.loop_positions.append(LoopPosition(motif_id=self.final_ids[row[0]],
+                                        loop_id=row[1],
+                                        release_id=self.release.id,
+                                        nt_id=row[2],
+                                        position=row[3]
+                                   ))
+                                   
+        
+    def __process_mutual_discrepancy(self):
+        """
+        IL_1O9M_003,0.0000,IL_1O9M_003
+        """
+        r = csv.reader(open(self.files['MutualDiscrepancy']), delimiter=',', quotechar='"')
+        for row in r:
+            self.loop_discrepancy.append(LoopDiscrepancy(loop_id1=row[0],
+                                        discrepancy=row[1],
+                                        loop_id2=row[2],
+                                        release_id=self.release.id,
+                                   ))
+
+    def __rename_mat_files(self):
+        
+        if not os.path.exists(self.files['MatFiles']):
+            os.mkdir(self.files['MatFiles'])
+    
+        for file in self.c.c1.sg:
+            src = os.path.join(self.files['folder'],file+'.mat')
+            dst = os.path.join(self.files['MatFiles'], self.final_ids[file] + '.mat')
+            if os.path.exists(src):
+                shutil.copyfile(src, dst)
+            else:
+                print "File %s wasn't found" % src
+
+        
+        
 Base.metadata.create_all(engine)
             
