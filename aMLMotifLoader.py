@@ -8,7 +8,7 @@ from aMLSqlAlchemyClasses import *
 
 
 f = dict()
-f['folder']            = '/FR3D/Workspace/Releases/iljul2'
+f['folder']            = '/FR3D/Workspace/Releases/iljun6'
 f['MotifList']         = os.path.join(f['folder'],'MotifList.csv')
 f['MotifLoopOrder']    = os.path.join(f['folder'],'MotifLoopOrder.csv')
 f['MotifPositions']    = os.path.join(f['folder'],'MotifPositions.csv')
