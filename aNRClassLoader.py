@@ -71,7 +71,7 @@ class Loader:
         """
         all_releases = list_all_releases()
         if len(all_releases) <= 2:
-            continue
+            return
         all_releases = all_releases[2:]
         for resolution in self.resolution_labels:
             for release in all_releases:
@@ -81,7 +81,7 @@ class Loader:
                 A = Uploader(ensembles=NRCollectionMerger(c1,c2), upload_mode='release_diff')
 
 
-    def import_lists(folder):
+    def import_lists(self,folder):
         """
         """
         for (res_id,resolution) in enumerate(self.resolutions):

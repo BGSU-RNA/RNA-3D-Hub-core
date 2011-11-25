@@ -63,10 +63,12 @@ class NR_class(Base): # = motif
     resolution = Column(String(4))
     handle     = Column(String(5))
     version    = Column(String(3))
+    comment    = Column(Text)
 
-    def __init__(self, id='', increment=False, release_id='', resolution=''):
+    def __init__(self, id='', increment=False, release_id='', resolution='', comment=''):
         self.release_id = release_id
         self.resolution = resolution
+        self.comment    = comment
         if id == '':
             self.get_new_motif_id()
         elif increment is True:
@@ -185,6 +187,7 @@ class NR_release_diff(Base):
     nr_release_id1 = Column(String(4), primary_key=True)
     nr_release_id2 = Column(String(4), primary_key=True)
     resolution     = Column(String(4), primary_key=True)
+    direct_parent  = Column(Boolean)
     added_groups   = Column(Text)
     removed_groups = Column(Text)
     updated_groups = Column(Text)
@@ -261,7 +264,7 @@ class NR_eqclass_collection:
 
     def get_release(self):
         for loop in session.query(NR_pdb).filter(NR_pdb.release_id==self.release) \
-                                         .filter(NR_pdb.class_id.like('%'+self.res+'%')) \
+                                         .filter(NR_pdb.class_id.like('NR_'+self.res+'_%')) \
                                          .all():
             self.loops.append(loop.id)
             self.groups.append(loop.class_id)
@@ -317,6 +320,7 @@ class NRCollectionMerger:
         self.exact_match = dict()
         self.new_ids     = []
         self.parents     = collections.defaultdict(list)
+        self.explanation = dict()
 
         self.minOverlap = float(2)/3
 
@@ -361,6 +365,7 @@ class NRCollectionMerger:
                     if self.overlap[groupId][motifId] == 1 and \
                        self.overlap[motifId][groupId] == 1:
                        self.exact_match[groupId] = motifId
+                       self.explanation[groupId] = 'Exact match'
                        print 'Groups %s and motif %s match up exactly' % (groupId, motifId)
                     # and the match is not perfect
                     else:
@@ -368,9 +373,11 @@ class NRCollectionMerger:
                         if self.overlap[groupId][motifId] >= self.minOverlap and \
                            self.overlap[motifId][groupId] >= self.minOverlap:
                             self.correspond[groupId] = motifId
+                            self.explanation[groupId] = 'Updated, 1 parent'
                         else:
                             self.new_ids.append(groupId)
                             self.parents[groupId].append(motifId)
+                            self.explanation[groupId] = 'New id, 1 parent'
 
                 # with two motifs
                 elif len(match) == 2:
@@ -382,10 +389,12 @@ class NRCollectionMerger:
                            self.overlap[motifId][groupId] >= self.minOverlap:
                             success = True
                             self.correspond[groupId] = motifId
+                            self.explanation[groupId] = 'Updated, 2 parents'
                             break
                     # if the overlap is not big enough - assign new id
                     if success == False:
                         self.new_ids.append(groupId)
+                        self.explanation[groupId] = 'New id, 2 parents'
                     else:
                         # don't need to do anything because success==True
                         pass
@@ -393,6 +402,7 @@ class NRCollectionMerger:
                 # with more than 2 motifs - assign new id
                 elif len(match) > 2:
                     print 'Group %s has more than 2 parents' % groupId
+                    self.explanation[groupId] = '> 2 parents'
                     self.new_ids.append(groupId)
                     for motifId,v in match.iteritems():
                         self.parents[groupId].append(motifId)
@@ -400,6 +410,7 @@ class NRCollectionMerger:
 
             # if didn't intersect with anything
             else:
+                self.explanation[groupId] = 'New id, no parents'
                 self.new_ids.append(groupId)
 
 
@@ -454,15 +465,18 @@ class Uploader:
         self.added_pdbs         = []
         self.removed_pdbs       = []
 
+        self.upload_mode = upload_mode
         if upload_mode != 'release_diff':
             self.release = NR_release(mode=release_mode, description=release_description)
             self.__finalize()
             self.__process_set_diff()
+            self.direct_parent = 1
             self.__process_release_diff()
             self.__commit()
         else:
             self.release = NR_release()
             self.release.id = self.c.c1.release
+            self.direct_parent = 0
             self.__finalize()
             self.__process_release_diff()
             self.__release_diff_commit()
@@ -476,7 +490,9 @@ class Uploader:
 
         for group_id in self.c.c1.sg:
             if group_id in self.c.new_ids:
-                motif = NR_class(release_id=self.release.id, resolution=self.c.c1.res)
+                motif = NR_class(release_id=self.release.id,
+                                 resolution=self.c.c1.res,
+                                 comment=self.c.explanation[group_id])
                 if self.c.parents.has_key(group_id):
                     parents = ','.join(set(self.c.parents[group_id]))
                 else:
@@ -486,7 +502,11 @@ class Uploader:
 
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
-                motif   = NR_class(id=old_id, release_id=self.release.id, increment=True, resolution=self.c.c1.res)
+                motif   = NR_class(id=old_id,
+                                   release_id=self.release.id,
+                                   increment=True,
+                                   resolution=self.c.c1.res,
+                                   comment=self.c.explanation[group_id])
                 parents = ','.join(set([old_id] + self.c.parents[group_id]))
                 self.updated_groups.append(motif.id)
                 self.old_updated_groups.append(old_id)
@@ -494,7 +514,10 @@ class Uploader:
 
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
-                motif = NR_class(id=id, release_id=self.release.id, resolution=self.c.c1.res)
+                motif = NR_class(id=id,
+                                 release_id=self.release.id,
+                                 resolution=self.c.c1.res,
+                                 comment=self.c.explanation[group_id])
                 parents = ''
                 self.same_groups.append(motif.id)
                 print 'Group %s matches exactly motif %s' % (group_id, motif.id)
@@ -514,6 +537,8 @@ class Uploader:
                 else:
                     self.loops.append(NR_pdb(id=loop_id, class_id=motif.id, release_id=self.release.id, rep = False))
 
+            self.removed_groups = set(self.c.c2.groups) - set(self.old_updated_groups) - set(self.same_groups)
+
 
     def __process_release_diff(self):
         """
@@ -522,12 +547,11 @@ class Uploader:
         if self.release.id == '0.1':
             return
 
-        self.removed_groups = set(self.c.c2.groups) - set(self.old_updated_groups) - set(self.same_groups)
-
         self.release_diff.append( NR_release_diff(
             nr_release_id1     = self.release.id,
             nr_release_id2     = self.c.c2.release,
             resolution         = self.c.c1.res,
+            direct_parent      = self.direct_parent,
             added_groups       = ', '.join(self.added_groups),
             removed_groups     = ', '.join(self.removed_groups),
             updated_groups     = ', '.join(self.updated_groups),
