@@ -192,7 +192,7 @@ class Release(Base):
     def compute_new_release_id(self):
         prev = session.query(Release).order_by(desc(Release.date)).first()
         if prev is None:
-            self.id = 0.1
+            self.id = '0.1'
         elif self.mode == 'major':
             parts = prev.id.split('.')
             self.id = '.'.join([str(int(parts[0])+1), '0'])
@@ -225,6 +225,12 @@ class Loop(Base):
     def __repr__(self):
         return "<Loop('%s','%s','%s')>" % (self.id, self.motif_id, self.release_id)
 
+class ML_handle(Base):
+    """
+    """
+    __tablename__ = 'ml_handles'
+    id = Column(String(5), primary_key=True)
+
 
 class Motif(Base):
     """
@@ -254,6 +260,10 @@ class Motif(Base):
         while True:
             self.handle = '%05d' % random.randrange(99999)
             if session.query(Motif).filter(Motif.handle==self.handle).first() is None:
+                if session.query(ML_handle).filter(ML_handle.id==self.handle).first() is None:
+                    h = ML_handle(id=self.handle)
+                    session.add(h)
+                    break
                 break
         self.version = 1
         self.id = self.type + '_' + self.handle + '.' + str(self.version)
@@ -332,6 +342,32 @@ class LoopDiscrepancy(Base):
     def __repr__(self):
         return "<LoopDiscrepancy('%s','%s','%f')>" % (self.loop_id1, self.loop_id2, self.discrepancy)
 
+class Release_diff(Base):
+    """
+    """
+    __tablename__ = 'ml_release_diff'
+
+    release_id1    = Column(String(4), primary_key=True)
+    release_id2    = Column(String(4), primary_key=True)
+    direct_parent  = Column(Boolean)
+    added_groups   = Column(Text)
+    removed_groups = Column(Text)
+    updated_groups = Column(Text)
+    same_groups    = Column(Text)
+    added_loops    = Column(Text)
+    removed_loops  = Column(Text)
+    num_added_groups   = Column(Integer)
+    num_removed_groups = Column(Integer)
+    num_updated_groups = Column(Integer)
+    num_same_groups    = Column(Integer)
+    num_added_loops    = Column(Integer)
+    num_removed_loops  = Column(Integer)
+
+    def __repr__(self):
+        return "<NRReleaseDiff('%s','%s')>" % (self.release_id1, self.release_id2)
+
+
+
 ################################################################################
 # End of motif tables declarations
 ################################################################################
@@ -345,21 +381,24 @@ class MotifCollection:
 
     """
     def __init__(self, file='', release=''):
-        self.loops  = []
-        self.groups = []
-        self.sl     = set()
-        self.sg     = set()
-        self.d      = collections.defaultdict(list) # [group: {loopX..loopY} ]
-        self.sd     = collections.defaultdict(set)  # [group: set({loopX..loopY}]
+        self.loops   = []
+        self.groups  = []
+        self.sl      = set()
+        self.sg      = set()
+        self.d       = collections.defaultdict(list) # [group: {loopX..loopY} ]
+        self.sd      = collections.defaultdict(set)  # [group: set({loopX..loopY}]
+        self.release = release
 
         if file is not '':
             self.file = file
             self.read_motifs_csv_file()
         elif release == 'latest':
             self.get_latest_release()
-        else:
-            self.release_id = release
+        elif release != '':
+            self.release = release
             self.get_release()
+        else:
+            pass
 
         self.make_dictionary()
         self.make_sets()
@@ -385,13 +424,11 @@ class MotifCollection:
             print 'No previous releases found'
             return
         release = session.query(Release).order_by(desc(Release.date)).first()
-        loops = session.query(Loop).filter(Loop.release_id==release.id)
-        for loop in loops:
-            self.loops.append(loop.id)
-            self.groups.append(loop.motif_id)
+        self.release = release.id
+        self.get_release()
 
     def get_release(self):
-        for loop in session.query(Loop).filter(Loop.release_id==self.release_id).all():
+        for loop in session.query(Loop).filter(Loop.release_id==self.release).all():
             self.loops.append(loop.id)
             self.groups.append(loop.motif_id)
 
@@ -544,36 +581,60 @@ class MotifCollectionMerger:
 class Uploader:
     """
     """
-    def __init__(self, ensembles=None, mode='', description='',files={}):
-        self.c         = ensembles
-        self.release   = Release(mode=mode, description=description)
+    def __init__(self, ensembles=None, mode='', description='',files={}, upload_mode=''):
+        self.c           = ensembles
+        self.release     = Release(mode=mode, description=description)
+        self.upload_mode = upload_mode
         self.motifs    = []
         self.loops     = []
         self.history   = []
         self.intersection = []
-        self.final_ids = dict()
-        self.files = files
+        self.final_ids    = dict()
+        self.files        = files
+
+        self.release_diff       = []
+        self.added_groups       = []
+        self.removed_groups     = []
+        self.updated_groups     = []
+        self.old_updated_groups = []
+        self.same_groups        = []
+        self.added_loops         = []
+        self.removed_loops       = []
 
         self.loop_order       = []
         self.loop_positions   = []
         self.loop_discrepancy = []
 
-        self.__finalize()
-        self.__process_set_diff()
-        self.__process_motif_loop_order()
-        self.__process_motif_loop_positions()
-        self.__process_mutual_discrepancy()
-        self.show_report()
-        self.__commit()
-        self.__rename_mat_files()
+        if self.upload_mode != 'release_diff':
+            self.direct_parent = 1
+            self.__finalize()
+            self.__process_set_diff()
+            self.__process_release_diff()
+            self.__process_motif_loop_order()
+            self.__process_motif_loop_positions()
+            self.__process_mutual_discrepancy()
+#             self.show_report()
+            self.__commit()
+            self.__rename_mat_files()
+        else:
+            self.direct_parent = 0
+            self.release = Release()
+            self.release.id = self.c.c1.release
+            self.__finalize()
+            self.__process_release_diff()
+            self.__release_diff_commit()
 
 
     def __finalize(self):
         """
         """
+        self.added_loops   = self.c.c1.sl - self.c.c2.sl
+        self.removed_loops = self.c.c2.sl - self.c.c1.sl
+
         for group_id in self.c.c1.sg:
             if group_id in self.c.new_ids:
                 motif = Motif(release_id=self.release.id)
+                self.added_groups.append(motif.id)
                 if self.c.parents.has_key(group_id):
                     parents = ','.join(self.c.parents[group_id])
                 else:
@@ -583,10 +644,13 @@ class Uploader:
                 old_id  = self.c.correspond[group_id]
                 motif   = Motif(id=old_id, release_id=self.release.id, increment=True)
                 parents = ','.join(set([old_id] + self.c.parents[group_id]))
+                self.updated_groups.append(motif.id)
+                self.old_updated_groups.append(old_id)
                 print 'Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id)
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
                 motif = Motif(id=id, release_id=self.release.id)
+                self.same_groups.append(motif.id)
                 parents = ''
                 print 'Group %s matches exactly motif %s' % (group_id, motif.id)
             else:
@@ -599,6 +663,32 @@ class Uploader:
             for loop_id in self.c.c1.d[group_id]:
                 self.loops.append(Loop(id=loop_id, motif_id=motif.id, release_id=self.release.id))
 
+            self.removed_groups = set(self.c.c2.groups) - set(self.old_updated_groups) - set(self.same_groups)
+
+    def __process_release_diff(self):
+        """
+        """
+        # do nothing during the very first upload
+        if self.release.id == '0.1':
+            return
+
+        self.release_diff.append( Release_diff(
+            release_id1        = self.release.id,
+            release_id2        = self.c.c2.release,
+            direct_parent      = self.direct_parent,
+            added_groups       = ', '.join(self.added_groups),
+            removed_groups     = ', '.join(self.removed_groups),
+            updated_groups     = ', '.join(self.updated_groups),
+            same_groups        = ', '.join(self.same_groups),
+            added_loops         = ', '.join(self.added_loops),
+            removed_loops       = ', '.join(self.removed_loops),
+            num_added_groups   = len(self.added_groups),
+            num_removed_groups = len(self.removed_groups),
+            num_updated_groups = len(self.updated_groups),
+            num_same_groups    = len(self.same_groups),
+            num_added_loops     = len(self.added_loops),
+            num_removed_loops   = len(self.removed_loops)
+        ))
 
     def __process_set_diff(self):
         """
@@ -645,14 +735,28 @@ class Uploader:
         session.query(Parents).filter(Parents.release_id==release).delete()
         session.query(LoopDiscrepancy).filter(LoopDiscrepancy.release_id==release).delete()
 
+    def __release_diff_commit(self):
+        """
+        """
+        try:
+            session.add_all(self.release_diff)
+            session.query(ML_handle).delete()
+            session.commit()
+            print 'Successful update'
+        except sqlalchemy.exc.SQLAlchemyError, e:
+            print 'Update failed. SQLAlchemy error. Rolling back.'
+            print str(e)
+            session.rollback()
+            sys.exit()
+
     def __commit(self):
-        failed = False
         try:
             session.add(self.release)
             session.add_all(self.motifs)
             session.add_all(self.loops)
             session.add_all(self.history)
             session.add_all(self.intersection)
+            session.add_all(self.release_diff)
 
             session.add_all(self.loop_order)
             session.add_all(self.loop_positions)
@@ -662,20 +766,22 @@ class Uploader:
         except sqlalchemy.exc.SQLAlchemyError, e:
             print 'Update failed. Rolling back.'
             print str(e)
-            # print sys.exc_info()[0]
             session.rollback()
             self.remove_release(self.release.id)
+            sys.exit()
         except sqlalchemy.exc.DBAPIError, e:
             print 'Update failed. Rolling back.'
             print str(e)
-            # print sys.exc_info()[0]
             session.rollback()
             self.remove_release(self.release.id)
+            sys.exit()
         except sys.exc_info()[0]:
             print 'Update failed. Rolling back.'
             print sys.exc_info()[0]
             session.rollback()
             self.remove_release(self.release.id)
+            sys.exit()
+
 
     def __process_motif_loop_order(self):
         """

@@ -135,7 +135,7 @@ class NR_release(Base):
     def compute_new_release_id(self):
         prev = session.query(NR_release).order_by(desc(NR_release.date)).first()
         if prev is None:
-            self.id = 0.1
+            self.id = '0.1'
         elif self.mode == 'major':
             parts = prev.id.split('.')
             self.id = '.'.join([str(int(parts[0])+1), '0'])

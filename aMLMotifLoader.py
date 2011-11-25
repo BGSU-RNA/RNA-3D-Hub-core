@@ -25,7 +25,7 @@ class Loader:
     def __init__(self):
         self.motifs_root = '/FR3D/Workspace/Releases'
 
-#         self.done  = list_done()
+        self.done  = list_done()
         self.folders = sorted(os.listdir(self.motifs_root))
 
 
@@ -44,28 +44,43 @@ class Loader:
     def import_motif_release(self):
         """
         """
-#                     A = Uploader(ensembles=NRCollectionMerger(c1,c2),
-#                                  release_mode='reuse',
-#                                  release_description=folder)
-#       c1 = NR_eqclass_collection(file=self.temp_file, resolution=self.resolution_labels[res_id])
-#       c2 = NR_eqclass_collection(release='previous',resolution=self.resolution_labels[res_id])
-
         c1 = MotifCollection(file=self.f['MotifList'])
         c2 = MotifCollection(release='latest')
-        pdb.set_trace()
         A = Uploader(ensembles=MotifCollectionMerger(c1,c2),
                         mode='minor',
                         description=self.f['folder'],
                         files=self.f)
 
 
+    def compare_all_releases(self):
+        """
+        """
+        all_releases = list_all_releases()
+        if len(all_releases) <= 2:
+            return
+        all_releases = all_releases[2:]
+        c1 = MotifCollection(release='latest')
+        for release in all_releases:
+            c2 = MotifCollection(release=release)
+            print c1.release, c2.release
+            A = Uploader(ensembles=MotifCollectionMerger(c1,c2), upload_mode='release_diff')
+
+
     def import_data(self):
         """
         """
         for folder in self.folders:
-        	if len(folder) == 6:
-				self.initialize_files(folder)
-				self.import_motif_release()
+            if len(folder) != 6:
+                print 'Skipping folder ', folder
+                continue
+
+            if folder in self.done:
+                print 'Already imported ', folder
+                continue
+
+            self.initialize_files(folder)
+            self.import_motif_release()
+            self.compare_all_releases()
 
 
 
