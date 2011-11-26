@@ -242,9 +242,11 @@ class Motif(Base):
     type       = Column(String(2)) # IL, HL, JL
     handle     = Column(String(5)) # XXXXX
     version    = Column(Integer)
+    comment    = Column(Text)
 
-    def __init__(self, id='', release_id='', increment=False):
+    def __init__(self, id='', release_id='', increment=False, comment=''):
         self.release_id = release_id
+        self.comment    = comment
         if id == '':
             self.get_new_motif_id()
         elif increment is True:
@@ -633,7 +635,7 @@ class Uploader:
 
         for group_id in self.c.c1.sg:
             if group_id in self.c.new_ids:
-                motif = Motif(release_id=self.release.id)
+                motif = Motif(release_id=self.release.id,comment=self.c.explanation[group_id])
                 self.added_groups.append(motif.id)
                 if self.c.parents.has_key(group_id):
                     parents = ','.join(self.c.parents[group_id])
@@ -642,14 +644,14 @@ class Uploader:
                 print 'Group %s assigned new id %s' % (group_id, motif.id)
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
-                motif   = Motif(id=old_id, release_id=self.release.id, increment=True)
+                motif   = Motif(id=old_id, release_id=self.release.id, increment=True,comment=self.c.explanation[group_id])
                 parents = ','.join(set([old_id] + self.c.parents[group_id]))
                 self.updated_groups.append(motif.id)
                 self.old_updated_groups.append(old_id)
                 print 'Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id)
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
-                motif = Motif(id=id, release_id=self.release.id)
+                motif = Motif(id=id, release_id=self.release.id,comment=self.c.explanation[group_id])
                 self.same_groups.append(motif.id)
                 parents = ''
                 print 'Group %s matches exactly motif %s' % (group_id, motif.id)

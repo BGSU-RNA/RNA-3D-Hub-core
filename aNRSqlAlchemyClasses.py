@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 import sqlalchemy.exc
 
-engine  = create_engine('mysql://root:bioinfo@localhost/nrtest')
+engine  = create_engine('mysql://root:bioinfo@localhost/MotifVersions')
 Session = sessionmaker(bind=engine)
 session = Session()
 
