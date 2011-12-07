@@ -6,6 +6,7 @@ Usage: python aNRClassLoader [options]
 Options:
   -d                    drop all tables and reload
   -h, --help            show this help
+  -c                    just calculate release diff
 
 Examples:
 python aPyMotifLoader.py
@@ -64,6 +65,25 @@ class Loader:
                             p = re.findall('>(\w{4})<',link)
                             if len(p) > 0 and len(p[0]) == 4: # "Compare" link
                                 ofn.write( '%s,Group_%i\n' % (p[0], i) )
+
+
+    def recalculate_release_diff(self):
+        """
+        """
+        all_releases = list_all_releases()
+        if len(all_releases) <= 2:
+            return
+        all_releases = all_releases
+        for resolution in self.resolution_labels:
+            for i in range(len(all_releases)):
+                for j in range(i,len(all_releases)):
+                    if i == j:
+                        continue
+                    c1 = NR_eqclass_collection(release=all_releases[i], resolution=resolution)
+                    c2 = NR_eqclass_collection(release=all_releases[j], resolution=resolution)
+                    print c1.release, c2.release, resolution
+                    A = Uploader(ensembles=NRCollectionMerger(c1,c2), upload_mode='release_diff')
+
 
 
     def compare_all_releases(self):
@@ -131,18 +151,22 @@ def main(argv):
     """
     """
     try:
-        opts, args = getopt.getopt(argv, "d", ['help'])
+        opts, args = getopt.getopt(argv, "dc", ['help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-d':
-            print 'Confirm dropping all tables and reloading the data by pressing c'
+            print 'Confirm dropping all tables and reloading the data by pressing c or press q to abort:'
             pdb.set_trace()
             drop_all()
             Base.metadata.create_all(engine)
-        elif opt in ('-h', '--help'):
+        elif opt == '-c':
+            L = Loader()
+            L.recalculate_release_diff()
+            sys.exit()
+        else:
             usage()
             sys.exit()
 

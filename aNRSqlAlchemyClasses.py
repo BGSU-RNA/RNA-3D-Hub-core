@@ -497,7 +497,10 @@ class Uploader:
                     parents = ','.join(set(self.c.parents[group_id]))
                 else:
                     parents = ''
-                self.added_groups.append(motif.id)
+                if self.upload_mode == 'release_diff':
+                    self.added_groups.append(group_id) # otherwise the new temporary id is committed
+                else:
+                    self.added_groups.append(motif.id)
                 print 'Group %s assigned new id %s' % (group_id, motif.id)
 
             elif group_id in self.c.correspond:

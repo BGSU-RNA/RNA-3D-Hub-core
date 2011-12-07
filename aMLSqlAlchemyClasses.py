@@ -7,10 +7,12 @@ import random, datetime, math, sys, pdb, csv, os, shutil, collections
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 import sqlalchemy.exc
 
-engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
+# engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
+engine  = create_engine('mysql://root:bioinfo@localhost/motifversions')
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -24,15 +26,18 @@ Base = declarative_base()
 def drop_all():
     Base.metadata.drop_all(engine)
 
-def list_done():
+def drop_temp_tables():
+    Base.metadata.drop_all(bind=engine, tables='ML_handle')
+
+def list_done(type):
     done = []
-    for release in session.query(Release).all():
+    for release in session.query(Release).filter(Release.type==type).all():
         done.append(release.description)
     return done
 
-def list_all_releases():
+def list_all_releases(type):
     all_releases = []
-    for release in session.query(Release).order_by(desc(Release.date)).all():
+    for release in session.query(Release).filter(Release.type==type).order_by(desc(Release.date)).all():
         all_releases.append(release.id)
     return all_releases
 
@@ -177,12 +182,16 @@ class Release(Base):
     __tablename__ = 'ml_releases'
 
     id          = Column(String(4), primary_key=True)
+    type        = Column(String(2), primary_key=True)
     date        = Column(DateTime)
     description = Column(Text)
+    graphml     = Column(LONGTEXT)
 
-    def __init__(self, mode='', description=''):
+    def __init__(self, mode='', description='', type=''):
         self.description = description
         self.mode = mode
+        self.type = type
+        self.graphml = ''
         self.compute_new_release_id()
         self.get_date()
 
@@ -190,7 +199,7 @@ class Release(Base):
         return "<Release('%s','%s','%s')>" % (self.id, self.date, self.description)
 
     def compute_new_release_id(self):
-        prev = session.query(Release).order_by(desc(Release.date)).first()
+        prev = session.query(Release).filter(Release.type==self.type).order_by(desc(Release.date)).first()
         if prev is None:
             self.id = '0.1'
         elif self.mode == 'major':
@@ -244,9 +253,10 @@ class Motif(Base):
     version    = Column(Integer)
     comment    = Column(Text)
 
-    def __init__(self, id='', release_id='', increment=False, comment=''):
+    def __init__(self, id='', release_id='', increment=False, comment='', type=''):
         self.release_id = release_id
         self.comment    = comment
+        self.type       = type
         if id == '':
             self.get_new_motif_id()
         elif increment is True:
@@ -258,7 +268,7 @@ class Motif(Base):
         return "<Motif('%s','%s','%s')>" % (self.id, self.type, self.release_id)
 
     def get_new_motif_id(self):
-        self.type = 'IL'
+#         self.type = 'IL'
         while True:
             self.handle = '%05d' % random.randrange(99999)
             if session.query(Motif).filter(Motif.handle==self.handle).first() is None:
@@ -266,19 +276,19 @@ class Motif(Base):
                     h = ML_handle(id=self.handle)
                     session.add(h)
                     break
-                break
+
         self.version = 1
         self.id = self.type + '_' + self.handle + '.' + str(self.version)
 
     def increment_motif_id(self, id):
-        self.type = 'IL'
+#         self.type = 'IL'
         self.handle  = id[3:8]
         self.version = int(id[9:]) + 1
         self.id = self.type + '_' + self.handle + '.' + str(self.version)
 
     def populate_fields(self, id):
         self.id = id
-        self.type = 'IL'
+#         self.type = 'IL'
         self.handle  = id[3:8]
         self.version = int(id[9:])
 
@@ -351,6 +361,7 @@ class Release_diff(Base):
 
     release_id1    = Column(String(4), primary_key=True)
     release_id2    = Column(String(4), primary_key=True)
+    type           = Column(String(2), primary_key=True)
     direct_parent  = Column(Boolean)
     added_groups   = Column(Text)
     removed_groups = Column(Text)
@@ -382,9 +393,10 @@ class MotifCollection:
     """
 
     """
-    def __init__(self, file='', release=''):
+    def __init__(self, file='', release='',type=''):
         self.loops   = []
         self.groups  = []
+        self.type    = type
         self.sl      = set()
         self.sg      = set()
         self.d       = collections.defaultdict(list) # [group: {loopX..loopY} ]
@@ -422,15 +434,15 @@ class MotifCollection:
             self.d[self.groups[i]].append(loop)
 
     def get_latest_release(self):
-        if session.query(Release).first() is None:
+        if session.query(Release).filter(Release.type==self.type).first() is None:
             print 'No previous releases found'
             return
-        release = session.query(Release).order_by(desc(Release.date)).first()
+        release = session.query(Release).filter(Release.type==self.type).order_by(desc(Release.date)).first()
         self.release = release.id
         self.get_release()
 
     def get_release(self):
-        for loop in session.query(Loop).filter(Loop.release_id==self.release).all():
+        for loop in session.query(Loop).filter(Loop.release_id==self.release).filter(Loop.id.like(self.type+'%')).all():
             self.loops.append(loop.id)
             self.groups.append(loop.motif_id)
 
@@ -583,9 +595,10 @@ class MotifCollectionMerger:
 class Uploader:
     """
     """
-    def __init__(self, ensembles=None, mode='', description='',files={}, upload_mode=''):
+    def __init__(self, ensembles=None, mode='', description='',files={}, upload_mode='', motif_type=''):
         self.c           = ensembles
-        self.release     = Release(mode=mode, description=description)
+        self.motif_type  = motif_type.upper()
+        self.release     = Release(mode=mode, description=description, type=self.motif_type)
         self.upload_mode = upload_mode
         self.motifs    = []
         self.loops     = []
@@ -618,6 +631,8 @@ class Uploader:
 #             self.show_report()
             self.__commit()
             self.__rename_mat_files()
+            self.__move_2d_files()
+            self.__process_graphml_file()
         else:
             self.direct_parent = 0
             self.release = Release()
@@ -635,7 +650,9 @@ class Uploader:
 
         for group_id in self.c.c1.sg:
             if group_id in self.c.new_ids:
-                motif = Motif(release_id=self.release.id,comment=self.c.explanation[group_id])
+                motif = Motif(release_id=self.release.id,
+                              comment=self.c.explanation[group_id],
+                              type=self.motif_type)
                 self.added_groups.append(motif.id)
                 if self.c.parents.has_key(group_id):
                     parents = ','.join(self.c.parents[group_id])
@@ -644,14 +661,21 @@ class Uploader:
                 print 'Group %s assigned new id %s' % (group_id, motif.id)
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
-                motif   = Motif(id=old_id, release_id=self.release.id, increment=True,comment=self.c.explanation[group_id])
+                motif   = Motif(id=old_id,
+                                release_id=self.release.id,
+                                increment=True,
+                                comment=self.c.explanation[group_id],
+                                type=self.motif_type)
                 parents = ','.join(set([old_id] + self.c.parents[group_id]))
                 self.updated_groups.append(motif.id)
                 self.old_updated_groups.append(old_id)
                 print 'Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id)
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
-                motif = Motif(id=id, release_id=self.release.id,comment=self.c.explanation[group_id])
+                motif = Motif(id=id,
+                              release_id=self.release.id,
+                              comment=self.c.explanation[group_id],
+                              type=self.motif_type)
                 self.same_groups.append(motif.id)
                 parents = ''
                 print 'Group %s matches exactly motif %s' % (group_id, motif.id)
@@ -677,6 +701,7 @@ class Uploader:
         self.release_diff.append( Release_diff(
             release_id1        = self.release.id,
             release_id2        = self.c.c2.release,
+            type               = self.motif_type,
             direct_parent      = self.direct_parent,
             added_groups       = ', '.join(self.added_groups),
             removed_groups     = ', '.join(self.removed_groups),
@@ -837,6 +862,42 @@ class Uploader:
                 shutil.copyfile(src, dst)
             else:
                 print "File %s wasn't found" % src
+
+
+    def __move_2d_files(self):
+        """
+        """
+        img_release_folder = os.path.join(self.files['2ds_destination'],self.motif_type + self.release.id)
+        if not os.path.exists(img_release_folder):
+            os.mkdir(img_release_folder)
+
+        for file in self.c.c1.sg:
+            src = os.path.join(self.files['2ds_origin'], file + '.png')
+            dst = os.path.join(img_release_folder, self.final_ids[file] + '.png')
+            if os.path.exists(src):
+                shutil.copyfile(src, dst)
+            else:
+                print "File %s wasn't found" % src
+
+
+    def __process_graphml_file(self):
+        """
+        """
+        graphml = os.path.join(self.files['folder'],'Supergroups.graphml')
+        if os.path.exists(graphml):
+            f = open(graphml, 'r')
+            contents = f.read()
+            for group in self.c.c1.sg:
+                # first try replacing group names as they were given
+                contents = contents.replace(group, self.final_ids[group])
+                # next, try to replace ids like Group_001 in case the matfiles were renamed to IL_001 etc
+                parts = group.split('_')
+                contents = contents.replace('Group_'+parts[1], self.final_ids[group])
+            contents = contents.replace('\n','')
+            self.release.graphml = contents
+            session.add(self.release)
+            session.commit()
+
 
 ################################################################################
 # End of database operations
