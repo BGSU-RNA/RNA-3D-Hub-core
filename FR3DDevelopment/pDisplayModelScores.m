@@ -18,11 +18,18 @@ end
 fprintf('Loop type is %s\n', loopType);
 
 if ~exist('SequenceSource'),
-  SequenceSource = 1;                          % parse separate sequences?
+  SequenceSource = 1;                          % parse separate sequences
+  SequenceSource = 0;                          % parse sequences by group
 end
 
 if ~exist('basepaironly'),
   basepaironly = 1;                        % only keep models with a basepair
+end
+
+RankingMethods = {'max log probability','percentile'};
+
+if ~exist('rm'),
+  rm = 1;
 end
 
 % ---------------------------------------------- Load parsing data
@@ -393,12 +400,12 @@ for i = 1:s,                             % loop through all sequence files
 end
 
 if 2*s == t,
-  fprintf('%3d out of %d sequences (%7.4f%%) are given the highest score by their own forward model\n', counter, s, 100*counter/s);
-  fprintf('%3d out of %d sequences (%7.4f%%) are given the highest score by a model from their group\n', counter4, s, 100*counter4/s);
-  fprintf('%3d out of %d sequences (%7.4f%%) are given a good score by their own forward model\n', counter2, s, 100*counter2/s);
-  fprintf('%3d out of %d sequences (%7.4f%%) are given a very poor score by their own forward model\n', counter3, s, 100*counter3/s);
+  fprintf('%3d out of %d sequences (%7.4f%%) are given the highest maxlogprob score by their own forward model\n', counter, s, 100*counter/s);
+  fprintf('%3d out of %d sequences (%7.4f%%) are given the highest maxlogprob score by a model from their group\n', counter4, s, 100*counter4/s);
+  fprintf('%3d out of %d sequences (%7.4f%%) are given a good maxlogprob score by their own forward model\n', counter2, s, 100*counter2/s);
+  fprintf('%3d out of %d sequences (%7.4f%%) are given a very poor maxlogprob score by their own forward model\n', counter3, s, 100*counter3/s);
 else
-  fprintf('%3d out of %d sequences (%7.4f%%) are given the highest score by a model from their group\n', counter4, s, 100*counter4/s);
+  fprintf('%3d out of %d sequences (%7.4f%%) are given the highest maxlogprob score by a model from their group\n', counter4, s, 100*counter4/s);
 end
 
 % ------------------------------------- Histogram ranks of matches
@@ -413,7 +420,7 @@ end
 bar(1:maxrank,n/sum(n));
 axis([0.5 maxrank+0.5 0 max(n/sum(n))*1.1]);
 
-xlabel('Rank of own model');
+xlabel(['Rank of own model by ' RankingMethods{rm}]);
 ylabel('Frequency');
 switch SequenceSource
 case 0,

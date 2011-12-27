@@ -43,7 +43,8 @@ function [name, M] = aGetAAId(File, ind)
     end
 
     name = sprintf('%s_%s_%i_%s_%s_%s_%s',...
-        pdb_id{1},pdb_type,AA.ModelNum,AA.Chain,AA.Unit,AA.Number,insCode);
+    pdb_id{1},pdb_type,AA.ModelNum,AA.Chain,AA.Number,AA.Unit,insCode);    
+%         pdb_id{1},pdb_type,AA.ModelNum,AA.Chain,AA.Unit,AA.Number,insCode);
 %     name = sprintf('%s_%s_%i_%s_%s_%s_%s_%s',pdb_id,pdb_type,NT.ModelNum,NT.Chain,NT.Number,NT.Base,insCode,alternateId);
     
 end

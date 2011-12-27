@@ -3,9 +3,6 @@
 
 function [Screen] = xPairwiseScreen(File,Codes,Query,p,q);
 
-% Note: in the next lines, (File.Distance < Query.Diameter) is a "big
-% sparse" matrix because it has many non-zero entries.  Change it.
-
 if Query.Geometric == 0,
   D = zSparseRange(File.Distance,0,Query.Diameter);
                                         % cap distance for non-geometric search
@@ -278,6 +275,10 @@ if isfield(Query,'DifferenceSignMat'),
   end
 end
 
+% -------------------------------------------------------------------------
+% --------- Unary constraints ---------------------------------------------
+% -------------------------------------------------------------------------
+
 % --------- Screen according to the nucleotide mask
 
 % This is not very efficient, because this field always exists, even
@@ -335,6 +336,7 @@ if isfield(Query,'Config'),
   end
 end
 
+% --------- Binary constraints again
 % --------- Screen according to pairwise distance in model
 
 if (Query.Geometric > 0),

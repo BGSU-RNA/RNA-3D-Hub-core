@@ -6,6 +6,8 @@ N = N - 1;                              % number of nucleotides
 
 if nargin <3,
     UseIndex = 1:L;                     % Use all instances
+else
+    L = length(UseIndex);
 end
 
 % ---------------------------- Set parameters for the nodes from instances
@@ -29,7 +31,7 @@ for n = 1:length(Node),
 
                     inscount = zeros(1,L);
                     for c = 1:L,
-                        inscount(c) = abs(Search.Candidates(c,aa) - Search.Candidates(c,a)) - 1;
+                        inscount(c) = abs(Search.Candidates(UseIndex(c),aa) - Search.Candidates(UseIndex(c),a)) - 1;
                     end
 
                     %disp('pMakeMotifModelFromSSF: Left insertion counts:')
@@ -37,15 +39,14 @@ for n = 1:length(Node),
 
                     lld = zeros(1,max(inscount)+2);           % Dirichlet distribution
                     for c = 1:L,
-
                         if inscount(c) > 0,
                             lld(inscount(c)+0) = lld(inscount(c)+0) + 0.01;% spread a little
                         end
                         lld(inscount(c)+1) = lld(inscount(c)+1) + 1.00;
                         lld(inscount(c)+2) = lld(inscount(c)+2) + 0.01;% spread a little
 
-                        ff = Search.Candidates(c,N+1);          % file number
-                        d = Search.Candidates(c,a);             % index of interacting base
+                        ff = Search.Candidates(UseIndex(c),N+1);          % file number
+                        d = Search.Candidates(UseIndex(c),a);             % index of interacting base
                         if inscount(c) > 0,
                             for i = 1:inscount(c),
                                 insb = Search.File(ff).NT(d+i).Code;  % A=1, C=2, G=3, U=4
@@ -73,7 +74,7 @@ for n = 1:length(Node),
                         inscount(1:L) = 0;
                     else
                         for c = 1:L,
-                            inscount(c) = abs(Search.Candidates(c,b) - Search.Candidates(c,bb)) - 1;
+                            inscount(c) = abs(Search.Candidates(UseIndex(c),b) - Search.Candidates(UseIndex(c),bb)) - 1;
                         end
                     end
 
@@ -88,8 +89,8 @@ for n = 1:length(Node),
                         rld(inscount(c)+1) = rld(inscount(c)+1) + 1.00;
                         rld(inscount(c)+2) = rld(inscount(c)+2) + 0.01;% spread a little
 
-                        ff = Search.Candidates(c,N+1);          % file number
-                        d = Search.Candidates(c,b);            % index of interacting base
+                        ff = Search.Candidates(UseIndex(c),N+1);          % file number
+                        d = Search.Candidates(UseIndex(c),b);            % index of interacting base
                         if inscount(c) > 0,
                             for i = 1:inscount(c),
                                 insb = Search.File(ff).NT(d-i).Code; % A=1, C=2, G=3, U=4
@@ -139,7 +140,7 @@ for n = 1:length(Node),
             bb = max(Node(n+1).RightIndex);      % next interacting base in the model
             if (n < length(Node)-1 || strcmp(loopType,'HL')) && aa <= bb,                    % no insertions after last pair
                 for c = 1:L,
-                    inscount(c) = abs(Search.Candidates(c,aa) - Search.Candidates(c,a)) - 1;
+                    inscount(c) = abs(Search.Candidates(UseIndex(c),aa) - Search.Candidates(UseIndex(c),a)) - 1;
                 end
 
                 %disp('pMakeMotifModelFromSSF: Left insertion counts:')
@@ -153,8 +154,8 @@ for n = 1:length(Node),
                     lld(inscount(c)+1) = lld(inscount(c)+1) + 1.00;
                     lld(inscount(c)+2) = lld(inscount(c)+2) + 0.01;  % spread a little
 
-                    ff = Search.Candidates(c,N+1);          % file number
-                    d = Search.Candidates(c,a);             % index of interacting base
+                    ff = Search.Candidates(UseIndex(c),N+1);          % file number
+                    d = Search.Candidates(UseIndex(c),a);             % index of interacting base
                     if inscount(c) > 0,
                         for i = 1:inscount(c),
                             insb = Search.File(ff).NT(d+i).Code;  % A=1, C=2, G=3, U=4
@@ -184,7 +185,7 @@ for n = 1:length(Node),
                     inscount(1:L) = 0;
                 else
                     for c = 1:L,
-                        inscount(c) = abs(Search.Candidates(c,b) - Search.Candidates(c,bb)) - 1;
+                        inscount(c) = abs(Search.Candidates(UseIndex(c),b) - Search.Candidates(UseIndex(c),bb)) - 1;
                     end
                 end
 
@@ -200,8 +201,8 @@ for n = 1:length(Node),
                     rld(inscount(c)+1) = rld(inscount(c)+1) + 1.00;
                     rld(inscount(c)+2) = rld(inscount(c)+2) + 0.01;  % spread a little
 
-                    ff = Search.Candidates(c,N+1);          % file number
-                    d = Search.Candidates(c,b);            % index of interacting base
+                    ff = Search.Candidates(UseIndex(c),N+1);          % file number
+                    d = Search.Candidates(UseIndex(c),b);            % index of interacting base
                     if inscount(c) > 0,
                         for i = 1:inscount(c),
                             insb = Search.File(ff).NT(d-i).Code; % A=1, C=2, G=3, U=4
@@ -272,7 +273,7 @@ for n = 1:length(Node),
                         inscount = [];
                         letter = Prior;
                         for c = 1:L,
-                            inscount(c) = abs(Search.Candidates(c,aa) - Search.Candidates(c,a)) - 1;
+                            inscount(c) = abs(Search.Candidates(UseIndex(c),aa) - Search.Candidates(UseIndex(c),a)) - 1;
                         end
                         if max(inscount) ~= 0,                    % if insertion seen, add to node
                             lld = zeros(1,max(inscount)+2);         % Dirichlet distribution
@@ -284,8 +285,8 @@ for n = 1:length(Node),
                                 lld(inscount(c)+1) = lld(inscount(c)+1) + 1.00;
                                 lld(inscount(c)+2) = lld(inscount(c)+2) + 0.01;  % spread a little
 
-                                ff = Search.Candidates(c,N+1);         % file number
-                                d = Search.Candidates(c,a);            % index of interacting base
+                                ff = Search.Candidates(UseIndex(c),N+1);         % file number
+                                d = Search.Candidates(UseIndex(c),a);            % index of interacting base
                                 if inscount(c) > 0,
                                     for i = 1:inscount(c),
                                         insb = Search.File(ff).NT(d+i).Code;  % A=1, C=2, G=3, U=4
@@ -322,7 +323,6 @@ for n = 1:length(Node),
                 a = Node(n).LeftIndex;
                 b = Node(n).RightIndex;
                 interbases = Node(n).MiddleIndex(unique(Node(n).IBases));
-                [files,nucleo] = size(Search.Candidates);
                 if a<b,
                     for i = a:b,
                         interactions = interactions+1;
@@ -333,13 +333,12 @@ for n = 1:length(Node),
                             Node(n).SubsProb(:,:,index) = zeros(4);
                             dist = Prior;
                             clear basesInds
-                            nucleo = nucleo-1;
-                            for j = 1:files
-                                f = Search.Candidates(j,end);
-                                if nucleo == length(Search.File(j).NT),  % if insertions seem to be missing or there are none
+                            for j = 1:L
+                                f = Search.Candidates(UseIndex(j),end);
+                                if N == length(Search.File(UseIndex(j)).NT),  % if insertions seem to be missing or there are none
                                     baseCode = Search.File(f).NT(i).Code;
                                 else
-                                    position = Search.Candidates(j,i);
+                                    position = Search.Candidates(UseIndex(j),i);
                                     baseCode = Search.File(f).NT(position).Code;
                                 end
                                 dist(baseCode) = dist(baseCode) + 1;
@@ -354,8 +353,8 @@ for n = 1:length(Node),
                         if i ~= Node(n).RightIndex,
                             insCounts = 0;
                             dist = Prior;
-                            for j = 1:files
-                                f = Search.Candidates(j,end);
+                            for j = 1:L
+                                f = Search.Candidates(UseIndex(j),end);
                                 inserts = Search.Candidates(f,i+1)-Search.Candidates(f,i)-1;
                                 if length(insCounts) >= inserts+1,
                                     insCounts(inserts+1) = insCounts(inserts+1)+1;
@@ -363,8 +362,8 @@ for n = 1:length(Node),
                                     insCounts(inserts+1) = 1;
                                 end
                                 if inserts ~= 0,
-                                    if nucleo ~= length(Search.File(f).NT),
-                                        start = Search.Candidates(j,i);
+                                    if N ~= length(Search.File(f).NT),
+                                        start = Search.Candidates(UseIndex(j),i);
                                         for k = 1:inserts,
                                             baseCode = Search.File(f).NT(start+k).Code;
                                             dist(baseCode) = dist(baseCode) + 1;
@@ -391,9 +390,9 @@ for n = 1:length(Node),
                     extra = Prior;
                     extracount = 0;
                     for j = 1:length(ins),
-                        f = Search.Candidates(j,end);
+                        f = Search.Candidates(UseIndex(j),end);
                         if ins(j) >= 1,
-                            position = Search.Candidates(j,a)+1;
+                            position = Search.Candidates(UseIndex(j),a)+1;
                             baseCode = Search.File(f).NT(position).Code;
                             first(baseCode) = first(baseCode) + 1;
                             if length(extracount) >= ins(j),
@@ -403,7 +402,7 @@ for n = 1:length(Node),
                             end
                             if ins(j) >= 2,
                                 for i = 1:ins(j)-1
-                                    position = Search.Candidates(j,a)+i+1;
+                                    position = Search.Candidates(UseIndex(j),a)+i+1;
                                     baseCode = Search.File(f).NT(position).Code;
                                     extra(baseCode) = extra(baseCode) + 1;
                                 end

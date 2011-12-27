@@ -69,6 +69,7 @@ end
 % Move models in NMR file apart ---------------------------------------------
 % Otherwise they land right on top of one another and confuse basepairs
 % But don't do this with files like 3NJ6, which are x-ray and have 2 models
+% This is not a sophisticated way to decide whether a file is NMR or x-ray
 
 if (max(ModelNum) > 4) && (PDBFilename(end) == 'b'),
   P(:,1) = P(:,1) + 1000*(ModelNum - 1);  % move by 1000 Angstroms
@@ -84,12 +85,8 @@ Lim(2,:) = [15 13 16 12];     % total number of atoms, including hydrogen
 % Read list of modified bases ---------------------------------------------
 
 try
-  T = textread('ModifiedNucleotides.txt','%80c');
-  clear ModList
-  for t = 1:length(T(:,1)),
-    ModList{t} = T(t,13:15);
-  end
-  ModList = unique(ModList);
+  [Parent,ParentAtom,ModName,ModAtom] = textread('rna-pair-atom-mapping.txt','%s%s%s%s');
+  ModList = unique(ModName);
 catch
   ModList = {'5BU','PSU','H2U','OMG','5IC','5IU'};
 end

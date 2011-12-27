@@ -55,8 +55,15 @@ for a = 1:N,                                    % first NT of possible pair
       i = Search.Candidates(c,a);               % index of first nucleotide
       j = Search.Candidates(c,b);               % index of second nucleotide
       e = [e Search.File(f(c)).Edge(i,j)];      % append observed interaction
-      cp= [cp Search.File(f(c)).LooseCoplanar(i,j)]; 
-                                                % append coplanar information
+      
+      % modified by Anton to deal with old motif atlas releases 12/6/2011
+      if isfield(Search.File(f(c)),'LooseCoplanar')
+          cp= [cp Search.File(f(c)).LooseCoplanar(i,j)]; % append coplanar information
+      else
+          cp= [cp 0];
+      end
+     % modified by Anton to deal with old motif atlas releases 12/6/2011
+
     end
 
     e = fix(e);                                 % round subcategories

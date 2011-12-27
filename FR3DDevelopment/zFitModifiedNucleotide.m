@@ -13,18 +13,18 @@ Y = NT.Loc(1:3,:);                           % 3 points on modified base
 
 Corresp = [];
 
-[ModName,ModAtom,Parent,ParentAtom] = textread('ModifiedNucleotideAtomCorrespondence.txt','%s\t%s\t%s\t%s');
+[Parent,ParentAtom,ModName,ModAtom] = textread('rna-pair-atom-mapping.txt','%s%s%s%s');
 
-r = find(ismember(ModName,NT.Base));
+r = find(ismember(ModName,NT.Base));         % rows corresponding to this NT
 
-if ~isempty(r),
-  Parent = Parent{r(1)};
-  Parent = find(Parent == 'ACGU');
+if ~isempty(r),                              % there is a match
+  Parent = Parent{r(1)};                     
+  Parent = find(Parent == 'ACGU');           % identify A, C, G, U if any
 
   if ~isempty(Parent),
 
-    MA = ModAtom(r);
-    PA = ParentAtom(r);
+    MA = ModAtom(r);                         % list of atoms in modified NT
+    PA = ParentAtom(r);                      % corresponding atoms in parent NT
 
     zStandardBases                % read in QM locations of atoms in 4 bases
 
@@ -33,12 +33,13 @@ if ~isempty(r),
 
     clear X Y
 
-    for i = 1:length(MA),
-      j = find(ismember(NT.AtomName,MA{i}));
+    for i = 1:length(MA),                    % loop through correspondences
+      j = find(ismember(NT.AtomName,MA{i})); % location of atom i in given NT
       k = find(ismember(AtomNames(1:Lim(1,Parent),Parent),PA{i}));
       if isempty(j),
         fprintf('zFitModifiedNucleotide: %s is missing atom %s\n', NT.Base, MA{i});
-      else
+      elseif ~isempty(k),                    % parent has this atom
+                                             % avoids matching backbone atoms
         X(i,:) = StandardLoc(k(1),:,Parent);  % ideal base atom locations
         Y(i,:) = NT.Loc(j(1),:);
       end

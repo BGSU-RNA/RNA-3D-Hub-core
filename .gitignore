@@ -5,6 +5,7 @@
 *.exe
 *.jar
 *.txt
+*.ppt*
 .dropbox
 .metadata/
 JAR3D/

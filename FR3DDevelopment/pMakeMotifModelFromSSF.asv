@@ -179,11 +179,7 @@ for t = 1:length(Text),
     fprintf('%s\n', Text{t});
 end
 
-
-
 Node = pUpdateModelWithSSF(Node,Search);      %Adjust pair and substitution probabilities
-
-
 
 % % ---------------------------- Set parameters for the nodes from instances
 % 

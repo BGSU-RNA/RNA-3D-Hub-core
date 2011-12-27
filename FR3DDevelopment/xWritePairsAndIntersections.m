@@ -1,51 +1,62 @@
 % xPairsAndIntersections.m loads a PDB file, selects a query motif randomly, determines FR3D search parameters, does pairwise screening, and intersects the pairwise results
 
-FN = '1J1U';
+Motif   = 2;
 Verbose = 1;
-m = 4;                        % number of nucleotides in query
-
 clear Query
 
-% ---------------------------------------------------------------------------
-
-File = zAddNTData(FN);
-i = 1;
-
-Filenames = {FN};
-
+switch Motif
+case 1,
+  FN = '1J1U';
   Query.Description    = 'FR3D test query';
   Query.Filename       = FN;
+  m = 4;                        % number of nucleotides in query
   Query.IndicesManual  = 10:(10+m-1);                   % indices
-% Query.NTList ?????
   Query.DiscCutoff     = 0.5;
   Query.SearchFiles    = {FN};
   Query.Name           = 'Test';
+  Query.NTList         = {1,1,1,1};
+case 2,
+  FN = '1S72';
+  m = 5;
+  Query.Description    = '1S72 Sarcin core';
+  Query.Filename       = FN;
+  Query.IndicesManual  = [1251 1252 1253 898 899];       % indices
+  Query.DiscCutoff     = 0.5;
+  Query.SearchFiles    = {FN};
+  Query.Name           = 'Sarcin core';
+  Query.Geometric      = 1;
+  Query.Mask           = 'NNNNN';
+  Query.NTList         = {1,1,1,1,1};            % fake list, correct length
+end
+
+Filenames = {FN};
+File = zAddNTData(FN);
 
 UsingLibrary = 1;
 
 Query = xConstructQuery(Query,File);
-
 Query.DistCutoff = 30;
 
-    c = cat(1,File(i).NT(1:File(i).NumNT).Center);
-    File(i).Distance = zMutualDistance(c,Query.DistCutoff); 
+c = cat(1,File(1).NT(1:File(1).NumNT).Center);
+File(1).Distance = zMutualDistance(c,Query.DistCutoff); 
 
 Codes = cat(1,File.NT(:).Code); 
 
 Model = Query;
-f = 1;
 
-OFN = ['Database' filesep FN];
+% -------------------------------- Create file name from PDB ID and NTs
+OF = ['Database' filesep FN];
 for i = 1:length(Query.NT),
-  OFN = [OFN '_' Query.NT(i).Number];
+  OF = [OF '_' Query.NT(i).Number];
 end
-OFN = [OFN '_Pairs.txt'];
 
+% -------------------------------- Write canditates
+OFN = [OF '_Pairs.txt'];
 fid = fopen(OFN,'w');
 
 for i=2:Model.NumNT                % loop through model nucleotides
   for j=1:(i-1)
-    PS{i,j} = xPairwiseScreen(File(f),Codes,Model,i,j);
+    PS{i,j} = xPairwiseScreen(File,Codes,Model,i,j);
     PS{j,i} = PS{i,j}';
     NNZ(i,j) = nnz(PS{i,j});              % number of non-zero entries
     NNZ(j,i) = NNZ(i,j);
@@ -64,11 +75,8 @@ Query.SSCutoff = Inf*Query.SSCutoff;
 
 Candidates = xFindCandidates(File,Query,Verbose);  % screen for candidates
 
-OFN = ['Database' filesep FN];
-for i = 1:length(Query.NT),
-  OFN = [OFN '_' Query.NT(i).Number];
-end
-OFN = [OFN '_Candidates.txt'];
+% -------------------------------- Write canditates
+OFN = [OF '_Candidates.txt'];
 fid = fopen(OFN,'w');
 
 for c = 1:length(Candidates(:,1)),
@@ -83,37 +91,3 @@ for c = 1:length(Candidates(:,1)),
 end
 fclose(fid);
 
-break
-
-if (Query.Geometric > 0),
-
-  % --------- Compute square of distance difference from model
-
-  d = (d - Query.Distance(p,q)).^2;   % squared difference in distances
-
-  d = d + 0.00000001 * (d == 0);       % avoid rejecting model; make d nonzero
-
-  % --------- Impose upper limit on distance differences; 2-nucleotide cutoff
-
-
-  if Query.NumNT > 2,
-    Wp = Query.LocWeight(p);
-    Wq = Query.LocWeight(q);
-    MaxD = (Wp + Wq) * (Query.NumNT * Query.DiscCutoff)^2 / (Wp * Wq);
-  else
-    Wp = 1;
-    Wq = 1;
-    MaxD = (Query.NumNT * Query.DiscCutoff)^2;
-  end
-
-  if isfield(Query,'Flex'),
-    MaxD = max(MaxD,Query.Flex(p,q)^2);  % allow larger distance if desired
-  end
-
-  k = find(d <= MaxD);            % keep ones with small difference from model
-
-  i = i(k);
-  j = j(k);
-  d = d(k) * Wp * Wq;
-
-end

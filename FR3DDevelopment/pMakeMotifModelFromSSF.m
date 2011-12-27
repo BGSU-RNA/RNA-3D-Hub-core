@@ -6,7 +6,7 @@
 % load LIB00014_IL_tSH-tSH-tHS-tHS.mat
 % pMakeModelFromSearchSaveFile(Search,'IL',1);
 
-function [Node,Truncate,Signature,RSignature] = pMakeMotifModelFromSSF(Search,Param,Prior,loopType)
+function [Node,Truncate,Signature,RSignature] = pMakeMotifModelFromSSF(Search,Param,Prior,loopType,UseIndex)
 
 if nargin < 2,
     Param   = 0;
@@ -179,11 +179,7 @@ for t = 1:length(Text),
     fprintf('%s\n', Text{t});
 end
 
-
-
-Node = pUpdateModelWithSSF(Node,Search);      %Adjust pair and substitution probabilities
-
-
+Node = pUpdateModelWithSSF(Node,Search,f,F,Verbose,Prior,loopType,File,UseIndex);      %Adjust pair and substitution probabilities
 
 % % ---------------------------- Set parameters for the nodes from instances
 % 

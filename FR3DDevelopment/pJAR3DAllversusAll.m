@@ -1,10 +1,11 @@
-% pJAR3DAllversusAll 
+% pJAR3DAllversusAll runs JAR3D on all motif sequences against all motif
+% models.  One should specify the loopType and the SequenceSource
 
 disp('Make sure the Matlab current folder has a MotifLibrary in it');
 
 if ~exist('loopType'),
-  loopType = 'HL';
-  %loopType = 'IL';
+%  loopType = 'HL';
+  loopType = 'IL';
 end
 
 if ~exist('SequenceSource'),
