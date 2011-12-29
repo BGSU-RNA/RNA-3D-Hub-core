@@ -9,6 +9,7 @@
 *.vi
 *~
 *.pyc
+*.cfg
 
 # OS or Editor folders
 .DS_Store

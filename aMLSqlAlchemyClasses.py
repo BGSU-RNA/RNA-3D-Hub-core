@@ -11,8 +11,8 @@ from sqlalchemy.dialects.mysql import LONGTEXT
 
 import sqlalchemy.exc
 
-# engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
-engine  = create_engine('mysql://root:bioinfo@localhost/motifversions')
+engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
+# engine  = create_engine('mysql://root:bioinfo@localhost/motifversions')
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -44,6 +44,52 @@ def list_all_releases(type):
 ################################################################################
 # Motif tables declarations
 ################################################################################
+
+class Dcc(Base):
+    """
+    """
+    __tablename__ = 'dcc_residues'
+    id                               = Column(String(20), primary_key=True)
+    sfcheck_correlation              = Column(Float)
+    sfcheck_correlation_side_chain   = Column(Float)
+    sfcheck_real_space_R             = Column(Float)
+    sfcheck_real_space_R_side_chain  = Column(Float)
+    sfcheck_connect                  = Column(Float)
+    sfcheck_shift                    = Column(Float)
+    sfcheck_shift_side_chain         = Column(Float)
+    sfcheck_density_index_main_chain = Column(Float)
+    sfcheck_density_index_side_chain = Column(Float)
+    sfcheck_B_iso_main_chain         = Column(Float)
+    sfcheck_B_iso_side_chain         = Column(Float)
+    mapman_correlation               = Column(Float)
+    mapman_real_space_R              = Column(Float)
+    mapman_Biso_mean                 = Column(Float)
+    mapman_occupancy_mean            = Column(Float)
+
+
+class Coordinates(Base):
+    """
+    """
+    __tablename__ = 'pdb_coordinates'
+    id          = Column(String(30), primary_key=True)
+    pdb         = Column(String(4))
+    pdb_type    = Column(String(4))
+    model       = Column(Integer)
+    chain       = Column(String(1))
+    number      = Column(Integer)
+    unit        = Column(String(3))
+    ins_code    = Column(String(1))
+    coordinates = Column(Text)
+
+
+class Distances(Base):
+    """
+    """
+    __tablename__ = 'pdb_distances'
+    id1      = Column(String(30), primary_key=True)
+    id2      = Column(String(30), primary_key=True)
+    distance = Column(Float)
+
 
 class AllLoops(Base):
     """
@@ -87,7 +133,7 @@ class LoopModifications(Base):
     __tablename__ = 'loop_modifications'
     # IL_1C2W_062,7MG
     id           = Column(String(11), primary_key=True)
-    modification = Column(String(3))
+    modification = Column(Text)
 
     def __init__(self, id = '', modification = ''):
         self.id = id
@@ -102,7 +148,7 @@ class LoopQA(Base):
     """
     __tablename__ = 'loop_qa'
     # IL_1C2W_062,1
-    # 1 - valid, 2 - missing, 3 - modified
+    # 1 - valid, 2 - missing, 3 - modified, 4 - complementary
     id    = Column(String(11), primary_key=True)
     valid = Column(Boolean)
     modified_nt    = Column(Boolean)
@@ -470,7 +516,7 @@ class MotifCollectionMerger:
         self.parents     = collections.defaultdict(list)
         self.explanation = dict()
 
-        self.minOverlap = float(2)/3
+        self.minOverlap = Column(Float)(2)/3
 
         self.compare_releases()
         self.show_report()
@@ -488,8 +534,8 @@ class MotifCollectionMerger:
                     self.intersection[motifId][groupId] = t
                     self.setdiff[groupId][motifId] = group - motif
                     self.setdiff[motifId][groupId] = motif - group
-                    self.overlap[groupId][motifId] = float(len(t)) / len(group)
-                    self.overlap[motifId][groupId] = float(len(t)) / len(motif)
+                    self.overlap[groupId][motifId] = Column(Float)(len(t)) / len(group)
+                    self.overlap[motifId][groupId] = Column(Float)(len(t)) / len(motif)
                 else:
                     self.noIntersection[groupId] = motifId
                     self.noIntersection[motifId] = groupId
@@ -888,9 +934,11 @@ class Uploader:
             f = open(graphml, 'r')
             contents = f.read()
             for group in self.c.c1.sg:
-                # first try replacing group names as they were given
-                contents = contents.replace(group, self.final_ids[group])
-                # next, try to replace ids like Group_001 in case the matfiles were renamed to IL_001 etc
+#                 if group in contents:
+#                     # first try replacing group names as they were given
+#                     contents = contents.replace(group, self.final_ids[group])
+#                 else:
+#                     # try to replace ids like Group_001 in case the matfiles were renamed to IL_001 etc
                 parts = group.split('_')
                 contents = contents.replace('Group_'+parts[1], self.final_ids[group])
             contents = contents.replace('\n','')
