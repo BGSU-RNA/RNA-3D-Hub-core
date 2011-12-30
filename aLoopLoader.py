@@ -30,7 +30,7 @@ class LoopLoader:
     """
     """
     def __init__(self):
-        self.matlab = False
+        self.mlab = False
         self.f = dict()
         self.f['all_loops']   = '/FR3D/MotifAtlas/Tables/All_loops.csv'
         self.f['loop_mod']    = '/FR3D/MotifAtlas/Tables/Loops_modifications.csv'
@@ -39,15 +39,15 @@ class LoopLoader:
         self.f['distances']   = '/FR3D/MotifAtlas/Tables/Distances.csv'
 
     def _setup_matlab(self):
-        if self.matlab:
+        if self.mlab:
             logging.info('Matlab already running')
             return
         logging.info('Starting up matlab')
         from mlabwrap import mlab
-        mlab.setup()
+        self.mlab = mlab
+        self.mlab.setup()
         self.matlab = True
         logging.info('Matlab started')
-        return mlab
 
     def __crash(self, msg=None):
         if msg:
@@ -71,11 +71,11 @@ class LoopLoader:
                 self.__filter_done_distances(pdb_list)
 
             if pdb_list:
-                mlab = self._setup_matlab()
+                self._setup_matlab()
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
-                ifn, status, err_msg = mlab.aGetDistances(pdb_file,nout=3)
+                ifn, status, err_msg = self.mlab.aGetDistances(pdb_file,nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_distances_from_csv(ifn)
@@ -84,7 +84,7 @@ class LoopLoader:
                 else:
                     logging.warning('Matlab error code %i when analyzing %s',
                                      status, pdb_file)
-                    logging.warning('Matlab says: %s', err_msg)
+                    self.__crash(err_msg)
 
             logging.info('Leaving matlab_import_distances')
             logging.info('%s', '+'*40)
@@ -158,11 +158,11 @@ class LoopLoader:
                 self.__delete_coordinates(pdb_list)
 
             if pdb_list:
-                mlab = self._setup_matlab()
+                self._setup_matlab()
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
-                ifn, status, err_msg = mlab.aGetCoordinates(pdb_file,nout=3)
+                ifn, status, err_msg = self.mlab.aGetCoordinates(pdb_file,nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_coordinates_from_csv(ifn)
@@ -171,7 +171,7 @@ class LoopLoader:
                 else:
                     logging.warning('Matlab error code %i when analyzing %s',
                                      status, pdb_file)
-                    logging.warning('Matlab says: %s', err_msg)
+                    self.__crash(err_msg)
 
             logging.info('Leaving matlab_import_coordinates')
             logging.info('%s', '+'*40)

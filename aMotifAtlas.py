@@ -79,9 +79,6 @@ class MotifAtlasLoader():
 
 
 
-# get new pdb files, import descriptions into the database
-
-# import coordinates and distances into the database
 
 # compute new non-redundant lists, import into the database
 
@@ -139,21 +136,22 @@ def main(argv):
 
     # mlab._dont_proxy["cell"] = True
 
-    pdbs = ['1EKA']#,'1J5E','1S72']
+    pdbs = ['1EKA','1HLX']#,'1S72','2AVY']
 
 
     M = MotifAtlasLoader()
-    P = PdbInfoLoader()
     L = LoopLoader()
 
-
+    """get new pdb files, import descriptions into the database"""
+    P = PdbInfoLoader()
     P.update_rna_containing_pdbs()
+    """import coordinates and distances into the database"""
     L.matlab_import_distances(pdbs,False)
     L.matlab_import_coordinates(pdbs,False)
 
 
     logging.info('SUCCESSFUL UPDATE')
-#     M.send_report()
+    M.send_report()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

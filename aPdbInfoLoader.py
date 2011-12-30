@@ -94,17 +94,19 @@ class PdbInfoLoader():
         keys = description.split(',')
 
         for line in lines:
+            """one line per chain"""
             if len(line) < 10:
                 continue # skip empty lines
             """replace quotechars that are not preceded and followed by commas,
             except for the beginning and the end of the string
             example: in 1HXL unescaped doublequotes in the details field"""
             line = re.sub('(?<!^)(?<!,)"(?!,)(?!$)',"'",line)
+            """parse the line using csv reader"""
             reader = csv.reader([line],delimiter=',',quotechar='"')
             P = PdbInfo()
             for read in reader:
                 for i,part in enumerate(read):
-                    if part == '':
+                    if part == '': # to save as NULL in the db
                         part = None
                     setattr(P,keys[i],part)
 
@@ -126,7 +128,7 @@ class PdbInfoLoader():
         """
         try:
             self.get_all_rna_pdbs()
-            self.pdbs = ['1HLX']
+            self.pdbs = ['1HLX','1S72','2AVY']
 
             for pdb_id in self.pdbs:
                 report = self._get_custom_report(pdb_id)

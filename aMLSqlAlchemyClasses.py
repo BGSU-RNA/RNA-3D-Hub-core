@@ -189,6 +189,7 @@ class Coordinates(Base):
     number      = Column(Integer)
     unit        = Column(String(3))
     ins_code    = Column(String(1))
+    index       = Column(Integer)
     coordinates = Column(Text)
 
 
