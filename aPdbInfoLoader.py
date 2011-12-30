@@ -1,19 +1,25 @@
-import urllib2
+"""
+
+About
+
+"""
+
+__author__ = 'Anton Petrov'
+
 import pdb, csv, logging, re, sys
+import urllib2
+from aMLSqlAlchemyClasses import session, PdbInfo
 
-from aMLSqlAlchemyClasses import *
 
-
-class PdbInfoUpdater():
-    """
-    """
+class PdbInfoLoader():
+    """We need to check all files weekly in case anything changed"""
 
     def __init__(self):
         pdbs = []
 
     def get_all_rna_pdbs(self):
-        """
-        """
+        """Gets a list of all rna-containing pdb files, including hybrids."""
+        logging.info('Getting a list of all rna-containing pbds')
         url  = 'http://www.rcsb.org/pdb/rest/search'
         queryText = """
         <orgPdbQuery>
@@ -29,14 +35,13 @@ class PdbInfoUpdater():
         result = f.read()
 
         if result:
-            logging.info("Found number of PDB entries: %i", result.count('\n'))
             self.pdbs = result.split('\n')
             """filter out possible garbage in query results"""
             self.pdbs = filter(lambda x: len(x) == 4, self.pdbs)
+            logging.info("Found number of PDB entries: %i", len(self.pdbs))
         else:
-            logging.warning("Failed to retrieve results")
+            logging.critical("Failed to retrieve results")
             sys.exit(2)
-
 
     def create_report_for_matlab(self):
         """
@@ -54,45 +59,43 @@ class PdbInfoUpdater():
 # GROUP BY structureId
 # keywords missing
 
-    def get_custom_report(self, pdb_id):
-        """
-        """
+    def _get_custom_report(self, pdb_id):
+        """Gets a custom report in csv format for a single pdb file. Each chain
+           is described in a separate line"""
         custom_report = '&customReportColumns=structureId,chainId,structureTitle,experimentalTechnique,depositionDate,releaseDate,revisionDate,ndbId,resolution,classification,structureMolecularWeight,macromoleculeType,structureAuthor,entityId,sequence,chainLength,db_id,db_name,molecularWeight,secondaryStructure,entityMacromoleculeType,ligandId,ligandIdImage,ligandMolecularWeight,ligandFormula,ligandName,ligandSmiles,InChI,InChIKey,hetId,Ki,Kd,EC50,IC50,deltaG,deltaH,deltaS,Ka,compound,plasmid,source,taxonomyId,biologicalProcess,cellularComponent,molecularFunction,ecNo,expressionHost,cathId,cathDescription,scopId,scopDomain,scopFold,pfamAccession,pfamId,pfamDescription,crystallizationMethod,crystallizationTempK,phValue,densityMatthews,densityPercentSol,pdbxDetails,unitCellAngleAlpha,unitCellAngleBeta,unitCellAngleGamma,spaceGroup,lengthOfUnitCellLatticeA,lengthOfUnitCellLatticeB,lengthOfUnitCellLatticeC,Z_PDB,rObserved,rAll,rWork,rFree,refinementResolution,highResolutionLimit,reflectionsForRefinement,structureDeterminationMethod,conformerId,selectionCriteria,fieldStrength,manufacturer,model,contents,solventSystem,ionicStrength,ph,pressure,pressureUnits,temperature,softwareAuthor,softwareName,version,method,details,conformerSelectionCriteria,totalConformersCalculated,totalConformersSubmitted,emdbId,emResolution,aggregationState,symmetryType,reconstructionMethod,specimenType&format=csv'
         url = 'http://www.rcsb.org/pdb/rest/customReport?pdbids=%s%s' % (pdb_id, custom_report)
+        logging.info('Getting custom report for %s', pdb_id)
         f = urllib2.urlopen(url)
         result = f.read()
         if result:
             logging.info("Retrieved custom report for %s", pdb_id)
         else:
-            logging.warning("Failed to retrieve results")
+            logging.critical("Failed to retrieve results")
             sys.exit(2)
-
         lines = result.split('<br />');
         return lines
 
-
-    def compare_instances(self, A, B):
-        """
-        """
-        logging.warning('Structure %s, chain %s was updated', A.structureId, A.chainId)
+    def _compare_instances(self, A, B):
+        """Compares two instances of the PdbInfo class. Reports any differences
+           A - new instance, B - old instance"""
         for k,v in A.__dict__.iteritems():
             if k[0] == '_':
                 continue # skip internal attributes
             if str(v) != str(getattr(B,k)): # compare as strings
-                logging.warning('%s was: %s, became: %s', k, v, getattr(B,k))
+                logging.warning('Structure %s, chain %s was updated', A.structureId, A.chainId)
+                logging.warning('%s was: %s, became: %s', k, getattr(B,k), v)
 
+    def _load_into_db(self, lines):
+        """Compares the custom report data with what's already in the database,
+           reports any discrepancies and stores the most recent version."""
 
-    def load_into_db(self, pdb_id):
-        """
-        """
-        lines = self.get_custom_report(pdb_id)
-
-        description = lines.pop(0)
+        logging.info('Loading custom report')
+        description = lines.pop(0) # contains field names
         keys = description.split(',')
 
         for line in lines:
             if len(line) < 10:
-                continue
+                continue # skip empty lines
             """replace quotechars that are not preceded and followed by commas,
             except for the beginning and the end of the string
             example: in 1HXL unescaped doublequotes in the details field"""
@@ -106,32 +109,48 @@ class PdbInfoUpdater():
                     setattr(P,keys[i],part)
 
             logging.info('%s %s', P.structureId, P.chainId)
+            """check if this pdb is present in the db"""
             existingP = session.query(PdbInfo). \
                                 filter(PdbInfo.structureId==P.structureId). \
                                 filter(PdbInfo.chainId==P.chainId).first()
 
             if existingP is not None and existingP != P:
-                self.compare_instances(P, existingP)
+                self._compare_instances(P, existingP)
 
             session.merge(P)
             session.commit()
-#             pdb.set_trace()
+        logging.info('Custom report saved in the database')
 
-
-    def update(self):
+    def update_rna_containing_pdbs(self):
         """
         """
-        self.get_all_rna_pdbs()
-#         self.pdbs = ['1HLX']
-        for pdb_id in self.pdbs:
-            self.load_into_db(pdb_id)
-        logging.info('SUCCESSFUL UPDATE')
+        try:
+            self.get_all_rna_pdbs()
+            self.pdbs = ['1HLX']
+
+            for pdb_id in self.pdbs:
+                report = self._get_custom_report(pdb_id)
+                self._load_into_db(report)
+            logging.info('Successful update of RNA-containing pdbs')
+            logging.info('%s', '+'*40)
+        except:
+            logging.critical('Update FAILED')
+            sys.exit(2)
 
 
-logging.basicConfig(filename='pdbinfoupdate.log', filemode='w', level=logging.DEBUG)
-P = PdbInfoUpdater()
-try:
-    P.update()
-except:
-    logging.warning('Update FAILED')
-    sys.exit(2)
+
+def usage():
+    print __doc__
+
+
+def main(argv):
+    """
+    """
+    logging.basicConfig(level=logging.DEBUG)
+
+    P = PdbInfoLoader()
+    P.update_rna_containing_pdbs()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

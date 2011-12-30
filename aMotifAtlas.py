@@ -1,6 +1,6 @@
 """
-http://mlabwrap.sourceforge.net/
-about
+
+About
 
 """
 
@@ -13,6 +13,7 @@ from datetime import date
 
 from aMLSqlAlchemyClasses import *
 from aLoopLoader import LoopLoader
+from aPdbInfoLoader import PdbInfoLoader
 
 
 class MotifAtlasLoader():
@@ -117,10 +118,6 @@ def main(argv):
 #     except getopt.GetoptError:
 #         usage()
 #         sys.exit(2)
-
-    M = MotifAtlasLoader()
-    L = LoopLoader()
-
 #     for opt, arg in opts:
 #         pass
 #         if   opt == '-d':
@@ -139,15 +136,23 @@ def main(argv):
 #             usage()
 #             sys.exit()
 
-#     mlab.setup()
+
     # mlab._dont_proxy["cell"] = True
 
     pdbs = ['1EKA']#,'1J5E','1S72']
 
+
+    M = MotifAtlasLoader()
+    P = PdbInfoLoader()
+    L = LoopLoader()
+
+
+    P.update_rna_containing_pdbs()
     L.matlab_import_distances(pdbs,False)
     L.matlab_import_coordinates(pdbs,False)
-    logging.info('SUCCESSFUL UPDATE')
 
+
+    logging.info('SUCCESSFUL UPDATE')
 #     M.send_report()
 
 if __name__ == "__main__":
