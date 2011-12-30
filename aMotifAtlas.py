@@ -1,5 +1,5 @@
 """
-
+http://mlabwrap.sourceforge.net/
 about
 
 """
@@ -12,7 +12,7 @@ from datetime import date
 
 
 from aMLSqlAlchemyClasses import *
-
+from aLoopLoader import LoopLoader
 
 
 class MotifAtlasLoader():
@@ -38,7 +38,7 @@ class MotifAtlasLoader():
             self.config['email']['login']    = config.get('Email', 'login')
             self.config['email']['password'] = config.get('Email', 'password')
             logging.info('Leaving import_config')
-            logging.info('+++++++++++++++++++++++++++++++++++')
+            logging.info('%s', '+'*40)
         except:
             e = sys.exc_info()[1]
             logging.warning('import_config CRASHED')
@@ -107,20 +107,22 @@ def usage():
 def main(argv):
     """
     """
-    logging.basicConfig(filename='motifatlas.log', filemode='w', level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
+#     logging.basicConfig(filename='motifatlas.log', filemode='w', level=logging.DEBUG)
     logging.info('Initializing update')
 
 
-    try:
-        opts, args = getopt.getopt(argv, "", ['help'])
-    except getopt.GetoptError:
-        usage()
-        sys.exit(2)
+#     try:
+#         opts, args = getopt.getopt(argv, "", ['help'])
+#     except getopt.GetoptError:
+#         usage()
+#         sys.exit(2)
 
     M = MotifAtlasLoader()
+    L = LoopLoader()
 
-    for opt, arg in opts:
-        pass
+#     for opt, arg in opts:
+#         pass
 #         if   opt == '-d':
 #             M.import_distances()
 # #         elif opt == '-q':
@@ -140,11 +142,12 @@ def main(argv):
 #     mlab.setup()
     # mlab._dont_proxy["cell"] = True
 
-    pdbs = ['1S72']#,'1J5E','1S72']
+    pdbs = ['1EKA']#,'1J5E','1S72']
 
-    M.import_distances(pdbs,False)
-    M.import_coordinates(pdbs,False)
+    L.matlab_import_distances(pdbs,False)
+    L.matlab_import_coordinates(pdbs,False)
     logging.info('SUCCESSFUL UPDATE')
+
 #     M.send_report()
 
 if __name__ == "__main__":
