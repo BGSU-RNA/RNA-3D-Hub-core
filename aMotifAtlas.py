@@ -92,7 +92,8 @@ class MotifAtlasLoader():
                 logging.info('New files to analyze: ' + ','.join(pdb_list))
             else:
                 """recalculate everything, delete what's already in the database"""
-                logging.info('Deleting existing records before recalculation ' + ','.join(pdb_list))
+                logging.info('Deleting existing records before recalculation %s',
+                             ','.join(pdb_list))
                 for pdb_file in pdb_list:
                     session.query(Distances). \
                             filter(Distances.id1.like(pdb_file+'%')). \
