@@ -12,7 +12,6 @@
 function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
 
     try
-
         FILENAME = 'Coordinates.csv';
         status   = 2;
         err_msg  = '';        
@@ -43,11 +42,12 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
                    'number',  '', ...
                    'unit',    '', ...
                    'ins_code','', ...
+                   'index',   '', ...
                    'coordinates','');
                        
         for i = 1:N
             id   = aGetNTId(F,i);
-            C(i) = aParseId(id);
+            C(i) = aParseId(id,i);
             C(i).coordinates = aGetNucleotideAsPdbText(F.NT(i));            
             print_line(fid, C(i));
         end
@@ -55,7 +55,7 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
         for i = 1:A
             id         = aGetAAId(F,i);
             current    = N+i;
-            C(current) = aParseId(id);        
+            C(current) = aParseId(id,i);        
             C(current).coordinates = aGetAsPdbText(F.AA(i),'aa');
             print_line(fid, C(current));
         end
@@ -64,7 +64,7 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
         for i = 1:H
             id         = aGetHetId(F,i);
             current    = S+i;
-            C(current) = aParseId(id);        
+            C(current) = aParseId(id,i);        
             C(current).coordinates = aGetAsPdbText(F.Het(i),'het');        
             print_line(fid, C(current));            
         end
@@ -73,6 +73,7 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
         status = 0;
         
     catch err
+        keyboard;
         err_msg = sprintf('Error "%s" in aGetCoordinates on line %i (%s)\n', err.message, err.stack.line, pdb_id);
         disp(err_msg);
         status = 1;        
@@ -82,14 +83,14 @@ end
 
 function [line] = print_line(fid,C)
 
-    line = fprintf(fid,'"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n', ...
+    line = fprintf(fid,'"%s","%s","%s","%s","%s","%s","%s","%s","%i","%s"\n', ...
                    C.id, C.pdb, C.pdb_type, C.model, ...
-                   C.chain, C.number, C.unit, C.ins_code, ...
+                   C.chain, C.number, C.unit, C.ins_code, C.index, ...
                    C.coordinates);
 
 end
 
-function [Coord] = aParseId(id)
+function [Coord] = aParseId(id, index)
 
     parts          = regexp(id,'_','split');
     Coord.id       = id;
@@ -100,7 +101,8 @@ function [Coord] = aParseId(id)
     Coord.number   = parts{5};
     Coord.unit     = parts{6};
     Coord.ins_code = parts{7};
-    Coord.coordinates    = '';
+    Coord.index    = index;
+    Coord.coordinates = '';
 
 end
 
