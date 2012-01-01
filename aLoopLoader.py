@@ -46,7 +46,6 @@ class LoopLoader:
         from mlabwrap import mlab
         self.mlab = mlab
         self.mlab.setup()
-        self.matlab = True
         logging.info('Matlab started')
 
     def __crash(self, msg=None):
