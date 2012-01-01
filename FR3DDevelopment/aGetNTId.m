@@ -1,4 +1,4 @@
-function [name, M] = aGetNTId_NDB(File,ind)
+function [name, M] = aGetNTId(File,ind)
 
     NT = File.NT(ind);
     

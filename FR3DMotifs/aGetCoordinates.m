@@ -73,7 +73,6 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
         status = 0;
         
     catch err
-        keyboard;
         err_msg = sprintf('Error "%s" in aGetCoordinates on line %i (%s)\n', err.message, err.stack.line, pdb_id);
         disp(err_msg);
         status = 1;        
