@@ -220,19 +220,19 @@ class AllLoops(Base):
     nt_ids        = Column(Text)
     loop_name     = Column(Text)
 
-    def __init__(self, parts):
-        self.id   = parts[0]
-        self.type = parts[1]
-        self.pdb  = parts[2]
-        self.sequential_id = parts[3]
-        self.length        = parts[4]
-        self.seq           = parts[5]
-        self.r_seq     = parts[6]
-        self.nwc_seq   = parts[7]
-        self.r_nwc_seq = parts[8]
-        self.pdb_file  = parts[9]
-        self.nt_ids    = parts[10]
-        self.loop_name = parts[11]
+#     def __init__(self, parts):
+#         self.id   = parts[0]
+#         self.type = parts[1]
+#         self.pdb  = parts[2]
+#         self.sequential_id = parts[3]
+#         self.length        = parts[4]
+#         self.seq           = parts[5]
+#         self.r_seq     = parts[6]
+#         self.nwc_seq   = parts[7]
+#         self.r_nwc_seq = parts[8]
+#         self.pdb_file  = parts[9]
+#         self.nt_ids    = parts[10]
+#         self.loop_name = parts[11]
 
     def __repr__(self):
         return "<Loop('%s','%s')>" % (self.id, self.seq)
