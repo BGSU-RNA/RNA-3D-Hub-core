@@ -127,8 +127,8 @@ class PdbInfoLoader():
         """
         """
         try:
-            self.get_all_rna_pdbs()
-            self.pdbs = ['1HLX','1S72','2AVY']
+            if not pdbs:
+                self.get_all_rna_pdbs()
 
             for pdb_id in self.pdbs:
                 report = self._get_custom_report(pdb_id)
@@ -151,6 +151,8 @@ def main(argv):
     logging.basicConfig(level=logging.DEBUG)
 
     P = PdbInfoLoader()
+    P.get_all_rna_pdbs()
+#     P.pdbs = ['1HLX','1S72','2AVY']
     P.update_rna_containing_pdbs()
 
 

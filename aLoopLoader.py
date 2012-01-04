@@ -24,12 +24,14 @@ __author__ = 'Anton Petrov'
 
 import os, csv, pdb, sys, getopt, logging
 from aMLSqlAlchemyClasses import session, Distances, Coordinates
+from aMotifAtlasBaseClass import MotifAtlasBaseClass
 
 
-class LoopLoader:
+class LoopLoader(MotifAtlasBaseClass):
     """
     """
     def __init__(self):
+        MotifAtlasBaseClass.__init__(self)
         self.mlab = False
         self.f = dict()
         self.f['all_loops']   = '/FR3D/MotifAtlas/Tables/All_loops.csv'
@@ -55,185 +57,6 @@ class LoopLoader:
         session.rollback()
         sys.exit(2)
 
-    ############################################################################
-    """ matlab_import_distances and its supporting private functions"""
-    def matlab_import_distances(self, pdbs, distance_recalculate):
-        """Determines what files need to be analyzed, deletes stored data if
-           necessary, loops over the pdbs, runs matlab on each of them
-           independently, imports csv files one by one."""
-        try:
-            logging.info('Inside matlab_import_distances')
-            pdb_list = pdbs[:] # create a copy, not a reference
-            if distance_recalculate:
-                self.__delete_distances(pdb_list)
-            else:
-                self.__filter_done_distances(pdb_list)
-
-            if pdb_list:
-                self._setup_matlab()
-
-            for pdb_file in pdb_list:
-                logging.info('Running matlab on %s', pdb_file)
-                ifn, status, err_msg = self.mlab.aGetDistances(pdb_file,nout=3)
-                status = status[0][0]
-                if status == 0:
-                    self.__import_distances_from_csv(ifn)
-                elif status == 2: # no nucleotides in the pdb file
-                    logging.info('Pdb file %s has no nucleotides', pdb_file)
-                else:
-                    logging.warning('Matlab error code %i when analyzing %s',
-                                     status, pdb_file)
-                    self.__crash(err_msg)
-
-            logging.info('Leaving matlab_import_distances')
-            logging.info('%s', '+'*40)
-        except:
-            e = sys.exc_info()[1]
-            logging.critical('matlab_import_distances CRASHED')
-            self.__crash(e)
-
-    def __import_distances_from_csv(self, ifn):
-        """Reads the csv file, imports all distances, deletes the file when done
-           to avoid stale data and free up disk space"""
-        logging.info('Importing distances')
-        commit_every = 1000
-        reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
-        for i,row in enumerate(reader):
-            D = Distances(id1=row[0], id2=row[1], distance=row[2])
-            try:
-                session.add(D)
-            except:
-                logging.warning('Distance value updated')
-                session.merge(D)
-            """Since the files can be huge, it's unfeasible to store all
-            objects in memory, have to commit regularly"""
-            if i % commit_every == 0:
-                session.commit()
-        session.commit()
-        os.remove(ifn)
-        logging.info('Csv file successfully imported')
-
-    def __delete_distances(self, pdb_list):
-        """recalculate everything, delete what's already in the database"""
-        logging.info('Deleting existing records before recalculation %s',
-                     ','.join(pdb_list))
-        for pdb_file in pdb_list:
-            session.query(Distances). \
-                    filter(Distances.id1.like(pdb_file+'%')). \
-                    delete(synchronize_session=False)
-        session.commit()
-
-    def __filter_done_distances(self, pdb_list):
-        """find what pbds have already been analyzed, remove them from the list
-        so that they are not reanalyzed"""
-        logging.info('Filtering out processed distances')
-        done = []
-        for pdb_file in pdb_list:
-            if session.query(Distances). \
-                       filter(Distances.id1.like(pdb_file+'%')). \
-                       first() is not None:
-                done.append(pdb_file)
-        [pdb_list.remove(x) for x in done]
-        if done:
-            logging.info('Already in the database: ' + ','.join(done))
-        else:
-            logging.info('No stored distances found')
-        if pdb_list:
-            logging.info('New files to analyze: ' + ','.join(pdb_list))
-        else:
-            logging.info('No new files to analyze')
-
-    ############################################################################
-    """matlab_import_coordinates and its supporting private functions"""
-    def matlab_import_coordinates(self, pdbs, coordinates_recalculate):
-        """
-        """
-        try:
-            logging.info('Inside matlab_import_coordinates')
-            pdb_list = pdbs[:] # create copy, not a reference
-            if coordinates_recalculate is False:
-                self.__filter_done_coordinates(pdb_list)
-            else:
-                self.__delete_coordinates(pdb_list)
-
-            if pdb_list:
-                self._setup_matlab()
-
-            for pdb_file in pdb_list:
-                logging.info('Running matlab on %s', pdb_file)
-                ifn, status, err_msg = self.mlab.aGetCoordinates(pdb_file,nout=3)
-                status = status[0][0]
-                if status == 0:
-                    self.__import_coordinates_from_csv(ifn)
-                elif status == 2: # no nucleotides in the pdb file
-                    logging.info('Pdb file %s has no nucleotides', pdb_file)
-                else:
-                    logging.warning('Matlab error code %i when analyzing %s',
-                                     status, pdb_file)
-                    self.__crash(err_msg)
-
-            logging.info('Leaving matlab_import_coordinates')
-            logging.info('%s', '+'*40)
-        except:
-            e = sys.exc_info()[1]
-            logging.critical('matlab_import_coordinates CRASHED')
-            self.__crash(e)
-
-    def __import_coordinates_from_csv(self, ifn):
-        """
-        """
-        logging.info('Importing coordinates')
-        reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
-        for row in reader:
-            C = Coordinates(id          = row[0],
-                            pdb         = row[1],
-                            pdb_type    = row[2],
-                            model       = row[3],
-                            chain       = row[4],
-                            number      = row[5],
-                            unit        = row[6],
-                            ins_code    = row[7],
-                            coordinates = row[8])
-            try:
-                session.add(C)
-            except:
-                logging.warning('Merging for %s', C.id)
-                session.merge(C)
-        session.commit()
-        os.remove(ifn)
-        logging.info('Csv file successfully imported')
-
-    def __delete_coordinates(self, pdb_list):
-        """recalculate everything, delete what's already in the database"""
-        logging.info('Deleting existing records before recalculation %s',
-                     ','.join(pdb_list))
-        for pdb_file in pdb_list:
-            session.query(Coordinates). \
-                    filter(Coordinates.pdb==pdb_file). \
-                    delete(synchronize_session=False)
-        session.commit()
-
-    def __filter_done_coordinates(self, pdb_list):
-        """find what pbds have already been analyzed, remove them from the list
-        so that they are not reanalyzed"""
-        logging.info('Filtering out processed coordinates')
-        done = []
-        for pdb_file in pdb_list:
-                if session.query(Coordinates). \
-                           filter(Coordinates.pdb==pdb_file). \
-                           first() is not None:
-                    done.append(pdb_file)
-        [pdb_list.remove(x) for x in done]
-        if done:
-            logging.info('Already in the database: ' + ','.join(done))
-        else:
-            logging.info('No stored coordinates found')
-        if pdb_list:
-            logging.info('New files to analyze: ' + ','.join(pdb_list))
-        else:
-            logging.info('No new files to analyze')
-
-    ############################################################################
     def import_coordinates(self):
         ifn = self.f['coordinates']
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')

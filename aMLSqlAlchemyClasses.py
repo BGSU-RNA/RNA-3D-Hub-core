@@ -238,6 +238,23 @@ class AllLoops(Base):
         return "<Loop('%s','%s')>" % (self.id, self.seq)
 
 
+class PdbAnalysisStatus(Base):
+    """ To keep track of what pdb files were analyzed and when. Will help to
+        determine what programs need to be rerun if the algorithms or the
+        annotations change. `pdb_file` is added to the primary key in order to
+        keep track of asymmetric units and biological assemblies."""
+    __tablename__ = 'pdb_analysis_status'
+    id          = Column(String(4),  primary_key=True)
+#     pdb_file    = Column(String(10), primary_key=True)
+    distances   = Column(DateTime)
+    coordinates = Column(DateTime)
+    il          = Column(DateTime)
+    hl          = Column(DateTime)
+    j3          = Column(DateTime)
+    qa          = Column(DateTime)
+    motifs      = Column(DateTime)
+
+
 class LoopModifications(Base):
     """
     """
