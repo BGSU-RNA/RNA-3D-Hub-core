@@ -1,20 +1,19 @@
 %==========================================================================
 % Extracts all RNA 3D motifs of a specified loopType from a set of PDB files.
-% Input: folder, motif loopType (IL, HL, 3WJ, 4WJ etc), PDB files (optional).
-% By default 1S72 is searched. PDB files can be specified as a cell array
-% or as a list (must be located in /PDBFiles).
+% Input: pdb id, motif loopType (IL, HL, J3, J4 etc).
+% Returns loops as a structure array or 0 if no loops were found.
 % All motifs, including noncontiguous and ncWW are stored. Postprocessing 
 % should be done separately.
-% Use J3, J4 etc to search for junctions
 %==========================================================================
 function [Loops, L, err_msg] = aGetLoops(pdb_id,loopType)
 
     global loop_type;
+
     try
-        loop_type = loopType;        
-        Loops = [];
-        L = 0;
-        err_msg = '';        
+        loop_type = upper(loopType);
+        Loops     = 0;
+        L         = 0;
+        err_msg   = '';        
         
         if strcmp(loopType,'IL')
             Loops = aCombinedInternalLoopSearch(pdb_id);        
@@ -25,6 +24,7 @@ function [Loops, L, err_msg] = aGetLoops(pdb_id,loopType)
         end
 
         L = length(Loops);
+        aCleanUp;
 
     catch err
         err_msg = sprintf('Error "%s" in aGetLoops on line %i (%s)\n', ...
@@ -74,8 +74,9 @@ function [Loops] = aWriteMatAndPdbFiles(Search)
         if strcmp(loop_type,'IL')
             File.chain_breaks = find(range==Search.Candidates(i,2));
         elseif strcmp(loop_type,'J3')
-            File.chain_breaks = figure_out_later;
-        else % a hairpin
+            File.chain_breaks = find(range==Search.Candidates(i,2) | ...
+                                     range==Search.Candidates(i,4));
+        elseif strcmp(loop_type,'HL') % a hairpin
             File.chain_breaks = [];
         end        
         
@@ -93,7 +94,7 @@ function [Loops] = aWriteMatAndPdbFiles(Search)
             File.AllLoops_table.r_seq = '';
             File.AllLoops_table.nwc   = ''; %seq(2:end-1);
             File.AllLoops_table.r_nwc = '';            
-        else % HL
+        elseif strcmp(loop_type,'HL')
             File.AllLoops_table.seq   = nt_seq;
             File.AllLoops_table.r_seq = '';
             File.AllLoops_table.nwc   = File.AllLoops_table.seq(2:end-1);
@@ -101,9 +102,9 @@ function [Loops] = aWriteMatAndPdbFiles(Search)
         end
                        
         if i == 1
-            Loops = File;
+            Loops(1:length(Search.Candidates(:,1))) = File;
         else
-            Loops = [Loops File];
+            Loops(i) = File; %#ok<AGROW>
         end
                 
     end        
@@ -112,16 +113,11 @@ end
 %==========================================================================
 % Run HL or JL searches depending on the query passed.
 %==========================================================================
-function [] = aRunHLorJLSearches(Query,filesToSearch)
+function [Loops] = aRunHLorJLSearches(Query,pdb_id)
 
-    for i = 1:length(filesToSearch)
-        Query.SearchFiles = filesToSearch{i};
-        Search = aFR3DSearch(Query);
-        if isfield(Search,'Candidates') && ~isempty(Search.Candidates)
-            aProcessSearchData(Search);
-        end        
-        aSaveAndCleanUp(filesToSearch{i},{Query.Name});
-    end    
+    Query.SearchFiles = pdb_id;
+    Search = aFR3DSearch(Query);
+    Loops = aProcessSearchData(Search);
     
 end
 
@@ -130,9 +126,13 @@ end
 %==========================================================================
 function [Loops] = aProcessSearchData(Search)
 
-    Search = aFilterDuplicates(Search);             
-    Search.File = zAddNTData(Search.Query.SearchFiles); % load temporarily      
-    Loops = aWriteMatAndPdbFiles(Search);    
+    if isfield(Search,'Candidates') && ~isempty(Search.Candidates)
+        Search = aFilterDuplicates(Search);             
+        Search.File = zAddNTData(Search.Query.SearchFiles); % load temporarily      
+        Loops = aWriteMatAndPdbFiles(Search);    
+    else
+        Loops = 0;
+    end
 
 end
 
@@ -141,8 +141,6 @@ end
 %==========================================================================
 function [Loops] = aCombinedInternalLoopSearch(pdb_id)
     
-    Loops = struct();
-
     Query1 = aSetUpAlphaLoopQuery();        
     Query2 = aSetUpSixNTLoopQuery();                
             
@@ -158,9 +156,8 @@ function [Loops] = aCombinedInternalLoopSearch(pdb_id)
     end    
 
     Search = aMergeSearches(S1,S2); 
-    if isfield(Search,'Candidates') && ~isempty(Search.Candidates)
-        Loops = aProcessSearchData(Search);
-    end
+
+    Loops = aProcessSearchData(Search);
             
 end
 
@@ -230,7 +227,7 @@ end
 %==========================================================================
 % Generic hairpin search.
 %==========================================================================
-function [] = aFlankHairpinSearch(filesToSearch)
+function [Loops] = aFlankHairpinSearch(pdb_id)
     
     Query = aSetUpGenericQuery();    
     Query.Name = 'Hairpins';
@@ -244,14 +241,14 @@ function [] = aFlankHairpinSearch(filesToSearch)
     
     Query.Diagonal = {'N','N'};
 
-    aRunHLorJLSearches(Query,filesToSearch); 
+    Loops = aRunHLorJLSearches(Query,pdb_id); 
             
 end
 
 %==========================================================================
 % Generic junction searches.
 %==========================================================================
-function [] = aFlankJunctionSearch(filesToSearch,loopType)
+function [Loops] = aFlankJunctionSearch(pdb_id,loopType)
 
     Query = aSetUpGenericQuery();
     Query.Name = 'Junctions';
@@ -271,9 +268,9 @@ function [] = aFlankJunctionSearch(filesToSearch,loopType)
     Query.Edges{1,end} = 'flank';
     Query.Diagonal(1:Query.NumNT) = {'N'};           
     
-    aRunHLorJLSearches(Query,filesToSearch);  
+    Loops = aRunHLorJLSearches(Query,pdb_id);  
     
-    aSaveAndCleanUp(filesToSearch,{Query.Name});    
+%     aSaveAndCleanUp(filesToSearch,{Query.Name});    
         
 end
 
@@ -311,10 +308,11 @@ function [range] = aGetRange(row)
 
 end
 
-function [] = aSaveAndCleanUp(filesToDelete)
+function [] = aCleanUp()
         
+    filesToDelete = {'Hairpins','SixNtIL','Junctions','AlphaLoopSearch'};
     for i = 1:length(filesToDelete)
-        filename = [Param.location filesep filesToDelete{i} '.mat'];
+        filename = [filesToDelete{i} '.mat'];
         if exist(filename,'file')
             delete(filename);
         end
