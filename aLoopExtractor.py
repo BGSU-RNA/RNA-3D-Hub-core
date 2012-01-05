@@ -82,23 +82,24 @@ class LoopExtractor(MotifAtlasBaseClass):
                              pdb_file      = Loops[i].PDBFilename,
                              nt_ids        = Loops[i].AllLoops_table.full_id,
                              loop_name     = Loops[i].AllLoops_table.loop_name))
-
+            self.save_mat_files(Loops)
             self.mark_pdb_as_analyzed(pdb_id, loop_type)
             logging.info('%s from %s successfully imported', loop_type, pdb_id)
-
-            """Pass the Loops structure array back to matlab so that it can
-            save the .mat files in the specified location."""
-            MotifAtlasBaseClass._setup_matlab(self)
-            [status, err_msg] = self.mlab.aSaveLoops(Loops,
-                                                     self.config['loops_mat_files'],
-                                                     nout=2)
-            if status == 0:
-                logging.info('mat files saved')
-            else:
-                MotifAtlasBaseClass._crash(self,err_msg)
         except:
             e = sys.exc_info()[1]
             MotifAtlasBaseClass._crash(self,e)
+
+    def save_mat_files(self,Loops):
+        """Pass the Loops structure array back to matlab so that it can
+        save the .mat files in the specified location."""
+        MotifAtlasBaseClass._setup_matlab(self)
+        [status, err_msg] = self.mlab.aSaveLoops(Loops,
+                                                 self.config['locations']['loops_mat_files'],
+                                                 nout=2)
+        if status == 0:
+            logging.info('mat files saved')
+        else:
+            MotifAtlasBaseClass._crash(self,err_msg)
 
     def _get_loop_id(self, full_id, pdb_id, loop_type):
         """returns a loop id"""

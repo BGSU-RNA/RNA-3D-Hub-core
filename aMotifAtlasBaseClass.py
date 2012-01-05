@@ -58,30 +58,38 @@ class MotifAtlasBaseClass:
         """
         """
         try:
-            logging.info('Inside import_config')
+            logging.info('Importing configuration')
             config = ConfigParser.RawConfigParser()
             config.read(self.configfile)
             """email settings"""
-            self.config['email']['from']     = config.get('Email', 'from')
-            self.config['email']['to']       = config.get('Email', 'to')
-            self.config['email']['login']    = config.get('Email', 'login')
-            self.config['email']['password'] = config.get('Email', 'password')
+            section = 'email'
+            keys = ['from','to','login','password','subject']
+            for k in keys: self.config[section][k] = config.get(section,k)
+#             self.config['email']['from']     = config.get('Email', 'from')
+#             self.config['email']['to']       = config.get('Email', 'to')
+#             self.config['email']['login']    = config.get('Email', 'login')
+#             self.config['email']['password'] = config.get('Email', 'password')
             """recalculation settings"""
-            self.config['recalculate']['coordinates'] = config.getboolean('Recalculate', 'coordinates')
-            self.config['recalculate']['distances']   = config.getboolean('Recalculate', 'distances')
-            self.config['recalculate']['IL']          = config.getboolean('Recalculate', 'IL')
-            self.config['recalculate']['HL']          = config.getboolean('Recalculate', 'HL')
-            self.config['recalculate']['J3']          = config.getboolean('Recalculate', 'J3')
+            section = 'recalculate'
+            keys = ['coordinates','distances','IL','HL','J3']
+            for k in keys: self.config[section][k] = config.getboolean(section,k)
+#             self.config['recalculate']['coordinates'] = config.getboolean('Recalculate', 'coordinates')
+#             self.config['recalculate']['distances']   = config.getboolean('Recalculate', 'distances')
+#             self.config['recalculate']['IL']          = config.getboolean('Recalculate', 'IL')
+#             self.config['recalculate']['HL']          = config.getboolean('Recalculate', 'HL')
+#             self.config['recalculate']['J3']          = config.getboolean('Recalculate', 'J3')
             """logging"""
             self.config['logfile'] = 'motifatlas.log'
             """locations"""
-            self.config['loops_mat_files'] = config.get('Locations','loops_mat_files')
-
-            logging.info('Leaving import_config')
-            logging.info('%s', '+'*40)
+            self.config['loops_mat_files'] = config.get('locations','loops_mat_files')
+            """release modes"""
+            section = 'release_mode'
+            keys = ['loops','motifs','nrlist']
+            for k in keys: self.config[section][k] = config.get(section,k)
+            logging.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
-            self.crash(e)
+            self._crash(e)
 
     def send_report(self):
         """
@@ -90,8 +98,8 @@ class MotifAtlasBaseClass:
             fp = open(self.logfile, 'rb')
             msg = MIMEText(fp.read())
             fp.close()
-
-            msg['Subject'] = 'Motif Atlas Update ' + date.today().isoformat()
+            msg['Subject'] = ' '.join([self.config['Email']['subject'],
+                                       date.today().isoformat()])
             server = smtplib.SMTP('smtp.gmail.com:587')
             server.ehlo()
             server.starttls()
@@ -101,7 +109,7 @@ class MotifAtlasBaseClass:
             server.quit()
         except:
             e = sys.exc_info()[1]
-            self.crash(e)
+            self._crash(e)
 
     def _crash(self, msg=None):
         """

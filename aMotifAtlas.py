@@ -15,7 +15,7 @@ from aDistancesAndCoordinatesLoader import DistancesAndCoordinatesLoader
 # from aLoopLoader    import LoopLoader
 from aPdbInfoLoader import PdbInfoLoader
 from aLoopExtractor import LoopExtractor
-
+from aLoopQualityChecker import LoopQualityChecker
 
 def usage():
     print __doc__
@@ -36,16 +36,18 @@ def main(argv):
 #     P.update_rna_containing_pdbs()
     """import coordinates and distances into the database"""
     D = DistancesAndCoordinatesLoader()
-    D.import_distances(P.pdbs[0:3],False)
-    D.import_coordinates(P.pdbs[0:3],False)
+    D.import_distances(P.pdbs[1:5], recalculate=False)
+    D.import_coordinates(P.pdbs[1:5],recalculate=False)
     """extract all loops and import into the database"""
     E = LoopExtractor()
-    E.extract_and_import_loops(P.pdbs[0:3])
-
+    E.extract_and_import_loops(P.pdbs[1:5])
+    """do loop QA, import into the database"""
+    Q = LoopQualityChecker()
+    Q.check_loop_quality(P.pdbs[1:5])
 
 # compute new non-redundant lists, import into the database
 
-# do loop QA, import into the database
+
 
 # get a list of loops to be clustered
 
@@ -62,7 +64,7 @@ def main(argv):
 
 
     logging.info('SUCCESSFUL UPDATE')
-    E.send_report()
+#     E.send_report()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
