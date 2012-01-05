@@ -81,7 +81,7 @@ class MotifAtlasBaseClass:
             """logging"""
             self.config['logfile'] = 'motifatlas.log'
             """locations"""
-            self.config['loops_mat_files'] = config.get('locations','loops_mat_files')
+            self.config['locations']['loops_mat_files'] = config.get('locations','loops_mat_files')
             """release modes"""
             section = 'release_mode'
             keys = ['loops','motifs','nrlist']
@@ -91,11 +91,11 @@ class MotifAtlasBaseClass:
             e = sys.exc_info()[1]
             self._crash(e)
 
-    def send_report(self):
+    def send_report(self, logfile):
         """
         """
         try:
-            fp = open(self.logfile, 'rb')
+            fp = open(logfile, 'rb')
             msg = MIMEText(fp.read())
             fp.close()
             msg['Subject'] = ' '.join([self.config['Email']['subject'],
@@ -108,8 +108,7 @@ class MotifAtlasBaseClass:
             server.sendmail(self.config['email']['from'], self.config['email']['to'], msg.as_string())
             server.quit()
         except:
-            e = sys.exc_info()[1]
-            self._crash(e)
+            sys.exit(2)
 
     def _crash(self, msg=None):
         """
@@ -120,4 +119,5 @@ class MotifAtlasBaseClass:
             session.rollback()
         except:
             pass
+        self.send_report('motifatlas.log')
         sys.exit(2)
