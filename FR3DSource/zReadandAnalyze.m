@@ -340,6 +340,7 @@ while i <= length(NTNUMBER),                 % go through all atoms
       Het(hh+hhh-1).Loc        = P(j(hhh),1:3);
       Het(hh+hhh-1).Beta       = P(j(hhh),4);
       Het(hh+hhh-1).Center     = P(j(hhh),1:3);
+      Het(hh+hhh-1).ModelNum   = ModelNum(j(hhh)); %Anton 1/4/2012
     end
     hh = hh + length(j);
 

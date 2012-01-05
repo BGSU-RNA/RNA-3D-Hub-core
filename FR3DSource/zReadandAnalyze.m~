@@ -311,7 +311,7 @@ while i <= length(NTNUMBER),                 % go through all atoms
     AA(aa).Beta       = P(j,4);
     k = min(4,length(j));
     AA(aa).Center     = mean(P(j(1:k),1:3),1); % backbone center
-    AA(aa).ModelNum   = ModelNum(j(1));     % Anton 
+    AA(aa).ModelNum   = ModelNum(j(1));     % Anton 9/14/2011
     
     aa = aa + 1;
     UnitType = 2;
@@ -340,6 +340,7 @@ while i <= length(NTNUMBER),                 % go through all atoms
       Het(hh+hhh-1).Loc        = P(j(hhh),1:3);
       Het(hh+hhh-1).Beta       = P(j(hhh),4);
       Het(hh+hhh-1).Center     = P(j(hhh),1:3);
+      Het(hh+hhh-1).Mod     = P(j(hhh),1:3);      
     end
     hh = hh + length(j);
 
