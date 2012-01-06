@@ -1,5 +1,5 @@
 import pdb, sys, getopt, os, re
-from aMLSqlAlchemyClasses import *
+from MLSqlAlchemyClasses import *
 from sqlalchemy import distinct
 
 # pdbfiles = ['1S72','2ZJR']

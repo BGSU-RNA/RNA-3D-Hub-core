@@ -7,8 +7,8 @@ About
 __author__ = 'Anton Petrov'
 
 import os, csv, pdb, sys, getopt, logging
-from aMLSqlAlchemyClasses import session, Distances, Coordinates
-from aMotifAtlasBaseClass import MotifAtlasBaseClass
+from MLSqlAlchemyClasses import session, Distances, Coordinates
+from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
 class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):

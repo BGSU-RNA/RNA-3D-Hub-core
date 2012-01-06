@@ -8,8 +8,8 @@ __author__ = 'Anton Petrov'
 
 import pdb, sys, getopt, logging, datetime
 
-from aMLSqlAlchemyClasses import session, LoopQA, LoopRelease, LoopModifications
-from aMotifAtlasBaseClass import MotifAtlasBaseClass
+from MLSqlAlchemyClasses import session, LoopQA, LoopRelease, LoopModifications
+from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
 class LoopQualityChecker(MotifAtlasBaseClass):

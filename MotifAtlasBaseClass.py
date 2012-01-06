@@ -7,7 +7,7 @@ About
 __author__ = 'Anton Petrov'
 
 import sys, logging, smtplib, ConfigParser, collections, datetime
-from aMLSqlAlchemyClasses import session, PdbAnalysisStatus
+from MLSqlAlchemyClasses import session, PdbAnalysisStatus
 
 class MotifAtlasBaseClass:
     """

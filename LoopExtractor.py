@@ -7,8 +7,8 @@ About
 __author__ = 'Anton Petrov'
 
 import os, csv, pdb, sys, getopt, logging, datetime
-from aMLSqlAlchemyClasses import session, AllLoops
-from aMotifAtlasBaseClass import MotifAtlasBaseClass
+from MLSqlAlchemyClasses import session, AllLoops
+from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
 class LoopExtractor(MotifAtlasBaseClass):

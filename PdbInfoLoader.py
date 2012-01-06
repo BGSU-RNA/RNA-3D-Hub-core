@@ -8,7 +8,7 @@ __author__ = 'Anton Petrov'
 
 import pdb, csv, logging, re, sys
 import urllib2
-from aMLSqlAlchemyClasses import session, PdbInfo
+from MLSqlAlchemyClasses import session, PdbInfo
 
 
 class PdbInfoLoader():

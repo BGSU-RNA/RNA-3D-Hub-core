@@ -13,7 +13,7 @@ python aPyMotifLoader.py
 """
 
 import pdb, sys, getopt, os, re
-from aNRSqlAlchemyClasses import *
+from NRSqlAlchemyClasses import *
 
 __author__ = 'Anton Petrov'
 

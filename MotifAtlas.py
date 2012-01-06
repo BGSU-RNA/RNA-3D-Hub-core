@@ -8,11 +8,11 @@ __author__ = 'Anton Petrov'
 
 import sys, getopt, logging
 
-from aMLSqlAlchemyClasses import *
-from aDistancesAndCoordinatesLoader import DistancesAndCoordinatesLoader
-from aPdbInfoLoader import PdbInfoLoader
-from aLoopExtractor import LoopExtractor
-from aLoopQualityChecker import LoopQualityChecker
+from MLSqlAlchemyClasses import *
+from DistancesAndCoordinatesLoader import DistancesAndCoordinatesLoader
+from PdbInfoLoader import PdbInfoLoader
+from LoopExtractor import LoopExtractor
+from LoopQualityChecker import LoopQualityChecker
 
 
 def usage():

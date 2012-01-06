@@ -18,7 +18,7 @@ python aMLMotifLoader.py
 """
 
 import pdb, sys, getopt, os, re, fnmatch
-from aMLSqlAlchemyClasses import *
+from MLSqlAlchemyClasses import *
 
 __author__ = 'Anton Petrov'
 
