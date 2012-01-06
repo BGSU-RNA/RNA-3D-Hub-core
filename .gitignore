@@ -29,5 +29,6 @@ dwsync.xml
 publish
 .idea
 
+pylint.html
 ignored/*
 temp.csv
