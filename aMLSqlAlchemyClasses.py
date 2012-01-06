@@ -289,7 +289,7 @@ class LoopQA(Base):
         self.id = id
         self.release_id = release_id
         self.complementary = self_compl
-        self.original_code = code
+        self.original_code = int(code)
         if code == 1:
             self.valid         = 1
             self.modified_nt   = 0
