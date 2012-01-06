@@ -34,8 +34,8 @@ def main(argv):
 #     P.update_rna_containing_pdbs()
     """import coordinates and distances into the database"""
     D = DistancesAndCoordinatesLoader()
-    D.import_distances(P.pdbs[1:200], recalculate=False)
-    D.import_coordinates(P.pdbs[1:200],recalculate=False)
+    D.import_distances(P.pdbs[1:200])
+    D.import_coordinates(P.pdbs[1:200])
     """extract all loops and import into the database"""
     E = LoopExtractor()
     E.extract_and_import_loops(P.pdbs[1:200])
@@ -60,7 +60,7 @@ def main(argv):
 
 
     logging.info('SUCCESSFUL UPDATE')
-    E.send_report('motifatlas.log')
+#     E.send_report('motifatlas.log')
 
 if __name__ == "__main__":
     main(sys.argv[1:])

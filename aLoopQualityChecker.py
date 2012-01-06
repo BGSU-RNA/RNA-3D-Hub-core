@@ -6,9 +6,9 @@ About
 
 __author__ = 'Anton Petrov'
 
-import os, csv, pdb, sys, getopt, logging, datetime
-from aMLSqlAlchemyClasses import session, AllLoops, LoopQA, LoopRelease, \
-                                 LoopModifications, AllLoops
+import pdb, sys, getopt, logging, datetime
+
+from aMLSqlAlchemyClasses import session, LoopQA, LoopRelease, LoopModifications
 from aMotifAtlasBaseClass import MotifAtlasBaseClass
 
 
@@ -46,9 +46,14 @@ class LoopQualityChecker(MotifAtlasBaseClass):
             MotifAtlasBaseClass._crash(self,err_msg)
 
         for i in xrange(L):
-            session.add(LoopQA(id=result[i].id, code=result[i].status,
-                               self_compl=result[i].self_compl,
-                               release_id=release_id))
+            session.add(LoopQA(id   = result[i].id,
+                               code = result[i].status,
+                               self_compl = result[i].self_compl,
+                               release_id = release_id))
+            if result[i].modres != '':
+                session.add(LoopModifications(id = result[i].id,
+                                              modification = result[i].modres,
+                                              release_id   = release_id))
         session.commit()
         self.mark_pdb_as_analyzed(pdb_id,'qa')
 

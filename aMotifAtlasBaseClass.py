@@ -19,6 +19,16 @@ class MotifAtlasBaseClass:
         self.configfile = '/Users/anton/Dropbox/Code/PyMotifLoader/motifatlas.cfg'
         self.import_config()
 
+    def _setup_matlab(self):
+        if self.mlab:
+            return
+        logging.info('Starting up matlab')
+        from mlabwrap import mlab
+        self.mlab = mlab
+        self.mlab.setup()
+        # self.mlab._dont_proxy["cell"] = True
+        logging.info('Matlab started')
+
     def filter_out_analyzed_pdbs(self, pdbs, column_name):
         """Checks whether the pdb files were processed . Returns only the files
         that need to be analyzed. The `column_name` parameters corresponds to
@@ -44,16 +54,6 @@ class MotifAtlasBaseClass:
         session.commit()
         logging.info('Updated %s status for pdb %s', column_name, pdb_id)
 
-    def _setup_matlab(self):
-        if self.mlab:
-            return
-        logging.info('Starting up matlab')
-        from mlabwrap import mlab
-        self.mlab = mlab
-        self.mlab.setup()
-        # self.mlab._dont_proxy["cell"] = True
-        logging.info('Matlab started')
-
     def import_config(self):
         """
         """
@@ -65,19 +65,10 @@ class MotifAtlasBaseClass:
             section = 'email'
             keys = ['from','to','login','password','subject']
             for k in keys: self.config[section][k] = config.get(section,k)
-#             self.config['email']['from']     = config.get('Email', 'from')
-#             self.config['email']['to']       = config.get('Email', 'to')
-#             self.config['email']['login']    = config.get('Email', 'login')
-#             self.config['email']['password'] = config.get('Email', 'password')
             """recalculation settings"""
             section = 'recalculate'
             keys = ['coordinates','distances','IL','HL','J3']
             for k in keys: self.config[section][k] = config.getboolean(section,k)
-#             self.config['recalculate']['coordinates'] = config.getboolean('Recalculate', 'coordinates')
-#             self.config['recalculate']['distances']   = config.getboolean('Recalculate', 'distances')
-#             self.config['recalculate']['IL']          = config.getboolean('Recalculate', 'IL')
-#             self.config['recalculate']['HL']          = config.getboolean('Recalculate', 'HL')
-#             self.config['recalculate']['J3']          = config.getboolean('Recalculate', 'J3')
             """logging"""
             self.config['logfile'] = 'motifatlas.log'
             """locations"""

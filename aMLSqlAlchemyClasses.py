@@ -263,9 +263,10 @@ class LoopModifications(Base):
     id           = Column(String(11), primary_key=True)
     modification = Column(Text)
 
-    def __init__(self, id = '', modification = ''):
+    def __init__(self, id = '', modification = '', release_id=None):
         self.id = id
         self.modification = modification
+        self.release_id   = release_id
 
     def __repr__(self):
         return "<Modified('%s','%s')>" % (self.id, self.modification)
@@ -275,19 +276,20 @@ class LoopQA(Base):
     """
     """
     __tablename__ = 'loop_qa'
-    # IL_1C2W_062,1
     # 1 - valid, 2 - missing, 3 - modified
     id    = Column(String(11), primary_key=True)
     valid = Column(Boolean)
     modified_nt    = Column(Boolean)
     missing_nt     = Column(Boolean)
-    complementary  = Column(Boolean);
+    complementary  = Column(Boolean)
+    original_code  = Column(Integer)
     release_id     = Column(String(4), primary_key=True)
 
     def __init__(self, id='', code=0, self_compl=0, release_id=''):
         self.id = id
         self.release_id = release_id
         self.complementary = self_compl
+        self.original_code = code
         if code == 1:
             self.valid         = 1
             self.modified_nt   = 0
@@ -304,7 +306,6 @@ class LoopQA(Base):
             self.valid         = 0
             self.modified_nt   = 0
             self.missing_nt    = 0
-
 
     def __repr__(self):
         return "<LoopQA('%s','%s','%s')>" % (self.id, self.valid,self.release_id)
