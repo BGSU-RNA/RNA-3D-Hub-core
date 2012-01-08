@@ -262,6 +262,7 @@ class LoopModifications(Base):
     # IL_1C2W_062,7MG
     id           = Column(String(11), primary_key=True)
     modification = Column(Text)
+    release_id   = Column(String(4), primary_key=True)
 
     def __init__(self, id = '', modification = '', release_id=None):
         self.id = id

@@ -31,16 +31,16 @@ def main(argv):
     p = PdbInfoLoader()
     p.get_all_rna_pdbs()
 #     P.update_rna_containing_pdbs()
-    """import coordinates and distances into the database"""
-    d = DistancesAndCoordinatesLoader()
-    d.import_distances(P.pdbs[1:200])
-    d.import_coordinates(P.pdbs[1:200])
     """extract all loops and import into the database"""
     e = LoopExtractor()
-    e.extract_and_import_loops(P.pdbs[1:200])
+    e.extract_and_import_loops(p.pdbs)
     """do loop QA, import into the database"""
     q = LoopQualityChecker()
-    q.check_loop_quality(P.pdbs[1:200])
+    q.check_loop_quality(p.pdbs)
+    """import coordinates and distances into the database"""
+    d = DistancesAndCoordinatesLoader()
+    d.import_distances(p.pdbs)
+    d.import_coordinates(p.pdbs)
 
     # compute new non-redundant lists, import into the database
 

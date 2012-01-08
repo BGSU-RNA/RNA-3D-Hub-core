@@ -69,7 +69,8 @@ def main(argv):
     Q = LoopQualityChecker()
 
 #     pdbs = ['1HLX','124D','2AW4']
-    pdbs = ['1HLX']
+#     pdbs = ['1HLX']
+    pdbs = ['1ASY']
 
     Q.check_loop_quality(pdbs)
 
