@@ -255,58 +255,22 @@ class PdbAnalysisStatus(Base):
     motifs      = Column(DateTime)
 
 
-class LoopModifications(Base):
-    """
-    """
-    __tablename__ = 'loop_modifications'
-    # IL_1C2W_062,7MG
-    id           = Column(String(11), primary_key=True)
-    modification = Column(Text)
-    release_id   = Column(String(4), primary_key=True)
-
-    def __init__(self, id = '', modification = '', release_id=None):
-        self.id = id
-        self.modification = modification
-        self.release_id   = release_id
-
-    def __repr__(self):
-        return "<Modified('%s','%s')>" % (self.id, self.modification)
-
-
 class LoopQA(Base):
     """
+    1 - valid loop
+    2 - missing nucleotides
+    3 - modified nucleotides
+    4 - abnormal chain number
+    5 - incomplete nucleotides
+    6 - self-complementary internal loop
     """
     __tablename__ = 'loop_qa'
-    # 1 - valid, 2 - missing, 3 - modified
-    id    = Column(String(11), primary_key=True)
-    valid = Column(Boolean)
-    modified_nt    = Column(Boolean)
-    missing_nt     = Column(Boolean)
-    complementary  = Column(Boolean)
-    original_code  = Column(Integer)
-    release_id     = Column(String(4), primary_key=True)
-
-    def __init__(self, id='', code=0, self_compl=0, release_id=''):
-        self.id = id
-        self.release_id = release_id
-        self.complementary = self_compl
-        self.original_code = int(code)
-        if code == 1:
-            self.valid         = 1
-            self.modified_nt   = 0
-            self.missing_nt    = 0
-        elif code == 2:
-            self.valid         = 0
-            self.modified_nt   = 0
-            self.missing_nt    = 1
-        elif code == 3:
-            self.valid         = 0
-            self.modified_nt   = 1
-            self.missing_nt    = 0
-        else:
-            self.valid         = 0
-            self.modified_nt   = 0
-            self.missing_nt    = 0
+    id     = Column(String(11), primary_key=True)
+    status = Column(Integer)
+    modifications = Column(Text)
+    nt_signature  = Column(Text)
+    complementary = Column(Text)
+    release_id = Column(String(4), primary_key=True)
 
     def __repr__(self):
         return "<LoopQA('%s','%s','%s')>" % (self.id, self.valid,self.release_id)

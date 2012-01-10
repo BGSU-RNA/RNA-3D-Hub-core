@@ -8,7 +8,7 @@ __author__ = 'Anton Petrov'
 
 import pdb, sys, getopt, logging, datetime
 
-from MLSqlAlchemyClasses import session, LoopQA, LoopRelease, LoopModifications
+from MLSqlAlchemyClasses import session, LoopQA, LoopRelease
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
@@ -46,14 +46,12 @@ class LoopQualityChecker(MotifAtlasBaseClass):
             MotifAtlasBaseClass._crash(self,err_msg)
 
         for i in xrange(L):
-            session.add(LoopQA(id   = result[i].id,
-                               code = result[i].status,
-                               self_compl = result[i].self_compl,
+            session.add(LoopQA(id     = result[i].id,
+                               status = int(result[i].status[0][0]),
+                               modifications = result[i].modres,
+                               nt_signature  = result[i].nt_sig,
+                               complementary = result[i].compl,
                                release_id = release_id))
-            if result[i].modres != '':
-                session.add(LoopModifications(id = result[i].id,
-                                              modification = result[i].modres,
-                                              release_id   = release_id))
         session.commit()
         self.mark_pdb_as_analyzed(pdb_id,'qa')
 
