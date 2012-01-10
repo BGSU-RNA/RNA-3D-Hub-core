@@ -31,6 +31,17 @@ function [FILENAME, status, err_msg] = aGetDistances(pdb_id)
             F.Het = [];
         end
 
+        % 
+        het_ids ={};
+        for i = 1:length(F.Het)
+            het_ids{end+1}=aGetHetId(F,i);
+        end
+        if length(unique(het_ids)) ~= length(het_ids)
+            F = zAddNTData([pdb_id '.pdb']);
+            F.Het = aParseHetEntities(F);
+        end
+        %
+        
         N = length(F.NT);
         A = length(F.AA);
         H = length(F.Het);        
