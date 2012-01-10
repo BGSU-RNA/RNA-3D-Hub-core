@@ -46,11 +46,16 @@ class LoopQualityChecker(MotifAtlasBaseClass):
             MotifAtlasBaseClass._crash(self,err_msg)
 
         for i in xrange(L):
+            modres = result[i].modres
+            if modres == '': modres = None
+            compl = result[i].compl
+            if compl == '': compl = None
+
             session.add(LoopQA(id     = result[i].id,
                                status = int(result[i].status[0][0]),
-                               modifications = result[i].modres,
+                               modifications = modres,
                                nt_signature  = result[i].nt_sig,
-                               complementary = result[i].compl,
+                               complementary = compl,
                                release_id = release_id))
         session.commit()
         self.mark_pdb_as_analyzed(pdb_id,'qa')
