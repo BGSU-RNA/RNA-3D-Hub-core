@@ -20,7 +20,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [result, L, err_msg] = aLoopQualityAssurance(pdb_id)
+function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
     % status codes
     VALID      = 1;    
@@ -32,9 +32,9 @@ function [result, L, err_msg] = aLoopQualityAssurance(pdb_id)
 
     try
         % initialize return values
+        FILENAME = 'LoopQA.csv';
         result  = struct();
         err_msg = '';
-        L = 0;         
         
         LOOPMATFILES = fullfile('MotifAtlas','PrecomputedData');
         
@@ -106,9 +106,11 @@ function [result, L, err_msg] = aLoopQualityAssurance(pdb_id)
                         end        
                     end
                 end
-            end
+            end                        
                                     
         end % loop over .mat files
+        
+        outputToCsv();        
 
     catch err
         err_msg = sprintf('Error "%s" on line %i (%s)\n', err.message, err.stack.line, pdb_id);
@@ -118,6 +120,18 @@ function [result, L, err_msg] = aLoopQualityAssurance(pdb_id)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Nested functions
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    function [] = outputToCsv()
+        
+        fid = fopen(FILENAME, 'w');
+        for i = 1:f
+            fprintf(fid, '"%s","%i","%s","%s","%s"\n', result(i).id, ...
+                    result(i).status, result(i).modres, result(i).nt_sig, ...
+                    result(i).compl);
+        end
+        fclose(fid);
+        
+    end
     
     function [disqualify] = missingNtsFound()
 
