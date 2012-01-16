@@ -22,6 +22,14 @@
 
 function [result, L, err_msg] = aLoopQualityAssurance(pdb_id)
 
+    % status codes
+    VALID      = 1;    
+    MISSING    = 2;
+    MODIFIED   = 3;
+    ABNORMAL   = 4;    
+    INCOMPLETE = 5;
+    SELFCOMPL  = 6;
+
     try
         % initialize return values
         result  = struct();
@@ -56,41 +64,43 @@ function [result, L, err_msg] = aLoopQualityAssurance(pdb_id)
             % some covalent_breaks are spurious. Nts are adjacent, 
             % but the covalent matrix says that they are not.
             
+            nt_sig = aImplode({File.NT.Number}); % nt signature            
+            result(f).nt_sig = nt_sig;            
+            
             if isempty(breaks) % no suspicious breaks
                 [isSelfComplementary, compl] = checkSelfComplementarity();
                 if isSelfComplementary
-                    result(f).status = 6;
+                    result(f).status = SELFCOMPL;
                     result(f).compl  = compl;
                     fprintf('Self-complementary %s: %s\n',File.Filename,compl);
                 else
-                    result(f).status = 1;
+                    result(f).status = VALID;
                 end
             else
-                nt_sig = aImplode({File.NT.Number}); % nt signature
+
                 fprintf('Suspicious loop %s, %s\n',File.Filename,nt_sig);                
-                result(f).nt_sig = nt_sig;                    
 
                 if foundChainAbnormalities % abnormalities in chain number
-                    result(f).status = 4;
+                    result(f).status = ABNORMAL;
                     fprintf('Abnormal chain number\n');
                 else
                     [real_breaks, modifications] = checkSuspiciousBreaks;            
 
                     if ~isempty(modifications)
                         modres = aImplode(modifications);
-                        result(f).status  = 3;
+                        result(f).status  = MODIFIED;
                         result(f).modres = modres;
                         fprintf('Modified nucleotides %s\n',modres);
                     else
                         if ~isempty(missing_ids) && missingNtsFound
-                            result(f).status = 2;
+                            result(f).status = MISSING;
                             fprintf('Missing nucleotides\n');                
                         else
                             if real_breaks > 0
-                                result(f).status = 5;
+                                result(f).status = INCOMPLETE;
                                 fprintf('Incomplete nucleotides\n');
                             else
-                                result(f).status = 1;
+                                result(f).status = VALID;
                                 fprintf('Valid loop\n');
                             end
                         end        
@@ -123,7 +133,7 @@ function [result, L, err_msg] = aLoopQualityAssurance(pdb_id)
 
         end
                 
-       % compare next_ids with missing ids.
+        % compare next_ids with missing ids.
         function [isMissing] = checkRemark465()
 
             % try to generate shortened ids of nucleotides that could follow NT
