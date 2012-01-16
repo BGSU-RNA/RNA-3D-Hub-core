@@ -6,7 +6,7 @@ About
 
 __author__ = 'Anton Petrov'
 
-import pdb, sys, getopt, logging, datetime
+import pdb, sys, getopt, logging, datetime, csv, os
 
 from MLSqlAlchemyClasses import session, LoopQA, LoopRelease
 from MotifAtlasBaseClass import MotifAtlasBaseClass
@@ -40,25 +40,36 @@ class LoopQualityChecker(MotifAtlasBaseClass):
         logging.info('QA on %s', pdb_id)
         MotifAtlasBaseClass._setup_matlab(self)
 
-        [result, L, err_msg] = self.mlab.aLoopQualityAssurance(pdb_id, nout=3)
+        [ifn, err_msg] = self.mlab.aLoopQualityAssurance(pdb_id, nout=2)
 
         if err_msg != '':
             MotifAtlasBaseClass._crash(self,err_msg)
+        else:
+            self.__import_qa_from_csv(ifn, release_id)
+            self.mark_pdb_as_analyzed(pdb_id,'qa')
 
-        for i in xrange(L):
-            modres = result[i].modres
+    def __import_qa_from_csv(self, ifn, release_id):
+        """Reads the csv file, imports all distances, deletes the file when done
+           to avoid stale data and free up disk space"""
+        logging.info('Importing qa')
+        reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
+        QA = []
+        for i, row in enumerate(reader):
+            modres = row[2]
             if modres == '': modres = None
-            compl = result[i].compl
+            compl = row[4]
             if compl == '': compl = None
 
-            session.add(LoopQA(id     = result[i].id,
-                               status = int(result[i].status[0][0]),
-                               modifications = modres,
-                               nt_signature  = result[i].nt_sig,
-                               complementary = compl,
-                               release_id = release_id))
+            QA.append(LoopQA(id     = row[0],
+                             status = row[1],
+                             modifications = modres,
+                             nt_signature  = row[3],
+                             complementary = compl,
+                             release_id = release_id))
+        os.remove(ifn)
+        session.add_all(QA)
         session.commit()
-        self.mark_pdb_as_analyzed(pdb_id,'qa')
+        logging.info('Csv file successfully imported')
 
 
 def usage():
