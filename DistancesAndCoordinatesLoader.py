@@ -162,10 +162,11 @@ def main(argv):
     logging.basicConfig(level=logging.DEBUG)
 
     pdbs = ['1EKA','1HLX','1A9N','1S72','2AVY']
+#     pdbs = ['1VSP', '1ML5'] # these pdbs have case-sensitive nt_ids
 
     D = DistancesAndCoordinatesLoader()
     D.import_distances(pdbs, recalculate=False)
-    D.import_coordinates(pdbs, recalculate=True)
+    D.import_coordinates(pdbs, recalculate=False)
 
 
 

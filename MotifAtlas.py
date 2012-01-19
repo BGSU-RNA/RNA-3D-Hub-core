@@ -35,8 +35,8 @@ def main(argv):
     e = LoopExtractor()
     e.extract_and_import_loops(p.pdbs)
     """do loop QA, import into the database"""
-    q = LoopQualityChecker()
-    q.check_loop_quality(p.pdbs)
+#     q = LoopQualityChecker()
+#     q.check_loop_quality(p.pdbs)
     """import coordinates and distances into the database"""
     d = DistancesAndCoordinatesLoader()
     d.import_distances(p.pdbs)

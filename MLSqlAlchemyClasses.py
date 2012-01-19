@@ -7,7 +7,7 @@ import random, datetime, math, sys, pdb, csv, os, shutil, collections
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
 
 import sqlalchemy.exc
 
@@ -181,7 +181,7 @@ class Coordinates(Base):
     """
     """
     __tablename__ = 'pdb_coordinates'
-    id          = Column(String(30), primary_key=True)
+    id          = Column(VARCHAR(30, binary=True), primary_key=True)
     pdb         = Column(String(4))
     pdb_type    = Column(String(4))
     model       = Column(Integer)
@@ -197,8 +197,8 @@ class Distances(Base):
     """
     """
     __tablename__ = 'pdb_distances'
-    id1      = Column(String(30), primary_key=True)
-    id2      = Column(String(30), primary_key=True)
+    id1      = Column(VARCHAR(30, binary=True), primary_key=True)
+    id2      = Column(VARCHAR(30, binary=True), primary_key=True)
     distance = Column(Float)
 
 
