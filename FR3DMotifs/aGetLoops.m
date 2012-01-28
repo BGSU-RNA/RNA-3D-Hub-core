@@ -142,7 +142,7 @@ end
 function [Loops] = aCombinedInternalLoopSearch(pdb_id)
     
     Query1 = aSetUpAlphaLoopQuery();        
-    Query2 = aSetUpSixNTLoopQuery();                
+    Query2 = aSetUpStandardInternalLoopQuery();                
             
     fprintf('%s\n',pdb_id);
     Query1.SearchFiles = pdb_id;
@@ -150,10 +150,6 @@ function [Loops] = aCombinedInternalLoopSearch(pdb_id)
 
     Query2.SearchFiles = pdb_id;
     S2 = aFR3DSearch(Query2);    
-
-    if isfield(S2,'Candidates') && ~isempty(S2.Candidates)
-        S2.Candidates = S2.Candidates(:,[1 3 4 6 7]);
-    end    
 
     Search = aMergeSearches(S1,S2); 
 
@@ -180,24 +176,23 @@ function [Query] = aSetUpAlphaLoopQuery()
         
 end
 
-function [Query] = aSetUpSixNTLoopQuery()
+function [Query] = aSetUpStandardInternalLoopQuery()
 
     Query = aSetUpGenericQuery();
-    Query.Name = 'SixNtIL';
+    Query.Name = 'StandardIL';
 
-    Query.NumNT = 6;
+    Query.NumNT = 4;
 
     Query.Edges = cell(Query.NumNT,Query.NumNT);
-    Query.Edges{1,3} = 'flank';	
-    Query.Edges{1,6} = 'cWW';	
-    Query.Edges{3,4} = 'cWW';		
-    Query.Edges{4,6} = 'flank';		
+    Query.Edges{1,4} = 'cWW';	
+    Query.Edges{1,2} = 'flankSS';
+    Query.Edges{2,3} = 'cWW';		
+    Query.Edges{3,4} = 'flank';		
 
     Query.Diff = cell(Query.NumNT,Query.NumNT);
-    Query.Diff{2,1} = '=1 >';
+    Query.Diff{2,1} = '>';
     Query.Diff{3,2} = '>';
-    Query.Diff{5,4} = '>';		
-    Query.Diff{6,5} = '=1 >';	
+    Query.Diff{4,3} = '>';		
 
     Query.Diagonal(1:Query.NumNT) = {'N'};
     
@@ -310,7 +305,7 @@ end
 
 function [] = aCleanUp()
         
-    filesToDelete = {'Hairpins','SixNtIL','Junctions','AlphaLoopSearch'};
+    filesToDelete = {'Hairpins','StandardIL','Junctions','AlphaLoopSearch'};
     for i = 1:length(filesToDelete)
         filename = [filesToDelete{i} '.mat'];
         if exist(filename,'file')
