@@ -13,7 +13,7 @@ if nargin < 2
         Search = [];
         return;
     end
-    Query = xConstructQuery(Query);
+    Query = xConstructQuery(Query, File);
 
 else
 
