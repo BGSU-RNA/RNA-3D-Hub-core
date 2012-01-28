@@ -190,9 +190,6 @@ function [Query] = aSetUpStandardInternalLoopQuery()
     Query.Edges{3,4} = 'flank';		
 
     Query.Diff = cell(Query.NumNT,Query.NumNT);
-    Query.Diff{2,1} = '>';
-    Query.Diff{3,2} = '>';
-    Query.Diff{4,3} = '>';		
 
     Query.Diagonal(1:Query.NumNT) = {'N'};
     
