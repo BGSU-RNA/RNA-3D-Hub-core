@@ -197,8 +197,8 @@ class Distances(Base):
     """
     """
     __tablename__ = 'pdb_distances'
-    id1      = Column(VARCHAR(30, binary=True), primary_key=True)
-    id2      = Column(VARCHAR(30, binary=True), primary_key=True)
+    id1      = Column(VARCHAR(30, binary=True), primary_key=True, index=True)
+    id2      = Column(VARCHAR(30, binary=True), primary_key=True, index=True)
     distance = Column(Float)
 
 
