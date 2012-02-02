@@ -100,8 +100,15 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                                 result(f).status = INCOMPLETE;
                                 fprintf('Incomplete nucleotides\n');
                             else
-                                result(f).status = VALID;
-                                fprintf('Valid loop\n');
+                                [isSelfComplementary, compl] = checkSelfComplementarity();
+                                if isSelfComplementary
+                                    result(f).status = SELFCOMPL;
+                                    result(f).compl  = compl;
+                                    fprintf('Self-complementary %s: %s\n',File.Filename,compl);
+                                else
+                                    fprintf('Valid loop\n');                                    
+                                    result(f).status = VALID;
+                                end
                             end
                         end        
                     end
