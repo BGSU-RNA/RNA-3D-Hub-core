@@ -11,8 +11,8 @@ from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
 
 import sqlalchemy.exc
 
-engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
-# engine  = create_engine('mysql://root:bioinfo@localhost/motifversions')
+# engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
+engine  = create_engine('mysql://root:bioinfo@localhost/motifversions')
 Session = sessionmaker(bind=engine)
 session = Session()
 

@@ -30,13 +30,13 @@ def main(argv):
     """get new pdb files, import descriptions into the database"""
     p = PdbInfoLoader()
     p.get_all_rna_pdbs()
-#     P.update_rna_containing_pdbs()
+    p.update_rna_containing_pdbs()
     """extract all loops and import into the database"""
     e = LoopExtractor()
     e.extract_and_import_loops(p.pdbs)
     """do loop QA, import into the database"""
-#     q = LoopQualityChecker()
-#     q.check_loop_quality(p.pdbs)
+    q = LoopQualityChecker()
+    q.check_loop_quality(p.pdbs)
     """import coordinates and distances into the database"""
     d = DistancesAndCoordinatesLoader()
     d.import_distances(p.pdbs)
