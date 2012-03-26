@@ -2,8 +2,6 @@ function [] = aAaSearches(loop_ids, start, stop)
 
 
     N = length(loop_ids);
-    
-    SearchResults = getSearchFolder;
 
     if nargin < 2
         start = 1;
@@ -16,7 +14,7 @@ function [] = aAaSearches(loop_ids, start, stop)
     for i = start:stop    
         
         disp(i);
-        destination = [SearchResults filesep loop_ids{i}];
+        destination = [getSearchFolder filesep loop_ids{i}];
         if ~exist(destination,'dir'), mkdir(destination); end
 
         % read log file with negative results
@@ -31,7 +29,6 @@ function [] = aAaSearches(loop_ids, start, stop)
         load(getPrecomputedDataAddress(loop_ids{i}));        
         
         for j = 1:N
-            % don't repeat the search if 
             if isempty(intersect(done, loop_ids{j}))            
                 pairwiseSearch(File, loop_ids{j});
             end
