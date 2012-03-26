@@ -46,10 +46,10 @@ end
 
 function [F, f] = getNameAndData(input_entity)
 
-    if isstruct(input_entity)
+    if isstruct(input_entity) % assume File structures
         F = input_entity;
         f = input_entity.Filename;
-    else
+    else % assume loop id
         load(getPrecomputedDataAddress(input_entity));
         F = File;
         f = File.Filename;
@@ -101,7 +101,11 @@ function [matched] = aSearchFlankingBases(File1, File2, P)
     
     if isfield(Search,'Candidates') && ~isempty(Search.Candidates)
         matched = 1;
-        delete([Query.Name '.mat']); % delete small search        
+        if ismac
+            unix(sprintf('rm %s', fullfile(pwd, [Query.Name '.mat'])));
+        else
+            delete([Query.Name '.mat']); % delete small search        
+        end
     end            
     
 end
