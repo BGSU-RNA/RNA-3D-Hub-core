@@ -45,6 +45,33 @@ def list_all_releases(type):
 # Motif tables declarations
 ################################################################################
 
+class PairwiseInteractions(Base):
+    """
+    """
+    __tablename__ = 'pdb_pairwise_interactions'
+
+    iPdbSig    = Column(String(30), primary_key=True)
+    jPdbSig    = Column(String(30), primary_key=True)
+    pdb_id     = Column(String(4))
+    f_lwbp     = Column(String(4))
+    f_stacks   = Column(String(4))
+    f_bphs     = Column(String(4))
+    f_brbs     = Column(String(4))
+    m_lwbp     = Column(String(3))
+    m_mclw     = Column(String(10))
+    m_mcOther  = Column(String(10))
+    m_stacks   = Column(String(3))
+    m_mcstacks = Column(String(8))
+    r_sanger   = Column(String(6))
+    r_lwbp     = Column(String(3))
+    r_tertiary = Column(String(10))
+    r_stacks   = Column(String(10))
+
+    def __init__(self, iPdbSig='', jPdbSig=''):
+        self.iPdbSig = iPdbSig
+        self.jPdbSig = jPdbSig
+
+
 class PdbInfo(Base):
     """
     """
@@ -246,13 +273,14 @@ class PdbAnalysisStatus(Base):
     __tablename__ = 'pdb_analysis_status'
     id          = Column(String(4),  primary_key=True)
 #     pdb_file    = Column(String(10), primary_key=True)
-    distances   = Column(DateTime)
-    coordinates = Column(DateTime)
-    il          = Column(DateTime)
-    hl          = Column(DateTime)
-    j3          = Column(DateTime)
-    qa          = Column(DateTime)
-    motifs      = Column(DateTime)
+    distances    = Column(DateTime)
+    coordinates  = Column(DateTime)
+    interactions = Column(DateTime)
+    il           = Column(DateTime)
+    hl           = Column(DateTime)
+    j3           = Column(DateTime)
+    qa           = Column(DateTime)
+    motifs       = Column(DateTime)
 
 
 class LoopQA(Base):
@@ -427,12 +455,15 @@ class Motif(Base):
 
 
 
-class LoopAnnotation(Base):
-    __tablename__ = 'ml_loop_annotations'
+class MotifAnnotation(Base):
+    __tablename__ = 'ml_motif_annotations'
 
-    id          = Column(String(11), primary_key=True)
-    common_name = Column(Text)
-    reference   = Column(Text)
+    motif_id     = Column(String(11), primary_key=True)
+    common_name  = Column(Text)
+    annotation   = Column(Text)
+    author       = Column(String(20))
+    bp_signature = Column(String(100))
+    date         = Column(DateTime)
 
 
 class SetDiff(Base):
@@ -603,7 +634,7 @@ class MotifCollectionMerger:
         self.parents     = collections.defaultdict(list)
         self.explanation = dict()
 
-        self.minOverlap = Column(Float)(2)/3
+        self.minOverlap = float(2)/3
 
         self.compare_releases()
         self.show_report()
@@ -621,8 +652,8 @@ class MotifCollectionMerger:
                     self.intersection[motifId][groupId] = t
                     self.setdiff[groupId][motifId] = group - motif
                     self.setdiff[motifId][groupId] = motif - group
-                    self.overlap[groupId][motifId] = Column(Float)(len(t)) / len(group)
-                    self.overlap[motifId][groupId] = Column(Float)(len(t)) / len(motif)
+                    self.overlap[groupId][motifId] = float(len(t)) / len(group)
+                    self.overlap[motifId][groupId] = float(len(t)) / len(motif)
                 else:
                     self.noIntersection[groupId] = motifId
                     self.noIntersection[motifId] = groupId
@@ -989,8 +1020,8 @@ class Uploader:
             os.mkdir(self.files['MatFiles'])
 
         for file in self.c.c1.sg:
-            src = os.path.join(self.files['folder'],file+'.mat')
-            dst = os.path.join(self.files['MatFiles'], self.final_ids[file] + '.mat')
+            src = os.path.join(self.files['MatFiles_origin'], file+'.mat')
+            dst = os.path.join(self.files['MatFiles_dest'], self.final_ids[file] + '.mat')
             if os.path.exists(src):
                 shutil.copyfile(src, dst)
             else:
