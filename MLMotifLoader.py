@@ -29,7 +29,7 @@ class Loader:
     """
 
     def __init__(self, motif_type=''):
-        self.motifs_root = '/FR3D/Workspace/Releases'
+        self.motifs_root = '/Users/anton/FR3D/MotifAtlas/Releases'
         self.motif_type  = motif_type
 
         self.done  = list_done(self.motif_type)
@@ -52,8 +52,9 @@ class Loader:
         self.f['MotifLoopOrder']    = os.path.join(self.f['folder'],'MotifLoopOrder.csv')
         self.f['MotifPositions']    = os.path.join(self.f['folder'],'MotifPositions.csv')
         self.f['MutualDiscrepancy'] = os.path.join(self.f['folder'],'MutualDiscrepancy.csv')
-        self.f['MatFiles']          = os.path.join(self.f['folder'],'mat')
-        self.f['2ds_origin']        = os.path.join(self.f['folder'],'html','2ds')
+        self.f['MatFiles_origin']   = os.path.join(self.f['folder'],'mat')
+        self.f['MatFiles_dest']     = os.path.join(self.f['folder'],'Groups')
+        self.f['2ds_origin']        = os.path.join(self.f['folder'],'2ds')
         self.f['2ds_destination']   = '/Servers/rna.bgsu.edu/img/MotifAtlas'
 
 
@@ -89,7 +90,7 @@ class Loader:
         """
         """
         for folder in self.folders:
-            if len(folder) != 6:
+            if len(folder) < 6:
                 print 'Skipping folder ', folder
                 continue
 
