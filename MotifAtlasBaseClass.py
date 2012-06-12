@@ -16,7 +16,7 @@ class MotifAtlasBaseClass:
     def __init__(self):
         self.mlab   = False
         self.config = collections.defaultdict(dict)
-        self.configfile = '/Users/anton/Dropbox/Code/PyMotifLoader/motifatlas.cfg'
+        self.configfile = '/Users/anton/Dropbox/Code/PyMotifLoader_dev/motifatlas.cfg'
         self.import_config()
 
     def _setup_matlab(self):
@@ -72,7 +72,9 @@ class MotifAtlasBaseClass:
             """logging"""
             self.config['logfile'] = 'motifatlas.log'
             """locations"""
-            self.config['locations']['loops_mat_files'] = config.get('locations','loops_mat_files')
+            section = 'locations'
+            keys = ['loops_mat_files', 'loops_search_dir']
+            for k in keys: self.config[section][k] = config.get(section,k)
             """release modes"""
             section = 'release_mode'
             keys = ['loops','motifs','nrlist']

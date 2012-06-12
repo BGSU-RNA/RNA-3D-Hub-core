@@ -12,7 +12,7 @@ from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
 import sqlalchemy.exc
 
 # engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
-engine  = create_engine('mysql://root:bioinfo@localhost/motifversions')
+engine  = create_engine('mysql://root:bioinfo@localhost/motifversions_dev')
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -44,6 +44,22 @@ def list_all_releases(type):
 ################################################################################
 # Motif tables declarations
 ################################################################################
+
+class LoopSearch(Base):
+    """
+        Stores information about pairwise all-against-all FR3D searches between
+        all loops.
+    """
+    __tablename__ = 'loop_searches'
+    __table_args__ = ( UniqueConstraint('loop_id1', 'loop_id2'), )
+
+    id       = Column(Integer, primary_key=True, autoincrement=True)
+    loop_id1 = Column(String(11))
+    loop_id2 = Column(String(11))
+    disc     = Column(Float)
+    nt_list1 = Column(Text)
+    nt_list2 = Column(Text)
+
 
 class PairwiseInteractions(Base):
     """
