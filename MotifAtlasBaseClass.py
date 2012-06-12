@@ -6,7 +6,7 @@ About
 
 __author__ = 'Anton Petrov'
 
-import sys, logging, smtplib, ConfigParser, collections, datetime
+import sys, logging, smtplib, ConfigParser, collections, datetime, os
 from MLSqlAlchemyClasses import session, PdbAnalysisStatus
 
 class MotifAtlasBaseClass:
@@ -16,7 +16,7 @@ class MotifAtlasBaseClass:
     def __init__(self):
         self.mlab   = False
         self.config = collections.defaultdict(dict)
-        self.configfile = '/Users/anton/Dropbox/Code/PyMotifLoader_dev/motifatlas.cfg'
+        self.configfile = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), 'motifatlas.cfg')
         self.import_config()
 
     def _setup_matlab(self):

@@ -2,7 +2,7 @@
 
 """
 
-import random, datetime, math, sys, pdb, csv, os, shutil, collections
+import random, datetime, math, sys, pdb, csv, os, shutil, collections, os
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
@@ -10,9 +10,26 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
 
 import sqlalchemy.exc
+import ConfigParser
 
-# engine  = create_engine('mysql://root:bioinfo@localhost/mltest')
-engine  = create_engine('mysql://root:bioinfo@localhost/motifversions_dev')
+def get_engine():
+    """
+        looks up the connection parameters in a config file, which must be
+        located in the same directory as the python scripts
+    """
+    script_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    configfile = os.path.join(script_path, 'motifatlas.cfg')
+    config = ConfigParser.RawConfigParser()
+    config.read(configfile)
+
+    return create_engine('mysql://' + config.get('database','user')     + ':' +
+                                      config.get('database','password') + '@' +
+                                      config.get('database','host')     + '/' +
+                                      config.get('database','database'))
+    return engine
+
+engine = get_engine()
+
 Session = sessionmaker(bind=engine)
 session = Session()
 
