@@ -12,6 +12,7 @@ import getopt
 import logging
 import os
 import re
+import csv
 
 from MLSqlAlchemyClasses import session, LoopSearch
 from MotifAtlasBaseClass import MotifAtlasBaseClass
@@ -26,8 +27,6 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
 
         self.loopSearchDir = self.config['locations']['loops_search_dir']
         self.loop_regex = '(IL|HL)_\w{4}_\d{3}'
-        self.matfile_regex = '(%s)_(%s)\.mat' % (self.loop_regex, self.loop_regex)
-        self.loop_id1 = self.loop_id2 = ''
         self.update = True # determines whether to update existing values in the db
 
 
@@ -36,56 +35,56 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
             directory structure: loopSearchDir filesep IL_1S72_001 filesep IL_1S72_001_IL_1J5E_001.mat
         """
         # loop over directories
-        for dir in os.listdir(self.loopSearchDir):
-            if re.search(self.loop_regex, dir):
-                self.loop_id1 = dir
-                logging.info('Importing %s searches', self.loop_id1)
+        for folder in os.listdir(self.loopSearchDir):
+            if re.search(self.loop_regex, folder):
+                logging.info('Importing %s searches', folder)
             else:
                 continue
-            # loop over files in each directory
-            for file in os.listdir( os.path.join(self.loopSearchDir, self.loop_id1) ):
-                fullFile = os.path.join(self.loopSearchDir, dir, file)
-                match = re.search(self.matfile_regex, file)
-                if match:
-                    self.loop_id2 = match.group(3)
-                    [disc, nt_list1, nt_list2, err_msg] = self.mlab.loadLoopSearchFile(fullFile, nout=4)
-                    if err_msg != '':
-                        MotifAtlasBaseClass._crash(self, err_msg)
-                    else:
-                        self._store_in_database(disc[0][0], nt_list1, nt_list2)
-                elif file == 'No_candidates.txt':
-                    self._read_no_candidates_file(fullFile)
-                else:
-                    continue
+            # run matlab to create a temporary csv file with results
+            [outputFile, err_msg] = self.mlab.loadLoopSearchFile(os.path.join(self.loopSearchDir, folder), nout=2)
+            if err_msg != '':
+                MotifAtlasBaseClass._crash(self, err_msg)
+            else:
+                reader = csv.reader(open(outputFile), delimiter=',', quotechar='"')
+                for row in reader:
+                    (loop_id1, loop_id2, disc, nt_list1, nt_list2) = row
+                    self._store_in_database(loop_id1, loop_id2, disc, nt_list1, nt_list2)
+                os.remove(outputFile) # delete temporary csv file
 
-    def _store_in_database(self, disc=-1, nt_list1=None, nt_list2=None):
+            # read in No_candidates.txt if exists
+            self._read_no_candidates_file(folder)
+
+    def _store_in_database(self, loop_id1, loop_id2, disc=-1, nt_list1=None, nt_list2=None):
         """
         """
         existing = session.query(LoopSearch). \
-                           filter(LoopSearch.loop_id1==self.loop_id1). \
-                           filter(LoopSearch.loop_id2==self.loop_id2). \
+                           filter(LoopSearch.loop_id1==loop_id1). \
+                           filter(LoopSearch.loop_id2==loop_id2). \
                            first()
         if existing:
             if self.update:
-                existing.disc = disc
+                existing.disc = float(disc)
                 existing.nt_list1 = nt_list1
                 existing.nt_list2 = nt_list2
                 session.merge(existing)
         else:
-            session.add(LoopSearch(loop_id1=self.loop_id1,
-                                   loop_id2=self.loop_id2,
-                                   disc=disc,
+            session.add(LoopSearch(loop_id1=loop_id1,
+                                   loop_id2=loop_id2,
+                                   disc=float(disc),
                                    nt_list1=nt_list1,
                                    nt_list2=nt_list2))
         session.commit()
 
-    def _read_no_candidates_file(self, fullFile):
+    def _read_no_candidates_file(self, folder):
         """
         """
-        loops = open(fullFile , 'r').readlines()
-        loops = [x.rstrip() for x in loops]
-        for self.loop_id2 in loops:
-            self._store_in_database()
+        no_candidates_file = os.path.join(self.loopSearchDir, folder, 'No_candidates.txt')
+        if os.path.exists(no_candidates_file):
+            loop_id1 = folder
+            loops = open(no_candidates_file, 'r').readlines()
+            loops = [x.rstrip() for x in loops]
+            for loop_id2 in loops:
+                self._store_in_database(loop_id1, loop_id2)
 
     def load_final_matching_matrix(self):
         """
