@@ -15,22 +15,24 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
     SYMMETRIC_PAIRS = [1 2 7 8 11 12]; % cWW, tWW, cHH, tHH, cSS, tSS
         
     FILENAME = 'MM_symmetrize.mat';
-
+    LOGFILE  = 'MM_symmetrize.txt';
+    
+    fid = fopen(LOGFILE, 'w');
 
     for iLoop = 1:N
         
         fprintf('%i out of %i\n', iLoop, N);
 
-        ind = find(MM(iLoop,:) <= 2); % less than any disqualified match
+        ind = find(MM(iLoop,:) <= 2 & MM(iLoop,:) > 0); % less than any disqualified match
         
         for jLoop = ind
 
             motif1 = loop_ids{iLoop};
             motif2 = loop_ids{jLoop};
             
-            if isequal(iLoop, jLoop) %|| isequal(MM(iLoop,jLoop), MM(jLoop,iLoop)) %|| MM(iLoop,jLoop) < 0
-                continue;
-            end                                                   
+%             if isequal(iLoop, jLoop) %|| isequal(MM(iLoop,jLoop), MM(jLoop,iLoop)) %|| MM(iLoop,jLoop) < 0
+%                 continue;
+%             end                                                   
             
             switch aCompareInteractions
                 case BASEPAIR_MISMATCH
@@ -39,7 +41,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
                 case BASESTACK_MISMATCH
                     MM(iLoop,jLoop) = BASESTACK_MISMATCH;
                     MM(jLoop,iLoop) = BASESTACK_MISMATCH;                
-                case PAIRNPAIR_MISMATCH
+%                 case PAIRNPAIR_MISMATCH
 %                 MM(iLoop,jLoop) = PAIRNPAIR_MISMATCH;
 %                 MM(jLoop,iLoop) = PAIRNPAIR_MISMATCH;                
                 otherwise                    
@@ -51,6 +53,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
     end
     
     save(FILENAME,'MM','loop_ids');
+    fclose(fid);
     checkMatchingMatrix(MM);
     
 
@@ -105,6 +108,9 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
                             fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
                                               zEdgeText(queryEdgesFixAbs(i,j)));
                         end
+                        
+                        annotate_conflicting_interactions();
+                        
                         return;                        
                     end
                 end
@@ -119,6 +125,9 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
                         fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
                                           zEdgeText(queryEdgesFixAbs(i,j)));
                     end
+                    
+                    annotate_conflicting_interactions();                    
+                    
                     return;
                 end
 
@@ -141,6 +150,18 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
 
             end
         end                        
+        
+        function [] = annotate_conflicting_interactions()
+            nt1 = [Search.File(pdb).NT(i).Base Search.File(pdb).NT(i).Number];
+            nt2 = [Search.File(pdb).NT(j).Base Search.File(pdb).NT(j).Number];
+            int1 = strtrim(zEdgeText(foundEdgesFixAbs(i,j)));
+            nt3 = [Search.Query.NT(i).Base Search.Query.NT(i).Number];
+            nt4 = [Search.Query.NT(j).Base Search.Query.NT(j).Number];
+            int2 = strtrim(zEdgeText(queryEdgesFixAbs(i,j)));
+            message = sprintf('%s %s %s vs %s %s %s', nt1, int1, nt2, nt3, int2, nt4);
+            fprintf(fid, '"%s","%s","%i","%s"\n', motif1, motif2, disqualify, message);                        
+        end
+        
     end
 
 end
