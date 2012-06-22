@@ -62,6 +62,32 @@ def list_all_releases(type):
 # Motif tables declarations
 ################################################################################
 
+class LoopPositions(Base):
+    """
+    """
+    __tablename__ = 'loop_positions'
+    __table_args__ = ( UniqueConstraint('loop_id', 'position'), )
+
+    id       = Column(Integer, primary_key=True, autoincrement=True)
+    loop_id  = Column(String(11))
+    position = Column(Integer)
+    nt_id    = Column(Text)
+    bulge    = Column(Boolean)
+    flanking = Column(Boolean)
+
+class LoopSearchQA(Base):
+    """
+    """
+    __tablename__ = 'loop_search_qa'
+    __table_args__ = ( UniqueConstraint('loop_id1', 'loop_id2'), )
+
+    id       = Column(Integer, primary_key=True, autoincrement=True)
+    loop_id1 = Column(String(11))
+    loop_id2 = Column(String(11))
+    status   = Column(Integer)
+    message  = Column(Text)
+
+
 class LoopSearch(Base):
     """
         Stores information about pairwise all-against-all FR3D searches between

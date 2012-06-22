@@ -14,7 +14,7 @@ import os
 import re
 import csv
 
-from MLSqlAlchemyClasses import session, LoopSearch
+from MLSqlAlchemyClasses import session, LoopSearch, LoopSearchQA, LoopPositions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
@@ -26,9 +26,45 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         MotifAtlasBaseClass._setup_matlab(self)
 
         self.loopSearchDir = self.config['locations']['loops_search_dir']
+        self.precomputedData = self.config['locations']['loops_mat_files']
         self.loop_regex = '(IL|HL)_\w{4}_\d{3}'
+        self.pdb_regex = '^[0-9A-Za-z]{4}$'
         self.update = True # determines whether to update existing values in the db
 
+    def load_loop_annotations(self):
+        """
+        """
+        # loop over directories
+        for folder in os.listdir(self.precomputedData):
+            if re.search(self.pdb_regex, folder):
+                logging.info('Importing loop annotations from %s', folder)
+            else:
+                continue
+            [outputFile, err_msg] = self.mlab.loadLoopAnnotations(os.path.join(self.precomputedData, folder), nout=2)
+            if err_msg != '':
+                MotifAtlasBaseClass._crash(self, err_msg)
+            else:
+                reader = csv.reader(open(outputFile), delimiter=',', quotechar='"')
+                for row in reader:
+                    (loop_id, position, nt_id, bulge, flanking) = row
+                    existing = session.query(LoopPositions). \
+                                       filter(LoopPositions.loop_id==loop_id). \
+                                       filter(LoopPositions.position==position). \
+                                       first()
+                    if existing:
+                        if self.update:
+                            existing.flanking = int(flanking)
+                            existing.bulge = int(bulge)
+                            existing.nt_id = nt_id
+                            session.merge(existing)
+                    else:
+                        session.add(LoopPositions(loop_id=loop_id,
+                                                  position=position,
+                                                  nt_id=nt_id,
+                                                  flanking=int(flanking),
+                                                  bulge=int(bulge)))
+                session.commit()
+                os.remove(outputFile) # delete temporary csv file
 
     def load_loop_searches(self):
         """
@@ -91,6 +127,27 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         """
         pass
 
+    def load_loop_search_qa_text_file(self, file):
+        """
+        """
+        reader = csv.reader(open(file, 'r'))
+        for row in reader:
+            existing = session.query(LoopSearchQA). \
+                               filter(LoopSearchQA.loop_id1==row[0]). \
+                               filter(LoopSearchQA.loop_id2==row[1]). \
+                               first()
+            if existing:
+                if self.update:
+                    existing.status = int(row[2])
+                    existing.message = row[3]
+                    session.merge(existing)
+            else:
+                session.add(LoopSearchQA(loop_id1=row[0],
+                                         loop_id2=row[1],
+                                         status=int(row[2]),
+                                         message=row[3]))
+        session.commit()
+
 
 def usage():
     print __doc__
@@ -102,7 +159,14 @@ def main(argv):
     logging.basicConfig(level=logging.DEBUG)
     S = LoopSearchesLoader()
 
-    S.load_loop_searches()
+#     S.load_loop_searches()
+
+#     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_extraNTs.txt')
+
+#     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_symmetrize.txt')
+
+    S.load_loop_annotations()
+
 #     S.load_final_matching_matrix()
 
 
