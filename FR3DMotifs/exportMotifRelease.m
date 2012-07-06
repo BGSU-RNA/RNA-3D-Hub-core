@@ -12,7 +12,8 @@ function [] = exportMotifRelease(location)
     MotifList  = fopen([location filesep 'MotifList.csv'],'w');
     MotifPositions = fopen([location filesep 'MotifPositions.csv'],'w'); 
     CandOrder  = fopen([location filesep 'MotifLoopOrder.csv'],'w'); 
-    DiscValues = fopen([location filesep 'MutualDiscrepancy.csv'],'w');  
+    DiscValues = fopen([location filesep 'MutualDiscrepancy.csv'],'w');
+    BpSignatures = fopen([location filesep 'MotifBpSignatures.csv'],'w');
     
     for i = 1:length(list)
 
@@ -25,6 +26,8 @@ function [] = exportMotifRelease(location)
         
         motif_id = list{i}(1:end-4);        
         LoopIds = {Search.File.Filename};
+        
+        fprintf(BpSignatures, '"%s","%s"\n', motif_id, Search.Signature);
         
         N = length(Search.Candidates(:,1));        
         if ~isfield(Search,'LoopsOrdered') && N > 1
