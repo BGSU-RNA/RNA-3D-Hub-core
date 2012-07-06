@@ -842,6 +842,7 @@ class Uploader:
         self.loop_order       = []
         self.loop_positions   = []
         self.loop_discrepancy = []
+        self.bp_signatures = []
 
         if self.upload_mode != 'release_diff':
             self.direct_parent = 1
@@ -851,6 +852,8 @@ class Uploader:
             self.__process_motif_loop_order()
             self.__process_motif_loop_positions()
             self.__process_mutual_discrepancy()
+            self.__process_bp_signatures()
+            self.__store_correspondences()
 #             self.show_report()
             self.__commit()
             self.__rename_mat_files()
@@ -907,12 +910,44 @@ class Uploader:
 
             self.motifs.append(motif)
             if parents != '':
+                if self.upload_mode != 'release_diff':
+                    self.__inherit_history(motif, parents)
                 self.history.append(Parents(motif_id=motif.id, release_id=self.release.id, parents=parents))
             self.final_ids[group_id] = motif.id
             for loop_id in self.c.c1.d[group_id]:
                 self.loops.append(Loop(id=loop_id, motif_id=motif.id, release_id=self.release.id))
 
             self.removed_groups = set(self.c.c2.groups) - set(self.old_updated_groups) - set(self.same_groups)
+
+    def __store_correspondences(self):
+        """
+        """
+        f = open(self.files['correspondences'], 'w')
+        for group_id, motif_id in self.final_ids.iteritems():
+            f.write('%s,%s\n' % (group_id, motif_id) )
+        f.close()
+
+    def __inherit_history(self, motif, parents):
+        """
+        """
+        parent_motifs = parents.split(',')
+        common_name = []
+        annotation = []
+        author = []
+        for parent in parent_motifs:
+            parent_motif = session.query(MotifAnnotation).filter(MotifAnnotation.motif_id==parent).first()
+            if parent_motif:
+                if parent_motif.common_name is not None and parent_motif.common_name != '':
+                    common_name.append(parent_motif.common_name + ' [' + parent + ']')
+                if parent_motif.annotation is not None and parent_motif.annotation != '':
+                    annotation.append(parent_motif.annotation + ' [' + parent + ']')
+                if parent_motif.author is not None and parent_motif.author != '':
+                    author.append(parent_motif.author)
+
+        session.merge(MotifAnnotation(motif_id=motif.id,
+                                      common_name=', '.join(common_name),
+                                      annotation=', '.join(annotation),
+                                      author=', '.join(author)))
 
     def __process_release_diff(self):
         """
@@ -978,6 +1013,15 @@ class Uploader:
         print 'Intersection\n', self.intersection, '\n======================='
 
     def remove_release(self, release):
+# DELETE FROM ml_set_diff WHERE release_id='0.7';
+# DELETE FROM ml_mutual_discrepancy WHERE release_id='0.7';
+# DELETE FROM ml_motifs WHERE release_id='0.7';
+# DELETE FROM ml_loops WHERE release_id='0.7';
+# DELETE FROM ml_loop_positions WHERE release_id='0.7';
+# DELETE FROM ml_loop_order WHERE release_id='0.7';
+# DELETE FROM ml_history WHERE release_id='0.7';
+# DELETE FROM ml_releases WHERE id='0.7';
+# DELETE FROM ml_release_diff WHERE release_id1='0.7' OR `release_id2`='0.7';
         session.query(Release).filter(Release.id==release).delete()
         session.query(Motif).filter(Motif.release_id==release).delete()
         session.query(Loop).filter(Loop.release_id==release).delete()
@@ -1061,6 +1105,17 @@ class Uploader:
                                    ))
 
 
+    def __process_bp_signatures(self):
+        """
+        "Group_001","06_cWW-cWW-cWW"
+        """
+        r = csv.reader(open(self.files['BpSignatures']), delimiter=',', quotechar='"')
+        for row in r:
+            session.merge(MotifAnnotation(motif_id=self.final_ids[row[0]],
+                                          bp_signature=row[1]))
+        session.commit()
+
+
     def __process_mutual_discrepancy(self):
         """
         IL_1O9M_003,0.0000,IL_1O9M_003
@@ -1075,8 +1130,8 @@ class Uploader:
 
     def __rename_mat_files(self):
 
-        if not os.path.exists(self.files['MatFiles']):
-            os.mkdir(self.files['MatFiles'])
+        if not os.path.exists(self.files['MatFiles_dest']):
+            os.mkdir(self.files['MatFiles_dest'])
 
         for file in self.c.c1.sg:
             src = os.path.join(self.files['MatFiles_origin'], file+'.mat')

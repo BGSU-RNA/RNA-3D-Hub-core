@@ -52,10 +52,12 @@ class Loader:
         self.f['MotifLoopOrder']    = os.path.join(self.f['folder'],'MotifLoopOrder.csv')
         self.f['MotifPositions']    = os.path.join(self.f['folder'],'MotifPositions.csv')
         self.f['MutualDiscrepancy'] = os.path.join(self.f['folder'],'MutualDiscrepancy.csv')
-        self.f['MatFiles_origin']   = os.path.join(self.f['folder'],'mat')
-        self.f['MatFiles_dest']     = os.path.join(self.f['folder'],'Groups')
+        self.f['BpSignatures']      = os.path.join(self.f['folder'],'MotifBpSignatures.csv')
+        self.f['MatFiles_origin']   = os.path.join(self.f['folder'],'Groups')
+        self.f['MatFiles_dest']     = os.path.join(self.f['folder'],'mat')
         self.f['2ds_origin']        = os.path.join(self.f['folder'],'2ds')
         self.f['2ds_destination']   = '/Servers/rna.bgsu.edu/img/MotifAtlas'
+        self.f['correspondences']   = os.path.join(self.f['folder'],'correspondences.txt')
 
 
     def import_motif_release(self):
