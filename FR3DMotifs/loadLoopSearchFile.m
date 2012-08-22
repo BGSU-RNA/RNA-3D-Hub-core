@@ -45,7 +45,7 @@ function [filename, err_msg] = loadLoopSearchFile(input_folder)
             nt_list1 = nt_list1(2:end); % remove the last comma
 
             nt_list2 = '';
-            for i = 1:length(Search.Candidates(1,1:end-1))
+            for i = Search.Candidates(1,1:end-1)
                 nt_list2 = strcat(nt_list2, ',', aGetNTId(Search.File, i));
             end
             nt_list2 = nt_list2(2:end); % remove the last comma
