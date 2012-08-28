@@ -62,6 +62,16 @@ def list_all_releases(type):
 # Motif tables declarations
 ################################################################################
 
+class PdbObsolete(Base):
+    """
+    """
+    __tablename__ = 'pdb_obsolete'
+    __table_args__ = ( UniqueConstraint('obsolete_id'), )
+
+    obsolete_id = Column(String(4), primary_key=True)
+    replaced_by = Column(String(40), index=True)
+    date = Column(DateTime)
+
 class LoopPositions(Base):
     """
     """
@@ -135,9 +145,11 @@ class PdbInfo(Base):
     """
     """
     __tablename__ = 'pdb_info'
+    __table_args__ = ( UniqueConstraint('structureId', 'chainId'), )
 
-    structureId = Column(String(4), primary_key=True)
-    chainId = Column(String(1), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    structureId = Column(String(4), index=True)
+    chainId = Column(VARCHAR(1, binary=True), index=True) # NB! case sensitive
     structureTitle = Column(Text)
     experimentalTechnique = Column(Text)
     depositionDate = Column(Date)
@@ -149,7 +161,7 @@ class PdbInfo(Base):
     structureMolecularWeight = Column(Float)
     macromoleculeType = Column(Text)
     structureAuthor = Column(Text)
-    entityId = Column(Integer, primary_key=True)
+    entityId = Column(Integer)
     sequence = Column(LONGTEXT)
     chainLength = Column(Integer)
     db_id = Column(Text)

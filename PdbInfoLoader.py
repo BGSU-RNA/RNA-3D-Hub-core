@@ -1,14 +1,20 @@
 """
 
-About
+Update pdb_info and pdb_obsolete tables. Pdb_info only contains the current
+pdb files, old files are removed. Uses PDB RESTful services for getting a list
+of all RNA-containing structures and for getting custom reports.
+
+Usage: python PdbInfoLoader.py
 
 """
 
 __author__ = 'Anton Petrov'
 
-import csv, logging, re, urllib2
+import csv, logging, re, urllib2, sys, os
+from datetime import datetime
+from ftplib import FTP
 
-from MLSqlAlchemyClasses import session, PdbInfo
+from MLSqlAlchemyClasses import session, PdbInfo, PdbObsolete
 
 
 class GetAllRnaPdbsError(Exception):
@@ -26,6 +32,8 @@ class PdbInfoLoader():
         self.pdbs = []
         self.adv_query_url     = 'http://www.rcsb.org/pdb/rest/search'
         self.custom_report_url = 'http://www.rcsb.org/pdb/rest/customReport'
+        self.logfile = 'PdbInfoLoader.log'
+        logging.basicConfig(filename=self.logfile, level=logging.DEBUG)
 
     def update_rna_containing_pdbs(self):
         """Get custom reports for all pdb files or for self.pdbs, if not empty,
@@ -66,22 +74,6 @@ class PdbInfoLoader():
             logging.critical("Failed to retrieve results")
             raise GetAllRnaPdbsError
 
-    def create_report_for_matlab(self):
-        """
-        """
-#         for row in session.query(PdbInfo.structureId, PdbInfo.structureTitle, \
-#                                  PdbInfo.experimentalTechnique, PdbInfo.releaseData, \
-#                                  PdbInfo.structureAuthor, PdbInfo.resolution,
-#                                  PdbInfo.source, func.group
-        pass
-# SELECT structureId,`structureTitle`,`experimentalTechnique`,`releaseDate`,`structureAuthor`, `resolution`,`source`,`chainLength`,
-# group_concat(source ORDER BY chainLength DESC) AS source_
-# FROM `pdb_info_copy`
-# WHERE `entityMacromoleculeType` LIKE '%RNA%'
-# AND structureId='2HGP'
-# GROUP BY structureId
-# keywords missing
-
     def _get_custom_report(self, pdb_id):
         """Gets a custom report in csv format for a single pdb file. Each chain
            is described in a separate line"""
@@ -109,16 +101,13 @@ class PdbInfoLoader():
         lines = result.split('<br />')
         return lines
 
-    def _compare_instances(self, obj1, obj2):
-        """Compares two instances of the PdbInfo class. Reports any differences
-           obj1 - new instance, obj2 - old instance"""
-        for k, v in obj1.__dict__.iteritems():
+    def _update_info(self, obj1, obj2):
+        """obj1 - new instance as a dictionary, obj2 - old instance as a db object"""
+        for k, v in obj1.iteritems():
             if k[0] == '_':
                 continue # skip internal attributes
-            if str(v) != str(getattr(obj2, k)): # compare as strings
-                logging.warning('Structure %s, chain %s was updated',
-                                 obj1.structureId, obj1.chainId)
-                logging.warning('%s was: %s, became: %s', k, getattr(obj2, k), v)
+            setattr(obj2, k, v) # update the existing object
+        return obj2
 
     def __load_into_db(self, lines):
         """Compares the custom report data with what's already in the database,
@@ -137,24 +126,99 @@ class PdbInfoLoader():
             line = re.sub('(?<!^)(?<!,)"(?!,)(?!$)', "'", line)
             """parse the line using csv reader"""
             reader = csv.reader([line], delimiter=',', quotechar='"')
-            p = PdbInfo()
+            """temporary store all field in a dictionary"""
+            chain_dict = dict()
             for read in reader:
                 for i, part in enumerate(read):
                     if not part:
                         part = None # to save as NULL in the db
-                    setattr(p, keys[i], part)
+                    chain_dict[keys[i]] = part
 
-            logging.info('%s %s', p.structureId, p.chainId)
+            logging.info('%s %s', chain_dict['structureId'], chain_dict['chainId'])
             """check if this chain from this pdb is present in the db"""
-            existing_p = session.query(PdbInfo). \
-                                 filter(PdbInfo.structureId==p.structureId). \
-                                 filter(PdbInfo.chainId==p.chainId).first()
-            if existing_p:
-                if  existing_p != p:
-                    self._compare_instances(p, existing_p)
-                session.merge(p)
+            existing_chain = session.query(PdbInfo). \
+                                     filter(PdbInfo.structureId==chain_dict['structureId']). \
+                                     filter(PdbInfo.chainId==chain_dict['chainId']). \
+                                     first()
+            if existing_chain:
+                """compare and merge objects"""
+                existing_chain = self._update_info(chain_dict, existing_chain)
+                session.merge(existing_chain)
             else:
-                session.add(p)
+                """create a new chain object"""
+                new_chain = PdbInfo()
+                for k, v in chain_dict.iteritems():
+                    if not v:
+                        v = None # to save as NULL in the db
+                    setattr(new_chain, k, v)
+                session.add(new_chain)
 
         session.commit()
         logging.info('Custom report saved in the database')
+
+    def check_obsolete_structures(self):
+        """Download the file with all obsolete structures over ftp, store
+           the data in the database, remove obsolete entries
+           from the pdb_info table"""
+
+        TEMPFILE = 'obsolete.dat'
+
+        """download the data file from PDB"""
+        try:
+            ftp = FTP('ftp.wwpdb.org')
+            ftp.login()
+            ftp.cwd('/pub/pdb/data/status')
+            ftp.retrbinary("RETR %s" % TEMPFILE, open(TEMPFILE,"wb").write)
+            ftp.quit()
+            logging.info('Downloaded obsolete.dat')
+        except:
+            logging.critical('Ftp download failed')
+            sys.exit(2)
+
+        """parse the data file"""
+        obsolete_ids = []
+        f = open(TEMPFILE, 'r')
+        for line in f:
+            # OBSLTE    26-SEP-06 2H33     2JM5 2OWI
+            if 'OBSLTE' in line:
+                parts = line.split()
+                obsolete_date = datetime.strptime(parts[1], '%d-%b-%y')
+                obsolete_ids.append(parts[2])
+                replaced_by = ','.join(parts[3:])
+                dbObj = PdbObsolete(obsolete_id=obsolete_ids[-1],
+                                    date=obsolete_date,
+                                    replaced_by=replaced_by)
+                session.merge(dbObj)
+        session.commit()
+
+        """remove obsoleted files from pdb_info"""
+        session.query(PdbInfo).\
+                filter(PdbInfo.structureId.in_(obsolete_ids)).\
+                delete(synchronize_session='fetch')
+
+        """delete tempfile"""
+        os.remove(TEMPFILE)
+
+    def create_report_for_matlab(self):
+        """
+        """
+# SELECT structureId,`structureTitle`,`experimentalTechnique`,`releaseDate`,`structureAuthor`, `resolution`,`source`,`chainLength`,
+# group_concat(source ORDER BY chainLength DESC) AS source_
+# FROM `pdb_info_copy`
+# WHERE `entityMacromoleculeType` LIKE '%RNA%'
+# AND structureId='2HGP'
+# GROUP BY structureId
+# keywords missing
+        pass
+
+
+def main(argv):
+    """
+    """
+    P = PdbInfoLoader()
+    P.update_rna_containing_pdbs()
+    P.check_obsolete_structures()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
