@@ -1,23 +1,22 @@
-function [] = folderToVarna(Location)
+function [] = folderToVarna(location)
 
-    files = dir( fullfile(Location, '*.mat') );
+    groups_location = [location filesep 'Groups'];
+    files = dir( fullfile(groups_location, '*.mat') );
     N = length(files);
     
-    filename = fullfile(pwd, ['varna_' strrep(Location, filesep, '-') '.txt']);
+    filename = fullfile(pwd, ['varna_' strrep(location, filesep, '-') '.txt']);
 
     fid = fopen(filename,'w');
-
-    destination = fullfile(Location, 'html');
     
     for i = 1:N
         
         clear Search;
-        load( fullfile(Location, files(i).name) );
+        load( fullfile(groups_location, files(i).name) );
         if ~exist('Search','var')
             continue;
         end
         Search.FileName = files(i).name;
-        command = motifToVarna(Search, destination, 0);
+        command = motifToVarna(Search, location, 0);
         
         fprintf(fid, '%s\n', command);
         
@@ -27,6 +26,6 @@ function [] = folderToVarna(Location)
 
     unix(sprintf('bash %s',filename));
     
-    movefile(filename,Location);
+    movefile(filename, location);
 
 end
