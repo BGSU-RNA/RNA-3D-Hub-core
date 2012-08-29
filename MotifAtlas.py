@@ -31,20 +31,21 @@ def main(argv):
     """get new pdb files, import descriptions into the database"""
     p = PdbInfoLoader()
     p.get_all_rna_pdbs()
-#     p.update_rna_containing_pdbs()
-#     """extract all loops and import into the database"""
+    p.update_rna_containing_pdbs()
+    p.check_obsolete_structures()
+    """extract all loops and import into the database"""
 #     e = LoopExtractor()
 #     e.extract_and_import_loops(p.pdbs)
-#     """do loop QA, import into the database"""
+    """do loop QA, import into the database"""
 #     q = LoopQualityChecker()
 #     q.check_loop_quality(p.pdbs)
-#     """import coordinates and distances into the database"""
-#     d = DistancesAndCoordinatesLoader()
-#     d.import_distances(p.pdbs)
-#     d.import_coordinates(p.pdbs)
     """import pairwise interactions annotated by FR3D"""
     i = PairwiseInteractionsLoader()
     i.import_interactions(p.pdbs)
+    """import coordinates and distances into the database"""
+#     d = DistancesAndCoordinatesLoader()
+#     d.import_distances(p.pdbs)
+#     d.import_coordinates(p.pdbs)
 
     # compute new non-redundant lists, import into the database
 

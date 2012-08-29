@@ -159,13 +159,13 @@ def main(argv):
     logging.basicConfig(level=logging.DEBUG)
     S = LoopSearchesLoader()
 
-#     S.load_loop_searches()
+    S.load_loop_searches()
 
 #     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_extraNTs.txt')
 
 #     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_symmetrize.txt')
 
-    S.load_loop_annotations()
+#     S.load_loop_annotations()
 
 #     S.load_final_matching_matrix()
 

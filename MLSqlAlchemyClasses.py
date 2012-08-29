@@ -62,6 +62,28 @@ def list_all_releases(type):
 # Motif tables declarations
 ################################################################################
 
+class PdbBestChainsAndModels(Base):
+    """
+    """
+    __tablename__  = 'pdb_best_chains_and_models'
+    __table_args__ = ( UniqueConstraint('pdb_id'), )
+
+    id          = Column(Integer, primary_key=True, autoincrement=True)
+    pdb_id      = Column(String(4), index=True)
+    best_chains = Column(VARCHAR(20, binary=True)) # case-sensitive
+    best_models = Column(String(10))
+
+class RedundantNucleotide(Base):
+    """
+    """
+    __tablename__ = 'pdb_redundant_nucleotides'
+    __table_args__ = ( UniqueConstraint('nt_id1', 'nt_id2'), )
+
+    id     = Column(Integer, primary_key=True, autoincrement=True)
+    pdb_id = Column(String(4), index=True)
+    nt_id1 = Column(String(30))
+    nt_id2 = Column(String(30))
+
 class PdbObsolete(Base):
     """
     """
@@ -337,21 +359,23 @@ class AllLoops(Base):
 
 
 class PdbAnalysisStatus(Base):
-    """ To keep track of what pdb files were analyzed and when. Will help to
-        determine what programs need to be rerun if the algorithms or the
-        annotations change. `pdb_file` is added to the primary key in order to
-        keep track of asymmetric units and biological assemblies."""
+    """Keeps track of what pdb files were analyzed and when. Will help to
+       determine what programs need to be rerun if the algorithms or the
+       annotations change. `pdb_file` is added to the primary key in order to
+       keep track of asymmetric units and biological assemblies."""
     __tablename__ = 'pdb_analysis_status'
-    id          = Column(String(4),  primary_key=True)
+    id            = Column(String(4),  primary_key=True)
 #     pdb_file    = Column(String(10), primary_key=True)
-    distances    = Column(DateTime)
-    coordinates  = Column(DateTime)
-    interactions = Column(DateTime)
-    il           = Column(DateTime)
-    hl           = Column(DateTime)
-    j3           = Column(DateTime)
-    qa           = Column(DateTime)
-    motifs       = Column(DateTime)
+    distances     = Column(DateTime)
+    coordinates   = Column(DateTime)
+    interactions  = Column(DateTime)
+    il            = Column(DateTime)
+    hl            = Column(DateTime)
+    j3            = Column(DateTime)
+    qa            = Column(DateTime)
+    motifs        = Column(DateTime)
+    redundant_nts = Column(DateTime)
+    best_chains_and_models = Column(DateTime)
 
 
 class LoopQA(Base):

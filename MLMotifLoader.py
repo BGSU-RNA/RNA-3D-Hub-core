@@ -29,7 +29,7 @@ class Loader:
     """
 
     def __init__(self, motif_type=''):
-        self.motifs_root = '/Users/anton/FR3D/MotifAtlas/Releases'
+        self.motifs_root = '/Users/anton/FR3D/MotifAtlas/Releases_test'
         self.motif_type  = motif_type
 
         self.done  = list_done(self.motif_type)

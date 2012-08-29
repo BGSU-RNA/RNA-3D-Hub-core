@@ -31,7 +31,7 @@ class MotifAtlasBaseClass:
 
     def filter_out_analyzed_pdbs(self, pdbs, column_name):
         """Checks whether the pdb files were processed . Returns only the files
-        that need to be analyzed. The `column_name` parameters corresponds to
+        that need to be analyzed. The `column_name` parameter corresponds to
         the column name of the pdb_analysis_status table."""
         pdb_list = pdbs[:] # copy, not reference
         done = session.query(PdbAnalysisStatus). \
@@ -67,7 +67,8 @@ class MotifAtlasBaseClass:
             for k in keys: self.config[section][k] = config.get(section,k)
             """recalculation settings"""
             section = 'recalculate'
-            keys = ['coordinates','distances','interactions','IL','HL','J3']
+            keys = ['coordinates','distances','interactions','IL','HL','J3',
+                    'redundant_nts','best_chains_and_models']
             for k in keys: self.config[section][k] = config.getboolean(section,k)
             """logging"""
             self.config['logfile'] = 'motifatlas.log'

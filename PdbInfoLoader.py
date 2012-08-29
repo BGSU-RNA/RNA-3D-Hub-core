@@ -32,8 +32,6 @@ class PdbInfoLoader():
         self.pdbs = []
         self.adv_query_url     = 'http://www.rcsb.org/pdb/rest/search'
         self.custom_report_url = 'http://www.rcsb.org/pdb/rest/customReport'
-        self.logfile = 'PdbInfoLoader.log'
-        logging.basicConfig(filename=self.logfile, level=logging.DEBUG)
 
     def update_rna_containing_pdbs(self):
         """Get custom reports for all pdb files or for self.pdbs, if not empty,
@@ -215,6 +213,8 @@ class PdbInfoLoader():
 def main(argv):
     """
     """
+    logging.basicConfig(level=logging.DEBUG)
+
     P = PdbInfoLoader()
     P.update_rna_containing_pdbs()
     P.check_obsolete_structures()
