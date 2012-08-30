@@ -48,7 +48,7 @@ class PdbInfoLoader():
     def get_all_rna_pdbs(self):
         """Get a list of all rna-containing pdb files, including hybrids. Raise
            a specific error if it fails."""
-        logging.info('Getting a list of all rna-containing pbds')
+        logging.info('Getting a list of all rna-containing pdbs')
         query_text = """
         <orgPdbQuery>
         <queryType>org.pdb.query.simple.ChainTypeQuery</queryType>

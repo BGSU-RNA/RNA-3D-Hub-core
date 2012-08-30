@@ -2,8 +2,6 @@
 
 Import information about redundancy between nucleotides within a PDB file
 
-Usage:
-
 
 """
 

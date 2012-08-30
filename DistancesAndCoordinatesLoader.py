@@ -37,7 +37,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
-                ifn, status, err_msg = self.mlab.aGetDistances(pdb_file,nout=3)
+                ifn, status, err_msg = self.mlab.aGetDistances(pdb_file, nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_distances_from_csv(ifn)
@@ -102,7 +102,8 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
-                ifn, status, err_msg = self.mlab.aGetCoordinates(pdb_file,nout=3)
+                ifn, status, err_msg = self.mlab.aGetCoordinates(pdb_file,
+                                                                 nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_coordinates_from_csv(ifn)

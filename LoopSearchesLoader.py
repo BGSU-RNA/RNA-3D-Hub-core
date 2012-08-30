@@ -1,6 +1,10 @@
 """
 
-About
+Import information about all pairwise all-against-all searches, detailed
+loop annotations and search disqualification data.
+
+Disqualification codes are imported from text files created by Matlab during
+the execution of aSymmetrizeMatrix and aAnalyzeExtraNucleotides.
 
 """
 
@@ -31,9 +35,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         self.pdb_regex = '^[0-9A-Za-z]{4}$'
         self.update = True # determines whether to update existing values in the db
 
-    def load_loop_annotations(self):
-        """
-        """
+    def load_loop_positions(self):
+        """update loop_positions table by loading data from the mat files
+        stored in the PrecomputedData folder"""
         # loop over directories
         for folder in os.listdir(self.precomputedData):
             if re.search(self.pdb_regex, folder):
@@ -114,7 +118,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
     def _read_no_candidates_file(self, folder):
         """
         """
-        no_candidates_file = os.path.join(self.loopSearchDir, folder, 'No_candidates.txt')
+        no_candidates_file = os.path.join(self.loopSearchDir,
+                                          folder,
+                                          'No_candidates.txt')
         if os.path.exists(no_candidates_file):
             loop_id1 = folder
             loops = open(no_candidates_file, 'r').readlines()
@@ -122,14 +128,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
             for loop_id2 in loops:
                 self._store_in_database(loop_id1, loop_id2)
 
-    def load_final_matching_matrix(self):
-        """
-        """
-        pass
-
     def load_loop_search_qa_text_file(self, file):
-        """
-        """
+        """independent method used to load search QA data (disqualification
+        codes from the text files created by matlab during clustering"""
         reader = csv.reader(open(file, 'r'))
         for row in reader:
             existing = session.query(LoopSearchQA). \
@@ -149,25 +150,18 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         session.commit()
 
 
-def usage():
-    print __doc__
-
 def main(argv):
     """
     """
-
     logging.basicConfig(level=logging.DEBUG)
+
     S = LoopSearchesLoader()
-
     S.load_loop_searches()
+    S.load_loop_positions()
 
-#     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_extraNTs.txt')
+    S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_extraNTs.txt')
+    S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_symmetrize.txt')
 
-#     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_symmetrize.txt')
-
-#     S.load_loop_annotations()
-
-#     S.load_final_matching_matrix()
 
 
 if __name__ == "__main__":

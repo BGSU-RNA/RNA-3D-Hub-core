@@ -1,6 +1,6 @@
 """
 
-Main entry point for launching a Motif Atlas update.
+Main entry point for clustering motifs.
 
 """
 
@@ -11,6 +11,7 @@ import pdb
 import sys
 import getopt
 import logging
+from time import localtime, strftime
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from MLSqlAlchemyClasses import session, AllLoops, PdbBestChainsAndModels
@@ -27,6 +28,12 @@ class ClusterMotifs(MotifAtlasBaseClass):
         self.loop_ids = []
         self.best_loops = [] # these loops will be clustered
         self.mlab_input_filename = os.path.join(os.getcwd(), 'loops.txt')
+        """make a directory for the release files"""
+        self.output_dir = os.path.join( self.config['locations']['releases_dir'],
+                                         strftime("%Y%m%d_%H%M", localtime() ))
+        print self.output_dir
+        os.mkdir( self.output_dir )
+
 
     def get_pdb_ids_for_clustering(self):
         """get latest nr release"""
@@ -74,13 +81,13 @@ class ClusterMotifs(MotifAtlasBaseClass):
         f.close()
         logging.info('Saved loop_ids in file %s' % self.mlab_input_filename)
 
-    def cluster_loops(self, output_dir):
+    def cluster_loops(self):
         """
         """
         try:
             MotifAtlasBaseClass._setup_matlab(self)
             [status, err_msg] = self.mlab.MotifAtlasPipeline(self.mlab_input_filename,
-                                                             output_dir,
+                                                             self.output_dir,
                                                              nout=2)
             os.remove(self.mlab_input_filename)
         except:
@@ -95,9 +102,6 @@ class ClusterMotifs(MotifAtlasBaseClass):
                                                        filter(AllLoops.type=='il').
                                                        all()]
 
-
-def usage():
-    print __doc__
 
 def main(argv):
     """
@@ -114,8 +118,7 @@ def main(argv):
 
     M.make_input_file_for_matlab()
 
-    output_dir='/Users/anton/FR3D/MotifAtlas/Releases_test/il_aug4'
-    M.cluster_loops(output_dir)
+    M.cluster_loops()
 #
 #     L = Loader(motif_type='il')
 #     L.import_data()
