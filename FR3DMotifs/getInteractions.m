@@ -54,7 +54,7 @@ function [FILENAME, status, err_msg] = getInteractions(pdb_id)
 
             textAnnotation = functionHandle( matrix(nt1, nt2) );
 
-            if strcmp(textAnnotation,'---- ')
+            if strcmp(textAnnotation,'---- ') || strcmp(textAnnotation,'----')
                 continue;
             end
 
