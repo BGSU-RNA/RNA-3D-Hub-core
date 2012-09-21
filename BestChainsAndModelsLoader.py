@@ -39,11 +39,10 @@ class BestChainsAndModelsLoader(MotifAtlasBaseClass):
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
+                # 'ABC', '1,2', ''
                 best_chains, best_models, err_msg = self.mlab.loadBestChainsAndModels(pdb_file, nout=3)
-                # 'ABC'
                 best_chains = ','.join(list(best_chains))
-                # [1 2 3]
-                best_models = ','.join(best_models)
+
                 if err_msg == '':
                     self.__import_into_db(pdb_file, best_chains, best_models)
                 else:
