@@ -1,53 +1,68 @@
 """
-Motifs loader
-Loads motif groups into a database. Manages id tracking, version numbers etc.
+Motif loader
+
+Loads motif groups into the database. Manages id tracking, version numbers etc.
 Treats internal, hairpin and junction loops separately. The root folder must
-contain folders with mat files. The folders must be prefixed with the loop type,
+contain folders with mat files.
+
+The folders must be prefixed with the loop type,
 for example: il1, il2, hl1, hl2. The release precedence is determined by sorting
 folder names.
 
-Usage: python aMLMotifLoader [options]
+Usage: python MotifLoader [options]
 
 Options:
   -t                    motif type (mandatory): il, hl, j3, j4 etc
-  -d                    drop all tables and reload
   -h, --help            show this help
 
 Examples:
-python aMLMotifLoader.py
+python MotifLoader.py
 """
 
-import pdb, sys, getopt, os, re, fnmatch
-from MLSqlAlchemyClasses import *
+import pdb
+import sys
+import getopt
+import os
+import re
+import fnmatch
+import logging
+
+from sqlalchemy import desc
+
+
+from MLSqlAlchemyClasses import session, MotifCollection, Uploader, Release, \
+                                MotifCollectionMerger
+from MotifAtlasBaseClass import MotifAtlasBaseClass
+
 
 __author__ = 'Anton Petrov'
 
 
-
-class Loader:
+class MotifLoader(MotifAtlasBaseClass):
     """
     """
-
     def __init__(self, motif_type=''):
-        self.motifs_root = '/Users/anton/FR3D/MotifAtlas/Releases_test'
-        self.motif_type  = motif_type
-
-        self.done  = list_done(self.motif_type)
-
+        MotifAtlasBaseClass.__init__(self)
+        self.motifs_root = self.config['locations']['releases_dir']
+        self.motif_type  = motif_type.upper()
+        self.done  = self.get_processed_releases(self.motif_type)
         self.folders = []
+        self.__get_data_folders()
+
+    def __get_data_folders(self):
+        """folders must begin with loop_type (IL or HL)"""
         for file in os.listdir(self.motifs_root):
             if fnmatch.fnmatch(file, self.motif_type + '*'):
                 self.folders.append(file)
                 print file
         self.folders = sorted(self.folders)
 
-
-    def initialize_files(self, folder):
+    def __initialize_files(self, folder):
         """
         """
         self.f = dict()
         self.f['description']       = folder
-        self.f['folder']            = os.path.join(self.motifs_root, folder) #'/FR3D/Workspace/Releases/iljun6'
+        self.f['folder']            = os.path.join(self.motifs_root, folder)
         self.f['MotifList']         = os.path.join(self.f['folder'],'MotifList.csv')
         self.f['MotifLoopOrder']    = os.path.join(self.f['folder'],'MotifLoopOrder.csv')
         self.f['MotifPositions']    = os.path.join(self.f['folder'],'MotifPositions.csv')
@@ -59,23 +74,39 @@ class Loader:
         self.f['2ds_destination']   = '/Servers/rna.bgsu.edu/img/MotifAtlas'
         self.f['correspondences']   = os.path.join(self.f['folder'],'correspondences.txt')
 
+    def get_processed_releases(self, type):
+        """the `description` field corresponds to the folder name that the data
+        for the release came from"""
+        done = []
+        for release in session.query(Release).filter(Release.type==type).all():
+            done.append(release.description)
+        return done
+
+    def list_all_releases(self, type):
+        all_releases = []
+        for release in session.query(Release). \
+                               filter(Release.type==type). \
+                               order_by(desc(Release.date)). \
+                               all():
+            all_releases.append(release.id)
+        return all_releases
 
     def import_motif_release(self):
         """
         """
-        c1 = MotifCollection(file=self.f['MotifList'],type=self.motif_type)
-        c2 = MotifCollection(release='latest',type=self.motif_type)
+        c1 = MotifCollection(file=self.f['MotifList'], type=self.motif_type)
+        c2 = MotifCollection(release='latest', type=self.motif_type)
         A = Uploader(ensembles=MotifCollectionMerger(c1,c2),
-                        mode='minor',
+                        mode=self.config['release_mode']['motifs'], #'minor',
                         description=self.f['description'],
                         files=self.f,
                         motif_type=self.motif_type)
-
+        A.import_release()
 
     def compare_all_releases(self):
         """
         """
-        all_releases = list_all_releases(self.motif_type)
+        all_releases = self.list_all_releases(self.motif_type)
         if len(all_releases) <= 2:
             return
         all_releases = all_releases[2:]
@@ -86,7 +117,7 @@ class Loader:
             A = Uploader(ensembles=MotifCollectionMerger(c1,c2),
                          upload_mode='release_diff',
                          motif_type=self.motif_type)
-
+            A.import_release()
 
     def import_data(self):
         """
@@ -100,10 +131,9 @@ class Loader:
                 print 'Already imported ', folder
                 continue
 
-            self.initialize_files(folder)
+            self.__initialize_files(folder)
             self.import_motif_release()
             self.compare_all_releases()
-
 
 
 def usage():
@@ -113,35 +143,42 @@ def usage():
 def main(argv):
     """
     """
+    logging.basicConfig(level=logging.DEBUG)
+
     try:
-        opts, args = getopt.getopt(argv, "dht:", ['help','type'])
+        opts, args = getopt.getopt(argv, "t:r:h", ['help','type'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
 
     motif_type = None
+    release_to_remove = None
     for opt, arg in opts:
-        if opt == '-d':
-            print 'Confirm dropping all tables and reloading the data by pressing c'
-            pdb.set_trace()
-            drop_all()
-            Base.metadata.create_all(engine)
-        elif opt in ('-h', '--help'):
+        if opt in ('-h', '--help'):
             usage()
             sys.exit()
         elif opt in ('-t', '--type'):
             motif_type = arg
+        elif opt in ('-r'):
+            release_to_remove = arg
 
     if motif_type is None:
         usage()
         print 'Please specify motif type: il, hl, j3, j4 etc'
         sys.exit(2)
 
+    if release_to_remove is not None:
+        print 'Are you sure you want to delete %s release %s?. Press c to continue or q to abort.' \
+              % (motif_type, release_to_remove)
+        pdb.set_trace()
+        U = Uploader(motif_type=motif_type)
+        U.remove_release(release_to_remove)
+        print 'Success'
+        return
 
-    L = Loader(motif_type=motif_type)
+    L = MotifLoader(motif_type=motif_type)
     L.import_data()
-#     drop_temp_tables()
-#     pdb.set_trace()
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

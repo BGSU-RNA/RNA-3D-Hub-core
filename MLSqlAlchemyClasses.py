@@ -3,11 +3,13 @@
 """
 
 import random, datetime, math, sys, pdb, csv, os, shutil, collections, os
+import logging
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
+from sqlalchemy.sql import or_
 
 import sqlalchemy.exc
 import ConfigParser
@@ -35,28 +37,6 @@ session = Session()
 
 Base = declarative_base()
 
-
-################################################################################
-# Auxiliary functions
-################################################################################
-
-def drop_all():
-    Base.metadata.drop_all(engine)
-
-def drop_temp_tables():
-    Base.metadata.drop_all(bind=engine, tables='ML_handle')
-
-def list_done(type):
-    done = []
-    for release in session.query(Release).filter(Release.type==type).all():
-        done.append(release.description)
-    return done
-
-def list_all_releases(type):
-    all_releases = []
-    for release in session.query(Release).filter(Release.type==type).order_by(desc(Release.date)).all():
-        all_releases.append(release.id)
-    return all_releases
 
 ################################################################################
 # Motif tables declarations
@@ -121,10 +101,8 @@ class LoopSearchQA(Base):
 
 
 class LoopSearch(Base):
-    """
-        Stores information about pairwise all-against-all FR3D searches between
-        all loops.
-    """
+    """Stores information about pairwise all-against-all FR3D searches between
+    all loops."""
     __tablename__ = 'loop_searches'
     __table_args__ = ( UniqueConstraint('loop_id1', 'loop_id2'), )
 
@@ -840,7 +818,7 @@ class MotifCollectionMerger:
 class Uploader:
     """
     """
-    def __init__(self, ensembles=None, mode='', description='',files={}, upload_mode='', motif_type=''):
+    def __init__(self, ensembles=None, mode='', description='', files={}, upload_mode='', motif_type=''):
         self.c           = ensembles
         self.motif_type  = motif_type.upper()
         self.release     = Release(mode=mode, description=description, type=self.motif_type)
@@ -866,6 +844,9 @@ class Uploader:
         self.loop_discrepancy = []
         self.bp_signatures = []
 
+    def import_release(self):
+        """
+        """
         if self.upload_mode != 'release_diff':
             self.direct_parent = 1
             self.__finalize()
@@ -1035,6 +1016,10 @@ class Uploader:
         print 'Intersection\n', self.intersection, '\n======================='
 
     def remove_release(self, release):
+        """
+           Must pay attention to release type so that only IL or HL release
+           is deleted, not both
+        """
 # DELETE FROM ml_set_diff WHERE release_id='0.7';
 # DELETE FROM ml_mutual_discrepancy WHERE release_id='0.7';
 # DELETE FROM ml_motifs WHERE release_id='0.7';
@@ -1044,12 +1029,64 @@ class Uploader:
 # DELETE FROM ml_history WHERE release_id='0.7';
 # DELETE FROM ml_releases WHERE id='0.7';
 # DELETE FROM ml_release_diff WHERE release_id1='0.7' OR `release_id2`='0.7';
-        session.query(Release).filter(Release.id==release).delete()
-        session.query(Motif).filter(Motif.release_id==release).delete()
-        session.query(Loop).filter(Loop.release_id==release).delete()
-        session.query(SetDiff).filter(SetDiff.release_id==release).delete()
-        session.query(Parents).filter(Parents.release_id==release).delete()
-        session.query(LoopDiscrepancy).filter(LoopDiscrepancy.release_id==release).delete()
+
+        # ml_handles
+        logging.info('Removing release %s from table %s' % (release, ML_handle.__tablename__) )
+        session.query(ML_handle).delete(synchronize_session='fetch')
+        # ml_loop_order
+        logging.info('Removing release %s from table %s' % (release, LoopOrder.__tablename__) )
+        session.query(LoopOrder).\
+                filter(LoopOrder.release_id==release).\
+                filter(LoopOrder.motif_id.like(self.motif_type+'%')).\
+                delete(synchronize_session='fetch')
+        # ml_loop_positions
+        logging.info('Removing release %s from table %s' % (release, LoopPosition.__tablename__) )
+        session.query(LoopPosition).\
+                filter(LoopPosition.release_id==release).\
+                filter(LoopPosition.motif_id.like(self.motif_type+'%')).\
+                delete(synchronize_session='fetch')
+        # ml_releases
+        logging.info('Removing release %s from table %s' % (release, Release.__tablename__) )
+        session.query(Release).\
+                filter_by(id=release).\
+                filter_by(type=self.motif_type).\
+                delete(synchronize_session='fetch')
+        # ml_motifs
+        logging.info('Removing release %s from table %s' % (release, Motif.__tablename__) )
+        session.query(Motif).\
+                filter_by(release_id=release).\
+                filter_by(type=self.motif_type).\
+                delete(synchronize_session='fetch')
+        # ml_loops
+        logging.info('Removing release %s from table %s' % (release, Loop.__tablename__) )
+        session.query(Loop).\
+                filter(Loop.release_id==release).\
+                filter(Loop.id.like(self.motif_type+'%')).\
+                delete(synchronize_session='fetch')
+        # ml_set_diff
+        logging.info('Removing release %s from table %s' % (release, SetDiff.__tablename__) )
+        session.query(SetDiff).\
+                filter(SetDiff.release_id==release).\
+                filter(SetDiff.motif_id1.like(self.motif_type+'%')).\
+                delete(synchronize_session='fetch')
+        # ml_history
+        logging.info('Removing release %s from table %s' % (release, Parents.__tablename__) )
+        session.query(Parents).\
+                filter(Parents.release_id==release).\
+                filter(Parents.motif_id.like(self.motif_type+'%')).\
+                delete(synchronize_session='fetch')
+        # ml_mutual_discrepancy
+        logging.info('Removing release %s from table %s' % (release, LoopDiscrepancy.__tablename__) )
+        session.query(LoopDiscrepancy).\
+                filter(LoopDiscrepancy.release_id==release).\
+                delete(synchronize_session='fetch')
+        # ml_release_diff
+        logging.info('Removing release %s from table %s' % (release, Release_diff.__tablename__) )
+        session.query(Release_diff).\
+                filter(or_(Release_diff.release_id1==release, Release_diff.release_id2==release)).\
+                filter_by(type=self.motif_type).\
+                delete(synchronize_session='fetch')
+        session.commit()
 
     def __release_diff_commit(self):
         """
