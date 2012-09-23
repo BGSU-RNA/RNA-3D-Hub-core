@@ -1,12 +1,20 @@
 """
 
-About
+Python module for extracting loops from RNA 3D structures.
 
 """
 
 __author__ = 'Anton Petrov'
 
-import os, csv, pdb, sys, getopt, logging, datetime
+import os
+import csv
+import pdb
+import sys
+import getopt
+import logging
+import datetime
+
+
 from MLSqlAlchemyClasses import session, AllLoops
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
@@ -22,12 +30,13 @@ class LoopExtractor(MotifAtlasBaseClass):
         """Loops over `pdbs`, extracts and imports all loops"""
         try:
             for loop_type in self.loop_types:
+                logging.info('Extracting %s' % loop_type)
                 if recalculate is None:
                     recalculate = self.config['recalculate'][loop_type]
                 if recalculate:
                     pdb_list = pdbs[:]
                 else:
-                    pdb_list = self.filter_out_analyzed_pdbs(pdbs,loop_type)
+                    pdb_list = self.filter_out_analyzed_pdbs(pdbs, loop_type)
                 for pdb_id in pdb_list:
                     logging.info('Extracting %s from %s', loop_type, pdb_id)
                     (Loops,l) = self.extract_loops(pdb_id, loop_type)
@@ -43,7 +52,7 @@ class LoopExtractor(MotifAtlasBaseClass):
         try:
             MotifAtlasBaseClass._setup_matlab(self)
             """Loops - array of FR3D File structures. l - its length"""
-            [Loops, l, err_msg] = self.mlab.aGetLoops(pdb_id,loop_type,nout=3)
+            [Loops, l, err_msg] = self.mlab.aGetLoops(pdb_id, loop_type, nout=3)
 
             if err_msg != '':
                 MotifAtlasBaseClass._crash(self,err_msg)
