@@ -19,8 +19,9 @@ def get_engine():
         looks up the connection parameters in a config file, which must be
         located in the same directory as the python scripts
     """
-    script_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    script_path = os.path.dirname(os.path.abspath( __file__ ))
     configfile = os.path.join(script_path, 'motifatlas.cfg')
+    print  configfile
     config = ConfigParser.RawConfigParser()
     config.read(configfile)
 
