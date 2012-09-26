@@ -24,7 +24,8 @@ class MotifAtlasBaseClass:
     def __init__(self):
         self.mlab   = False
         self.config = collections.defaultdict(dict)
-        self.configfile = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), 'motifatlas.cfg')
+        script_path = os.path.dirname(os.path.abspath( __file__ ))
+        self.configfile = os.path.join(script_path, 'motifatlas.cfg')
         self.import_config()
         self.log = ''
 
@@ -92,7 +93,7 @@ class MotifAtlasBaseClass:
             """locations"""
             section = 'locations'
             keys = ['loops_mat_files', 'loops_search_dir', 'log_dir',
-                    'releases_dir']
+                    'releases_dir', 'nrlists_dir']
             for k in keys: self.config[section][k] = config.get(section,k)
             """release modes"""
             section = 'release_mode'

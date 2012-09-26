@@ -1,3 +1,12 @@
+"""
+
+Can be used in conjuction with nodetests. Just run
+nodetests
+from the project's home directory.
+
+"""
+
+
 import unittest
 
 from PdbInfoLoader import PdbInfoLoader

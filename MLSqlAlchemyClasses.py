@@ -21,7 +21,6 @@ def get_engine():
     """
     script_path = os.path.dirname(os.path.abspath( __file__ ))
     configfile = os.path.join(script_path, 'motifatlas.cfg')
-    print  configfile
     config = ConfigParser.RawConfigParser()
     config.read(configfile)
 

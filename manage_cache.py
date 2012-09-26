@@ -17,7 +17,7 @@ import sys
 import logging
 
 from PdbInfoLoader import PdbInfoLoader
-from NRSqlAlchemyClasses import session, NR_release, NR_class
+from nratlas.NRSqlAlchemyClasses import session, NR_release, NR_class
 from MLSqlAlchemyClasses import AllLoops, Motif, Release
 
 from sqlalchemy import distinct
