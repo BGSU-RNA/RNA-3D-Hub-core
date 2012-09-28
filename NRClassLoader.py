@@ -1,6 +1,6 @@
 """
 
-NR list loader
+Main script for loading NR data into RNA 3D Hub.
 Loads NR groups into a database. Manages id tracking, version numbers etc.
 
 Usage: python NRClassLoader [options]
@@ -21,9 +21,10 @@ import os
 import re
 import logging
 
-from nratlas.NRSqlAlchemyClasses import *
+from models import *
 from nratlas.NRUploader import Uploader
-from nratlas.NRCollections import NR_eqclass_collection, NRCollectionMerger
+from nratlas.NR_eqclass_collection import NR_eqclass_collection
+from CollectionsMerger import CollectionsMerger as NRCollectionMerger
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 __author__ = 'Anton Petrov'
@@ -115,7 +116,6 @@ class Loader(MotifAtlasBaseClass):
             nr_html = 'Nonredundant_' + resolution + '.html'
             full_nr_html = os.path.join(self.nrlists_root, folder, nr_html)
             if os.path.isfile(full_nr_html):
-                print full_nr_html
                 self.parse_file(file=full_nr_html) # creates self.temp_file
 
                 c1 = NR_eqclass_collection(file=self.temp_file,
@@ -138,11 +138,11 @@ class Loader(MotifAtlasBaseClass):
         """
         for folder in self.lists:
             if len(folder) != 8:
-                print 'Skipping folder ', folder
+                logging.info('Skipping folder %s' % folder)
                 continue
 
             if folder in self.done:
-                print 'Already imported ', folder
+                logging.info('Already imported %s' % folder)
                 continue
 
             self.import_lists(folder)
@@ -152,7 +152,7 @@ class Loader(MotifAtlasBaseClass):
             os.remove(self.temp_file)
 
         self.success = True
-        print 'Successful update'
+        logging.info('Successful update')
 
 
 def usage():

@@ -7,7 +7,7 @@ About
 __author__ = 'Anton Petrov'
 
 import os, csv, pdb, sys, getopt, logging
-from MLSqlAlchemyClasses import session, PairwiseInteractions
+from models import session, PairwiseInteractions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 

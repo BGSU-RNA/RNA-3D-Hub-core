@@ -14,10 +14,19 @@ from PdbInfoLoader import PdbInfoLoader
 
 class TestPdbInfoLoader(unittest.TestCase):
 
+    ClassIsSetup = False
+
     def setUp(self):
-        """populate self.loader.pdbs"""
-        self.loader = PdbInfoLoader()
-        self.loader.get_all_rna_pdbs()
+        # If it was not setup yet, do it
+        if not self.ClassIsSetup:
+            print "Initializing testing environment"
+            self.prepare()
+            self.__class__.ClassIsSetup = True
+
+    def prepare(self):
+        unittest.TestCase.setUp(self)
+        self.__class__.loader = PdbInfoLoader()
+        self.__class__.loader.get_all_rna_pdbs()
 
     def test_length_of_rna_pdb_list(self):
         """Make sure that the pdb list is at least 2000 entries long"""

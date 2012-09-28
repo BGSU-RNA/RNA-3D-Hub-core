@@ -10,11 +10,16 @@ Usage: python PdbInfoLoader.py
 
 __author__ = 'Anton Petrov'
 
-import csv, logging, re, urllib2, sys, os
+import csv
+import logging
+import re
+import urllib2
+import sys
+import os
 from datetime import datetime
 from ftplib import FTP
 
-from MLSqlAlchemyClasses import session, PdbInfo, PdbObsolete
+from models import session, PdbInfo, PdbObsolete
 
 
 class GetAllRnaPdbsError(Exception):

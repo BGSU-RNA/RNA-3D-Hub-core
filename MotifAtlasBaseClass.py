@@ -16,7 +16,8 @@ import os
 from email.mime.text import MIMEText
 from time import localtime, strftime
 
-from MLSqlAlchemyClasses import session, PdbAnalysisStatus
+from models import session, PdbAnalysisStatus
+
 
 class MotifAtlasBaseClass:
     """Don't use logging anywhere in this constructor or the functions it calls.

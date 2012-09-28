@@ -15,7 +15,7 @@ import logging
 import datetime
 
 
-from MLSqlAlchemyClasses import session, AllLoops
+from models import session, AllLoops
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 

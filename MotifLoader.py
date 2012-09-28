@@ -1,9 +1,8 @@
 """
-Motif loader
 
-Loads motif groups into the database. Manages id tracking, version numbers etc.
-Treats internal, hairpin and junction loops separately. The root folder must
-contain folders with mat files.
+Main script for loading motif groups into RNA 3D Hub.
+Manages id tracking, version numbers etc.
+Treats internal, hairpin and junction loops separately.
 
 The folders must be prefixed with the loop type,
 for example: il1, il2, hl1, hl2. The release precedence is determined by sorting
@@ -16,7 +15,9 @@ Options:
   -h, --help            show this help
 
 Examples:
-python MotifLoader.py
+python MotifLoader.py -t il
+python MotifLoader.py -t hl
+
 """
 
 import pdb
@@ -29,9 +30,11 @@ import logging
 
 from sqlalchemy import desc
 
+from CollectionsMerger import CollectionsMerger as MotifCollectionMerger
+from mlatlas.MLCollections import MotifCollection
+from mlatlas.MLUploader import Uploader
+from models import session, Release
 
-from MLSqlAlchemyClasses import session, MotifCollection, Uploader, Release, \
-                                MotifCollectionMerger
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
@@ -43,18 +46,18 @@ class MotifLoader(MotifAtlasBaseClass):
     """
     def __init__(self, motif_type=''):
         MotifAtlasBaseClass.__init__(self)
+        self.success = False
         self.motifs_root = self.config['locations']['releases_dir']
         self.motif_type  = motif_type.upper()
-        self.done  = self.get_processed_releases(self.motif_type)
+        self.done  = []
         self.folders = []
-        self.__get_data_folders()
 
     def __get_data_folders(self):
         """folders must begin with loop_type (IL or HL)"""
         for file in os.listdir(self.motifs_root):
             if fnmatch.fnmatch(file, self.motif_type + '*'):
                 self.folders.append(file)
-                print file
+                logging.info(file)
         self.folders = sorted(self.folders)
 
     def __initialize_files(self, folder):
@@ -74,13 +77,11 @@ class MotifLoader(MotifAtlasBaseClass):
         self.f['2ds_destination']   = '/Servers/rna.bgsu.edu/img/MotifAtlas'
         self.f['correspondences']   = os.path.join(self.f['folder'],'correspondences.txt')
 
-    def get_processed_releases(self, type):
+    def get_processed_releases(self):
         """the `description` field corresponds to the folder name that the data
         for the release came from"""
-        done = []
-        for release in session.query(Release).filter(Release.type==type).all():
-            done.append(release.description)
-        return done
+        for release in session.query(Release).filter(Release.type==self.motif_type).all():
+            self.done.append(release.description)
 
     def list_all_releases(self, type):
         all_releases = []
@@ -113,7 +114,7 @@ class MotifLoader(MotifAtlasBaseClass):
         c1 = MotifCollection(release='latest',type=self.motif_type)
         for release in all_releases:
             c2 = MotifCollection(release=release,type=self.motif_type)
-            print c1.release, c2.release
+            logging.info('Comparing %s and %s' % (c1.release, c2.release))
             A = Uploader(ensembles=MotifCollectionMerger(c1,c2),
                          upload_mode='release_diff',
                          motif_type=self.motif_type)
@@ -122,18 +123,21 @@ class MotifLoader(MotifAtlasBaseClass):
     def import_data(self):
         """
         """
+        self.get_processed_releases()
+        self.__get_data_folders()
         for folder in self.folders:
             if len(folder) < 6:
-                print 'Skipping folder ', folder
+                logging.info('Skipping folder %s' % folder)
                 continue
 
             if folder in self.done:
-                print 'Already imported ', folder
+                logging.info('Already imported %s' % folder)
                 continue
 
             self.__initialize_files(folder)
             self.import_motif_release()
             self.compare_all_releases()
+        self.success = True
 
 
 def usage():
@@ -143,8 +147,6 @@ def usage():
 def main(argv):
     """
     """
-    logging.basicConfig(level=logging.DEBUG)
-
     try:
         opts, args = getopt.getopt(argv, "t:r:h", ['help','type'])
     except getopt.GetoptError:
@@ -173,10 +175,11 @@ def main(argv):
         pdb.set_trace()
         U = Uploader(motif_type=motif_type)
         U.remove_release(release_to_remove)
-        print 'Success'
+        logging.info('Release %s removed successfully' % release_to_remove)
         return
 
     L = MotifLoader(motif_type=motif_type)
+    L.start_logging()
     L.import_data()
 
 

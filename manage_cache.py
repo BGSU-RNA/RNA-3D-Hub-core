@@ -16,11 +16,11 @@ import urllib2
 import sys
 import logging
 
-from PdbInfoLoader import PdbInfoLoader
-from nratlas.NRSqlAlchemyClasses import session, NR_release, NR_class
-from MLSqlAlchemyClasses import AllLoops, Motif, Release
-
 from sqlalchemy import distinct
+
+
+from PdbInfoLoader import PdbInfoLoader
+from models import AllLoops, Motif, Release, NR_release, NR_class
 
 
 class CacheManager():

@@ -11,7 +11,7 @@ import csv
 import sys
 import logging
 
-from MLSqlAlchemyClasses import session, PdbBestChainsAndModels, PdbAnalysisStatus
+from models import session, PdbBestChainsAndModels, PdbAnalysisStatus
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 

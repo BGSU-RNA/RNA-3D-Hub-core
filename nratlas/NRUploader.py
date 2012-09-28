@@ -8,8 +8,8 @@ import logging
 import sqlalchemy.exc
 
 
-from NRSqlAlchemyClasses import session, NR_release, NR_class, NR_parents, \
-                                NR_release_diff, NR_setdiff, NR_pdb, NR_handle
+from models import session, NR_release, NR_class, NR_parents, NR_release_diff,\
+                   NR_setdiff, NR_pdb, NR_handle
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 

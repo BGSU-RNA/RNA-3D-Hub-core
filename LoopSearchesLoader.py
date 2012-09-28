@@ -18,7 +18,7 @@ import os
 import re
 import csv
 
-from MLSqlAlchemyClasses import session, LoopSearch, LoopSearchQA, LoopPositions
+from models import session, LoopSearch, LoopSearchQA, LoopPositions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 

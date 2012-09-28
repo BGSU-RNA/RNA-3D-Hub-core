@@ -8,7 +8,7 @@ __author__ = 'Anton Petrov'
 
 import pdb, sys, getopt, logging, datetime, csv, os
 
-from MLSqlAlchemyClasses import session, LoopQA, LoopRelease
+from models import session, LoopQA, LoopRelease
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 

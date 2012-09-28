@@ -12,7 +12,7 @@ import csv
 import sys
 import logging
 
-from MLSqlAlchemyClasses import session, RedundantNucleotide, PdbAnalysisStatus
+from models import session, RedundantNucleotide, PdbAnalysisStatus
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
