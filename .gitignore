@@ -4,6 +4,7 @@
 *.m~
 *.exe
 *.jar
+!VARNA*.jar
 *.txt
 *.ppt*
 *.log
