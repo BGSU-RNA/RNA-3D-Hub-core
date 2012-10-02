@@ -1,0 +1,4977 @@
+<graphml>
+<key id="label" for="node" attr.name="label" attr.type="string"/>
+<key id="within" for="node" attr.name="within" attr.type="double"/>
+<key id="cands" for="node" attr.name="cands" attr.type="double"/>
+<key id="numnt" for="node" attr.name="numnt" attr.type="double"/>
+<key id="signature" for="node" attr.name="signature" attr.type="string"/>
+<key id="links" for="edge" attr.name="links" attr.type="double"/>
+<key id="disc" for="edge" attr.name="disc" attr.type="double"/>
+<key id="connection" for="edge" attr.name="connection" attr.type="string"/>
+<graph edgedefault="undirected">
+<node id="Group_001">
+	<data key="label">Group_001</data>
+	<data key="signature">06_cWW-cWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">250</data>
+	<data key="within">0.405012</data>
+</node>
+<edge id="1to3" source="Group_001" target="Group_003">
+	<data key="links">95</data>
+	<data key="connection">IL_1S72_095 IL_2O3X_003</data>
+	<data key="disc">0.217967</data>
+</edge>
+<edge id="1to6" source="Group_001" target="Group_006">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_095 IL_2AW7_035</data>
+	<data key="disc">0.993656</data>
+</edge>
+<edge id="1to8" source="Group_001" target="Group_008">
+	<data key="links">2390</data>
+	<data key="connection">IL_3NJ7_002 IL_3NJ7_001</data>
+	<data key="disc">0.158652</data>
+</edge>
+<edge id="1to13" source="Group_001" target="Group_013">
+	<data key="links">6</data>
+	<data key="connection">IL_2AW7_009 IL_4A1B_038</data>
+	<data key="disc">0.794548</data>
+</edge>
+<edge id="1to18" source="Group_001" target="Group_018">
+	<data key="links">1396</data>
+	<data key="connection">IL_4A1B_061 IL_3U5H_062</data>
+	<data key="disc">0.086362</data>
+</edge>
+<edge id="1to20" source="Group_001" target="Group_020">
+	<data key="links">3</data>
+	<data key="connection">IL_1S72_095 IL_2QBG_029</data>
+	<data key="disc">0.739188</data>
+</edge>
+<edge id="1to23" source="Group_001" target="Group_023">
+	<data key="links">227</data>
+	<data key="connection">IL_2XZM_086 IL_2ZJR_059</data>
+	<data key="disc">0.273110</data>
+</edge>
+<edge id="1to24" source="Group_001" target="Group_024">
+	<data key="links">2</data>
+	<data key="connection">IL_2QEK_002 IL_2XZM_040</data>
+	<data key="disc">0.911330</data>
+</edge>
+<edge id="1to26" source="Group_001" target="Group_026">
+	<data key="links">568</data>
+	<data key="connection">IL_2ZJR_090 IL_3V2F_079</data>
+	<data key="disc">0.431391</data>
+</edge>
+<edge id="1to30" source="Group_001" target="Group_030">
+	<data key="links">587</data>
+	<data key="connection">IL_3U5F_065 IL_2XZM_064</data>
+	<data key="disc">0.333344</data>
+</edge>
+<edge id="1to31" source="Group_001" target="Group_031">
+	<data key="links">847</data>
+	<data key="connection">IL_2ZJR_036 IL_2QBG_040</data>
+	<data key="disc">0.139717</data>
+</edge>
+<edge id="1to35" source="Group_001" target="Group_035">
+	<data key="links">4</data>
+	<data key="connection">IL_1S72_095 IL_1FJG_046</data>
+	<data key="disc">0.753330</data>
+</edge>
+<edge id="1to52" source="Group_001" target="Group_052">
+	<data key="links">4</data>
+	<data key="connection">IL_2QEK_002 IL_3BNL_003</data>
+	<data key="disc">0.565829</data>
+</edge>
+<edge id="1to53" source="Group_001" target="Group_053">
+	<data key="links">597</data>
+	<data key="connection">IL_4A1B_112 IL_1S72_085</data>
+	<data key="disc">0.198398</data>
+</edge>
+<edge id="1to59" source="Group_001" target="Group_059">
+	<data key="links">476</data>
+	<data key="connection">IL_2ZJR_107 IL_2AW7_049</data>
+	<data key="disc">0.388244</data>
+</edge>
+<edge id="1to69" source="Group_001" target="Group_069">
+	<data key="links">37</data>
+	<data key="connection">IL_2AW7_009 IL_1S72_053</data>
+	<data key="disc">0.861133</data>
+</edge>
+<edge id="1to73" source="Group_001" target="Group_073">
+	<data key="links">16</data>
+	<data key="connection">IL_2QEK_002 IL_1LNG_001</data>
+	<data key="disc">0.531748</data>
+</edge>
+<edge id="1to75" source="Group_001" target="Group_075">
+	<data key="links">1</data>
+	<data key="connection">IL_2QEK_002 IL_1RLG_003</data>
+	<data key="disc">0.777672</data>
+</edge>
+<edge id="1to96" source="Group_001" target="Group_096">
+	<data key="links">248</data>
+	<data key="connection">IL_3TD0_005 IL_3E5C_001</data>
+	<data key="disc">0.167766</data>
+</edge>
+<edge id="1to98" source="Group_001" target="Group_098">
+	<data key="links">126</data>
+	<data key="connection">IL_3LRR_001 IL_3U5F_012</data>
+	<data key="disc">0.155447</data>
+</edge>
+<edge id="1to127" source="Group_001" target="Group_127">
+	<data key="links">54</data>
+	<data key="connection">IL_2ZJR_042 IL_1YVP_001</data>
+	<data key="disc">0.804672</data>
+</edge>
+<edge id="1to153" source="Group_001" target="Group_153">
+	<data key="links">4</data>
+	<data key="connection">IL_2ZJR_107 IL_1MFQ_006</data>
+	<data key="disc">0.854503</data>
+</edge>
+<edge id="1to161" source="Group_001" target="Group_161">
+	<data key="links">2</data>
+	<data key="connection">IL_2QEK_002 IL_1S72_016</data>
+	<data key="disc">0.811683</data>
+</edge>
+<edge id="1to167" source="Group_001" target="Group_167">
+	<data key="links">124</data>
+	<data key="connection">IL_1ZEV_002 IL_1SI3_001</data>
+	<data key="disc">0.171585</data>
+</edge>
+<edge id="1to214" source="Group_001" target="Group_214">
+	<data key="links">95</data>
+	<data key="connection">IL_3U5F_036 IL_333D_001</data>
+	<data key="disc">0.547805</data>
+</edge>
+<node id="Group_002">
+	<data key="label">Group_002</data>
+	<data key="signature">04_cWW-cWW</data>
+	<data key="numnt">4.000000</data>
+	<data key="cands">233</data>
+	<data key="within">0.436489</data>
+</node>
+<edge id="2to5" source="Group_002" target="Group_005">
+	<data key="links">213</data>
+	<data key="connection">IL_2QBG_107 IL_4A1B_111</data>
+	<data key="disc">0.237841</data>
+</edge>
+<edge id="2to11" source="Group_002" target="Group_011">
+	<data key="links">2209</data>
+	<data key="connection">IL_2QBG_035 IL_2AW7_029</data>
+	<data key="disc">0.106548</data>
+</edge>
+<edge id="2to17" source="Group_002" target="Group_017">
+	<data key="links">1804</data>
+	<data key="connection">IL_1S72_026 IL_2QBG_022</data>
+	<data key="disc">0.108002</data>
+</edge>
+<edge id="2to18" source="Group_002" target="Group_018">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_093 IL_2QBG_065</data>
+	<data key="disc">0.974639</data>
+</edge>
+<edge id="2to25" source="Group_002" target="Group_025">
+	<data key="links">338</data>
+	<data key="connection">IL_2AW7_017 IL_3U5H_054</data>
+	<data key="disc">0.122996</data>
+</edge>
+<edge id="2to42" source="Group_002" target="Group_042">
+	<data key="links">113</data>
+	<data key="connection">IL_1S72_067 IL_3V2F_069</data>
+	<data key="disc">0.075780</data>
+</edge>
+<edge id="2to48" source="Group_002" target="Group_048">
+	<data key="links">225</data>
+	<data key="connection">IL_3U5H_129 IL_4A1B_032</data>
+	<data key="disc">0.098756</data>
+</edge>
+<edge id="2to55" source="Group_002" target="Group_055">
+	<data key="links">3</data>
+	<data key="connection">IL_1MFQ_005 IL_4A1B_004</data>
+	<data key="disc">0.933582</data>
+</edge>
+<edge id="2to58" source="Group_002" target="Group_058">
+	<data key="links">541</data>
+	<data key="connection">IL_2QBG_104 IL_1S72_093</data>
+	<data key="disc">0.084980</data>
+</edge>
+<edge id="2to120" source="Group_002" target="Group_120">
+	<data key="links">230</data>
+	<data key="connection">IL_1CSL_002 IL_1S72_045</data>
+	<data key="disc">0.099698</data>
+</edge>
+<edge id="2to177" source="Group_002" target="Group_177">
+	<data key="links">33</data>
+	<data key="connection">IL_2QBG_107 IL_2AW7_015</data>
+	<data key="disc">0.796573</data>
+</edge>
+<edge id="2to212" source="Group_002" target="Group_212">
+	<data key="links">111</data>
+	<data key="connection">IL_3U5H_125 IL_2ZJR_098</data>
+	<data key="disc">0.202033</data>
+</edge>
+<edge id="2to268" source="Group_002" target="Group_268">
+	<data key="links">113</data>
+	<data key="connection">IL_3U5H_125 IL_3V2F_102</data>
+	<data key="disc">0.164665</data>
+</edge>
+<edge id="2to278" source="Group_002" target="Group_278">
+	<data key="links">2</data>
+	<data key="connection">IL_1U9S_006 IL_4A1C_004</data>
+	<data key="disc">0.874064</data>
+</edge>
+<node id="Group_003">
+	<data key="label">Group_003</data>
+	<data key="signature">05_cWW--cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">102</data>
+	<data key="within">0.444845</data>
+</node>
+<edge id="3to5" source="Group_003" target="Group_005">
+	<data key="links">179</data>
+	<data key="connection">IL_2AW7_025 IL_4A1B_021</data>
+	<data key="disc">0.490705</data>
+</edge>
+<edge id="3to6" source="Group_003" target="Group_006">
+	<data key="links">328</data>
+	<data key="connection">IL_2ZJR_084 IL_1FJG_051</data>
+	<data key="disc">0.464355</data>
+</edge>
+<edge id="3to8" source="Group_003" target="Group_008">
+	<data key="links">38</data>
+	<data key="connection">IL_3TD1_005 IL_3U5H_151</data>
+	<data key="disc">0.258534</data>
+</edge>
+<edge id="3to15" source="Group_003" target="Group_015">
+	<data key="links">41</data>
+	<data key="connection">IL_2ZJR_084 IL_2QBG_074</data>
+	<data key="disc">0.500976</data>
+</edge>
+<edge id="3to17" source="Group_003" target="Group_017">
+	<data key="links">5</data>
+	<data key="connection">IL_2AW7_025 IL_1XOK_001</data>
+	<data key="disc">0.949729</data>
+</edge>
+<edge id="3to18" source="Group_003" target="Group_018">
+	<data key="links">289</data>
+	<data key="connection">IL_3R1E_001 IL_3V2F_064</data>
+	<data key="disc">0.415291</data>
+</edge>
+<edge id="3to20" source="Group_003" target="Group_020">
+	<data key="links">262</data>
+	<data key="connection">IL_2ZJR_055 IL_2QBG_029</data>
+	<data key="disc">0.220136</data>
+</edge>
+<edge id="3to23" source="Group_003" target="Group_023">
+	<data key="links">46</data>
+	<data key="connection">IL_2O3X_003 IL_3Q1Q_006</data>
+	<data key="disc">0.131519</data>
+</edge>
+<edge id="3to24" source="Group_003" target="Group_024">
+	<data key="links">236</data>
+	<data key="connection">IL_2QWY_002 IL_2QWY_005</data>
+	<data key="disc">0.145637</data>
+</edge>
+<edge id="3to35" source="Group_003" target="Group_035">
+	<data key="links">287</data>
+	<data key="connection">IL_2ZJR_055 IL_3U5H_107</data>
+	<data key="disc">0.297227</data>
+</edge>
+<edge id="3to42" source="Group_003" target="Group_042">
+	<data key="links">8</data>
+	<data key="connection">IL_2AW7_025 IL_3U5H_110</data>
+	<data key="disc">0.723005</data>
+</edge>
+<edge id="3to48" source="Group_003" target="Group_048">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_018 IL_2XZM_026</data>
+	<data key="disc">0.791173</data>
+</edge>
+<edge id="3to55" source="Group_003" target="Group_055">
+	<data key="links">9</data>
+	<data key="connection">IL_1FIR_001 IL_2XZM_018</data>
+	<data key="disc">0.886232</data>
+</edge>
+<edge id="3to59" source="Group_003" target="Group_059">
+	<data key="links">10</data>
+	<data key="connection">IL_1LNT_003 IL_409D_001</data>
+	<data key="disc">0.783460</data>
+</edge>
+<edge id="3to73" source="Group_003" target="Group_073">
+	<data key="links">134</data>
+	<data key="connection">IL_2O3X_003 IL_2ZJR_101</data>
+	<data key="disc">0.274079</data>
+</edge>
+<edge id="3to74" source="Group_003" target="Group_074">
+	<data key="links">35</data>
+	<data key="connection">IL_3P59_004 IL_3U5H_132</data>
+	<data key="disc">0.691447</data>
+</edge>
+<edge id="3to75" source="Group_003" target="Group_075">
+	<data key="links">189</data>
+	<data key="connection">IL_3R1D_001 IL_2XZM_050</data>
+	<data key="disc">0.275342</data>
+</edge>
+<edge id="3to94" source="Group_003" target="Group_094">
+	<data key="links">4</data>
+	<data key="connection">IL_2QWY_002 IL_1NTB_004</data>
+	<data key="disc">0.804448</data>
+</edge>
+<edge id="3to97" source="Group_003" target="Group_097">
+	<data key="links">4</data>
+	<data key="connection">IL_2QBG_010 IL_1S72_017</data>
+	<data key="disc">0.921312</data>
+</edge>
+<edge id="3to107" source="Group_003" target="Group_107">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_018 IL_3U5F_073</data>
+	<data key="disc">0.895382</data>
+</edge>
+<edge id="3to114" source="Group_003" target="Group_114">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_018 IL_1F1T_002</data>
+	<data key="disc">0.845115</data>
+</edge>
+<edge id="3to124" source="Group_003" target="Group_124">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_010 IL_1U6B_010</data>
+	<data key="disc">0.960637</data>
+</edge>
+<edge id="3to161" source="Group_003" target="Group_161">
+	<data key="links">39</data>
+	<data key="connection">IL_1O9M_002 IL_1S72_016</data>
+	<data key="disc">0.440454</data>
+</edge>
+<edge id="3to236" source="Group_003" target="Group_236">
+	<data key="links">19</data>
+	<data key="connection">IL_3U5H_009 IL_3U5F_020</data>
+	<data key="disc">0.795936</data>
+</edge>
+<node id="Group_004">
+	<data key="label">Group_004</data>
+	<data key="signature">08_cWW-cWW-cWW-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">55</data>
+	<data key="within">0.479393</data>
+</node>
+<edge id="4to9" source="Group_004" target="Group_009">
+	<data key="links">218</data>
+	<data key="connection">IL_3U5F_046 IL_2IL9_002</data>
+	<data key="disc">0.315175</data>
+</edge>
+<edge id="4to21" source="Group_004" target="Group_021">
+	<data key="links">34</data>
+	<data key="connection">IL_2NOK_004 IL_3BNQ_002</data>
+	<data key="disc">0.593768</data>
+</edge>
+<edge id="4to33" source="Group_004" target="Group_033">
+	<data key="links">26</data>
+	<data key="connection">IL_3U5F_078 IL_2AW7_010</data>
+	<data key="disc">0.603646</data>
+</edge>
+<edge id="4to43" source="Group_004" target="Group_043">
+	<data key="links">3</data>
+	<data key="connection">IL_2A64_004 IL_1FJG_008</data>
+	<data key="disc">0.778897</data>
+</edge>
+<edge id="4to45" source="Group_004" target="Group_045">
+	<data key="links">35</data>
+	<data key="connection">IL_1MFQ_004 IL_3D2V_003</data>
+	<data key="disc">0.767998</data>
+</edge>
+<edge id="4to54" source="Group_004" target="Group_054">
+	<data key="links">76</data>
+	<data key="connection">IL_422D_001 IL_165D_001</data>
+	<data key="disc">0.137161</data>
+</edge>
+<edge id="4to64" source="Group_004" target="Group_064">
+	<data key="links">23</data>
+	<data key="connection">IL_3U5F_046 IL_1LNG_002</data>
+	<data key="disc">0.701887</data>
+</edge>
+<edge id="4to70" source="Group_004" target="Group_070">
+	<data key="links">4</data>
+	<data key="connection">IL_2A64_004 IL_3V2F_105</data>
+	<data key="disc">0.895190</data>
+</edge>
+<edge id="4to77" source="Group_004" target="Group_077">
+	<data key="links">48</data>
+	<data key="connection">IL_3U5H_043 IL_1S72_037</data>
+	<data key="disc">0.382477</data>
+</edge>
+<edge id="4to84" source="Group_004" target="Group_084">
+	<data key="links">8</data>
+	<data key="connection">IL_3DHS_001 IL_3V2F_043</data>
+	<data key="disc">0.856595</data>
+</edge>
+<edge id="4to95" source="Group_004" target="Group_095">
+	<data key="links">3</data>
+	<data key="connection">IL_2A64_004 IL_1J2B_001</data>
+	<data key="disc">0.708669</data>
+</edge>
+<edge id="4to103" source="Group_004" target="Group_103">
+	<data key="links">46</data>
+	<data key="connection">IL_422D_001 IL_255D_001</data>
+	<data key="disc">0.151605</data>
+</edge>
+<edge id="4to129" source="Group_004" target="Group_129">
+	<data key="links">18</data>
+	<data key="connection">IL_3U5H_043 IL_2FQN_003</data>
+	<data key="disc">0.725705</data>
+</edge>
+<edge id="4to175" source="Group_004" target="Group_175">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_083 IL_1Y0Q_002</data>
+	<data key="disc">0.802690</data>
+</edge>
+<edge id="4to191" source="Group_004" target="Group_191">
+	<data key="links">6</data>
+	<data key="connection">IL_3DHS_001 IL_2QBG_056</data>
+	<data key="disc">0.712171</data>
+</edge>
+<edge id="4to200" source="Group_004" target="Group_200">
+	<data key="links">10</data>
+	<data key="connection">IL_3DHS_001 IL_2R20_001</data>
+	<data key="disc">0.671012</data>
+</edge>
+<edge id="4to207" source="Group_004" target="Group_207">
+	<data key="links">9</data>
+	<data key="connection">IL_1MFQ_004 IL_2Y9B_002</data>
+	<data key="disc">0.547027</data>
+</edge>
+<edge id="4to218" source="Group_004" target="Group_218">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZZM_001 IL_3G78_001</data>
+	<data key="disc">0.808650</data>
+</edge>
+<edge id="4to269" source="Group_004" target="Group_269">
+	<data key="links">27</data>
+	<data key="connection">IL_422D_001 IL_413D_001</data>
+	<data key="disc">0.182650</data>
+</edge>
+<edge id="4to277" source="Group_004" target="Group_277">
+	<data key="links">7</data>
+	<data key="connection">IL_2IL9_001 IL_4A1B_097</data>
+	<data key="disc">0.748773</data>
+</edge>
+<node id="Group_005">
+	<data key="label">Group_005</data>
+	<data key="signature">05_tHS,cWW-cWW--cSH</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">55</data>
+	<data key="within">0.483729</data>
+</node>
+<edge id="5to6" source="Group_005" target="Group_006">
+	<data key="links">5</data>
+	<data key="connection">IL_3V2F_097 IL_4A1B_049</data>
+	<data key="disc">0.802657</data>
+</edge>
+<edge id="5to11" source="Group_005" target="Group_011">
+	<data key="links">16</data>
+	<data key="connection">IL_4A1B_111 IL_3V2F_107</data>
+	<data key="disc">0.206619</data>
+</edge>
+<edge id="5to15" source="Group_005" target="Group_015">
+	<data key="links">5</data>
+	<data key="connection">IL_3D0U_004 IL_1FJG_025</data>
+	<data key="disc">0.915583</data>
+</edge>
+<edge id="5to17" source="Group_005" target="Group_017">
+	<data key="links">34</data>
+	<data key="connection">IL_3DIR_004 IL_387D_001</data>
+	<data key="disc">0.447552</data>
+</edge>
+<edge id="5to18" source="Group_005" target="Group_018">
+	<data key="links">28</data>
+	<data key="connection">IL_4A1B_108 IL_2ZJR_063</data>
+	<data key="disc">0.809658</data>
+</edge>
+<edge id="5to20" source="Group_005" target="Group_020">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_021 IL_2QBG_029</data>
+	<data key="disc">0.944568</data>
+</edge>
+<edge id="5to24" source="Group_005" target="Group_024">
+	<data key="links">115</data>
+	<data key="connection">IL_2ZJR_086 IL_4A1B_114</data>
+	<data key="disc">0.496037</data>
+</edge>
+<edge id="5to28" source="Group_005" target="Group_028">
+	<data key="links">59</data>
+	<data key="connection">IL_2QBG_049 IL_3V2F_047</data>
+	<data key="disc">0.144315</data>
+</edge>
+<edge id="5to35" source="Group_005" target="Group_035">
+	<data key="links">42</data>
+	<data key="connection">IL_4A1B_021 IL_4A1B_069</data>
+	<data key="disc">0.565255</data>
+</edge>
+<edge id="5to42" source="Group_005" target="Group_042">
+	<data key="links">109</data>
+	<data key="connection">IL_2QBG_095 IL_3V2F_093</data>
+	<data key="disc">0.113566</data>
+</edge>
+<edge id="5to55" source="Group_005" target="Group_055">
+	<data key="links">23</data>
+	<data key="connection">IL_2QBG_044 IL_2XZM_018</data>
+	<data key="disc">0.703149</data>
+</edge>
+<edge id="5to58" source="Group_005" target="Group_058">
+	<data key="links">3</data>
+	<data key="connection">IL_2QBG_092 IL_3U5H_063</data>
+	<data key="disc">0.818405</data>
+</edge>
+<edge id="5to75" source="Group_005" target="Group_075">
+	<data key="links">9</data>
+	<data key="connection">IL_4A1B_021 IL_2ZJR_023</data>
+	<data key="disc">0.743038</data>
+</edge>
+<edge id="5to97" source="Group_005" target="Group_097">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_025 IL_1S72_017</data>
+	<data key="disc">0.955915</data>
+</edge>
+<edge id="5to114" source="Group_005" target="Group_114">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_097 IL_1F1T_002</data>
+	<data key="disc">0.907820</data>
+</edge>
+<edge id="5to124" source="Group_005" target="Group_124">
+	<data key="links">17</data>
+	<data key="connection">IL_3DIR_004 IL_1NTB_001</data>
+	<data key="disc">0.208730</data>
+</edge>
+<edge id="5to177" source="Group_005" target="Group_177">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_087 IL_2AW7_015</data>
+	<data key="disc">0.981332</data>
+</edge>
+<edge id="5to236" source="Group_005" target="Group_236">
+	<data key="links">20</data>
+	<data key="connection">IL_3V2F_090 IL_3U5F_020</data>
+	<data key="disc">0.640208</data>
+</edge>
+<node id="Group_006">
+	<data key="label">Group_006</data>
+	<data key="signature">05_cSH,cWW-tHS-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">43</data>
+	<data key="within">0.502219</data>
+</node>
+<edge id="6to11" source="Group_006" target="Group_011">
+	<data key="links">4</data>
+	<data key="connection">IL_2GDI_007 IL_2ZJR_024</data>
+	<data key="disc">0.796781</data>
+</edge>
+<edge id="6to12" source="Group_006" target="Group_012">
+	<data key="links">1</data>
+	<data key="connection">IL_3RW6_001 IL_1FJG_047</data>
+	<data key="disc">0.527161</data>
+</edge>
+<edge id="6to15" source="Group_006" target="Group_015">
+	<data key="links">30</data>
+	<data key="connection">IL_3V2F_070 IL_2QBG_074</data>
+	<data key="disc">0.155032</data>
+</edge>
+<edge id="6to17" source="Group_006" target="Group_017">
+	<data key="links">6</data>
+	<data key="connection">IL_3V2F_070 IL_1XOK_001</data>
+	<data key="disc">0.906884</data>
+</edge>
+<edge id="6to20" source="Group_006" target="Group_020">
+	<data key="links">222</data>
+	<data key="connection">IL_3V2F_070 IL_2ZJR_105</data>
+	<data key="disc">0.249474</data>
+</edge>
+<edge id="6to24" source="Group_006" target="Group_024">
+	<data key="links">12</data>
+	<data key="connection">IL_1FJG_051 IL_3U5H_078</data>
+	<data key="disc">0.685372</data>
+</edge>
+<edge id="6to34" source="Group_006" target="Group_034">
+	<data key="links">5</data>
+	<data key="connection">IL_3RW6_001 IL_2AW7_013</data>
+	<data key="disc">0.466522</data>
+</edge>
+<edge id="6to35" source="Group_006" target="Group_035">
+	<data key="links">43</data>
+	<data key="connection">IL_3V2F_070 IL_3U5H_107</data>
+	<data key="disc">0.550519</data>
+</edge>
+<edge id="6to48" source="Group_006" target="Group_048">
+	<data key="links">102</data>
+	<data key="connection">IL_3V2F_078 IL_2XZM_026</data>
+	<data key="disc">0.283506</data>
+</edge>
+<edge id="6to107" source="Group_006" target="Group_107">
+	<data key="links">39</data>
+	<data key="connection">IL_1FJG_042 IL_3RW6_003</data>
+	<data key="disc">0.264751</data>
+</edge>
+<edge id="6to114" source="Group_006" target="Group_114">
+	<data key="links">28</data>
+	<data key="connection">IL_4A1B_128 IL_1F1T_002</data>
+	<data key="disc">0.405031</data>
+</edge>
+<edge id="6to120" source="Group_006" target="Group_120">
+	<data key="links">7</data>
+	<data key="connection">IL_2GDI_007 IL_1KXK_001</data>
+	<data key="disc">0.695437</data>
+</edge>
+<edge id="6to278" source="Group_006" target="Group_278">
+	<data key="links">8</data>
+	<data key="connection">IL_2AW7_050 IL_4A1C_004</data>
+	<data key="disc">0.665019</data>
+</edge>
+<node id="Group_007">
+	<data key="label">Group_007</data>
+	<data key="signature">10_cWW-tSH-tHS-tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">31</data>
+	<data key="within">0.455108</data>
+</node>
+<edge id="7to10" source="Group_007" target="Group_010">
+	<data key="links">13</data>
+	<data key="connection">IL_2ZJR_012 IL_2ZJR_032</data>
+	<data key="disc">0.505396</data>
+</edge>
+<edge id="7to19" source="Group_007" target="Group_019">
+	<data key="links">110</data>
+	<data key="connection">IL_2QWY_001 IL_2QWY_004</data>
+	<data key="disc">0.271686</data>
+</edge>
+<edge id="7to21" source="Group_007" target="Group_021">
+	<data key="links">5</data>
+	<data key="connection">IL_2ZJR_012 IL_4A1B_120</data>
+	<data key="disc">0.667395</data>
+</edge>
+<edge id="7to46" source="Group_007" target="Group_046">
+	<data key="links">47</data>
+	<data key="connection">IL_2QWY_001 IL_1S72_034</data>
+	<data key="disc">0.494085</data>
+</edge>
+<edge id="7to62" source="Group_007" target="Group_062">
+	<data key="links">28</data>
+	<data key="connection">IL_2ZJR_071 IL_3U5F_039</data>
+	<data key="disc">0.530938</data>
+</edge>
+<edge id="7to67" source="Group_007" target="Group_067">
+	<data key="links">19</data>
+	<data key="connection">IL_2QWY_001 IL_4A1B_008</data>
+	<data key="disc">0.526118</data>
+</edge>
+<edge id="7to71" source="Group_007" target="Group_071">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZJR_012 IL_1FJG_061</data>
+	<data key="disc">0.639450</data>
+</edge>
+<edge id="7to99" source="Group_007" target="Group_099">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_012 IL_4A1B_029</data>
+	<data key="disc">0.756608</data>
+</edge>
+<edge id="7to111" source="Group_007" target="Group_111">
+	<data key="links">12</data>
+	<data key="connection">IL_2ZJR_071 IL_1S72_056</data>
+	<data key="disc">0.529854</data>
+</edge>
+<edge id="7to138" source="Group_007" target="Group_138">
+	<data key="links">10</data>
+	<data key="connection">IL_2ZJR_071 IL_3OWZ_008</data>
+	<data key="disc">0.681485</data>
+</edge>
+<edge id="7to145" source="Group_007" target="Group_145">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_012 IL_4A1B_075</data>
+	<data key="disc">0.991193</data>
+</edge>
+<edge id="7to178" source="Group_007" target="Group_178">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZJR_071 IL_2AW7_022</data>
+	<data key="disc">0.590652</data>
+</edge>
+<edge id="7to222" source="Group_007" target="Group_222">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_027 IL_3G78_011</data>
+	<data key="disc">0.955046</data>
+</edge>
+<edge id="7to235" source="Group_007" target="Group_235">
+	<data key="links">6</data>
+	<data key="connection">IL_2ZJR_088 IL_3U5F_003</data>
+	<data key="disc">0.345996</data>
+</edge>
+<edge id="7to251" source="Group_007" target="Group_251">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_012 IL_3U5H_053</data>
+	<data key="disc">0.555556</data>
+</edge>
+<edge id="7to256" source="Group_007" target="Group_256">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZJR_071 IL_3U5H_079</data>
+	<data key="disc">0.725109</data>
+</edge>
+<node id="Group_008">
+	<data key="label">Group_008</data>
+	<data key="signature">06_cWW-cWH-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">28</data>
+	<data key="within">0.531548</data>
+</node>
+<edge id="8to18" source="Group_008" target="Group_018">
+	<data key="links">131</data>
+	<data key="connection">IL_3U5F_023 IL_3U5H_052</data>
+	<data key="disc">0.225740</data>
+</edge>
+<edge id="8to23" source="Group_008" target="Group_023">
+	<data key="links">13</data>
+	<data key="connection">IL_3U5H_151 IL_2ZJR_059</data>
+	<data key="disc">0.444032</data>
+</edge>
+<edge id="8to26" source="Group_008" target="Group_026">
+	<data key="links">37</data>
+	<data key="connection">IL_3U5H_151 IL_4A1B_102</data>
+	<data key="disc">0.563017</data>
+</edge>
+<edge id="8to30" source="Group_008" target="Group_030">
+	<data key="links">27</data>
+	<data key="connection">IL_364D_004 IL_2QBG_085</data>
+	<data key="disc">0.754579</data>
+</edge>
+<edge id="8to31" source="Group_008" target="Group_031">
+	<data key="links">61</data>
+	<data key="connection">IL_3U5H_151 IL_4A1C_001</data>
+	<data key="disc">0.120692</data>
+</edge>
+<edge id="8to53" source="Group_008" target="Group_053">
+	<data key="links">6</data>
+	<data key="connection">IL_3U5H_072 IL_1S72_085</data>
+	<data key="disc">0.678691</data>
+</edge>
+<edge id="8to59" source="Group_008" target="Group_059">
+	<data key="links">44</data>
+	<data key="connection">IL_364D_004 IL_2AW7_049</data>
+	<data key="disc">0.370226</data>
+</edge>
+<edge id="8to69" source="Group_008" target="Group_069">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_072 IL_1FJG_003</data>
+	<data key="disc">0.932672</data>
+</edge>
+<edge id="8to72" source="Group_008" target="Group_072">
+	<data key="links">2</data>
+	<data key="connection">IL_3NJ7_001 IL_2QBG_043</data>
+	<data key="disc">0.955620</data>
+</edge>
+<edge id="8to75" source="Group_008" target="Group_075">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_151 IL_1RLG_003</data>
+	<data key="disc">0.887832</data>
+</edge>
+<edge id="8to96" source="Group_008" target="Group_096">
+	<data key="links">10</data>
+	<data key="connection">IL_364D_004 IL_3U5F_074</data>
+	<data key="disc">0.470757</data>
+</edge>
+<edge id="8to98" source="Group_008" target="Group_098">
+	<data key="links">14</data>
+	<data key="connection">IL_4A1B_027 IL_3U5F_012</data>
+	<data key="disc">0.451250</data>
+</edge>
+<edge id="8to127" source="Group_008" target="Group_127">
+	<data key="links">1</data>
+	<data key="connection">IL_364D_004 IL_1YVP_001</data>
+	<data key="disc">0.974068</data>
+</edge>
+<edge id="8to167" source="Group_008" target="Group_167">
+	<data key="links">13</data>
+	<data key="connection">IL_2D6F_001 IL_1SI3_001</data>
+	<data key="disc">0.402494</data>
+</edge>
+<edge id="8to214" source="Group_008" target="Group_214">
+	<data key="links">12</data>
+	<data key="connection">IL_2D6F_001 IL_333D_001</data>
+	<data key="disc">0.533183</data>
+</edge>
+<edge id="8to237" source="Group_008" target="Group_237">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_072 IL_3U5F_021</data>
+	<data key="disc">0.892285</data>
+</edge>
+<node id="Group_009">
+	<data key="label">Group_009</data>
+	<data key="signature">08_cWW-tSH-tHS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">27</data>
+	<data key="within">0.446683</data>
+</node>
+<edge id="9to13" source="Group_009" target="Group_013">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_3U5H_111</data>
+	<data key="disc">0.901340</data>
+</edge>
+<edge id="9to21" source="Group_009" target="Group_021">
+	<data key="links">4</data>
+	<data key="connection">IL_2O3V_002 IL_3BNQ_002</data>
+	<data key="disc">0.582710</data>
+</edge>
+<edge id="9to23" source="Group_009" target="Group_023">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_1X8W_009</data>
+	<data key="disc">0.784759</data>
+</edge>
+<edge id="9to33" source="Group_009" target="Group_033">
+	<data key="links">6</data>
+	<data key="connection">IL_2O3V_002 IL_4A1B_070</data>
+	<data key="disc">0.365371</data>
+</edge>
+<edge id="9to43" source="Group_009" target="Group_043">
+	<data key="links">3</data>
+	<data key="connection">IL_2O3V_002 IL_1FJG_008</data>
+	<data key="disc">0.573560</data>
+</edge>
+<edge id="9to45" source="Group_009" target="Group_045">
+	<data key="links">5</data>
+	<data key="connection">IL_2A64_007 IL_3BNP_003</data>
+	<data key="disc">0.865748</data>
+</edge>
+<edge id="9to52" source="Group_009" target="Group_052">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_3U5F_028</data>
+	<data key="disc">0.964666</data>
+</edge>
+<edge id="9to54" source="Group_009" target="Group_054">
+	<data key="links">4</data>
+	<data key="connection">IL_2AKE_001 IL_1QBP_002</data>
+	<data key="disc">0.845554</data>
+</edge>
+<edge id="9to64" source="Group_009" target="Group_064">
+	<data key="links">10</data>
+	<data key="connection">IL_4A1B_005 IL_1LNG_002</data>
+	<data key="disc">0.482693</data>
+</edge>
+<edge id="9to69" source="Group_009" target="Group_069">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_1S72_053</data>
+	<data key="disc">0.865590</data>
+</edge>
+<edge id="9to70" source="Group_009" target="Group_070">
+	<data key="links">3</data>
+	<data key="connection">IL_2O3V_002 IL_2O3V_003</data>
+	<data key="disc">0.280053</data>
+</edge>
+<edge id="9to77" source="Group_009" target="Group_077">
+	<data key="links">5</data>
+	<data key="connection">IL_2A64_007 IL_1CSL_001</data>
+	<data key="disc">0.584825</data>
+</edge>
+<edge id="9to84" source="Group_009" target="Group_084">
+	<data key="links">2</data>
+	<data key="connection">IL_2A64_007 IL_2QBG_057</data>
+	<data key="disc">0.917216</data>
+</edge>
+<edge id="9to95" source="Group_009" target="Group_095">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_1U6B_004</data>
+	<data key="disc">0.912177</data>
+</edge>
+<edge id="9to103" source="Group_009" target="Group_103">
+	<data key="links">2</data>
+	<data key="connection">IL_2A64_007 IL_255D_001</data>
+	<data key="disc">0.717659</data>
+</edge>
+<edge id="9to129" source="Group_009" target="Group_129">
+	<data key="links">5</data>
+	<data key="connection">IL_2O3V_002 IL_2OE5_002</data>
+	<data key="disc">0.578680</data>
+</edge>
+<edge id="9to175" source="Group_009" target="Group_175">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_1Y0Q_002</data>
+	<data key="disc">0.966568</data>
+</edge>
+<edge id="9to184" source="Group_009" target="Group_184">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_2FQN_002</data>
+	<data key="disc">0.930886</data>
+</edge>
+<edge id="9to191" source="Group_009" target="Group_191">
+	<data key="links">1</data>
+	<data key="connection">IL_2AKE_001 IL_2QBG_056</data>
+	<data key="disc">0.771319</data>
+</edge>
+<edge id="9to199" source="Group_009" target="Group_199">
+	<data key="links">10</data>
+	<data key="connection">IL_2XZM_004 IL_2QBZ_003</data>
+	<data key="disc">0.410074</data>
+</edge>
+<edge id="9to200" source="Group_009" target="Group_200">
+	<data key="links">1</data>
+	<data key="connection">IL_2A64_007 IL_2R20_001</data>
+	<data key="disc">0.799825</data>
+</edge>
+<edge id="9to207" source="Group_009" target="Group_207">
+	<data key="links">1</data>
+	<data key="connection">IL_2A64_007 IL_2Y9B_002</data>
+	<data key="disc">0.632682</data>
+</edge>
+<edge id="9to218" source="Group_009" target="Group_218">
+	<data key="links">1</data>
+	<data key="connection">IL_2O3V_002 IL_3G78_001</data>
+	<data key="disc">0.983799</data>
+</edge>
+<edge id="9to269" source="Group_009" target="Group_269">
+	<data key="links">1</data>
+	<data key="connection">IL_2A64_007 IL_413D_001</data>
+	<data key="disc">0.720345</data>
+</edge>
+<edge id="9to277" source="Group_009" target="Group_277">
+	<data key="links">2</data>
+	<data key="connection">IL_2IL9_002 IL_4A1B_097</data>
+	<data key="disc">0.855502</data>
+</edge>
+<node id="Group_010">
+	<data key="label">Group_010</data>
+	<data key="signature">09_cWW-tSH-tHW-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">22</data>
+	<data key="within">0.411555</data>
+</node>
+<edge id="10to19" source="Group_010" target="Group_019">
+	<data key="links">5</data>
+	<data key="connection">IL_3U5H_124 IL_2QBG_058</data>
+	<data key="disc">0.487710</data>
+</edge>
+<edge id="10to21" source="Group_010" target="Group_021">
+	<data key="links">56</data>
+	<data key="connection">IL_3U5H_124 IL_4A1B_120</data>
+	<data key="disc">0.212522</data>
+</edge>
+<edge id="10to33" source="Group_010" target="Group_033">
+	<data key="links">3</data>
+	<data key="connection">IL_1X8W_006 IL_2AW7_010</data>
+	<data key="disc">0.767257</data>
+</edge>
+<edge id="10to43" source="Group_010" target="Group_043">
+	<data key="links">6</data>
+	<data key="connection">IL_1X8W_006 IL_1FJG_008</data>
+	<data key="disc">0.739380</data>
+</edge>
+<edge id="10to46" source="Group_010" target="Group_046">
+	<data key="links">3</data>
+	<data key="connection">IL_2QBG_051 IL_3V2F_098</data>
+	<data key="disc">0.709268</data>
+</edge>
+<edge id="10to67" source="Group_010" target="Group_067">
+	<data key="links">7</data>
+	<data key="connection">IL_2QBG_051 IL_2ZJR_048</data>
+	<data key="disc">0.131859</data>
+</edge>
+<edge id="10to71" source="Group_010" target="Group_071">
+	<data key="links">11</data>
+	<data key="connection">IL_3U5H_024 IL_1FJG_061</data>
+	<data key="disc">0.250420</data>
+</edge>
+<edge id="10to99" source="Group_010" target="Group_099">
+	<data key="links">4</data>
+	<data key="connection">IL_1X8W_006 IL_4A1B_029</data>
+	<data key="disc">0.626895</data>
+</edge>
+<edge id="10to145" source="Group_010" target="Group_145">
+	<data key="links">9</data>
+	<data key="connection">IL_2XZM_007 IL_3U5F_007</data>
+	<data key="disc">0.319429</data>
+</edge>
+<edge id="10to224" source="Group_010" target="Group_224">
+	<data key="links">4</data>
+	<data key="connection">IL_1S72_092 IL_3KTW_003</data>
+	<data key="disc">0.891919</data>
+</edge>
+<edge id="10to251" source="Group_010" target="Group_251">
+	<data key="links">8</data>
+	<data key="connection">IL_3V2F_036 IL_3U5H_053</data>
+	<data key="disc">0.236001</data>
+</edge>
+<node id="Group_011">
+	<data key="label">Group_011</data>
+	<data key="signature">04_cWW-cWW</data>
+	<data key="numnt">4.000000</data>
+	<data key="cands">21</data>
+	<data key="within">0.411015</data>
+</node>
+<edge id="11to17" source="Group_011" target="Group_017">
+	<data key="links">78</data>
+	<data key="connection">IL_2QBG_060 IL_1XOK_001</data>
+	<data key="disc">0.423855</data>
+</edge>
+<edge id="11to18" source="Group_011" target="Group_018">
+	<data key="links">10</data>
+	<data key="connection">IL_3U5H_019 IL_2QBG_065</data>
+	<data key="disc">0.922224</data>
+</edge>
+<edge id="11to25" source="Group_011" target="Group_025">
+	<data key="links">26</data>
+	<data key="connection">IL_2XZM_033 IL_2ZJR_033</data>
+	<data key="disc">0.398747</data>
+</edge>
+<edge id="11to42" source="Group_011" target="Group_042">
+	<data key="links">8</data>
+	<data key="connection">IL_1S72_042 IL_3V2F_069</data>
+	<data key="disc">0.209948</data>
+</edge>
+<edge id="11to48" source="Group_011" target="Group_048">
+	<data key="links">18</data>
+	<data key="connection">IL_1S72_099 IL_2QBG_032</data>
+	<data key="disc">0.388931</data>
+</edge>
+<edge id="11to55" source="Group_011" target="Group_055">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_019 IL_4A1B_004</data>
+	<data key="disc">0.958262</data>
+</edge>
+<edge id="11to58" source="Group_011" target="Group_058">
+	<data key="links">39</data>
+	<data key="connection">IL_3U5H_019 IL_1KXK_003</data>
+	<data key="disc">0.384957</data>
+</edge>
+<edge id="11to120" source="Group_011" target="Group_120">
+	<data key="links">18</data>
+	<data key="connection">IL_3U5H_137 IL_1KXK_001</data>
+	<data key="disc">0.280252</data>
+</edge>
+<edge id="11to177" source="Group_011" target="Group_177">
+	<data key="links">5</data>
+	<data key="connection">IL_1S72_099 IL_2AW7_015</data>
+	<data key="disc">0.870097</data>
+</edge>
+<edge id="11to212" source="Group_011" target="Group_212">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_019 IL_2ZJR_098</data>
+	<data key="disc">0.838109</data>
+</edge>
+<edge id="11to268" source="Group_011" target="Group_268">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_019 IL_3V2F_102</data>
+	<data key="disc">0.833110</data>
+</edge>
+<edge id="11to278" source="Group_011" target="Group_278">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_107 IL_4A1C_004</data>
+	<data key="disc">0.883446</data>
+</edge>
+<node id="Group_012">
+	<data key="label">Group_012</data>
+	<data key="signature">07_cWW-cSH,tWH--cWS-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">20</data>
+	<data key="within">0.478222</data>
+</node>
+<edge id="12to13" source="Group_012" target="Group_013">
+	<data key="links">3</data>
+	<data key="connection">IL_2QBG_102 IL_3V2F_091</data>
+	<data key="disc">0.908494</data>
+</edge>
+<edge id="12to15" source="Group_012" target="Group_015">
+	<data key="links">34</data>
+	<data key="connection">IL_1S72_051 IL_4A1B_019</data>
+	<data key="disc">0.404065</data>
+</edge>
+<edge id="12to20" source="Group_012" target="Group_020">
+	<data key="links">2</data>
+	<data key="connection">IL_1FJG_047 IL_2AW7_007</data>
+	<data key="disc">0.343123</data>
+</edge>
+<edge id="12to34" source="Group_012" target="Group_034">
+	<data key="links">4</data>
+	<data key="connection">IL_1FJG_047 IL_2AW7_013</data>
+	<data key="disc">0.237388</data>
+</edge>
+<edge id="12to56" source="Group_012" target="Group_056">
+	<data key="links">3</data>
+	<data key="connection">IL_3V2F_100 IL_2XXA_009</data>
+	<data key="disc">0.931502</data>
+</edge>
+<edge id="12to89" source="Group_012" target="Group_089">
+	<data key="links">16</data>
+	<data key="connection">IL_1FJG_015 IL_2XZM_022</data>
+	<data key="disc">0.257972</data>
+</edge>
+<edge id="12to114" source="Group_012" target="Group_114">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_047 IL_1F1T_002</data>
+	<data key="disc">0.928851</data>
+</edge>
+<edge id="12to144" source="Group_012" target="Group_144">
+	<data key="links">8</data>
+	<data key="connection">IL_1S72_091 IL_4A1B_119</data>
+	<data key="disc">0.213028</data>
+</edge>
+<edge id="12to150" source="Group_012" target="Group_150">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_018 IL_1FJG_037</data>
+	<data key="disc">0.986270</data>
+</edge>
+<node id="Group_013">
+	<data key="label">Group_013</data>
+	<data key="signature">07_cWW-cWW-cWW--cSH</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">19</data>
+	<data key="within">0.462221</data>
+</node>
+<edge id="13to18" source="Group_013" target="Group_018">
+	<data key="links">2</data>
+	<data key="connection">IL_3V2F_003 IL_2XZM_006</data>
+	<data key="disc">0.775663</data>
+</edge>
+<edge id="13to23" source="Group_013" target="Group_023">
+	<data key="links">17</data>
+	<data key="connection">IL_4A1B_038 IL_1X8W_009</data>
+	<data key="disc">0.767030</data>
+</edge>
+<edge id="13to31" source="Group_013" target="Group_031">
+	<data key="links">16</data>
+	<data key="connection">IL_3V2F_003 IL_3U5H_138</data>
+	<data key="disc">0.509798</data>
+</edge>
+<edge id="13to33" source="Group_013" target="Group_033">
+	<data key="links">8</data>
+	<data key="connection">IL_2ZJR_039 IL_4A1B_070</data>
+	<data key="disc">0.718170</data>
+</edge>
+<edge id="13to52" source="Group_013" target="Group_052">
+	<data key="links">2</data>
+	<data key="connection">IL_1XJR_001 IL_3U5F_068</data>
+	<data key="disc">0.886563</data>
+</edge>
+<edge id="13to53" source="Group_013" target="Group_053">
+	<data key="links">3</data>
+	<data key="connection">IL_3U5H_033 IL_2GDI_001</data>
+	<data key="disc">0.769684</data>
+</edge>
+<edge id="13to56" source="Group_013" target="Group_056">
+	<data key="links">5</data>
+	<data key="connection">IL_1S72_082 IL_2ZJR_087</data>
+	<data key="disc">0.224177</data>
+</edge>
+<edge id="13to57" source="Group_013" target="Group_057">
+	<data key="links">1</data>
+	<data key="connection">IL_1XJR_001 IL_1S72_059</data>
+	<data key="disc">0.851911</data>
+</edge>
+<edge id="13to59" source="Group_013" target="Group_059">
+	<data key="links">11</data>
+	<data key="connection">IL_1S72_003 IL_1FJG_041</data>
+	<data key="disc">0.817984</data>
+</edge>
+<edge id="13to69" source="Group_013" target="Group_069">
+	<data key="links">8</data>
+	<data key="connection">IL_4A1B_038 IL_1S72_053</data>
+	<data key="disc">0.656771</data>
+</edge>
+<edge id="13to70" source="Group_013" target="Group_070">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZJR_039 IL_2O3V_003</data>
+	<data key="disc">0.909407</data>
+</edge>
+<edge id="13to76" source="Group_013" target="Group_076">
+	<data key="links">11</data>
+	<data key="connection">IL_1XJR_001 IL_1FJG_063</data>
+	<data key="disc">0.611111</data>
+</edge>
+<edge id="13to137" source="Group_013" target="Group_137">
+	<data key="links">7</data>
+	<data key="connection">IL_3P49_006 IL_3OWZ_006</data>
+	<data key="disc">0.516653</data>
+</edge>
+<edge id="13to144" source="Group_013" target="Group_144">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_091 IL_4A1B_119</data>
+	<data key="disc">0.968563</data>
+</edge>
+<edge id="13to184" source="Group_013" target="Group_184">
+	<data key="links">7</data>
+	<data key="connection">IL_2ZJR_039 IL_2FQN_002</data>
+	<data key="disc">0.823717</data>
+</edge>
+<edge id="13to201" source="Group_013" target="Group_201">
+	<data key="links">1</data>
+	<data key="connection">IL_3P49_009 IL_2XZM_019</data>
+	<data key="disc">0.908237</data>
+</edge>
+<edge id="13to204" source="Group_013" target="Group_204">
+	<data key="links">1</data>
+	<data key="connection">IL_1XJR_001 IL_2XZM_067</data>
+	<data key="disc">0.885196</data>
+</edge>
+<edge id="13to227" source="Group_013" target="Group_227">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_039 IL_3NPB_006</data>
+	<data key="disc">0.778530</data>
+</edge>
+<edge id="13to237" source="Group_013" target="Group_237">
+	<data key="links">1</data>
+	<data key="connection">IL_1XJR_001 IL_3U5F_021</data>
+	<data key="disc">0.720860</data>
+</edge>
+<node id="Group_014">
+	<data key="label">Group_014</data>
+	<data key="signature">12_cWW-tSS--tSH-tHW,tHS-tHS,cWW-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">19</data>
+	<data key="within">0.480915</data>
+</node>
+<edge id="14to87" source="Group_014" target="Group_087">
+	<data key="links">14</data>
+	<data key="connection">IL_1T0K_001 IL_3NVI_001</data>
+	<data key="disc">0.386181</data>
+</edge>
+<edge id="14to105" source="Group_014" target="Group_105">
+	<data key="links">13</data>
+	<data key="connection">IL_3U5F_051 IL_2AW7_038</data>
+	<data key="disc">0.339627</data>
+</edge>
+<edge id="14to148" source="Group_014" target="Group_148">
+	<data key="links">5</data>
+	<data key="connection">IL_2AW7_014 IL_1FJG_011</data>
+	<data key="disc">0.152462</data>
+</edge>
+<node id="Group_015">
+	<data key="label">Group_015</data>
+	<data key="signature">06_cWW-cSH-cWS-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">17</data>
+	<data key="within">0.487727</data>
+</node>
+<edge id="15to17" source="Group_015" target="Group_017">
+	<data key="links">2</data>
+	<data key="connection">IL_2QBG_074 IL_1XOK_001</data>
+	<data key="disc">0.915783</data>
+</edge>
+<edge id="15to20" source="Group_015" target="Group_020">
+	<data key="links">18</data>
+	<data key="connection">IL_3TZR_001 IL_3Q1Q_003</data>
+	<data key="disc">0.274231</data>
+</edge>
+<edge id="15to24" source="Group_015" target="Group_024">
+	<data key="links">5</data>
+	<data key="connection">IL_2QBG_074 IL_3U5H_078</data>
+	<data key="disc">0.652331</data>
+</edge>
+<edge id="15to34" source="Group_015" target="Group_034">
+	<data key="links">3</data>
+	<data key="connection">IL_1S72_101 IL_2AW7_044</data>
+	<data key="disc">0.895065</data>
+</edge>
+<edge id="15to35" source="Group_015" target="Group_035">
+	<data key="links">4</data>
+	<data key="connection">IL_2QBG_074 IL_2AW7_024</data>
+	<data key="disc">0.711619</data>
+</edge>
+<edge id="15to48" source="Group_015" target="Group_048">
+	<data key="links">2</data>
+	<data key="connection">IL_2QBG_074 IL_2XZM_026</data>
+	<data key="disc">0.882564</data>
+</edge>
+<edge id="15to107" source="Group_015" target="Group_107">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_074 IL_3RW6_003</data>
+	<data key="disc">0.732879</data>
+</edge>
+<edge id="15to118" source="Group_015" target="Group_118">
+	<data key="links">9</data>
+	<data key="connection">IL_1U9S_004 IL_1J9H_001</data>
+	<data key="disc">0.766513</data>
+</edge>
+<edge id="15to236" source="Group_015" target="Group_236">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_069 IL_3U5F_020</data>
+	<data key="disc">0.973850</data>
+</edge>
+<node id="Group_016">
+	<data key="label">Group_016</data>
+	<data key="signature">15_cWW-cWW-tSH-tHH-cSH-tWH-tHS-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">16</data>
+	<data key="within">0.230318</data>
+</node>
+<edge id="16to243" source="Group_016" target="Group_243">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_118 IL_3U5H_006</data>
+	<data key="disc">0.276076</data>
+</edge>
+<node id="Group_017">
+	<data key="label">Group_017</data>
+	<data key="signature">04_cWW-cWW</data>
+	<data key="numnt">4.000000</data>
+	<data key="cands">16</data>
+	<data key="within">0.545329</data>
+</node>
+<edge id="17to20" source="Group_017" target="Group_020">
+	<data key="links">4</data>
+	<data key="connection">IL_1XOK_002 IL_3V2F_055</data>
+	<data key="disc">0.936408</data>
+</edge>
+<edge id="17to24" source="Group_017" target="Group_024">
+	<data key="links">4</data>
+	<data key="connection">IL_1XOK_001 IL_2XZM_040</data>
+	<data key="disc">0.897613</data>
+</edge>
+<edge id="17to25" source="Group_017" target="Group_025">
+	<data key="links">18</data>
+	<data key="connection">IL_3G78_015 IL_2ZJR_033</data>
+	<data key="disc">0.400109</data>
+</edge>
+<edge id="17to35" source="Group_017" target="Group_035">
+	<data key="links">5</data>
+	<data key="connection">IL_1XOK_002 IL_3U5H_107</data>
+	<data key="disc">0.871743</data>
+</edge>
+<edge id="17to42" source="Group_017" target="Group_042">
+	<data key="links">6</data>
+	<data key="connection">IL_3G78_015 IL_3V2F_069</data>
+	<data key="disc">0.711997</data>
+</edge>
+<edge id="17to48" source="Group_017" target="Group_048">
+	<data key="links">12</data>
+	<data key="connection">IL_3U5H_031 IL_4A1B_032</data>
+	<data key="disc">0.474884</data>
+</edge>
+<edge id="17to55" source="Group_017" target="Group_055">
+	<data key="links">2</data>
+	<data key="connection">IL_3G78_015 IL_4A1B_004</data>
+	<data key="disc">0.981005</data>
+</edge>
+<edge id="17to58" source="Group_017" target="Group_058">
+	<data key="links">31</data>
+	<data key="connection">IL_3G78_015 IL_1S72_093</data>
+	<data key="disc">0.258988</data>
+</edge>
+<edge id="17to114" source="Group_017" target="Group_114">
+	<data key="links">1</data>
+	<data key="connection">IL_1XOK_002 IL_1F1T_002</data>
+	<data key="disc">0.990527</data>
+</edge>
+<edge id="17to120" source="Group_017" target="Group_120">
+	<data key="links">12</data>
+	<data key="connection">IL_3U5H_031 IL_1S72_045</data>
+	<data key="disc">0.382370</data>
+</edge>
+<edge id="17to124" source="Group_017" target="Group_124">
+	<data key="links">4</data>
+	<data key="connection">IL_387D_001 IL_1NTB_001</data>
+	<data key="disc">0.360709</data>
+</edge>
+<edge id="17to177" source="Group_017" target="Group_177">
+	<data key="links">2</data>
+	<data key="connection">IL_3V2F_095 IL_2AW7_015</data>
+	<data key="disc">0.965743</data>
+</edge>
+<edge id="17to212" source="Group_017" target="Group_212">
+	<data key="links">6</data>
+	<data key="connection">IL_1S72_086 IL_2ZJR_098</data>
+	<data key="disc">0.176520</data>
+</edge>
+<edge id="17to268" source="Group_017" target="Group_268">
+	<data key="links">6</data>
+	<data key="connection">IL_3U5H_115 IL_3V2F_102</data>
+	<data key="disc">0.136222</data>
+</edge>
+<node id="Group_018">
+	<data key="label">Group_018</data>
+	<data key="signature">06_cWW-cSW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">16</data>
+	<data key="within">0.610365</data>
+</node>
+<edge id="18to23" source="Group_018" target="Group_023">
+	<data key="links">7</data>
+	<data key="connection">IL_2AZ2_004 IL_2ZJR_059</data>
+	<data key="disc">0.693928</data>
+</edge>
+<edge id="18to24" source="Group_018" target="Group_024">
+	<data key="links">21</data>
+	<data key="connection">IL_2QBG_065 IL_2QWY_005</data>
+	<data key="disc">0.793192</data>
+</edge>
+<edge id="18to26" source="Group_018" target="Group_026">
+	<data key="links">25</data>
+	<data key="connection">IL_2QBG_065 IL_3V2F_012</data>
+	<data key="disc">0.752460</data>
+</edge>
+<edge id="18to30" source="Group_018" target="Group_030">
+	<data key="links">17</data>
+	<data key="connection">IL_2AZ2_004 IL_2QBG_085</data>
+	<data key="disc">0.688692</data>
+</edge>
+<edge id="18to31" source="Group_018" target="Group_031">
+	<data key="links">39</data>
+	<data key="connection">IL_2AZ2_001 IL_3MEI_003</data>
+	<data key="disc">0.101278</data>
+</edge>
+<edge id="18to42" source="Group_018" target="Group_042">
+	<data key="links">5</data>
+	<data key="connection">IL_1S72_062 IL_3U5H_110</data>
+	<data key="disc">0.919906</data>
+</edge>
+<edge id="18to52" source="Group_018" target="Group_052">
+	<data key="links">5</data>
+	<data key="connection">IL_3U5H_085 IL_3U5F_028</data>
+	<data key="disc">0.957020</data>
+</edge>
+<edge id="18to53" source="Group_018" target="Group_053">
+	<data key="links">7</data>
+	<data key="connection">IL_2XZM_006 IL_1S72_085</data>
+	<data key="disc">0.673654</data>
+</edge>
+<edge id="18to59" source="Group_018" target="Group_059">
+	<data key="links">26</data>
+	<data key="connection">IL_3V2F_042 IL_2AW7_049</data>
+	<data key="disc">0.571974</data>
+</edge>
+<edge id="18to69" source="Group_018" target="Group_069">
+	<data key="links">4</data>
+	<data key="connection">IL_3V2F_042 IL_1FJG_003</data>
+	<data key="disc">0.930072</data>
+</edge>
+<edge id="18to75" source="Group_018" target="Group_075">
+	<data key="links">6</data>
+	<data key="connection">IL_4A1B_081 IL_2ZJR_023</data>
+	<data key="disc">0.639845</data>
+</edge>
+<edge id="18to76" source="Group_018" target="Group_076">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_006 IL_3V7E_007</data>
+	<data key="disc">0.916380</data>
+</edge>
+<edge id="18to96" source="Group_018" target="Group_096">
+	<data key="links">5</data>
+	<data key="connection">IL_2XZM_006 IL_3U5F_074</data>
+	<data key="disc">0.755556</data>
+</edge>
+<edge id="18to98" source="Group_018" target="Group_098">
+	<data key="links">11</data>
+	<data key="connection">IL_2XZM_006 IL_3U5F_006</data>
+	<data key="disc">0.268332</data>
+</edge>
+<edge id="18to127" source="Group_018" target="Group_127">
+	<data key="links">2</data>
+	<data key="connection">IL_2XZM_006 IL_1YVP_001</data>
+	<data key="disc">0.905341</data>
+</edge>
+<edge id="18to167" source="Group_018" target="Group_167">
+	<data key="links">5</data>
+	<data key="connection">IL_3U5H_052 IL_1SI3_001</data>
+	<data key="disc">0.402897</data>
+</edge>
+<edge id="18to213" source="Group_018" target="Group_213">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_006 IL_2ZJR_103</data>
+	<data key="disc">0.938274</data>
+</edge>
+<edge id="18to214" source="Group_018" target="Group_214">
+	<data key="links">5</data>
+	<data key="connection">IL_2AZ2_004 IL_333D_001</data>
+	<data key="disc">0.322140</data>
+</edge>
+<edge id="18to226" source="Group_018" target="Group_226">
+	<data key="links">3</data>
+	<data key="connection">IL_2ZJR_063 IL_3NPB_005</data>
+	<data key="disc">0.667026</data>
+</edge>
+<node id="Group_019">
+	<data key="label">Group_019</data>
+	<data key="signature">10_cWW-tSH-tHW-tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">15</data>
+	<data key="within">0.338226</data>
+</node>
+<edge id="19to21" source="Group_019" target="Group_021">
+	<data key="links">2</data>
+	<data key="connection">IL_2QBG_058 IL_4A1B_120</data>
+	<data key="disc">0.413479</data>
+</edge>
+<edge id="19to46" source="Group_019" target="Group_046">
+	<data key="links">19</data>
+	<data key="connection">IL_2QBG_058 IL_3V2F_027</data>
+	<data key="disc">0.456885</data>
+</edge>
+<edge id="19to62" source="Group_019" target="Group_062">
+	<data key="links">2</data>
+	<data key="connection">IL_2QWY_004 IL_2NZ4_012</data>
+	<data key="disc">0.853305</data>
+</edge>
+<edge id="19to67" source="Group_019" target="Group_067">
+	<data key="links">4</data>
+	<data key="connection">IL_2XZM_035 IL_4A1B_008</data>
+	<data key="disc">0.485189</data>
+</edge>
+<edge id="19to71" source="Group_019" target="Group_071">
+	<data key="links">2</data>
+	<data key="connection">IL_2QBG_058 IL_2QBG_075</data>
+	<data key="disc">0.450223</data>
+</edge>
+<edge id="19to145" source="Group_019" target="Group_145">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_058 IL_3U5F_007</data>
+	<data key="disc">0.393584</data>
+</edge>
+<edge id="19to178" source="Group_019" target="Group_178">
+	<data key="links">1</data>
+	<data key="connection">IL_2QWY_004 IL_2AW7_022</data>
+	<data key="disc">0.611340</data>
+</edge>
+<edge id="19to235" source="Group_019" target="Group_235">
+	<data key="links">2</data>
+	<data key="connection">IL_2QWY_004 IL_3U5F_003</data>
+	<data key="disc">0.528122</data>
+</edge>
+<node id="Group_020">
+	<data key="label">Group_020</data>
+	<data key="signature">05_cWW-cWS-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">15</data>
+	<data key="within">0.533467</data>
+</node>
+<edge id="20to23" source="Group_020" target="Group_023">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_029 IL_3Q1Q_006</data>
+	<data key="disc">0.731859</data>
+</edge>
+<edge id="20to24" source="Group_020" target="Group_024">
+	<data key="links">10</data>
+	<data key="connection">IL_2QBG_029 IL_3U5H_078</data>
+	<data key="disc">0.475132</data>
+</edge>
+<edge id="20to34" source="Group_020" target="Group_034">
+	<data key="links">18</data>
+	<data key="connection">IL_2AW7_007 IL_3UCZ_004</data>
+	<data key="disc">0.242542</data>
+</edge>
+<edge id="20to35" source="Group_020" target="Group_035">
+	<data key="links">25</data>
+	<data key="connection">IL_2XXA_013 IL_2AW7_024</data>
+	<data key="disc">0.270500</data>
+</edge>
+<edge id="20to48" source="Group_020" target="Group_048">
+	<data key="links">8</data>
+	<data key="connection">IL_3V2F_055 IL_2XZM_026</data>
+	<data key="disc">0.661283</data>
+</edge>
+<edge id="20to73" source="Group_020" target="Group_073">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_029 IL_2ZJR_101</data>
+	<data key="disc">0.830404</data>
+</edge>
+<edge id="20to75" source="Group_020" target="Group_075">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_029 IL_1RLG_003</data>
+	<data key="disc">0.971500</data>
+</edge>
+<edge id="20to107" source="Group_020" target="Group_107">
+	<data key="links">6</data>
+	<data key="connection">IL_3U5H_145 IL_3U5F_073</data>
+	<data key="disc">0.649841</data>
+</edge>
+<edge id="20to114" source="Group_020" target="Group_114">
+	<data key="links">7</data>
+	<data key="connection">IL_3U5H_145 IL_1F1T_003</data>
+	<data key="disc">0.738706</data>
+</edge>
+<edge id="20to150" source="Group_020" target="Group_150">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_046 IL_1FJG_037</data>
+	<data key="disc">0.481118</data>
+</edge>
+<edge id="20to278" source="Group_020" target="Group_278">
+	<data key="links">4</data>
+	<data key="connection">IL_1S72_066 IL_4A1C_004</data>
+	<data key="disc">0.590124</data>
+</edge>
+<node id="Group_021">
+	<data key="label">Group_021</data>
+	<data key="signature">09_cWW-tSH,cWW-tHS-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">15</data>
+	<data key="within">0.566305</data>
+</node>
+<edge id="21to33" source="Group_021" target="Group_033">
+	<data key="links">14</data>
+	<data key="connection">IL_3BNT_005 IL_2AW7_010</data>
+	<data key="disc">0.367040</data>
+</edge>
+<edge id="21to43" source="Group_021" target="Group_043">
+	<data key="links">21</data>
+	<data key="connection">IL_3BNT_005 IL_1FJG_008</data>
+	<data key="disc">0.362679</data>
+</edge>
+<edge id="21to45" source="Group_021" target="Group_045">
+	<data key="links">3</data>
+	<data key="connection">IL_3BNT_005 IL_3BNP_002</data>
+	<data key="disc">0.692319</data>
+</edge>
+<edge id="21to54" source="Group_021" target="Group_054">
+	<data key="links">3</data>
+	<data key="connection">IL_3BNQ_002 IL_1QBP_002</data>
+	<data key="disc">0.642527</data>
+</edge>
+<edge id="21to70" source="Group_021" target="Group_070">
+	<data key="links">3</data>
+	<data key="connection">IL_3BNT_005 IL_3V2F_105</data>
+	<data key="disc">0.759416</data>
+</edge>
+<edge id="21to71" source="Group_021" target="Group_071">
+	<data key="links">22</data>
+	<data key="connection">IL_4A1B_026 IL_1FJG_061</data>
+	<data key="disc">0.280775</data>
+</edge>
+<edge id="21to77" source="Group_021" target="Group_077">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNQ_002 IL_1CSL_001</data>
+	<data key="disc">0.776335</data>
+</edge>
+<edge id="21to84" source="Group_021" target="Group_084">
+	<data key="links">2</data>
+	<data key="connection">IL_3BNT_005 IL_3BNQ_005</data>
+	<data key="disc">0.654452</data>
+</edge>
+<edge id="21to95" source="Group_021" target="Group_095">
+	<data key="links">6</data>
+	<data key="connection">IL_2XZM_039 IL_1J2B_001</data>
+	<data key="disc">0.632211</data>
+</edge>
+<edge id="21to99" source="Group_021" target="Group_099">
+	<data key="links">2</data>
+	<data key="connection">IL_2XZM_039 IL_4A1B_029</data>
+	<data key="disc">0.640128</data>
+</edge>
+<edge id="21to103" source="Group_021" target="Group_103">
+	<data key="links">2</data>
+	<data key="connection">IL_3BNT_002 IL_2QBG_046</data>
+	<data key="disc">0.678580</data>
+</edge>
+<edge id="21to129" source="Group_021" target="Group_129">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNQ_002 IL_2OE5_002</data>
+	<data key="disc">0.598094</data>
+</edge>
+<edge id="21to145" source="Group_021" target="Group_145">
+	<data key="links">7</data>
+	<data key="connection">IL_4A1B_120 IL_3U5F_007</data>
+	<data key="disc">0.374523</data>
+</edge>
+<edge id="21to175" source="Group_021" target="Group_175">
+	<data key="links">3</data>
+	<data key="connection">IL_2XZM_039 IL_1Y0Q_002</data>
+	<data key="disc">0.821749</data>
+</edge>
+<edge id="21to219" source="Group_021" target="Group_219">
+	<data key="links">1</data>
+	<data key="connection">IL_1GID_010 IL_3G78_003</data>
+	<data key="disc">0.983551</data>
+</edge>
+<edge id="21to224" source="Group_021" target="Group_224">
+	<data key="links">5</data>
+	<data key="connection">IL_2XZM_039 IL_3KTW_003</data>
+	<data key="disc">0.827976</data>
+</edge>
+<edge id="21to251" source="Group_021" target="Group_251">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_022 IL_3U5H_053</data>
+	<data key="disc">0.535857</data>
+</edge>
+<node id="Group_022">
+	<data key="label">Group_022</data>
+	<data key="signature">13_cWW-tSH-tHH-cSH-tWH-tHS-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">14</data>
+	<data key="within">0.249055</data>
+</node>
+<edge id="22to171" source="Group_022" target="Group_171">
+	<data key="links">3</data>
+	<data key="connection">IL_1S72_020 IL_1UN6_004</data>
+	<data key="disc">0.183981</data>
+</edge>
+<edge id="22to195" source="Group_022" target="Group_195">
+	<data key="links">3</data>
+	<data key="connection">IL_3V2F_099 IL_2QBG_101</data>
+	<data key="disc">0.264662</data>
+</edge>
+<node id="Group_023">
+	<data key="label">Group_023</data>
+	<data key="signature">07_cWW-cWW-cSH-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">11</data>
+	<data key="within">0.561107</data>
+</node>
+<edge id="23to24" source="Group_023" target="Group_024">
+	<data key="links">1</data>
+	<data key="connection">IL_3Q1Q_006 IL_3U5H_078</data>
+	<data key="disc">0.840546</data>
+</edge>
+<edge id="23to26" source="Group_023" target="Group_026">
+	<data key="links">5</data>
+	<data key="connection">IL_4A1B_093 IL_4A1B_102</data>
+	<data key="disc">0.840337</data>
+</edge>
+<edge id="23to30" source="Group_023" target="Group_030">
+	<data key="links">6</data>
+	<data key="connection">IL_3Q1Q_006 IL_2XZM_064</data>
+	<data key="disc">0.448847</data>
+</edge>
+<edge id="23to31" source="Group_023" target="Group_031">
+	<data key="links">5</data>
+	<data key="connection">IL_2ZJR_059 IL_2QBG_040</data>
+	<data key="disc">0.413497</data>
+</edge>
+<edge id="23to33" source="Group_023" target="Group_033">
+	<data key="links">10</data>
+	<data key="connection">IL_1X8W_009 IL_1KFO_001</data>
+	<data key="disc">0.464235</data>
+</edge>
+<edge id="23to35" source="Group_023" target="Group_035">
+	<data key="links">3</data>
+	<data key="connection">IL_3Q1Q_006 IL_2AW7_024</data>
+	<data key="disc">0.736888</data>
+</edge>
+<edge id="23to52" source="Group_023" target="Group_052">
+	<data key="links">9</data>
+	<data key="connection">IL_1X8W_009 IL_3U5F_028</data>
+	<data key="disc">0.661571</data>
+</edge>
+<edge id="23to53" source="Group_023" target="Group_053">
+	<data key="links">2</data>
+	<data key="connection">IL_3Q1Q_006 IL_3BNL_002</data>
+	<data key="disc">0.396910</data>
+</edge>
+<edge id="23to56" source="Group_023" target="Group_056">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_089 IL_2XXA_009</data>
+	<data key="disc">0.736688</data>
+</edge>
+<edge id="23to59" source="Group_023" target="Group_059">
+	<data key="links">1</data>
+	<data key="connection">IL_3Q1Q_006 IL_3U5F_093</data>
+	<data key="disc">0.733009</data>
+</edge>
+<edge id="23to69" source="Group_023" target="Group_069">
+	<data key="links">5</data>
+	<data key="connection">IL_1X8W_009 IL_1S72_053</data>
+	<data key="disc">0.460614</data>
+</edge>
+<edge id="23to70" source="Group_023" target="Group_070">
+	<data key="links">6</data>
+	<data key="connection">IL_3U5H_071 IL_3U5F_017</data>
+	<data key="disc">0.484690</data>
+</edge>
+<edge id="23to75" source="Group_023" target="Group_075">
+	<data key="links">1</data>
+	<data key="connection">IL_3Q1Q_006 IL_1RLG_003</data>
+	<data key="disc">0.773343</data>
+</edge>
+<edge id="23to76" source="Group_023" target="Group_076">
+	<data key="links">9</data>
+	<data key="connection">IL_3NPB_004 IL_3GX5_003</data>
+	<data key="disc">0.143947</data>
+</edge>
+<edge id="23to96" source="Group_023" target="Group_096">
+	<data key="links">5</data>
+	<data key="connection">IL_2ZJR_059 IL_3U5F_074</data>
+	<data key="disc">0.649026</data>
+</edge>
+<edge id="23to98" source="Group_023" target="Group_098">
+	<data key="links">1</data>
+	<data key="connection">IL_3Q1Q_006 IL_3U5F_012</data>
+	<data key="disc">0.677610</data>
+</edge>
+<edge id="23to109" source="Group_023" target="Group_109">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_089 IL_2AW7_021</data>
+	<data key="disc">0.493396</data>
+</edge>
+<edge id="23to184" source="Group_023" target="Group_184">
+	<data key="links">1</data>
+	<data key="connection">IL_1X8W_009 IL_2FQN_002</data>
+	<data key="disc">0.700669</data>
+</edge>
+<edge id="23to193" source="Group_023" target="Group_193">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_093 IL_2QBG_087</data>
+	<data key="disc">0.548358</data>
+</edge>
+<edge id="23to198" source="Group_023" target="Group_198">
+	<data key="links">1</data>
+	<data key="connection">IL_1X8W_009 IL_2QBZ_002</data>
+	<data key="disc">0.982379</data>
+</edge>
+<edge id="23to213" source="Group_023" target="Group_213">
+	<data key="links">4</data>
+	<data key="connection">IL_4A1B_093 IL_2ZJR_103</data>
+	<data key="disc">0.431287</data>
+</edge>
+<edge id="23to227" source="Group_023" target="Group_227">
+	<data key="links">2</data>
+	<data key="connection">IL_1X8W_009 IL_3NPB_006</data>
+	<data key="disc">0.792058</data>
+</edge>
+<edge id="23to266" source="Group_023" target="Group_266">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_012 IL_3V2F_085</data>
+	<data key="disc">0.888009</data>
+</edge>
+<node id="Group_024">
+	<data key="label">Group_024</data>
+	<data key="signature">05_tHS,cWW-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">11</data>
+	<data key="within">0.597729</data>
+</node>
+<edge id="24to35" source="Group_024" target="Group_035">
+	<data key="links">18</data>
+	<data key="connection">IL_3U5H_078 IL_4A1B_069</data>
+	<data key="disc">0.209713</data>
+</edge>
+<edge id="24to42" source="Group_024" target="Group_042">
+	<data key="links">13</data>
+	<data key="connection">IL_3U5H_117 IL_3U5H_110</data>
+	<data key="disc">0.833965</data>
+</edge>
+<edge id="24to55" source="Group_024" target="Group_055">
+	<data key="links">4</data>
+	<data key="connection">IL_4A1B_114 IL_2XZM_018</data>
+	<data key="disc">0.778279</data>
+</edge>
+<edge id="24to74" source="Group_024" target="Group_074">
+	<data key="links">3</data>
+	<data key="connection">IL_3V2F_096 IL_3U5H_132</data>
+	<data key="disc">0.701820</data>
+</edge>
+<edge id="24to75" source="Group_024" target="Group_075">
+	<data key="links">6</data>
+	<data key="connection">IL_2QWY_005 IL_2ZJR_023</data>
+	<data key="disc">0.637042</data>
+</edge>
+<edge id="24to89" source="Group_024" target="Group_089">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZJR_092 IL_2AW7_016</data>
+	<data key="disc">0.695751</data>
+</edge>
+<edge id="24to94" source="Group_024" target="Group_094">
+	<data key="links">1</data>
+	<data key="connection">IL_2QWY_005 IL_1NTB_004</data>
+	<data key="disc">0.755743</data>
+</edge>
+<edge id="24to97" source="Group_024" target="Group_097">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_040 IL_1S72_017</data>
+	<data key="disc">0.858305</data>
+</edge>
+<edge id="24to124" source="Group_024" target="Group_124">
+	<data key="links">2</data>
+	<data key="connection">IL_2XZM_040 IL_1U6B_010</data>
+	<data key="disc">0.858284</data>
+</edge>
+<edge id="24to165" source="Group_024" target="Group_165">
+	<data key="links">3</data>
+	<data key="connection">IL_3U5H_117 IL_1S72_073</data>
+	<data key="disc">0.858518</data>
+</edge>
+<edge id="24to192" source="Group_024" target="Group_192">
+	<data key="links">4</data>
+	<data key="connection">IL_4A1B_094 IL_2QBG_079</data>
+	<data key="disc">0.309540</data>
+</edge>
+<edge id="24to236" source="Group_024" target="Group_236">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_114 IL_3U5F_020</data>
+	<data key="disc">0.730220</data>
+</edge>
+<node id="Group_025">
+	<data key="label">Group_025</data>
+	<data key="signature">10_cWW----cSH---cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">10</data>
+	<data key="within">0.253810</data>
+</node>
+<edge id="25to58" source="Group_025" target="Group_058">
+	<data key="links">5</data>
+	<data key="connection">IL_2ZJR_033 IL_3U5H_063</data>
+	<data key="disc">0.436298</data>
+</edge>
+<node id="Group_026">
+	<data key="label">Group_026</data>
+	<data key="signature">06_cWW-tHS-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">10</data>
+	<data key="within">0.277703</data>
+</node>
+<edge id="26to30" source="Group_026" target="Group_030">
+	<data key="links">8</data>
+	<data key="connection">IL_2ZJR_078 IL_2XZM_064</data>
+	<data key="disc">0.843441</data>
+</edge>
+<edge id="26to31" source="Group_026" target="Group_031">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_102 IL_3MEI_003</data>
+	<data key="disc">0.955085</data>
+</edge>
+<edge id="26to59" source="Group_026" target="Group_059">
+	<data key="links">6</data>
+	<data key="connection">IL_3V2F_012 IL_3U5F_067</data>
+	<data key="disc">0.472886</data>
+</edge>
+<edge id="26to76" source="Group_026" target="Group_076">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_102 IL_3GX5_003</data>
+	<data key="disc">0.933299</data>
+</edge>
+<edge id="26to98" source="Group_026" target="Group_098">
+	<data key="links">3</data>
+	<data key="connection">IL_3V2F_012 IL_3U5F_006</data>
+	<data key="disc">0.870218</data>
+</edge>
+<edge id="26to153" source="Group_026" target="Group_153">
+	<data key="links">3</data>
+	<data key="connection">IL_2QBG_082 IL_1MFQ_006</data>
+	<data key="disc">0.628636</data>
+</edge>
+<edge id="26to167" source="Group_026" target="Group_167">
+	<data key="links">3</data>
+	<data key="connection">IL_1S72_076 IL_1SI3_001</data>
+	<data key="disc">0.848550</data>
+</edge>
+<edge id="26to193" source="Group_026" target="Group_193">
+	<data key="links">2</data>
+	<data key="connection">IL_1S72_078 IL_2QBG_087</data>
+	<data key="disc">0.752534</data>
+</edge>
+<edge id="26to266" source="Group_026" target="Group_266">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZJR_081 IL_3V2F_085</data>
+	<data key="disc">0.428607</data>
+</edge>
+<node id="Group_027">
+	<data key="label">Group_027</data>
+	<data key="signature">12_cWW-tWH,tSH-tHW-tHS-cWW-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">10</data>
+	<data key="within">0.532365</data>
+</node>
+<edge id="27to32" source="Group_027" target="Group_032">
+	<data key="links">10</data>
+	<data key="connection">IL_1DUH_004 IL_4A1B_017</data>
+	<data key="disc">0.585605</data>
+</edge>
+<edge id="27to36" source="Group_027" target="Group_036">
+	<data key="links">3</data>
+	<data key="connection">IL_1VFG_001 IL_3V2F_065</data>
+	<data key="disc">0.867029</data>
+</edge>
+<edge id="27to40" source="Group_027" target="Group_040">
+	<data key="links">2</data>
+	<data key="connection">IL_1D4R_002 IL_3V2F_103</data>
+	<data key="disc">0.945234</data>
+</edge>
+<edge id="27to78" source="Group_027" target="Group_078">
+	<data key="links">2</data>
+	<data key="connection">IL_2XXA_015 IL_1FJG_026</data>
+	<data key="disc">0.943442</data>
+</edge>
+<edge id="27to80" source="Group_027" target="Group_080">
+	<data key="links">1</data>
+	<data key="connection">IL_1D4R_002 IL_2XZM_010</data>
+	<data key="disc">0.803375</data>
+</edge>
+<edge id="27to88" source="Group_027" target="Group_088">
+	<data key="links">5</data>
+	<data key="connection">IL_1DUH_004 IL_3B5F_001</data>
+	<data key="disc">0.534922</data>
+</edge>
+<edge id="27to93" source="Group_027" target="Group_093">
+	<data key="links">6</data>
+	<data key="connection">IL_1VFG_001 IL_2AW7_037</data>
+	<data key="disc">0.372645</data>
+</edge>
+<edge id="27to104" source="Group_027" target="Group_104">
+	<data key="links">3</data>
+	<data key="connection">IL_1VFG_001 IL_3U5F_038</data>
+	<data key="disc">0.728844</data>
+</edge>
+<edge id="27to112" source="Group_027" target="Group_112">
+	<data key="links">1</data>
+	<data key="connection">IL_1VFG_001 IL_1DUH_003</data>
+	<data key="disc">0.869028</data>
+</edge>
+<edge id="27to119" source="Group_027" target="Group_119">
+	<data key="links">2</data>
+	<data key="connection">IL_2XXA_015 IL_1KD5_001</data>
+	<data key="disc">0.804402</data>
+</edge>
+<edge id="27to147" source="Group_027" target="Group_147">
+	<data key="links">2</data>
+	<data key="connection">IL_1VFG_001 IL_1FJG_009</data>
+	<data key="disc">0.703242</data>
+</edge>
+<edge id="27to272" source="Group_027" target="Group_272">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_127 IL_4A1B_033</data>
+	<data key="disc">0.657506</data>
+</edge>
+<node id="Group_028">
+	<data key="label">Group_028</data>
+	<data key="signature">06_cWW---cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">9</data>
+	<data key="within">0.440354</data>
+</node>
+<node id="Group_029">
+	<data key="label">Group_029</data>
+	<data key="signature">09_cWW-tWH-cSH--cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">9</data>
+	<data key="within">0.216580</data>
+</node>
+<edge id="29to224" source="Group_029" target="Group_224">
+	<data key="links">4</data>
+	<data key="connection">IL_3T4B_002 IL_3KTW_003</data>
+	<data key="disc">0.866412</data>
+</edge>
+<node id="Group_030">
+	<data key="label">Group_030</data>
+	<data key="signature">06_cWW-tWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">9</data>
+	<data key="within">0.498236</data>
+</node>
+<edge id="30to31" source="Group_030" target="Group_031">
+	<data key="links">6</data>
+	<data key="connection">IL_2QBG_085 IL_3MEI_003</data>
+	<data key="disc">0.758839</data>
+</edge>
+<edge id="30to53" source="Group_030" target="Group_053">
+	<data key="links">7</data>
+	<data key="connection">IL_2XZM_064 IL_3BNL_002</data>
+	<data key="disc">0.454167</data>
+</edge>
+<edge id="30to59" source="Group_030" target="Group_059">
+	<data key="links">10</data>
+	<data key="connection">IL_3CJZ_001 IL_409D_001</data>
+	<data key="disc">0.433661</data>
+</edge>
+<edge id="30to73" source="Group_030" target="Group_073">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_064 IL_1LNG_001</data>
+	<data key="disc">0.874985</data>
+</edge>
+<edge id="30to96" source="Group_030" target="Group_096">
+	<data key="links">3</data>
+	<data key="connection">IL_2QBG_085 IL_3U5F_074</data>
+	<data key="disc">0.624069</data>
+</edge>
+<edge id="30to98" source="Group_030" target="Group_098">
+	<data key="links">2</data>
+	<data key="connection">IL_2QBG_085 IL_3U5F_012</data>
+	<data key="disc">0.775646</data>
+</edge>
+<edge id="30to127" source="Group_030" target="Group_127">
+	<data key="links">3</data>
+	<data key="connection">IL_3CJZ_001 IL_1YVP_001</data>
+	<data key="disc">0.470946</data>
+</edge>
+<edge id="30to167" source="Group_030" target="Group_167">
+	<data key="links">3</data>
+	<data key="connection">IL_2QBG_085 IL_1SI3_001</data>
+	<data key="disc">0.719387</data>
+</edge>
+<edge id="30to214" source="Group_030" target="Group_214">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_085 IL_333D_001</data>
+	<data key="disc">0.799029</data>
+</edge>
+<node id="Group_031">
+	<data key="label">Group_031</data>
+	<data key="signature">06_cWW-cWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">9</data>
+	<data key="within">0.563188</data>
+</node>
+<edge id="31to53" source="Group_031" target="Group_053">
+	<data key="links">5</data>
+	<data key="connection">IL_4A1B_129 IL_1S72_085</data>
+	<data key="disc">0.481857</data>
+</edge>
+<edge id="31to59" source="Group_031" target="Group_059">
+	<data key="links">12</data>
+	<data key="connection">IL_4A1C_001 IL_3U5F_067</data>
+	<data key="disc">0.558052</data>
+</edge>
+<edge id="31to69" source="Group_031" target="Group_069">
+	<data key="links">3</data>
+	<data key="connection">IL_3U5H_138 IL_1S72_053</data>
+	<data key="disc">0.915160</data>
+</edge>
+<edge id="31to72" source="Group_031" target="Group_072">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZI0_001 IL_1QA6_001</data>
+	<data key="disc">0.869227</data>
+</edge>
+<edge id="31to96" source="Group_031" target="Group_096">
+	<data key="links">6</data>
+	<data key="connection">IL_2QBG_040 IL_3E5C_001</data>
+	<data key="disc">0.566522</data>
+</edge>
+<edge id="31to98" source="Group_031" target="Group_098">
+	<data key="links">4</data>
+	<data key="connection">IL_4A1C_001 IL_3U5F_006</data>
+	<data key="disc">0.684347</data>
+</edge>
+<edge id="31to137" source="Group_031" target="Group_137">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_138 IL_3OWZ_002</data>
+	<data key="disc">0.858393</data>
+</edge>
+<edge id="31to167" source="Group_031" target="Group_167">
+	<data key="links">4</data>
+	<data key="connection">IL_2QBG_040 IL_1SI3_001</data>
+	<data key="disc">0.455268</data>
+</edge>
+<edge id="31to214" source="Group_031" target="Group_214">
+	<data key="links">4</data>
+	<data key="connection">IL_3MEI_003 IL_333D_001</data>
+	<data key="disc">0.337806</data>
+</edge>
+<node id="Group_032">
+	<data key="label">Group_032</data>
+	<data key="signature">12_cWW-cWW-tSH-tHS-tHS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">8</data>
+	<data key="within">0.441214</data>
+</node>
+<edge id="32to36" source="Group_032" target="Group_036">
+	<data key="links">4</data>
+	<data key="connection">IL_4A1B_037 IL_3V2F_065</data>
+	<data key="disc">0.586803</data>
+</edge>
+<edge id="32to40" source="Group_032" target="Group_040">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_026 IL_2QBG_105</data>
+	<data key="disc">0.863646</data>
+</edge>
+<edge id="32to78" source="Group_032" target="Group_078">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_026 IL_1FJG_026</data>
+	<data key="disc">0.962118</data>
+</edge>
+<edge id="32to88" source="Group_032" target="Group_088">
+	<data key="links">4</data>
+	<data key="connection">IL_4A1B_017 IL_3B5F_001</data>
+	<data key="disc">0.512010</data>
+</edge>
+<edge id="32to93" source="Group_032" target="Group_093">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_080 IL_4A1B_025</data>
+	<data key="disc">0.887815</data>
+</edge>
+<edge id="32to104" source="Group_032" target="Group_104">
+	<data key="links">2</data>
+	<data key="connection">IL_2XZM_080 IL_3U5F_038</data>
+	<data key="disc">0.439536</data>
+</edge>
+<edge id="32to112" source="Group_032" target="Group_112">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_037 IL_3FTF_001</data>
+	<data key="disc">0.298578</data>
+</edge>
+<edge id="32to119" source="Group_032" target="Group_119">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_026 IL_283D_001</data>
+	<data key="disc">0.876983</data>
+</edge>
+<node id="Group_033">
+	<data key="label">Group_033</data>
+	<data key="signature">07_cWW-cWW-cWW-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">8</data>
+	<data key="within">0.581322</data>
+</node>
+<edge id="33to43" source="Group_033" target="Group_043">
+	<data key="links">6</data>
+	<data key="connection">IL_2AW7_010 IL_1FJG_008</data>
+	<data key="disc">0.099676</data>
+</edge>
+<edge id="33to52" source="Group_033" target="Group_052">
+	<data key="links">3</data>
+	<data key="connection">IL_1KFO_001 IL_3U5F_028</data>
+	<data key="disc">0.796758</data>
+</edge>
+<edge id="33to54" source="Group_033" target="Group_054">
+	<data key="links">4</data>
+	<data key="connection">IL_1KFO_001 IL_3NPB_007</data>
+	<data key="disc">0.764461</data>
+</edge>
+<edge id="33to64" source="Group_033" target="Group_064">
+	<data key="links">4</data>
+	<data key="connection">IL_429D_002 IL_3V2F_054</data>
+	<data key="disc">0.910144</data>
+</edge>
+<edge id="33to69" source="Group_033" target="Group_069">
+	<data key="links">2</data>
+	<data key="connection">IL_1KFO_001 IL_1S72_053</data>
+	<data key="disc">0.546170</data>
+</edge>
+<edge id="33to70" source="Group_033" target="Group_070">
+	<data key="links">9</data>
+	<data key="connection">IL_429D_002 IL_2O3V_003</data>
+	<data key="disc">0.486131</data>
+</edge>
+<edge id="33to76" source="Group_033" target="Group_076">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_070 IL_3V7E_007</data>
+	<data key="disc">0.976817</data>
+</edge>
+<edge id="33to77" source="Group_033" target="Group_077">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_010 IL_1S72_037</data>
+	<data key="disc">0.926040</data>
+</edge>
+<edge id="33to84" source="Group_033" target="Group_084">
+	<data key="links">1</data>
+	<data key="connection">IL_1KFO_001 IL_3BNQ_005</data>
+	<data key="disc">0.894671</data>
+</edge>
+<edge id="33to95" source="Group_033" target="Group_095">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_010 IL_1U6B_004</data>
+	<data key="disc">0.922077</data>
+</edge>
+<edge id="33to129" source="Group_033" target="Group_129">
+	<data key="links">2</data>
+	<data key="connection">IL_429D_002 IL_2OE5_002</data>
+	<data key="disc">0.670046</data>
+</edge>
+<edge id="33to175" source="Group_033" target="Group_175">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_010 IL_1Y0Q_002</data>
+	<data key="disc">0.975733</data>
+</edge>
+<edge id="33to184" source="Group_033" target="Group_184">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_070 IL_2FQN_002</data>
+	<data key="disc">0.274089</data>
+</edge>
+<edge id="33to227" source="Group_033" target="Group_227">
+	<data key="links">1</data>
+	<data key="connection">IL_1KFO_004 IL_3NPB_006</data>
+	<data key="disc">0.715058</data>
+</edge>
+<node id="Group_034">
+	<data key="label">Group_034</data>
+	<data key="signature">06_cWW-cWW,cSW-cSH</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">7</data>
+	<data key="within">0.319411</data>
+</node>
+<edge id="34to107" source="Group_034" target="Group_107">
+	<data key="links">3</data>
+	<data key="connection">IL_3IWN_005 IL_3U5F_073</data>
+	<data key="disc">0.605421</data>
+</edge>
+<edge id="34to114" source="Group_034" target="Group_114">
+	<data key="links">5</data>
+	<data key="connection">IL_3IWN_005 IL_1F1T_003</data>
+	<data key="disc">0.583617</data>
+</edge>
+<edge id="34to150" source="Group_034" target="Group_150">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_044 IL_1FJG_037</data>
+	<data key="disc">0.140297</data>
+</edge>
+<edge id="34to278" source="Group_034" target="Group_278">
+	<data key="links">3</data>
+	<data key="connection">IL_2AW7_054 IL_4A1C_004</data>
+	<data key="disc">0.678216</data>
+</edge>
+<node id="Group_035">
+	<data key="label">Group_035</data>
+	<data key="signature">05_cWW--cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">7</data>
+	<data key="within">0.532704</data>
+</node>
+<edge id="35to42" source="Group_035" target="Group_042">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_069 IL_3U5H_110</data>
+	<data key="disc">0.886818</data>
+</edge>
+<edge id="35to48" source="Group_035" target="Group_048">
+	<data key="links">2</data>
+	<data key="connection">IL_2AW7_024 IL_2XZM_026</data>
+	<data key="disc">0.958433</data>
+</edge>
+<edge id="35to55" source="Group_035" target="Group_055">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_012 IL_2XZM_018</data>
+	<data key="disc">0.505269</data>
+</edge>
+<edge id="35to73" source="Group_035" target="Group_073">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_024 IL_2ZJR_101</data>
+	<data key="disc">0.852911</data>
+</edge>
+<edge id="35to75" source="Group_035" target="Group_075">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_069 IL_2ZJR_023</data>
+	<data key="disc">0.827705</data>
+</edge>
+<edge id="35to97" source="Group_035" target="Group_097">
+	<data key="links">3</data>
+	<data key="connection">IL_1FJG_012 IL_1S72_017</data>
+	<data key="disc">0.452246</data>
+</edge>
+<edge id="35to124" source="Group_035" target="Group_124">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_069 IL_1NTB_001</data>
+	<data key="disc">0.951831</data>
+</edge>
+<edge id="35to236" source="Group_035" target="Group_236">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_012 IL_3U5F_020</data>
+	<data key="disc">0.391973</data>
+</edge>
+<node id="Group_036">
+	<data key="label">Group_036</data>
+	<data key="signature">12_cWW-tSH-tSH-tHH-tHS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.155209</data>
+</node>
+<edge id="36to112" source="Group_036" target="Group_112">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_065 IL_3FTF_001</data>
+	<data key="disc">0.567084</data>
+</edge>
+<edge id="36to272" source="Group_036" target="Group_272">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_065 IL_4A1B_033</data>
+	<data key="disc">0.903022</data>
+</edge>
+<node id="Group_037">
+	<data key="label">Group_037</data>
+	<data key="signature">04_cWW-cWW</data>
+	<data key="numnt">4.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.244647</data>
+</node>
+<node id="Group_038">
+	<data key="label">Group_038</data>
+	<data key="signature">11_cWW-tHW-tHW-tWW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.233005</data>
+</node>
+<edge id="38to80" source="Group_038" target="Group_080">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_025 IL_4A1B_014</data>
+	<data key="disc">0.939915</data>
+</edge>
+<node id="Group_039">
+	<data key="label">Group_039</data>
+	<data key="signature">18_cWW-tSH-tHW-bif--bif-tWH-tHS-cWW</data>
+	<data key="numnt">18.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.156092</data>
+</node>
+<node id="Group_040">
+	<data key="label">Group_040</data>
+	<data key="signature">11_cWW-cWW-tWH--tHS-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.248279</data>
+</node>
+<edge id="40to78" source="Group_040" target="Group_078">
+	<data key="links">2</data>
+	<data key="connection">IL_1S72_019 IL_2AW7_066</data>
+	<data key="disc">0.354771</data>
+</edge>
+<edge id="40to88" source="Group_040" target="Group_088">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_105 IL_3B5F_001</data>
+	<data key="disc">0.985721</data>
+</edge>
+<edge id="40to187" source="Group_040" target="Group_187">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_019 IL_2OIU_004</data>
+	<data key="disc">0.970918</data>
+</edge>
+<edge id="40to263" source="Group_040" target="Group_263">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_019 IL_3V2F_060</data>
+	<data key="disc">0.630773</data>
+</edge>
+<node id="Group_041">
+	<data key="label">Group_041</data>
+	<data key="signature">10_cWW---cWS-cWW-tSW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.231875</data>
+</node>
+<edge id="41to151" source="Group_041" target="Group_151">
+	<data key="links">3</data>
+	<data key="connection">IL_3V2F_110 IL_1FJG_045</data>
+	<data key="disc">0.575012</data>
+</edge>
+<node id="Group_042">
+	<data key="label">Group_042</data>
+	<data key="signature">05_cWW-cWW--cHH</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.364159</data>
+</node>
+<edge id="42to55" source="Group_042" target="Group_055">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_110 IL_2XZM_018</data>
+	<data key="disc">0.990393</data>
+</edge>
+<edge id="42to58" source="Group_042" target="Group_058">
+	<data key="links">2</data>
+	<data key="connection">IL_3V2F_069 IL_3U5H_063</data>
+	<data key="disc">0.705511</data>
+</edge>
+<edge id="42to75" source="Group_042" target="Group_075">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_110 IL_1RLG_003</data>
+	<data key="disc">0.948313</data>
+</edge>
+<edge id="42to124" source="Group_042" target="Group_124">
+	<data key="links">2</data>
+	<data key="connection">IL_3V2F_069 IL_1NTB_001</data>
+	<data key="disc">0.882839</data>
+</edge>
+<edge id="42to177" source="Group_042" target="Group_177">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_069 IL_2AW7_015</data>
+	<data key="disc">0.921744</data>
+</edge>
+<edge id="42to236" source="Group_042" target="Group_236">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_110 IL_3U5F_020</data>
+	<data key="disc">0.914857</data>
+</edge>
+<node id="Group_043">
+	<data key="label">Group_043</data>
+	<data key="signature">09_cWW-cWW-cSW-cWW--cSH</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.441566</data>
+</node>
+<edge id="43to70" source="Group_043" target="Group_070">
+	<data key="links">1</data>
+	<data key="connection">IL_3CUN_001 IL_3V2F_105</data>
+	<data key="disc">0.953799</data>
+</edge>
+<edge id="43to71" source="Group_043" target="Group_071">
+	<data key="links">1</data>
+	<data key="connection">IL_3CUN_001 IL_2QBG_075</data>
+	<data key="disc">0.753361</data>
+</edge>
+<edge id="43to95" source="Group_043" target="Group_095">
+	<data key="links">3</data>
+	<data key="connection">IL_2XZM_084 IL_1MFQ_001</data>
+	<data key="disc">0.817734</data>
+</edge>
+<edge id="43to99" source="Group_043" target="Group_099">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_084 IL_4A1B_029</data>
+	<data key="disc">0.836832</data>
+</edge>
+<edge id="43to145" source="Group_043" target="Group_145">
+	<data key="links">1</data>
+	<data key="connection">IL_3CUN_001 IL_4A1B_075</data>
+	<data key="disc">0.893562</data>
+</edge>
+<edge id="43to175" source="Group_043" target="Group_175">
+	<data key="links">1</data>
+	<data key="connection">IL_3CUN_001 IL_1Y0Q_002</data>
+	<data key="disc">0.925767</data>
+</edge>
+<edge id="43to251" source="Group_043" target="Group_251">
+	<data key="links">1</data>
+	<data key="connection">IL_3CUN_001 IL_3U5H_053</data>
+	<data key="disc">0.964946</data>
+</edge>
+<node id="Group_044">
+	<data key="label">Group_044</data>
+	<data key="signature">05_cWW--cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.354176</data>
+</node>
+<node id="Group_045">
+	<data key="label">Group_045</data>
+	<data key="signature">08_cWW-cWH-tWS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.441724</data>
+</node>
+<edge id="45to77" source="Group_045" target="Group_077">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNP_003 IL_1CSL_001</data>
+	<data key="disc">0.998936</data>
+</edge>
+<edge id="45to84" source="Group_045" target="Group_084">
+	<data key="links">4</data>
+	<data key="connection">IL_3BNP_002 IL_3BNQ_005</data>
+	<data key="disc">0.151857</data>
+</edge>
+<edge id="45to103" source="Group_045" target="Group_103">
+	<data key="links">2</data>
+	<data key="connection">IL_3BNP_003 IL_2QBG_046</data>
+	<data key="disc">0.749137</data>
+</edge>
+<node id="Group_046">
+	<data key="label">Group_046</data>
+	<data key="signature">10_cWW-cSH,tWH-tWH,tSH-tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.494814</data>
+</node>
+<edge id="46to62" source="Group_046" target="Group_062">
+	<data key="links">2</data>
+	<data key="connection">IL_1S72_089 IL_2XZM_046</data>
+	<data key="disc">0.946798</data>
+</edge>
+<edge id="46to67" source="Group_046" target="Group_067">
+	<data key="links">5</data>
+	<data key="connection">IL_3V2F_098 IL_2ZJR_048</data>
+	<data key="disc">0.698700</data>
+</edge>
+<edge id="46to111" source="Group_046" target="Group_111">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_089 IL_1S72_056</data>
+	<data key="disc">0.841047</data>
+</edge>
+<edge id="46to194" source="Group_046" target="Group_194">
+	<data key="links">2</data>
+	<data key="connection">IL_3V2F_098 IL_2QBG_100</data>
+	<data key="disc">0.139716</data>
+</edge>
+<edge id="46to235" source="Group_046" target="Group_235">
+	<data key="links">2</data>
+	<data key="connection">IL_3V2F_098 IL_3U5F_003</data>
+	<data key="disc">0.636663</data>
+</edge>
+<node id="Group_047">
+	<data key="label">Group_047</data>
+	<data key="signature">14_cWW--tSH-tSH-tHS-cWW-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.350043</data>
+</node>
+<edge id="47to61" source="Group_047" target="Group_061">
+	<data key="links">5</data>
+	<data key="connection">IL_3V2F_001 IL_2XZM_011</data>
+	<data key="disc">0.631703</data>
+</edge>
+<edge id="47to121" source="Group_047" target="Group_121">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_038 IL_1LNG_003</data>
+	<data key="disc">0.973246</data>
+</edge>
+<node id="Group_048">
+	<data key="label">Group_048</data>
+	<data key="signature">05_cWW-tSS-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">6</data>
+	<data key="within">0.600827</data>
+</node>
+<edge id="48to58" source="Group_048" target="Group_058">
+	<data key="links">3</data>
+	<data key="connection">IL_4A1B_032 IL_3U5H_063</data>
+	<data key="disc">0.876346</data>
+</edge>
+<edge id="48to107" source="Group_048" target="Group_107">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_032 IL_3U5F_073</data>
+	<data key="disc">0.893444</data>
+</edge>
+<edge id="48to114" source="Group_048" target="Group_114">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_032 IL_1F1T_002</data>
+	<data key="disc">0.385049</data>
+</edge>
+<edge id="48to120" source="Group_048" target="Group_120">
+	<data key="links">2</data>
+	<data key="connection">IL_2QBG_032 IL_1KXK_001</data>
+	<data key="disc">0.532241</data>
+</edge>
+<node id="Group_049">
+	<data key="label">Group_049</data>
+	<data key="signature">16_tSS,cWW-cSW,tHH-tHS-cWW---bif-tWH-tSH</data>
+	<data key="numnt">16.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.199049</data>
+</node>
+<node id="Group_050">
+	<data key="label">Group_050</data>
+	<data key="signature">11_cWW-tSH---tHH-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.353937</data>
+</node>
+<edge id="50to166" source="Group_050" target="Group_166">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_139 IL_1S72_097</data>
+	<data key="disc">0.132485</data>
+</edge>
+<node id="Group_051">
+	<data key="label">Group_051</data>
+	<data key="signature">07_cWW----cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.216470</data>
+</node>
+<edge id="51to102" source="Group_051" target="Group_102">
+	<data key="links">1</data>
+	<data key="connection">IL_2PN4_002 IL_1FJG_032</data>
+	<data key="disc">0.722847</data>
+</edge>
+<edge id="51to197" source="Group_051" target="Group_197">
+	<data key="links">2</data>
+	<data key="connection">IL_2NOK_001 IL_2QBZ_001</data>
+	<data key="disc">0.953526</data>
+</edge>
+<node id="Group_052">
+	<data key="label">Group_052</data>
+	<data key="signature">07_cWW-cWW-cWW,tSH</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.394442</data>
+</node>
+<edge id="52to53" source="Group_052" target="Group_053">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNL_003 IL_2GDI_001</data>
+	<data key="disc">0.967045</data>
+</edge>
+<edge id="52to56" source="Group_052" target="Group_056">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_068 IL_2XZM_073</data>
+	<data key="disc">0.816930</data>
+</edge>
+<edge id="52to69" source="Group_052" target="Group_069">
+	<data key="links">4</data>
+	<data key="connection">IL_3V2F_031 IL_1S72_053</data>
+	<data key="disc">0.422259</data>
+</edge>
+<edge id="52to73" source="Group_052" target="Group_073">
+	<data key="links">3</data>
+	<data key="connection">IL_3U5F_068 IL_2AW7_068</data>
+	<data key="disc">0.840679</data>
+</edge>
+<edge id="52to76" source="Group_052" target="Group_076">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_068 IL_1FJG_063</data>
+	<data key="disc">0.948531</data>
+</edge>
+<edge id="52to153" source="Group_052" target="Group_153">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_068 IL_1MFQ_006</data>
+	<data key="disc">0.992710</data>
+</edge>
+<edge id="52to161" source="Group_052" target="Group_161">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNL_003 IL_1S72_016</data>
+	<data key="disc">0.879741</data>
+</edge>
+<edge id="52to184" source="Group_052" target="Group_184">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_028 IL_2FQN_002</data>
+	<data key="disc">0.899153</data>
+</edge>
+<edge id="52to204" source="Group_052" target="Group_204">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_068 IL_2XZM_067</data>
+	<data key="disc">0.208846</data>
+</edge>
+<node id="Group_053">
+	<data key="label">Group_053</data>
+	<data key="signature">06_cWW-cWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.461194</data>
+</node>
+<edge id="53to59" source="Group_053" target="Group_059">
+	<data key="links">3</data>
+	<data key="connection">IL_1S72_085 IL_3U5F_067</data>
+	<data key="disc">0.674413</data>
+</edge>
+<edge id="53to69" source="Group_053" target="Group_069">
+	<data key="links">1</data>
+	<data key="connection">IL_2GDI_001 IL_1S72_053</data>
+	<data key="disc">0.942849</data>
+</edge>
+<edge id="53to73" source="Group_053" target="Group_073">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNL_002 IL_1LNG_001</data>
+	<data key="disc">0.811673</data>
+</edge>
+<edge id="53to76" source="Group_053" target="Group_076">
+	<data key="links">1</data>
+	<data key="connection">IL_2GDI_001 IL_3V7E_007</data>
+	<data key="disc">0.918814</data>
+</edge>
+<edge id="53to96" source="Group_053" target="Group_096">
+	<data key="links">3</data>
+	<data key="connection">IL_2HOJ_001 IL_3E5C_001</data>
+	<data key="disc">0.564000</data>
+</edge>
+<edge id="53to98" source="Group_053" target="Group_098">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNL_002 IL_3U5F_006</data>
+	<data key="disc">0.741099</data>
+</edge>
+<edge id="53to161" source="Group_053" target="Group_161">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNL_002 IL_1S72_016</data>
+	<data key="disc">0.854060</data>
+</edge>
+<edge id="53to167" source="Group_053" target="Group_167">
+	<data key="links">2</data>
+	<data key="connection">IL_2HOJ_001 IL_1SI3_001</data>
+	<data key="disc">0.776276</data>
+</edge>
+<node id="Group_054">
+	<data key="label">Group_054</data>
+	<data key="signature">08_cWW-cWW-cWW-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.523823</data>
+</node>
+<edge id="54to70" source="Group_054" target="Group_070">
+	<data key="links">1</data>
+	<data key="connection">IL_3NPB_007 IL_2O3V_003</data>
+	<data key="disc">0.942062</data>
+</edge>
+<edge id="54to74" source="Group_054" target="Group_074">
+	<data key="links">2</data>
+	<data key="connection">IL_3V7E_009 IL_2B63_002</data>
+	<data key="disc">0.412213</data>
+</edge>
+<edge id="54to77" source="Group_054" target="Group_077">
+	<data key="links">2</data>
+	<data key="connection">IL_3GX5_004 IL_1CSL_001</data>
+	<data key="disc">0.875481</data>
+</edge>
+<edge id="54to95" source="Group_054" target="Group_095">
+	<data key="links">2</data>
+	<data key="connection">IL_3NPB_007 IL_1U6B_004</data>
+	<data key="disc">0.771711</data>
+</edge>
+<edge id="54to103" source="Group_054" target="Group_103">
+	<data key="links">2</data>
+	<data key="connection">IL_165D_001 IL_255D_001</data>
+	<data key="disc">0.196937</data>
+</edge>
+<edge id="54to175" source="Group_054" target="Group_175">
+	<data key="links">2</data>
+	<data key="connection">IL_3NPB_007 IL_1Y0Q_002</data>
+	<data key="disc">0.848199</data>
+</edge>
+<edge id="54to198" source="Group_054" target="Group_198">
+	<data key="links">2</data>
+	<data key="connection">IL_3NPB_007 IL_2QBZ_002</data>
+	<data key="disc">0.784024</data>
+</edge>
+<edge id="54to269" source="Group_054" target="Group_269">
+	<data key="links">1</data>
+	<data key="connection">IL_165D_001 IL_413D_001</data>
+	<data key="disc">0.221345</data>
+</edge>
+<node id="Group_055">
+	<data key="label">Group_055</data>
+	<data key="signature">07_cWW-cWW----cSH</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.464598</data>
+</node>
+<edge id="55to58" source="Group_055" target="Group_058">
+	<data key="links">2</data>
+	<data key="connection">IL_4A1B_004 IL_3U5H_063</data>
+	<data key="disc">0.890781</data>
+</edge>
+<edge id="55to75" source="Group_055" target="Group_075">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_004 IL_2ZJR_023</data>
+	<data key="disc">0.704745</data>
+</edge>
+<edge id="55to94" source="Group_055" target="Group_094">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_004 IL_1NTB_004</data>
+	<data key="disc">0.889818</data>
+</edge>
+<edge id="55to97" source="Group_055" target="Group_097">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_018 IL_1S72_017</data>
+	<data key="disc">0.591625</data>
+</edge>
+<edge id="55to133" source="Group_055" target="Group_133">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_062 IL_2QBG_059</data>
+	<data key="disc">0.736903</data>
+</edge>
+<edge id="55to169" source="Group_055" target="Group_169">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_004 IL_1U6B_009</data>
+	<data key="disc">0.882432</data>
+</edge>
+<edge id="55to177" source="Group_055" target="Group_177">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_062 IL_2AW7_015</data>
+	<data key="disc">0.883780</data>
+</edge>
+<edge id="55to226" source="Group_055" target="Group_226">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_007 IL_3NPB_005</data>
+	<data key="disc">0.810805</data>
+</edge>
+<node id="Group_056">
+	<data key="label">Group_056</data>
+	<data key="signature">08_cWW-cWW-cWW--cSH</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.542755</data>
+</node>
+<edge id="56to57" source="Group_056" target="Group_057">
+	<data key="links">2</data>
+	<data key="connection">IL_2OEU_001 IL_1S72_059</data>
+	<data key="disc">0.613548</data>
+</edge>
+<edge id="56to76" source="Group_056" target="Group_076">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_073 IL_1FJG_063</data>
+	<data key="disc">0.715298</data>
+</edge>
+<edge id="56to109" source="Group_056" target="Group_109">
+	<data key="links">1</data>
+	<data key="connection">IL_2XXA_009 IL_2AW7_021</data>
+	<data key="disc">0.784789</data>
+</edge>
+<edge id="56to144" source="Group_056" target="Group_144">
+	<data key="links">2</data>
+	<data key="connection">IL_2XZM_073 IL_4A1B_119</data>
+	<data key="disc">0.932768</data>
+</edge>
+<edge id="56to151" source="Group_056" target="Group_151">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_073 IL_1FJG_045</data>
+	<data key="disc">0.932342</data>
+</edge>
+<edge id="56to204" source="Group_056" target="Group_204">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_073 IL_2XZM_067</data>
+	<data key="disc">0.837201</data>
+</edge>
+<node id="Group_057">
+	<data key="label">Group_057</data>
+	<data key="signature">09_cWW----tHS-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.236509</data>
+</node>
+<edge id="57to108" source="Group_057" target="Group_108">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_048 IL_3U5F_052</data>
+	<data key="disc">0.203607</data>
+</edge>
+<edge id="57to131" source="Group_057" target="Group_131">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_061 IL_3V2F_013</data>
+	<data key="disc">0.998881</data>
+</edge>
+<edge id="57to254" source="Group_057" target="Group_254">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_048 IL_3U5H_068</data>
+	<data key="disc">0.562197</data>
+</edge>
+<node id="Group_058">
+	<data key="label">Group_058</data>
+	<data key="signature">04_cWW-cWW</data>
+	<data key="numnt">4.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.334336</data>
+</node>
+<edge id="58to120" source="Group_058" target="Group_120">
+	<data key="links">3</data>
+	<data key="connection">IL_3U5H_063 IL_1KXK_001</data>
+	<data key="disc">0.769190</data>
+</edge>
+<edge id="58to154" source="Group_058" target="Group_154">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_082 IL_1MZP_002</data>
+	<data key="disc">0.323295</data>
+</edge>
+<edge id="58to177" source="Group_058" target="Group_177">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_063 IL_2AW7_015</data>
+	<data key="disc">0.918905</data>
+</edge>
+<edge id="58to212" source="Group_058" target="Group_212">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_063 IL_2ZJR_098</data>
+	<data key="disc">0.524377</data>
+</edge>
+<edge id="58to268" source="Group_058" target="Group_268">
+	<data key="links">2</data>
+	<data key="connection">IL_3U5H_063 IL_3V2F_102</data>
+	<data key="disc">0.534602</data>
+</edge>
+<node id="Group_059">
+	<data key="label">Group_059</data>
+	<data key="signature">06_cWW-cSW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.515981</data>
+</node>
+<edge id="59to73" source="Group_059" target="Group_073">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_093 IL_1LNG_001</data>
+	<data key="disc">0.943955</data>
+</edge>
+<edge id="59to96" source="Group_059" target="Group_096">
+	<data key="links">3</data>
+	<data key="connection">IL_2AW7_049 IL_3U5F_074</data>
+	<data key="disc">0.419643</data>
+</edge>
+<edge id="59to98" source="Group_059" target="Group_098">
+	<data key="links">2</data>
+	<data key="connection">IL_2AW7_049 IL_3U5F_012</data>
+	<data key="disc">0.658306</data>
+</edge>
+<edge id="59to127" source="Group_059" target="Group_127">
+	<data key="links">2</data>
+	<data key="connection">IL_409D_001 IL_1YVP_001</data>
+	<data key="disc">0.423880</data>
+</edge>
+<edge id="59to167" source="Group_059" target="Group_167">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_093 IL_1SI3_001</data>
+	<data key="disc">0.744606</data>
+</edge>
+<edge id="59to214" source="Group_059" target="Group_214">
+	<data key="links">1</data>
+	<data key="connection">IL_409D_001 IL_333D_001</data>
+	<data key="disc">0.831387</data>
+</edge>
+<node id="Group_060">
+	<data key="label">Group_060</data>
+	<data key="signature">10_cWW-tSH-tSS,tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.253222</data>
+</node>
+<edge id="60to146" source="Group_060" target="Group_146">
+	<data key="links">2</data>
+	<data key="connection">IL_2OZB_002 IL_1E7K_002</data>
+	<data key="disc">0.147410</data>
+</edge>
+<node id="Group_061">
+	<data key="label">Group_061</data>
+	<data key="signature">14_cWW-tSH-----cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">5</data>
+	<data key="within">0.516456</data>
+</node>
+<edge id="61to121" source="Group_061" target="Group_121">
+	<data key="links">1</data>
+	<data key="connection">IL_2OIU_002 IL_1LNG_003</data>
+	<data key="disc">0.806840</data>
+</edge>
+<edge id="61to128" source="Group_061" target="Group_128">
+	<data key="links">1</data>
+	<data key="connection">IL_2XZM_011 IL_3U5F_011</data>
+	<data key="disc">0.291712</data>
+</edge>
+<edge id="61to240" source="Group_061" target="Group_240">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_090 IL_3U5F_042</data>
+	<data key="disc">0.971010</data>
+</edge>
+<edge id="61to250" source="Group_061" target="Group_250">
+	<data key="links">1</data>
+	<data key="connection">IL_2OIU_002 IL_3U5H_040</data>
+	<data key="disc">0.613965</data>
+</edge>
+<node id="Group_062">
+	<data key="label">Group_062</data>
+	<data key="signature">10_cWW--cWW-cWW-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.349921</data>
+</node>
+<edge id="62to67" source="Group_062" target="Group_067">
+	<data key="links">1</data>
+	<data key="connection">IL_2NZ4_012 IL_4A1B_008</data>
+	<data key="disc">0.981598</data>
+</edge>
+<edge id="62to111" source="Group_062" target="Group_111">
+	<data key="links">1</data>
+	<data key="connection">IL_2NZ4_012 IL_1S72_056</data>
+	<data key="disc">0.939518</data>
+</edge>
+<edge id="62to178" source="Group_062" target="Group_178">
+	<data key="links">1</data>
+	<data key="connection">IL_2NZ4_012 IL_2AW7_022</data>
+	<data key="disc">0.843646</data>
+</edge>
+<edge id="62to222" source="Group_062" target="Group_222">
+	<data key="links">1</data>
+	<data key="connection">IL_2IL9_003 IL_3G78_011</data>
+	<data key="disc">0.740285</data>
+</edge>
+<edge id="62to235" source="Group_062" target="Group_235">
+	<data key="links">2</data>
+	<data key="connection">IL_2NZ4_012 IL_3U5F_003</data>
+	<data key="disc">0.807321</data>
+</edge>
+<edge id="62to256" source="Group_062" target="Group_256">
+	<data key="links">1</data>
+	<data key="connection">IL_2NZ4_012 IL_3U5H_079</data>
+	<data key="disc">0.984032</data>
+</edge>
+<node id="Group_063">
+	<data key="label">Group_063</data>
+	<data key="signature">13_cSS,cWW-tSS-tWW,tHH-tHH-tHS-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.136635</data>
+</node>
+<node id="Group_064">
+	<data key="label">Group_064</data>
+	<data key="signature">08_cWW-tWH-tHS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.163160</data>
+</node>
+<node id="Group_065">
+	<data key="label">Group_065</data>
+	<data key="signature">11_cWW-tWH--tHW-cSH--cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.135557</data>
+</node>
+<node id="Group_066">
+	<data key="label">Group_066</data>
+	<data key="signature">05_cWW-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.287029</data>
+</node>
+<node id="Group_067">
+	<data key="label">Group_067</data>
+	<data key="signature">10_cWW-tSH--tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.476143</data>
+</node>
+<edge id="67to138" source="Group_067" target="Group_138">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_008 IL_3OWZ_008</data>
+	<data key="disc">0.677058</data>
+</edge>
+<edge id="67to235" source="Group_067" target="Group_235">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_008 IL_3U5F_003</data>
+	<data key="disc">0.697435</data>
+</edge>
+<node id="Group_068">
+	<data key="label">Group_068</data>
+	<data key="signature">13_cWW-cSW,tWH----tHS-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.183710</data>
+</node>
+<node id="Group_069">
+	<data key="label">Group_069</data>
+	<data key="signature">07_cWW---cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.469012</data>
+</node>
+<edge id="69to70" source="Group_069" target="Group_070">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_053 IL_3MEI_004</data>
+	<data key="disc">0.721082</data>
+</edge>
+<edge id="69to76" source="Group_069" target="Group_076">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_053 IL_3V7E_007</data>
+	<data key="disc">0.790702</data>
+</edge>
+<edge id="69to137" source="Group_069" target="Group_137">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_003 IL_3OWZ_002</data>
+	<data key="disc">0.987539</data>
+</edge>
+<edge id="69to184" source="Group_069" target="Group_184">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_053 IL_2FQN_002</data>
+	<data key="disc">0.799547</data>
+</edge>
+<node id="Group_070">
+	<data key="label">Group_070</data>
+	<data key="signature">07_cWW-cSW-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.471929</data>
+</node>
+<edge id="70to72" source="Group_070" target="Group_072">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_017 IL_1QA6_001</data>
+	<data key="disc">0.945331</data>
+</edge>
+<edge id="70to76" source="Group_070" target="Group_076">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_017 IL_3V7E_007</data>
+	<data key="disc">0.616698</data>
+</edge>
+<edge id="70to129" source="Group_070" target="Group_129">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_105 IL_2OE5_002</data>
+	<data key="disc">0.716744</data>
+</edge>
+<edge id="70to184" source="Group_070" target="Group_184">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_017 IL_2FQN_002</data>
+	<data key="disc">0.807004</data>
+</edge>
+<edge id="70to227" source="Group_070" target="Group_227">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_017 IL_3NPB_006</data>
+	<data key="disc">0.966591</data>
+</edge>
+<node id="Group_071">
+	<data key="label">Group_071</data>
+	<data key="signature">09_cWW-tWH,tSH-tHS-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.409655</data>
+</node>
+<edge id="71to145" source="Group_071" target="Group_145">
+	<data key="links">2</data>
+	<data key="connection">IL_2QBG_075 IL_3U5F_007</data>
+	<data key="disc">0.397103</data>
+</edge>
+<edge id="71to219" source="Group_071" target="Group_219">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_075 IL_3G78_003</data>
+	<data key="disc">0.966791</data>
+</edge>
+<edge id="71to224" source="Group_071" target="Group_224">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_075 IL_3KTW_003</data>
+	<data key="disc">0.891424</data>
+</edge>
+<node id="Group_072">
+	<data key="label">Group_072</data>
+	<data key="signature">07_cWW--cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.355579</data>
+</node>
+<edge id="72to169" source="Group_072" target="Group_169">
+	<data key="links">1</data>
+	<data key="connection">IL_1QA6_001 IL_1U6B_009</data>
+	<data key="disc">0.870398</data>
+</edge>
+<node id="Group_073">
+	<data key="label">Group_073</data>
+	<data key="signature">07_cWW--cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.514252</data>
+</node>
+<edge id="73to75" source="Group_073" target="Group_075">
+	<data key="links">2</data>
+	<data key="connection">IL_2ZJR_101 IL_1RLG_003</data>
+	<data key="disc">0.875932</data>
+</edge>
+<edge id="73to161" source="Group_073" target="Group_161">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_068 IL_1S72_016</data>
+	<data key="disc">0.423554</data>
+</edge>
+<node id="Group_074">
+	<data key="label">Group_074</data>
+	<data key="signature">06_cWW---cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.441974</data>
+</node>
+<edge id="74to75" source="Group_074" target="Group_075">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_132 IL_2ZJR_023</data>
+	<data key="disc">0.691015</data>
+</edge>
+<edge id="74to84" source="Group_074" target="Group_084">
+	<data key="links">1</data>
+	<data key="connection">IL_1QBP_003 IL_3BNQ_005</data>
+	<data key="disc">0.837046</data>
+</edge>
+<edge id="74to94" source="Group_074" target="Group_094">
+	<data key="links">2</data>
+	<data key="connection">IL_1QBP_003 IL_3U5H_088</data>
+	<data key="disc">0.866150</data>
+</edge>
+<edge id="74to118" source="Group_074" target="Group_118">
+	<data key="links">1</data>
+	<data key="connection">IL_1QBP_003 IL_1J9H_002</data>
+	<data key="disc">0.982383</data>
+</edge>
+<edge id="74to169" source="Group_074" target="Group_169">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5H_132 IL_1U6B_009</data>
+	<data key="disc">0.741349</data>
+</edge>
+<node id="Group_075">
+	<data key="label">Group_075</data>
+	<data key="signature">05_cWW--cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">4</data>
+	<data key="within">0.573356</data>
+</node>
+<edge id="75to94" source="Group_075" target="Group_094">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_023 IL_1NTB_004</data>
+	<data key="disc">0.769014</data>
+</edge>
+<edge id="75to236" source="Group_075" target="Group_236">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_023 IL_3U5F_020</data>
+	<data key="disc">0.708412</data>
+</edge>
+<node id="Group_076">
+	<data key="label">Group_076</data>
+	<data key="signature">07_cWW-tSH-cSH-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.430393</data>
+</node>
+<edge id="76to137" source="Group_076" target="Group_137">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_063 IL_3OWZ_006</data>
+	<data key="disc">0.958403</data>
+</edge>
+<edge id="76to153" source="Group_076" target="Group_153">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_063 IL_1MFQ_006</data>
+	<data key="disc">0.943817</data>
+</edge>
+<edge id="76to184" source="Group_076" target="Group_184">
+	<data key="links">1</data>
+	<data key="connection">IL_3V7E_007 IL_2FQN_002</data>
+	<data key="disc">0.962849</data>
+</edge>
+<edge id="76to193" source="Group_076" target="Group_193">
+	<data key="links">1</data>
+	<data key="connection">IL_3GX5_003 IL_2QBG_087</data>
+	<data key="disc">0.576861</data>
+</edge>
+<edge id="76to204" source="Group_076" target="Group_204">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_063 IL_2XZM_067</data>
+	<data key="disc">0.953272</data>
+</edge>
+<edge id="76to227" source="Group_076" target="Group_227">
+	<data key="links">1</data>
+	<data key="connection">IL_3V7E_007 IL_3NPB_006</data>
+	<data key="disc">0.893613</data>
+</edge>
+<edge id="76to237" source="Group_076" target="Group_237">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_063 IL_3U5F_021</data>
+	<data key="disc">0.899052</data>
+</edge>
+<node id="Group_077">
+	<data key="label">Group_077</data>
+	<data key="signature">08_cWW-cHW-cWW-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.341246</data>
+</node>
+<edge id="77to103" source="Group_077" target="Group_103">
+	<data key="links">1</data>
+	<data key="connection">IL_1CSL_001 IL_2QBG_046</data>
+	<data key="disc">0.861138</data>
+</edge>
+<edge id="77to106" source="Group_077" target="Group_106">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_037 IL_1S72_044</data>
+	<data key="disc">0.977927</data>
+</edge>
+<edge id="77to129" source="Group_077" target="Group_129">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_037 IL_2FQN_003</data>
+	<data key="disc">0.943168</data>
+</edge>
+<edge id="77to207" source="Group_077" target="Group_207">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_037 IL_2Y9B_002</data>
+	<data key="disc">0.799444</data>
+</edge>
+<edge id="77to253" source="Group_077" target="Group_253">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_037 IL_3U5H_060</data>
+	<data key="disc">0.954466</data>
+</edge>
+<node id="Group_078">
+	<data key="label">Group_078</data>
+	<data key="signature">11_cWW-tSH-tHS-tHS-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.482557</data>
+</node>
+<edge id="78to104" source="Group_078" target="Group_104">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_026 IL_2ZJR_017</data>
+	<data key="disc">0.970209</data>
+</edge>
+<edge id="78to119" source="Group_078" target="Group_119">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_026 IL_1KD5_001</data>
+	<data key="disc">0.975511</data>
+</edge>
+<edge id="78to196" source="Group_078" target="Group_196">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_026 IL_2QBG_106</data>
+	<data key="disc">0.901932</data>
+</edge>
+<edge id="78to263" source="Group_078" target="Group_263">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_026 IL_3V2F_060</data>
+	<data key="disc">0.788475</data>
+</edge>
+<edge id="78to272" source="Group_078" target="Group_272">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_026 IL_4A1B_033</data>
+	<data key="disc">0.974352</data>
+</edge>
+<node id="Group_079">
+	<data key="label">Group_079</data>
+	<data key="signature">12_cWW-tSH-tSH-tSS,tHS--cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.365005</data>
+</node>
+<node id="Group_080">
+	<data key="label">Group_080</data>
+	<data key="signature">11_cWW-cWW--cWW-cWW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.474384</data>
+</node>
+<node id="Group_081">
+	<data key="label">Group_081</data>
+	<data key="signature">11_cWW-tSW----cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.153810</data>
+</node>
+<node id="Group_082">
+	<data key="label">Group_082</data>
+	<data key="signature">13_cWW--cHW,tSS---cSH----cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.281660</data>
+</node>
+<edge id="82to164" source="Group_082" target="Group_164">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_077 IL_1S72_071</data>
+	<data key="disc">0.364130</data>
+</edge>
+<edge id="82to258" source="Group_082" target="Group_258">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_092 IL_3U5H_095</data>
+	<data key="disc">0.301987</data>
+</edge>
+<node id="Group_083">
+	<data key="label">Group_083</data>
+	<data key="signature">13_cSS,cWW-tSS--tSH-tSS---cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.142326</data>
+</node>
+<node id="Group_084">
+	<data key="label">Group_084</data>
+	<data key="signature">08_cWW-tSH--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.439029</data>
+</node>
+<edge id="84to94" source="Group_084" target="Group_094">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNQ_005 IL_3U5H_088</data>
+	<data key="disc">0.834453</data>
+</edge>
+<edge id="84to99" source="Group_084" target="Group_099">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_043 IL_3V2F_026</data>
+	<data key="disc">0.827622</data>
+</edge>
+<edge id="84to103" source="Group_084" target="Group_103">
+	<data key="links">1</data>
+	<data key="connection">IL_3BNQ_005 IL_2QBG_046</data>
+	<data key="disc">0.835846</data>
+</edge>
+<edge id="84to277" source="Group_084" target="Group_277">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_043 IL_4A1B_097</data>
+	<data key="disc">0.754910</data>
+</edge>
+<node id="Group_085">
+	<data key="label">Group_085</data>
+	<data key="signature">07_cSS,cWW--cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.473389</data>
+</node>
+<edge id="85to97" source="Group_085" target="Group_097">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_050 IL_1XJR_004</data>
+	<data key="disc">0.431237</data>
+</edge>
+<edge id="85to205" source="Group_085" target="Group_205">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_050 IL_2XZM_077</data>
+	<data key="disc">0.780580</data>
+</edge>
+<node id="Group_086">
+	<data key="label">Group_086</data>
+	<data key="signature">14_cWW-tSH-tHH-cSH-tWH-tHS--cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.077791</data>
+</node>
+<node id="Group_087">
+	<data key="label">Group_087</data>
+	<data key="signature">12_cWW-tSS--tSH-tHS-cWW-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.116313</data>
+</node>
+<node id="Group_088">
+	<data key="label">Group_088</data>
+	<data key="signature">12_cWW-tWH--tHS-bif-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.465494</data>
+</node>
+<edge id="88to104" source="Group_088" target="Group_104">
+	<data key="links">1</data>
+	<data key="connection">IL_3B5F_001 IL_3U5F_038</data>
+	<data key="disc">0.977066</data>
+</edge>
+<node id="Group_089">
+	<data key="label">Group_089</data>
+	<data key="signature">07_cWW----cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.441125</data>
+</node>
+<edge id="89to144" source="Group_089" target="Group_144">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_013 IL_3U5H_123</data>
+	<data key="disc">0.783940</data>
+</edge>
+<edge id="89to197" source="Group_089" target="Group_197">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_013 IL_2QBZ_001</data>
+	<data key="disc">0.680358</data>
+</edge>
+<node id="Group_090">
+	<data key="label">Group_090</data>
+	<data key="signature">12_cWW-tSH-tSS-cWW,tSS-cSS</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.238471</data>
+</node>
+<node id="Group_091">
+	<data key="label">Group_091</data>
+	<data key="signature">19_cWW-cWW-tSH-tHW-tHW-tWH--cWW-cWW</data>
+	<data key="numnt">19.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.072492</data>
+</node>
+<edge id="91to216" source="Group_091" target="Group_216">
+	<data key="links">1</data>
+	<data key="connection">IL_1M5O_005 IL_3B5F_002</data>
+	<data key="disc">0.439653</data>
+</edge>
+<node id="Group_092">
+	<data key="label">Group_092</data>
+	<data key="signature">10_cWW-cWW--tWH</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.162745</data>
+</node>
+<node id="Group_093">
+	<data key="label">Group_093</data>
+	<data key="signature">12_cWW-cWW-cWW-cWW-cSW-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.269507</data>
+</node>
+<edge id="93to104" source="Group_093" target="Group_104">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_025 IL_3U5F_038</data>
+	<data key="disc">0.785957</data>
+</edge>
+<node id="Group_094">
+	<data key="label">Group_094</data>
+	<data key="signature">06_cWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.539781</data>
+</node>
+<edge id="94to132" source="Group_094" target="Group_132">
+	<data key="links">1</data>
+	<data key="connection">IL_1NTB_004 IL_3V2F_058</data>
+	<data key="disc">0.826088</data>
+</edge>
+<edge id="94to133" source="Group_094" target="Group_133">
+	<data key="links">1</data>
+	<data key="connection">IL_1NTB_004 IL_2QBG_059</data>
+	<data key="disc">0.822543</data>
+</edge>
+<node id="Group_095">
+	<data key="label">Group_095</data>
+	<data key="signature">09_cWW----cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">3</data>
+	<data key="within">0.595928</data>
+</node>
+<edge id="95to99" source="Group_095" target="Group_099">
+	<data key="links">1</data>
+	<data key="connection">IL_1J2B_001 IL_4A1B_029</data>
+	<data key="disc">0.921162</data>
+</edge>
+<edge id="95to175" source="Group_095" target="Group_175">
+	<data key="links">1</data>
+	<data key="connection">IL_1U6B_004 IL_1Y0Q_002</data>
+	<data key="disc">0.354898</data>
+</edge>
+<edge id="95to224" source="Group_095" target="Group_224">
+	<data key="links">1</data>
+	<data key="connection">IL_1MFQ_001 IL_3KTW_003</data>
+	<data key="disc">0.891628</data>
+</edge>
+<node id="Group_096">
+	<data key="label">Group_096</data>
+	<data key="signature">06_cWW-cWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.329664</data>
+</node>
+<edge id="96to98" source="Group_096" target="Group_098">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_074 IL_3U5F_006</data>
+	<data key="disc">0.784347</data>
+</edge>
+<edge id="96to167" source="Group_096" target="Group_167">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_074 IL_1SI3_001</data>
+	<data key="disc">0.619827</data>
+</edge>
+<edge id="96to213" source="Group_096" target="Group_213">
+	<data key="links">1</data>
+	<data key="connection">IL_3E5C_001 IL_2ZJR_103</data>
+	<data key="disc">0.524347</data>
+</edge>
+<edge id="96to214" source="Group_096" target="Group_214">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_074 IL_333D_001</data>
+	<data key="disc">0.870168</data>
+</edge>
+<edge id="96to266" source="Group_096" target="Group_266">
+	<data key="links">1</data>
+	<data key="connection">IL_3E5C_001 IL_3V2F_085</data>
+	<data key="disc">0.985103</data>
+</edge>
+<node id="Group_097">
+	<data key="label">Group_097</data>
+	<data key="signature">05_cWW-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.310414</data>
+</node>
+<edge id="97to177" source="Group_097" target="Group_177">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_017 IL_2AW7_015</data>
+	<data key="disc">0.917183</data>
+</edge>
+<edge id="97to236" source="Group_097" target="Group_236">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_017 IL_3U5F_020</data>
+	<data key="disc">0.602481</data>
+</edge>
+<node id="Group_098">
+	<data key="label">Group_098</data>
+	<data key="signature">06_cWW--cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.409613</data>
+</node>
+<edge id="98to127" source="Group_098" target="Group_127">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_006 IL_1YVP_001</data>
+	<data key="disc">0.974140</data>
+</edge>
+<edge id="98to167" source="Group_098" target="Group_167">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_012 IL_1SI3_001</data>
+	<data key="disc">0.282147</data>
+</edge>
+<edge id="98to214" source="Group_098" target="Group_214">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_012 IL_333D_001</data>
+	<data key="disc">0.751422</data>
+</edge>
+<node id="Group_099">
+	<data key="label">Group_099</data>
+	<data key="signature">09_cWW---tHS-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.464297</data>
+</node>
+<edge id="99to145" source="Group_099" target="Group_145">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_029 IL_4A1B_075</data>
+	<data key="disc">0.938417</data>
+</edge>
+<edge id="99to175" source="Group_099" target="Group_175">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_029 IL_1Y0Q_002</data>
+	<data key="disc">0.882014</data>
+</edge>
+<edge id="99to267" source="Group_099" target="Group_267">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_029 IL_3V2F_101</data>
+	<data key="disc">0.977470</data>
+</edge>
+<edge id="99to277" source="Group_099" target="Group_277">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_026 IL_4A1B_097</data>
+	<data key="disc">0.852989</data>
+</edge>
+<node id="Group_100">
+	<data key="label">Group_100</data>
+	<data key="signature">12_cWW--tWH-tHW--cWW-cWW---cSS</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.199934</data>
+</node>
+<edge id="100to172" source="Group_100" target="Group_172">
+	<data key="links">1</data>
+	<data key="connection">IL_1GID_011 IL_1X8W_003</data>
+	<data key="disc">0.366500</data>
+</edge>
+<node id="Group_101">
+	<data key="label">Group_101</data>
+	<data key="signature">11_cWW-tSH-tHW--cWW---cSH</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.225027</data>
+</node>
+<edge id="101to223" source="Group_101" target="Group_223">
+	<data key="links">1</data>
+	<data key="connection">IL_1FJG_018 IL_3G78_013</data>
+	<data key="disc">0.402431</data>
+</edge>
+<node id="Group_102">
+	<data key="label">Group_102</data>
+	<data key="signature">07_cWW----cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.041399</data>
+</node>
+<edge id="102to169" source="Group_102" target="Group_169">
+	<data key="links">1</data>
+	<data key="connection">IL_2AW7_039 IL_1U6B_009</data>
+	<data key="disc">0.654881</data>
+</edge>
+<node id="Group_103">
+	<data key="label">Group_103</data>
+	<data key="signature">08_cWW-cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.449199</data>
+</node>
+<edge id="103to269" source="Group_103" target="Group_269">
+	<data key="links">1</data>
+	<data key="connection">IL_2QBG_046 IL_413D_001</data>
+	<data key="disc">0.910172</data>
+</edge>
+<node id="Group_104">
+	<data key="label">Group_104</data>
+	<data key="signature">12_cWW---tHS--cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.463332</data>
+</node>
+<edge id="104to272" source="Group_104" target="Group_272">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_017 IL_4A1B_033</data>
+	<data key="disc">0.760832</data>
+</edge>
+<node id="Group_105">
+	<data key="label">Group_105</data>
+	<data key="signature">13_cWW-tSH---cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.428658</data>
+</node>
+<edge id="105to188" source="Group_105" target="Group_188">
+	<data key="links">1</data>
+	<data key="connection">IL_2ZJR_051 IL_2QBG_009</data>
+	<data key="disc">0.664726</data>
+</edge>
+<node id="Group_106">
+	<data key="label">Group_106</data>
+	<data key="signature">08_cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.464819</data>
+</node>
+<edge id="106to253" source="Group_106" target="Group_253">
+	<data key="links">1</data>
+	<data key="connection">IL_1S72_044 IL_3U5H_060</data>
+	<data key="disc">0.257985</data>
+</edge>
+<node id="Group_107">
+	<data key="label">Group_107</data>
+	<data key="signature">05_cWW-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.471629</data>
+</node>
+<edge id="107to278" source="Group_107" target="Group_278">
+	<data key="links">1</data>
+	<data key="connection">IL_3RW6_003 IL_4A1C_004</data>
+	<data key="disc">0.833873</data>
+</edge>
+<node id="Group_108">
+	<data key="label">Group_108</data>
+	<data key="signature">09_cWW-cSH---cWW-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.481265</data>
+</node>
+<edge id="108to254" source="Group_108" target="Group_254">
+	<data key="links">1</data>
+	<data key="connection">IL_3U5F_025 IL_3U5H_068</data>
+	<data key="disc">0.956557</data>
+</edge>
+<node id="Group_109">
+	<data key="label">Group_109</data>
+	<data key="signature">08_cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.472745</data>
+</node>
+<edge id="109to231" source="Group_109" target="Group_231">
+	<data key="links">1</data>
+	<data key="connection">IL_3V2F_109 IL_3Q1Q_009</data>
+	<data key="disc">0.867887</data>
+</edge>
+<node id="Group_110">
+	<data key="label">Group_110</data>
+	<data key="signature">10_cWW-----cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.480142</data>
+</node>
+<edge id="110to252" source="Group_110" target="Group_252">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_057 IL_3U5H_056</data>
+	<data key="disc">0.428107</data>
+</edge>
+<node id="Group_111">
+	<data key="label">Group_111</data>
+	<data key="signature">10_cWW--tHH-tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.241737</data>
+</node>
+<edge id="111to256" source="Group_111" target="Group_256">
+	<data key="links">1</data>
+	<data key="connection">IL_4A1B_074 IL_3U5H_079</data>
+	<data key="disc">0.333707</data>
+</edge>
+<node id="Group_112">
+	<data key="label">Group_112</data>
+	<data key="signature">12_cWW-tSH-tSH-tHS-tHS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.099634</data>
+</node>
+<node id="Group_113">
+	<data key="label">Group_113</data>
+	<data key="signature">11_cWW----cWW--bif-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.047127</data>
+</node>
+<node id="Group_114">
+	<data key="label">Group_114</data>
+	<data key="signature">06_cWW-cWW-tSW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.373682</data>
+</node>
+<node id="Group_115">
+	<data key="label">Group_115</data>
+	<data key="signature">14_cWW-tSH-tWH-tSS-tHW--cWW---cWH</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.155089</data>
+</node>
+<node id="Group_116">
+	<data key="label">Group_116</data>
+	<data key="signature">14_cWW--tSH--tHS-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.303123</data>
+</node>
+<node id="Group_117">
+	<data key="label">Group_117</data>
+	<data key="signature">14_cWW-----tWW-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.388987</data>
+</node>
+<node id="Group_118">
+	<data key="label">Group_118</data>
+	<data key="signature">06_cWW--cWS-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.017159</data>
+</node>
+<node id="Group_119">
+	<data key="label">Group_119</data>
+	<data key="signature">12_cWW-tSH-tHW-tWH-tHS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.262319</data>
+</node>
+<node id="Group_120">
+	<data key="label">Group_120</data>
+	<data key="signature">06_cWW---cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.334155</data>
+</node>
+<node id="Group_121">
+	<data key="label">Group_121</data>
+	<data key="signature">14_cWW-cSW-tWH,tSH-tHW-tHS-cWW-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.075088</data>
+</node>
+<node id="Group_122">
+	<data key="label">Group_122</data>
+	<data key="signature">11_cWW--tHS-cWW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.069002</data>
+</node>
+<node id="Group_123">
+	<data key="label">Group_123</data>
+	<data key="signature">23_tSS,cWW---tWH,cSS-tSW-cWS-cSS-cSH,tWS-cWH-cHW---cWW-------cSH</data>
+	<data key="numnt">23.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.097408</data>
+</node>
+<node id="Group_124">
+	<data key="label">Group_124</data>
+	<data key="signature">05_cWW--cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.355803</data>
+</node>
+<node id="Group_125">
+	<data key="label">Group_125</data>
+	<data key="signature">12_cWW----cWW-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.370008</data>
+</node>
+<node id="Group_126">
+	<data key="label">Group_126</data>
+	<data key="signature">13_cWW----------cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.478384</data>
+</node>
+<node id="Group_127">
+	<data key="label">Group_127</data>
+	<data key="signature">06_cWW--cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.156928</data>
+</node>
+<node id="Group_128">
+	<data key="label">Group_128</data>
+	<data key="signature">14_cWW-cWW-tWH-tWH-tHW-tHW-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.081479</data>
+</node>
+<node id="Group_129">
+	<data key="label">Group_129</data>
+	<data key="signature">08_cWW-cSW-tHS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.047736</data>
+</node>
+<node id="Group_130">
+	<data key="label">Group_130</data>
+	<data key="signature">14_cWW--tHW-tHW-bif-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.033208</data>
+</node>
+<node id="Group_131">
+	<data key="label">Group_131</data>
+	<data key="signature">08_cWW-tHS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.201405</data>
+</node>
+<node id="Group_132">
+	<data key="label">Group_132</data>
+	<data key="signature">07_cWW-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.446587</data>
+</node>
+<node id="Group_133">
+	<data key="label">Group_133</data>
+	<data key="signature">05_cWW-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.384064</data>
+</node>
+<node id="Group_134">
+	<data key="label">Group_134</data>
+	<data key="signature">08_cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.101848</data>
+</node>
+<node id="Group_135">
+	<data key="label">Group_135</data>
+	<data key="signature">09_cWW--cWW--tWH</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.139913</data>
+</node>
+<node id="Group_136">
+	<data key="label">Group_136</data>
+	<data key="signature">17_cWW-cWW--tSH-tHH-cSH-tWH-tHS-cWW</data>
+	<data key="numnt">17.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.041101</data>
+</node>
+<node id="Group_137">
+	<data key="label">Group_137</data>
+	<data key="signature">07_cWW-cHW-tHS-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.030773</data>
+</node>
+<edge id="137to201" source="Group_137" target="Group_201">
+	<data key="links">1</data>
+	<data key="connection">IL_3OWZ_006 IL_2XZM_019</data>
+	<data key="disc">0.999645</data>
+</edge>
+<node id="Group_138">
+	<data key="label">Group_138</data>
+	<data key="signature">10_cWW-tWH--tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.037550</data>
+</node>
+<node id="Group_139">
+	<data key="label">Group_139</data>
+	<data key="signature">21_cWW---cWW---bif-tWH--------cSH</data>
+	<data key="numnt">21.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.081894</data>
+</node>
+<node id="Group_140">
+	<data key="label">Group_140</data>
+	<data key="signature">25_cWW-cWW-------tHH-tHS-cWW</data>
+	<data key="numnt">25.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.082634</data>
+</node>
+<node id="Group_141">
+	<data key="label">Group_141</data>
+	<data key="signature">11_cWW----tHS-cWW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.058202</data>
+</node>
+<node id="Group_142">
+	<data key="label">Group_142</data>
+	<data key="signature">11_cWW--tWW-tWW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.067838</data>
+</node>
+<node id="Group_143">
+	<data key="label">Group_143</data>
+	<data key="signature">08_cWW-----cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.265296</data>
+</node>
+<node id="Group_144">
+	<data key="label">Group_144</data>
+	<data key="signature">08_cWW----cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.174738</data>
+</node>
+<node id="Group_145">
+	<data key="label">Group_145</data>
+	<data key="signature">09_cWW---cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">2</data>
+	<data key="within">0.488229</data>
+</node>
+<node id="Group_146">
+	<data key="label">Group_146</data>
+	<data key="signature">10_cWW---tSH-tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_147">
+	<data key="label">Group_147</data>
+	<data key="signature">12_cWW-tWH-tWH-tHW-tHW-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_148">
+	<data key="label">Group_148</data>
+	<data key="signature">12_cWW-tWH-cWW-tHS-cWW,tSS-cSS</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_149">
+	<data key="label">Group_149</data>
+	<data key="signature">13_cWW--tHW-tHW--cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_150">
+	<data key="label">Group_150</data>
+	<data key="signature">07_cWW-cWW,cSW-cSH</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_151">
+	<data key="label">Group_151</data>
+	<data key="signature">08_cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_152">
+	<data key="label">Group_152</data>
+	<data key="signature">11_cWW-cSH-cWW-cWW---tWH</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_153">
+	<data key="label">Group_153</data>
+	<data key="signature">12_cWW-tSH-----cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_154">
+	<data key="label">Group_154</data>
+	<data key="signature">12_cWW----tWH-----cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_155">
+	<data key="label">Group_155</data>
+	<data key="signature">18_cWW-tSH-tSS-cWW,tSS------tWH-tWH</data>
+	<data key="numnt">18.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_156">
+	<data key="label">Group_156</data>
+	<data key="signature">08_cWW--cSH---cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_157">
+	<data key="label">Group_157</data>
+	<data key="signature">11_cWW-tSH---tHS-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_158">
+	<data key="label">Group_158</data>
+	<data key="signature">13_cWW-tSH----tHS-cWW-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_159">
+	<data key="label">Group_159</data>
+	<data key="signature">15_cWW-bif-tSH-tHW-tHH-bif-cWW----cSH</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_160">
+	<data key="label">Group_160</data>
+	<data key="signature">18_tSS,cWW-cSW,tHH-tHS-cWW-cWW----bif-tWH-tSH</data>
+	<data key="numnt">18.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_161">
+	<data key="label">Group_161</data>
+	<data key="signature">09_cWW-----cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_162">
+	<data key="label">Group_162</data>
+	<data key="signature">11_tSW,cWW-cSH,tSW,tWH--cWS-cWW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_163">
+	<data key="label">Group_163</data>
+	<data key="signature">13_cWW------tHH-tHS-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_164">
+	<data key="label">Group_164</data>
+	<data key="signature">13_cWW--cWW---tSW----cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_165">
+	<data key="label">Group_165</data>
+	<data key="signature">04_cWW-cWW</data>
+	<data key="numnt">4.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_166">
+	<data key="label">Group_166</data>
+	<data key="signature">10_cWW-tSH---tHH-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_167">
+	<data key="label">Group_167</data>
+	<data key="signature">06_cWW--cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_168">
+	<data key="label">Group_168</data>
+	<data key="signature">17_cWW-tHW---------cWW</data>
+	<data key="numnt">17.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_169">
+	<data key="label">Group_169</data>
+	<data key="signature">06_cWW--cSH-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_170">
+	<data key="label">Group_170</data>
+	<data key="signature">11_cWW-tSH-tHH-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_171">
+	<data key="label">Group_171</data>
+	<data key="signature">13_cWW-cWW-tHH-cSH-tWH-tHS-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_172">
+	<data key="label">Group_172</data>
+	<data key="signature">11_cSS,cWW-----cWW---cSS</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_173">
+	<data key="label">Group_173</data>
+	<data key="signature">11_cWW--cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_174">
+	<data key="label">Group_174</data>
+	<data key="signature">13_cWW-cWS-tSH-tHS---cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_175">
+	<data key="label">Group_175</data>
+	<data key="signature">09_cWW-tHH---cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_176">
+	<data key="label">Group_176</data>
+	<data key="signature">12_cWW---cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_177">
+	<data key="label">Group_177</data>
+	<data key="signature">05_cWW--cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_178">
+	<data key="label">Group_178</data>
+	<data key="signature">10_cWW-tSH-tHW-tWW-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_179">
+	<data key="label">Group_179</data>
+	<data key="signature">10_cWW--tHW--cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_180">
+	<data key="label">Group_180</data>
+	<data key="signature">13_cWW------cWW-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_181">
+	<data key="label">Group_181</data>
+	<data key="signature">11_cSH,cWW---cWW,cSW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_182">
+	<data key="label">Group_182</data>
+	<data key="signature">10_cWW-cWW-cWW---tWH</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_183">
+	<data key="label">Group_183</data>
+	<data key="signature">13_cWW-tWH-tWH,tWH---tWW-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_184">
+	<data key="label">Group_184</data>
+	<data key="signature">09_cWW--cWW-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_185">
+	<data key="label">Group_185</data>
+	<data key="signature">15_cWW-tSH--tHW-tHW-tHW-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_186">
+	<data key="label">Group_186</data>
+	<data key="signature">15_cWW-tWH-tWH----cWW-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_187">
+	<data key="label">Group_187</data>
+	<data key="signature">11_cWW-tSH-tHW--bif-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_188">
+	<data key="label">Group_188</data>
+	<data key="signature">11_cWW-tSH-tSH-tSS-cWW,tSS-cSS</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_189">
+	<data key="label">Group_189</data>
+	<data key="signature">12_cWW-cSW---tHS-cWS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_190">
+	<data key="label">Group_190</data>
+	<data key="signature">09_cWW----cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_191">
+	<data key="label">Group_191</data>
+	<data key="signature">08_cWW-tWH--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_192">
+	<data key="label">Group_192</data>
+	<data key="signature">05_cWW-cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_193">
+	<data key="label">Group_193</data>
+	<data key="signature">07_tHS,cWW-tHS-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_194">
+	<data key="label">Group_194</data>
+	<data key="signature">13_cWW-tWH-tSH-tHS-cWW----cSH</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_195">
+	<data key="label">Group_195</data>
+	<data key="signature">13_cWW-cSW-tHW-cSH-tWH-tHS-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_196">
+	<data key="label">Group_196</data>
+	<data key="signature">10_cWW-cWW---tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_197">
+	<data key="label">Group_197</data>
+	<data key="signature">07_cWW-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_198">
+	<data key="label">Group_198</data>
+	<data key="signature">07_cWW-tHS-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_199">
+	<data key="label">Group_199</data>
+	<data key="signature">08_cWW-tSH-tHS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_200">
+	<data key="label">Group_200</data>
+	<data key="signature">08_cWW-cWH--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_201">
+	<data key="label">Group_201</data>
+	<data key="signature">09_cWW-tHS-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_202">
+	<data key="label">Group_202</data>
+	<data key="signature">16_cWW------cWW,tSS</data>
+	<data key="numnt">16.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_203">
+	<data key="label">Group_203</data>
+	<data key="signature">10_cWW-cWW-cWW-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_204">
+	<data key="label">Group_204</data>
+	<data key="signature">08_cWW-bif-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_205">
+	<data key="label">Group_205</data>
+	<data key="signature">11_tSS,cWW------cWW-cSS</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_206">
+	<data key="label">Group_206</data>
+	<data key="signature">14_cWW-cWW----cWW-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_207">
+	<data key="label">Group_207</data>
+	<data key="signature">08_cWW--cWW-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_208">
+	<data key="label">Group_208</data>
+	<data key="signature">10_cWW---cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_209">
+	<data key="label">Group_209</data>
+	<data key="signature">15_cWW---tSH--bif--cWW-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_210">
+	<data key="label">Group_210</data>
+	<data key="signature">14_cWW-----cSH----cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_211">
+	<data key="label">Group_211</data>
+	<data key="signature">08_cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_212">
+	<data key="label">Group_212</data>
+	<data key="signature">06_cWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_213">
+	<data key="label">Group_213</data>
+	<data key="signature">07_cWW-cWW-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_214">
+	<data key="label">Group_214</data>
+	<data key="signature">06_cWW--cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_215">
+	<data key="label">Group_215</data>
+	<data key="signature">08_cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_216">
+	<data key="label">Group_216</data>
+	<data key="signature">18_cWW-cWW-tSH-tHW-tHW---cWW-cWW</data>
+	<data key="numnt">18.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_217">
+	<data key="label">Group_217</data>
+	<data key="signature">14_cWW-tSS,cWH-cWH-cWW--tWH--cSS</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_218">
+	<data key="label">Group_218</data>
+	<data key="signature">08_cWW--tHW-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_219">
+	<data key="label">Group_219</data>
+	<data key="signature">11_cWW-cSW-tHS-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_220">
+	<data key="label">Group_220</data>
+	<data key="signature">11_cWW----tHW,tSS--cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_221">
+	<data key="label">Group_221</data>
+	<data key="signature">14_cWW-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_222">
+	<data key="label">Group_222</data>
+	<data key="signature">10_cWW-tHW-tHS-cWW-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_223">
+	<data key="label">Group_223</data>
+	<data key="signature">11_cWW-tHH--tWH-tHS-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_224">
+	<data key="label">Group_224</data>
+	<data key="signature">11_cWW---tHW---cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_225">
+	<data key="label">Group_225</data>
+	<data key="signature">09_cWW----cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_226">
+	<data key="label">Group_226</data>
+	<data key="signature">06_bif,cWW-cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_227">
+	<data key="label">Group_227</data>
+	<data key="signature">07_cWW-bif--cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_228">
+	<data key="label">Group_228</data>
+	<data key="signature">11_cWW----cSH,tWH--cWW-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_229">
+	<data key="label">Group_229</data>
+	<data key="signature">10_cWW-------cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_230">
+	<data key="label">Group_230</data>
+	<data key="signature">14_cWW----cSS-tSS-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_231">
+	<data key="label">Group_231</data>
+	<data key="signature">08_cWW-tHW-cWW---cSH</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_232">
+	<data key="label">Group_232</data>
+	<data key="signature">10_cWW-------cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_233">
+	<data key="label">Group_233</data>
+	<data key="signature">15_cWW-cWW---tHS-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_234">
+	<data key="label">Group_234</data>
+	<data key="signature">12_cWW-tSW---tWS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_235">
+	<data key="label">Group_235</data>
+	<data key="signature">10_cWW-cWW-tSH-tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_236">
+	<data key="label">Group_236</data>
+	<data key="signature">08_cWW-----cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_237">
+	<data key="label">Group_237</data>
+	<data key="signature">08_cWW-tHS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_238">
+	<data key="label">Group_238</data>
+	<data key="signature">15_cWW-cWW-cWS--cSW--cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_239">
+	<data key="label">Group_239</data>
+	<data key="signature">13_cWW---cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_240">
+	<data key="label">Group_240</data>
+	<data key="signature">16_cWW-cWW-------cWW</data>
+	<data key="numnt">16.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_241">
+	<data key="label">Group_241</data>
+	<data key="signature">17_cWW----tSH-tSS-cWW-cWW-cWW</data>
+	<data key="numnt">17.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_242">
+	<data key="label">Group_242</data>
+	<data key="signature">16_cWW--tSH-tHW-tHH-tHS-cWW-cWW</data>
+	<data key="numnt">16.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_243">
+	<data key="label">Group_243</data>
+	<data key="signature">15_cWW-tSH-tSW-tHH-cSH-tWH-tHS-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_244">
+	<data key="label">Group_244</data>
+	<data key="signature">16_cWW-cWS-cWW-cWW--cWW</data>
+	<data key="numnt">16.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_245">
+	<data key="label">Group_245</data>
+	<data key="signature">18_cWW-cWW-cWW-cSW---------cWW-cSS</data>
+	<data key="numnt">18.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_246">
+	<data key="label">Group_246</data>
+	<data key="signature">15_cWW-cHW--tHW-tHW-tHW-bif-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_247">
+	<data key="label">Group_247</data>
+	<data key="signature">15_cWW-cWW-tHW,bif-cSH,tSW-cWH-tHS-cWW---cSH-cWH</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_248">
+	<data key="label">Group_248</data>
+	<data key="signature">10_cWW---cWW-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_249">
+	<data key="label">Group_249</data>
+	<data key="signature">09_cWW----cWW-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_250">
+	<data key="label">Group_250</data>
+	<data key="signature">14_cWW-cWW-bif-cSH-tWH-tHS-cWW</data>
+	<data key="numnt">14.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_251">
+	<data key="label">Group_251</data>
+	<data key="signature">09_cWW-tWH-tHS--cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_252">
+	<data key="label">Group_252</data>
+	<data key="signature">10_cWW-tWW--tWW--cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_253">
+	<data key="label">Group_253</data>
+	<data key="signature">09_cWW--cWW-cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_254">
+	<data key="label">Group_254</data>
+	<data key="signature">10_cWW-cSW-cSH,tSW,tWH--cWS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_255">
+	<data key="label">Group_255</data>
+	<data key="signature">10_tSH,cWW---cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_256">
+	<data key="label">Group_256</data>
+	<data key="signature">10_cWW-tWH-tHH-tHS-cWW</data>
+	<data key="numnt">10.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_257">
+	<data key="label">Group_257</data>
+	<data key="signature">13_cWW-cWW--tHW-bif-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_258">
+	<data key="label">Group_258</data>
+	<data key="signature">13_cWW--cHW---tSW,tHH----cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_259">
+	<data key="label">Group_259</data>
+	<data key="signature">13_cWW----cSS--cWW-cWW</data>
+	<data key="numnt">13.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_260">
+	<data key="label">Group_260</data>
+	<data key="signature">26_cWW-cWW-cWW,tSS-cWW--------cWW--cSS-cSS-----cWW-cWW</data>
+	<data key="numnt">26.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_261">
+	<data key="label">Group_261</data>
+	<data key="signature">07_cWW--cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_262">
+	<data key="label">Group_262</data>
+	<data key="signature">20_cWW-tWW--tHH-tHS-cWW---------tWH</data>
+	<data key="numnt">20.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_263">
+	<data key="label">Group_263</data>
+	<data key="signature">11_cWW-tSH-tHH-tHS-cWW</data>
+	<data key="numnt">11.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_264">
+	<data key="label">Group_264</data>
+	<data key="signature">05_cWW--cWW</data>
+	<data key="numnt">5.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_265">
+	<data key="label">Group_265</data>
+	<data key="signature">20_cWW--tSH-tSS-cWW,tSS------tWH-tSH</data>
+	<data key="numnt">20.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_266">
+	<data key="label">Group_266</data>
+	<data key="signature">08_cWW--cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_267">
+	<data key="label">Group_267</data>
+	<data key="signature">09_cWW-tSH--cWW</data>
+	<data key="numnt">9.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_268">
+	<data key="label">Group_268</data>
+	<data key="signature">07_cWW-cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_269">
+	<data key="label">Group_269</data>
+	<data key="signature">08_cWW-cWW-cWW-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_270">
+	<data key="label">Group_270</data>
+	<data key="signature">17_cWW--tSH-tHW-tHH-tHS-cWW-cWW-----cSH</data>
+	<data key="numnt">17.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_271">
+	<data key="label">Group_271</data>
+	<data key="signature">12_cWW-cWW--cSW--tHS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_272">
+	<data key="label">Group_272</data>
+	<data key="signature">12_cWW-cSW--tSH-tHS-cWW</data>
+	<data key="numnt">12.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_273">
+	<data key="label">Group_273</data>
+	<data key="signature">06_cWW---cWW</data>
+	<data key="numnt">6.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_274">
+	<data key="label">Group_274</data>
+	<data key="signature">15_cWW-bif-cSH-tWH-tHS--cWW,tSH</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_275">
+	<data key="label">Group_275</data>
+	<data key="signature">15_cWW--tSS--tSH---cWW-cWW</data>
+	<data key="numnt">15.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_276">
+	<data key="label">Group_276</data>
+	<data key="signature">07_cWW---cWW</data>
+	<data key="numnt">7.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_277">
+	<data key="label">Group_277</data>
+	<data key="signature">08_cWW-tHS-tHS-cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+<node id="Group_278">
+	<data key="label">Group_278</data>
+	<data key="signature">08_cWW-----cWW</data>
+	<data key="numnt">8.000000</data>
+	<data key="cands">1</data>
+	<data key="within">0.000000</data>
+</node>
+</graph></graphml>
