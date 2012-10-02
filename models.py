@@ -164,7 +164,7 @@ class PairwiseInteractions(Base):
     pdb_id     = Column(String(4))
     f_lwbp     = Column(String(4))
     f_stacks   = Column(String(4))
-    f_bphs     = Column(String(4))
+    f_bphs     = Column(String(5)) # n0BPh - can be 5 characters
     f_brbs     = Column(String(4))
     m_lwbp     = Column(String(3))
     m_mclw     = Column(String(10))
@@ -776,7 +776,7 @@ class NR_parents(Base):
     parents    = Column(Text)
 
     def __repr__(self):
-        return "<NR_parents('%s','%s','%s')>" % (self.motif_id, self.release_id, self.parents)
+        return "<NR_parents('%s','%s','%s')>" % (self.class_id, self.release_id, self.parents)
 
 
 class NR_release_diff(Base):

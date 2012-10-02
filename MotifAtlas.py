@@ -17,6 +17,8 @@ from PairwiseInteractionsLoader import PairwiseInteractionsLoader
 from RedundantNucleotidesLoader import RedundantNucleotidesLoader
 from BestChainsAndModelsLoader import BestChainsAndModelsLoader
 from MotifAtlasBaseClass import MotifAtlasBaseClass
+from ClusterMotifs import ClusterMotifs
+from LoopSearchesLoader import LoopSearchesLoader
 
 
 def main(argv):
@@ -53,15 +55,20 @@ def main(argv):
     b = BestChainsAndModelsLoader()
     b.import_best_chains_and_models(p.pdbs)
 
-    exit()
+#     exit()
 
     """cluster motifs"""
-    c = ClusterMotifs()
+    c = ClusterMotifs(loop_type='IL')
     c.get_pdb_ids_for_clustering()
-    c.get_loops_for_clustering(loop_type='IL')
+
+#     print c.pdb_ids
+#     c.pdb_ids = ['1S72']
+
+    c.get_loops_for_clustering()
     c.make_input_file_for_matlab()
 
-#     c.cluster_loops(output_dir)
+    exit()
+#     c.cluster_loops()
 
     # import motif atlas release into the database
 

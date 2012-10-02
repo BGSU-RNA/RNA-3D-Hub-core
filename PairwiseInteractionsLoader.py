@@ -16,6 +16,7 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
     """
     def __init__(self):
         MotifAtlasBaseClass.__init__(self)
+        self.success = False
 
     def import_interactions(self, pdbs, recalculate=False):
         """Determines what files need to be analyzed, deletes stored data if
@@ -49,7 +50,7 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
                     MotifAtlasBaseClass._crash(self,err_msg)
 
                 self.mark_pdb_as_analyzed(pdb_file,'interactions')
-
+            self.success = True
             logging.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]

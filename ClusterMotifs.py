@@ -1,6 +1,6 @@
 """
 
-Main entry point for clustering motifs.
+Main entry point for motif clustering
 
 """
 
@@ -11,29 +11,37 @@ import pdb
 import sys
 import getopt
 import logging
+import math
+import time
 from time import localtime, strftime
+from subprocess import Popen, list2cmdline
+
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from MLSqlAlchemyClasses import session, AllLoops, PdbBestChainsAndModels
-from NRSqlAlchemyClasses import NR_release, NR_pdb
-from MLMotifLoader import Loader
+from models import session, AllLoops, PdbBestChainsAndModels, NR_release, NR_pdb
+from MotifLoader import MotifLoader
 
 
 class ClusterMotifs(MotifAtlasBaseClass):
     """
     """
-    def __init__(self):
+    def __init__(self, loop_type=None):
         MotifAtlasBaseClass.__init__(self)
+        self.num_jobs = 4
+        self.loop_type = loop_type
         self.pdb_ids = []
         self.loop_ids = []
         self.best_loops = [] # these loops will be clustered
         self.mlab_input_filename = os.path.join(os.getcwd(), 'loops.txt')
+        self.__make_output_directory()
+
+    def __make_output_directory(self):
         """make a directory for the release files"""
         self.output_dir = os.path.join( self.config['locations']['releases_dir'],
-                                         strftime("%Y%m%d_%H%M", localtime() ))
-        print self.output_dir
-        os.mkdir( self.output_dir )
-
+                                         self.loop_type + '_' + strftime("%Y%m%d_%H%M", localtime() ))
+        if not os.path.exists(self.output_dir):
+            os.mkdir( self.output_dir )
+        logging.info('Files will be saved in %s' % self.output_dir)
 
     def get_pdb_ids_for_clustering(self):
         """get latest nr release"""
@@ -50,14 +58,19 @@ class ClusterMotifs(MotifAtlasBaseClass):
         logging.info('Found %i NR pdbs' % len(pdbs))
         self.pdb_ids = [x.id for x in pdbs]
 
-    def get_loops_for_clustering(self, loop_type):
+    def get_loops_for_clustering(self):
         """get all loops from non-redundant pdbs"""
         loops = session.query(AllLoops). \
                         filter(AllLoops.pdb.in_(self.pdb_ids)). \
-                        filter_by(type=loop_type). \
+                        filter_by(type=self.loop_type). \
                         all()
         self.loop_ids = [loop.id for loop in loops]
         logging.info('Found %i loops' % len(loops) )
+
+        """TODO: join with loop_qa table to filter out modified loops etc"""
+
+
+
         """get info about best chains"""
         best_chains = dict()
         for x in session.query(PdbBestChainsAndModels).all():
@@ -80,6 +93,61 @@ class ClusterMotifs(MotifAtlasBaseClass):
         f.write(','.join(self.best_loops))
         f.close()
         logging.info('Saved loop_ids in file %s' % self.mlab_input_filename)
+
+    def parallel_exec_commands(self, cmds):
+        """Exec commands in parallel in multiple process.
+        Borrowed from:
+        http://code.activestate.com/recipes/577376-simple-way-to-execute-multiple-process-in-parallel/
+        """
+        if not cmds:
+            logging.critical('No commands to execute')
+            return
+
+        def done(p):
+            return p.poll() is not None
+        def success(p):
+            return p.returncode == 0
+        def fail():
+            sys.exit(1)
+
+        processes = []
+        while True:
+            while cmds and len(processes) < self.num_jobs:
+                task = cmds.pop()
+                list2cmdline(task)
+                processes.append(Popen(task))
+
+            for p in processes:
+                if done(p):
+                    if success(p):
+                        processes.remove(p)
+                    else:
+                        fail()
+
+            if not processes and not cmds:
+                break
+            else:
+                time.sleep(0.05)
+
+    def prepare_aAa_commands(self):
+        """a list of matlab commands to run all-against-all searches in parallel
+        """
+        N = len(self.best_loops)
+        interval = int(math.ceil( N / float(self.num_jobs)))
+        logging.info('%i loops, will process in groups of %i' % (N, interval))
+        commands = []
+        mlab_app = '/Applications/MATLAB_R2007b/bin/matlab'
+        mlab_params = '-nodisplay -nojvm -nodesktop -r '
+        current_max = 0
+
+        while current_max < N:
+            aAa_command = "aAaSearches('%s', %i, %i)" % (self.mlab_input_filename,
+                                                         current_max + 1,
+                                                         current_max + interval)
+            mlab_command = ';'.join(['"setup', aAa_command, 'quit"'])
+            commands.append([mlab_app, mlab_params + mlab_command]) #"'setup; disp(rand(10)); quit();'"
+            current_max += interval
+        return commands
 
     def cluster_loops(self):
         """
@@ -109,18 +177,20 @@ def main(argv):
 
     logging.basicConfig(level=logging.DEBUG)
 
-    M = ClusterMotifs()
+    M = ClusterMotifs(loop_type='IL')
 
-#     M.get_pdb_ids_for_clustering()
-#     M.get_loops_for_clustering(loop_type='IL')
+    M.get_pdb_ids_for_clustering()
+    M.get_loops_for_clustering()
 
-    M.manually_get_loops_for_clustering()
+#     M.manually_get_loops_for_clustering()
 
     M.make_input_file_for_matlab()
 
+#     M.parallel_exec_commands( M.prepare_aAa_commands() )
+
     M.cluster_loops()
 #
-#     L = Loader(motif_type='il')
+#     L = MotifLoader(motif_type='il')
 #     L.import_data()
 
 
