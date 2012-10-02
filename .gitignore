@@ -1,37 +1,33 @@
-*.zip
-*.xls
-*.ppt
-*.m~
-*.exe
-*.jar
-!VARNA*.jar
-*.txt
-*.ppt*
+# Numerous always-ignore extensions
+*.diff
+*.err
+*.orig
 *.log
-.dropbox
-.metadata/
+*.rej
+*.swo
+*.swp
+*.vi
+*~
+*.pyc
+*.cfg
+
+# OS or Editor folders
 .DS_Store
-PDBFiles
-PrecomputedData
-JAR3D
-Alignments
-Pictures
-Motifs
-MutationRates
-NIH*/
-2011 SCFG MRF motif talk and article
-Data
-MutationRatesDoc
-ParserDoc
-Pattern Matching
-Triple clashes
-Zirbel meetings with students
-Motif library paper
-Secondary structures
-FR3DSourceDoc
-FR3DDevelopmentDoc
-documentation.html
-documentation.html~
-TripleCoplanarDataSearch.mat
-SearchDB
-MotifAtlas
+.cache
+.project
+.settings
+nbproject
+thumbs.db
+
+# Dreamweaver added files
+_notes
+dwsync.xml
+
+# Folders to ignore
+.hg
+.svn
+publish
+.idea
+
+# project specific
+*.m~
