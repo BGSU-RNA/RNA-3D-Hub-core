@@ -1,5 +1,13 @@
 function [] = aAaSearches(loop_ids, start, stop)
 
+    if ischar(loop_ids) % assume file
+        fid = fopen(loop_ids, 'r');
+        line = fgetl(fid);
+        loop_ids = regexp(line, ',','split');
+        fclose(fid);        
+    elseif ~iscell(loop_ids)
+        error('Incorrect input');
+    end
 
     N = length(loop_ids);
 

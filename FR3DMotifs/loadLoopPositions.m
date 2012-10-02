@@ -5,14 +5,14 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [filename, err_msg] = loadLoopAnnotations(input_folder)
+function [filename, err_msg] = loadLoopPositions(input_folder)
     
     filename = '';
     err_msg = '';
     
     try
 
-        filename = fullfile(input_folder, 'LoopAnnotations.csv');
+        filename = fullfile(input_folder, 'LoopPositions.csv');
         fid = fopen(filename, 'w');        
         
         files = dir([input_folder filesep '*.mat']);
