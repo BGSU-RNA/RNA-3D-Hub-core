@@ -55,13 +55,29 @@ class TestMotifLoader(unittest.TestCase):
         logging.info('Cleared old data from ml_tables')
 
     def tearDown(self):
-        """remove all newly renamed mat files from all test release folders"""
+        """
+            remove all newly renamed mat files from all test release folders
+            also delete text files with id correspondences
+        """
+        corr_file = 'correspondences.txt'
+        # get the path to this script
         script_path   = os.path.dirname(os.path.abspath( __file__ ))
+        # the test_data folder is in the same folder as this script
         releases_dir  = os.path.join(script_path, 'test_data', 'motifs')
+        # loop over all releases
         for release_folder in os.listdir(releases_dir):
             release_folder = os.path.join(releases_dir, release_folder)
             if not os.path.isdir(release_folder):
                 continue
+
+            # remove new correspondences.txt files
+            corr_file_path = os.path.join(release_folder, corr_file)
+            if os.path.exists(corr_file_path):
+                os.unlink(corr_file_path)
+            else:
+                logging.error('File %s not found' % corr_file_path)
+
+            # remove all files in the mat folder
             mat_folder = os.path.join(release_folder, 'mat')
             for file in os.listdir(mat_folder):
                 file_path = os.path.join(mat_folder, file)

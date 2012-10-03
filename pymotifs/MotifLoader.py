@@ -62,20 +62,31 @@ class MotifLoader(MotifAtlasBaseClass):
 
     def __initialize_files(self, folder):
         """
+            This function generates full paths to all files that make up a
+            motif atlas release. These files are produced by Matlab are
+            are expected to be found in each release directory.
         """
         self.f = dict()
-        self.f['description']       = folder
-        self.f['folder']            = os.path.join(self.motifs_root, folder)
-        self.f['MotifList']         = os.path.join(self.f['folder'],'MotifList.csv')
-        self.f['MotifLoopOrder']    = os.path.join(self.f['folder'],'MotifLoopOrder.csv')
-        self.f['MotifPositions']    = os.path.join(self.f['folder'],'MotifPositions.csv')
-        self.f['MutualDiscrepancy'] = os.path.join(self.f['folder'],'MutualDiscrepancy.csv')
-        self.f['BpSignatures']      = os.path.join(self.f['folder'],'MotifBpSignatures.csv')
-        self.f['MatFiles_origin']   = os.path.join(self.f['folder'],'Groups')
-        self.f['MatFiles_dest']     = os.path.join(self.f['folder'],'mat')
-        self.f['2ds_origin']        = os.path.join(self.f['folder'],'2ds')
-        self.f['2ds_destination']   = '/Servers/rna.bgsu.edu/img/MotifAtlas'
-        self.f['correspondences']   = os.path.join(self.f['folder'],'correspondences.txt')
+        self.f['description'] = folder
+        filenames = {
+                      'MotifList':         'MotifList.csv',
+                      'MotifLoopOrder':    'MotifLoopOrder.csv',
+                      'MotifPositions':    'MotifPositions.csv',
+                      'MutualDiscrepancy': 'MutualDiscrepancy.csv',
+                      'BpSignatures':      'MotifBpSignatures.csv',
+                      'MatFiles_origin':   'Groups',
+                      'MatFiles_dest':     'mat',
+                      '2ds_origin':        '2ds',
+                      'correspondences':   'correspondences.txt'
+                    }
+        self.f['folder'] = os.path.join(self.motifs_root, folder)
+        for k, v in filenames.iteritems():
+            self.f[k] = os.path.join(self.f['folder'], v)
+
+        # location for images accessible to the webserver
+        self.f['2ds_destination']   = self.config['locations']['2ds_destination']
+        if not os.path.exists(self.f['2ds_destination']):
+            os.mkdir(self.f['2ds_destination'])
 
     def get_processed_releases(self):
         """the `description` field corresponds to the folder name that the data

@@ -27,6 +27,7 @@ log_dir:
 releases_dir:
 nrlists_dir:
 fr3d_root:
+2ds_destination:
 
 # minor releases: 0.1, 0.2, 0.3 etc
 # major releases: 1.0, 2.0, 3.0 etc
