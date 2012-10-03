@@ -1,0 +1,45 @@
+# for emailing logs
+[email]
+subject: Motif Atlas Update
+from:
+to:
+login:
+password:
+
+# set to true to trigger recalculating of the corresponding entries in
+# the database. Causes the programs to ignore the annotation status recorded
+# in the `pdb_analysis_status` table.
+[recalculate]
+distances: False
+coordinates: False
+interactions: False
+IL: False
+Hl: False
+J3: False
+redundant_nts: False
+best_chains_and_models: False
+
+# provide full paths
+[locations]
+loops_mat_files:
+loops_search_dir:
+log_dir:
+releases_dir:
+nrlists_dir:
+fr3d_root:
+
+# minor releases: 0.1, 0.2, 0.3 etc
+# major releases: 1.0, 2.0, 3.0 etc
+[release_mode]
+loops: minor
+motifs: minor
+nrlist: minor
+
+# database connection parameters
+[database]
+user:
+password:
+host: localhost
+database: rna3dhub
+database_dev: rna3dhub_dev
+database_test: rna3dhub_test
