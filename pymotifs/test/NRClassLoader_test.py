@@ -43,13 +43,13 @@ class TestNRClassLoader(unittest.TestCase):
     def clean_up_database(self):
         """delete data from nr_tables"""
         session = models.session
-        session.query(models.NR_release).delete(synchronize_session='fetch')
-        session.query(models.NR_class).delete(synchronize_session='fetch')
-        session.query(models.NR_pdb).delete(synchronize_session='fetch')
-        session.query(models.NR_setdiff).delete(synchronize_session='fetch')
-        session.query(models.NR_parents).delete(synchronize_session='fetch')
-        session.query(models.NR_release_diff).delete(synchronize_session='fetch')
-        session.query(models.NR_release_diff).delete(synchronize_session='fetch')
+        session.query(models.NR_release).delete()
+        session.query(models.NR_class).delete()
+        session.query(models.NR_pdb).delete()
+        session.query(models.NR_setdiff).delete()
+        session.query(models.NR_parents).delete()
+        session.query(models.NR_release_diff).delete()
+        session.query(models.NR_release_diff).delete()
         session.commit()
 
     def test_import(self):

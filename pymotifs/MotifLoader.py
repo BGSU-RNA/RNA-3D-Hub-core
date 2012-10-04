@@ -192,6 +192,7 @@ def main(argv):
     L = MotifLoader(motif_type=motif_type)
     L.start_logging()
     L.import_data()
+    L.send_report()
 
 
 if __name__ == "__main__":

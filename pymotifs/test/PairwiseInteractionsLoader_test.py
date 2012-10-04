@@ -15,7 +15,7 @@ import models
 class TestPairwiseInteractionsLoader(unittest.TestCase):
 
     def setUp(self):
-        self.pdbs = ['3V11', '1J5E', '4B3G']
+        self.pdbs = ['1EKA','1HLX']
         self.loader = loader.PairwiseInteractionsLoader()
         # required by mlabwrap
         os.chdir(self.loader.config['locations']['fr3d_root'])
@@ -23,8 +23,7 @@ class TestPairwiseInteractionsLoader(unittest.TestCase):
     def clean_up_database(self):
         """delete data from nr_tables"""
         session = models.session
-        session.query(models.PairwiseInteractions).\
-                delete(synchronize_session='fetch')
+        session.query(models.PairwiseInteractions).delete()
         session.commit()
 
     def test_import(self):

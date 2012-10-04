@@ -33,9 +33,7 @@ class MotifAtlasBaseClass:
     def start_logging(self):
         """
         """
-        self.log = os.path.join(self.config['locations']['log_dir'],
-                                strftime("%Y-%m-%d_%H-%M", localtime())
-                                + '_pymotifatlas.txt')
+        self.log = os.path.join(self.config['locations']['log_dir'], 'rna3dhub_log.txt')
         logging.basicConfig(filename=self.log, level=logging.DEBUG)
         print 'Log file %s' % self.log
 

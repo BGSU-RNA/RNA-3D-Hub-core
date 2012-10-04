@@ -1,6 +1,6 @@
 """
 
-IL_20120905_0000: release 0.7 ilmarch_new
+IL_20120905_0000: release 0.7, ilmarch_new
 IL_20120906_1541: release 0.8 in MotifVersions_dev
 
 """
@@ -32,7 +32,9 @@ class TestMotifLoader(unittest.TestCase):
         self.__class__.loader.start_logging()
         """override the config with the path to the test dataset"""
         script_path = os.path.dirname(os.path.abspath( __file__ ))
-        self.__class__.loader.motifs_root = os.path.join(script_path, 'test_data', 'motifs')
+        self.__class__.loader.motifs_root = os.path.join(script_path,
+                                                         'test_data',
+                                                         'motifs')
         logging.info('Importing data from %s' % self.__class__.loader.motifs_root)
         """clean the database"""
         self.clean_up_database()
@@ -42,23 +44,24 @@ class TestMotifLoader(unittest.TestCase):
     def clean_up_database(self):
         """empty all motif-related tables"""
         session = models.session
-        session.query(models.Release).delete(synchronize_session='fetch')
-        session.query(models.LoopOrder).delete(synchronize_session='fetch')
-        session.query(models.LoopPosition).delete(synchronize_session='fetch')
-        session.query(models.Motif).delete(synchronize_session='fetch')
-        session.query(models.Loop).delete(synchronize_session='fetch')
-        session.query(models.SetDiff).delete(synchronize_session='fetch')
-        session.query(models.Parents).delete(synchronize_session='fetch')
-        session.query(models.LoopDiscrepancy).delete(synchronize_session='fetch')
-        session.query(models.Release_diff).delete(synchronize_session='fetch')
+        session.query(models.Release).delete()
+        session.query(models.LoopOrder).delete()
+        session.query(models.LoopPosition).delete()
+        session.query(models.Motif).delete()
+        session.query(models.Loop).delete()
+        session.query(models.SetDiff).delete()
+        session.query(models.Parents).delete()
+        session.query(models.LoopDiscrepancy).delete()
+        session.query(models.Release_diff).delete()
         session.commit()
         logging.info('Cleared old data from ml_tables')
 
-    def tearDown(self):
+    def destroy_environment(self):
         """
-            remove all newly renamed mat files from all test release folders
-            also delete text files with id correspondences
+            remove all newly renamed mat files from all test release folders,
+            delete text files with id correspondences
         """
+        unittest.TestCase.tearDown(self)
         corr_file = 'correspondences.txt'
         # get the path to this script
         script_path   = os.path.dirname(os.path.abspath( __file__ ))
@@ -88,6 +91,8 @@ class TestMotifLoader(unittest.TestCase):
                     logging.error(e)
 
     def test_import(self):
+        """check that the import succeeded"""
+        self.destroy_environment()
         self.assertTrue( self.loader.success )
 
     def test_release_count(self):
@@ -103,7 +108,9 @@ class TestMotifLoader(unittest.TestCase):
 
     def test_releases_diff(self):
         """Release_diff"""
-        self.assertEqual(len(models.session.query(models.Release_diff).all()), 1)
+        self.assertEqual(len(models.session.\
+                                    query(models.Release_diff).\
+                                    all()), 1)
 
     def test_ml_loops(self):
         """Loop"""

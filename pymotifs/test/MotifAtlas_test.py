@@ -38,7 +38,7 @@ class TestMotifAtlas(unittest.TestCase):
         p.get_all_rna_pdbs()
 
         """override pdb files with a smaller set"""
-        p.pdbs = ['1EKA','1HLX', '1S72']
+        p.pdbs = ['1EKA','1HLX']
 
         """extract all loops and import into the database"""
         e = LoopExtractor()
@@ -65,8 +65,6 @@ class TestMotifAtlas(unittest.TestCase):
         b = BestChainsAndModelsLoader()
         b.import_best_chains_and_models(p.pdbs)
 
-        m.send_report()
-
         self.success = True
 
     def test_import(self):
@@ -76,8 +74,13 @@ class TestMotifAtlas(unittest.TestCase):
         """
         """
         session = models.session
-        session.query(models.PdbAnalysisStatus).\
-                delete(synchronize_session='fetch')
+        session.query(models.PdbAnalysisStatus).delete()
+        session.query(models.PairwiseInteractions).delete()
+        session.query(models.Distances).delete()
+        session.query(models.Coordinates).delete()
+        session.query(models.AllLoops).delete()
+        session.query(models.RedundantNucleotide).delete()
+        session.query(models.PdbBestChainsAndModels).delete()
         session.commit()
 
 
