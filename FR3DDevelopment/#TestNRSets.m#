@@ -1,7 +1,0 @@
-
-load PDBInfo
-
-for i = 1:length(t(:,1)),
-  fprintf('%4s is in group %4s\n', t{i,1}, t{i,10});
-end
-
