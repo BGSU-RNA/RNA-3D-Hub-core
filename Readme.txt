@@ -1,13 +1,16 @@
 <h3>About</h3>
 PyFR3DMotifs is the backend for the <a href="http://rna.bgsu.edu/rna3dhub">RNA 3D Hub</a>.
 
-It contains:
+PyFR3DMotifs contains:
 
-1. core FR3D modules written in Matlab. In the near future PyFR3DMotifs will be integrated with the main <a href="https://github.com/BGSU-RNA/FR3D">FR3D Github repo</a>.
+1. core FR3D modules written in Matlab. In the near future PyFR3DMotifs will be
+integrated with the main <a href="https://github.com/BGSU-RNA/FR3D">FR3D Github repo</a>.
 
 2. additional Matlab code for extraction and clustering of RNA 3D motifs.
 
-3. Python code responsible for importing non-redundant lists and motif atlas releases into the database, and id assignment to motifs and non-redundant equivalence classes.
+3. Python code responsible for importing non-redundant lists and motif atlas
+releases into the database, and id assignment to motifs and non-redundant
+equivalence classes.
 
 <h3>Requirements</h3>
 * python 2.5 or newer (not tested with Python 3)
@@ -24,7 +27,7 @@ It contains:
 
     git clone https://github.com/AntonPetrov/PyFR3DMotifs.git
 
-1. Create a config file
+2. Create a config file
 
     pymotifs/motifatlas.cfg
 
@@ -32,15 +35,25 @@ according to the template found in:
 
     pymotifs/motifatlas.cfg.txt
 
-2. Run unit tests:
+3. Create the MySQL database(s) specified in the config file.
 
-cd pymotifs
-
-    nosetests --nologcapture
+<h3>Testing</h3>
 
 The software suite includes test datasets for motifs and non-redundant lists.
 
-Unit tests create a special testing environment and shouldn't interfere with the development or the production versions of the resource. When the unittest module is imported, the programs will connect to the test database specified in the config file.
+Unit tests create a special testing environment and shouldn't interfere with
+the development or the production versions of the resource. When the unittest
+module is imported, the programs will connect to the test database specified
+in the config file.
+
+To run unit tests with nosetests:
+
+    nosetests --nologcapture -s pymotifs
+
+* The --nologcapture option ensures that all output is logged to a file and is
+not intercepted by nosetests. The log file is emailed at the end of the test.
+* The -s option routes all STDOUT output to the screen for easier monitoring
+of test progress.
 
 <h3>Usage</h3>
 
