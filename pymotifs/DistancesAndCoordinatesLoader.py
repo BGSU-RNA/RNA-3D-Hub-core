@@ -59,7 +59,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
         """Reads the csv file, imports all distances, deletes the file when done
            to avoid stale data and free up disk space"""
         logging.info('Importing distances')
-        commit_every = 1000
+        commit_every = 100000
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for i,row in enumerate(reader):
             D = Distances(id1=row[0], id2=row[1], distance=row[2])
