@@ -20,8 +20,7 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
     try 
 
         startLogging();
-        disp('test logging');
-        return;
+%         return;
         if ~exist(location, 'dir'), mkdir(location); end
 
         if ischar(loop_ids)
@@ -55,6 +54,7 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
     catch err
         err_msg = 'Error in createMM';
         disp(err_msg);
+        diary off;        
         status = 2;        
     end
 
@@ -83,12 +83,9 @@ function [] = startLogging()
         log_path = pwd;        
     end
    
-    filename = fullfile(log_path, ...
-                        [datestr(now, 'yyyy-mm-dd_HH-MM') ...
-                        '_mlmotifatlas.txt']);
+    filename = fullfile(log_path, 'rna3dhub_log.txt');
 
-    fopen('filename', 'w');
-    diary on;                    
+    fopen(filename, 'a');        
     diary(filename);
     
     disp(filename);
