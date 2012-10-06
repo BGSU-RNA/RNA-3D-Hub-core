@@ -9,7 +9,7 @@
 % status 0 = success
 % status 1 = failure
 
-% location = '/Users/anton/FR3D/MotifAtlas/Releases/ilaug'
+% example location under MA_root: /Releases/IL_20121005_1233
 %==========================================================================
 
 function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
@@ -20,7 +20,7 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
     try 
 
         startLogging();
-%         return;
+
         if ~exist(location, 'dir'), mkdir(location); end
 
         if ischar(loop_ids)
@@ -52,9 +52,9 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
         movefile([pwd filesep 'MM*.txt'], location);        
                         
     catch err
-        err_msg = 'Error in createMM';
+        err_msg = 'Error in MotifAtlasPipeline';
         disp(err_msg);
-        diary off;        
+        diary off        
         status = 2;        
     end
 
