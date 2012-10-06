@@ -3,7 +3,7 @@
 
 % takes two arguments:
 % loop_ids = full path to the file with loop ids to be clustered
-% location = full path to the directory where all resulting files 
+% location = full path to the directory where all resulting files
 % should be stored.
 
 % status 0 = success
@@ -16,8 +16,8 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
 
     status  = 0;  % success
     err_msg = '';
-    
-    try 
+
+    try
 
         startLogging();
 
@@ -25,15 +25,15 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
 
         if ischar(loop_ids)
             loop_ids = parse_loop_id_file(loop_ids);
-        elseif ~iscell(loop_ids)           
+        elseif ~iscell(loop_ids)
             status = 1;
             err_msg = 'Wrong output';
             disp(err_msg);
             return;
         end
-        
+
         MM = aCreateMM(loop_ids);
-        
+
         MM = aAnalyzeExtraNucleotides(MM, loop_ids);
 
         MM = aSymmetrizeMatrix(MM, loop_ids);
@@ -42,20 +42,22 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
 
         groupsToSearches(location, groups);
 
-        groupsToGraphML(location, groups, MM, loop_ids, 1);    
+        groupsToGraphML(location, groups, MM, loop_ids, 1);
 
         folderToVarna(location);
 
         exportMotifRelease(location);
-    
+
         movefile([pwd filesep 'MM*.mat'], location);
-        movefile([pwd filesep 'MM*.txt'], location);        
-                        
+        movefile([pwd filesep 'MM*.txt'], location);
+
+        stopLogging();
+
     catch err
         err_msg = 'Error in MotifAtlasPipeline';
         disp(err_msg);
-        diary off        
-        status = 2;        
+        stopLogging();
+        status = 2;
     end
 
 end
@@ -63,31 +65,37 @@ end
 function [loop_ids] = parse_loop_id_file(filename)
 
     loop_ids = {};
-    
+
     fid = fopen(filename, 'r');
-    
-    line = fgetl(fid);    
+
+    line = fgetl(fid);
     loop_ids = regexp(line, ',', 'split');
-    
+
     fclose(fid);
 
 end
 
-function [] = startLogging()
+function startLogging()
 
     ma_root = getenv('MA_root');
 
     if ~strcmp(ma_root, '')
-        log_path = fullfile(ma_root, 'logs');        
+        log_path = fullfile(ma_root, 'logs');
     else
-        log_path = pwd;        
+        log_path = pwd;
     end
-   
+
     filename = fullfile(log_path, 'rna3dhub_log.txt');
 
-    fopen(filename, 'a');        
+    fopen(filename, 'a');
     diary(filename);
-    
+
     disp(filename);
-    
+
+end
+
+function stopLogging()
+
+    diary off;
+
 end
