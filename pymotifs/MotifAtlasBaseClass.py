@@ -36,7 +36,10 @@ class MotifAtlasBaseClass:
         """
             Overwrites the old log file.
         """
-        self.log = os.path.join(self.config['locations']['log_dir'], self.log_filename)
+        log_dir = self.config['locations']['log_dir']
+        self.log = os.path.join(log_dir, self.log_filename)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
         logging.basicConfig(filename=self.log,
                             level=logging.DEBUG,
                             filemode='w')
