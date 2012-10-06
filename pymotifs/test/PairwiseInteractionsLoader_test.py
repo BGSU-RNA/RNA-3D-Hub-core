@@ -15,7 +15,7 @@ import models
 class TestPairwiseInteractionsLoader(unittest.TestCase):
 
     def setUp(self):
-        self.pdbs = ['1EKA','1HLX']
+        self.pdbs = ['1FG0','1HLX']
         self.loader = loader.PairwiseInteractionsLoader()
         # required by mlabwrap
         os.chdir(self.loader.config['locations']['fr3d_root'])

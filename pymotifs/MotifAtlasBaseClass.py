@@ -1,6 +1,6 @@
 """
 
-About
+
 
 """
 
@@ -20,7 +20,8 @@ from models import session, PdbAnalysisStatus
 
 
 class MotifAtlasBaseClass:
-    """Don't use logging anywhere in this constructor or the functions it calls.
+    """
+        Don't use logging anywhere in this constructor or the functions it calls
     """
     def __init__(self):
         self.mlab   = False
@@ -29,12 +30,16 @@ class MotifAtlasBaseClass:
         self.configfile = os.path.join(script_path, 'motifatlas.cfg')
         self.import_config()
         self.log = ''
+        self.log_filename = 'rna3dhub_log.txt'
 
     def start_logging(self):
         """
+            Overwrites the old log file.
         """
-        self.log = os.path.join(self.config['locations']['log_dir'], 'rna3dhub_log.txt')
-        logging.basicConfig(filename=self.log, level=logging.DEBUG)
+        self.log = os.path.join(self.config['locations']['log_dir'], self.log_filename)
+        logging.basicConfig(filename=self.log,
+                            level=logging.DEBUG,
+                            filemode='w')
         print 'Log file %s' % self.log
 
     def _setup_matlab(self):
@@ -93,7 +98,7 @@ class MotifAtlasBaseClass:
             section = 'locations'
             keys = ['loops_mat_files', 'loops_search_dir', 'log_dir',
                     'releases_dir', 'nrlists_dir', 'fr3d_root',
-                    '2ds_destination']
+                    '2ds_destination', 'mlab_app']
             for k in keys: self.config[section][k] = config.get(section,k)
             """release modes"""
             section = 'release_mode'
@@ -116,8 +121,11 @@ class MotifAtlasBaseClass:
             server.ehlo()
             server.starttls()
             server.ehlo()
-            server.login(self.config['email']['login'],self.config['email']['password'])
-            server.sendmail(self.config['email']['from'], self.config['email']['to'], msg.as_string())
+            server.login(self.config['email']['login'],
+                         self.config['email']['password'])
+            server.sendmail(self.config['email']['from'],
+                            self.config['email']['to'],
+                            msg.as_string())
             server.quit()
         except:
             e = sys.exc_info()[1]

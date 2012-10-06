@@ -55,6 +55,20 @@ not intercepted by nosetests. The log file is emailed at the end of the test.
 * The -s option routes all STDOUT output to the screen for easier monitoring
 of test progress.
 
+<h3>Logging and email notifications</h3>
+
+Both Python and Matlab programs add their log messages to a file
+
+    MotifAtlas/logs/rna3dhub_log.txt
+
+The log file is refreshed each time the programs are run.
+
+Some programs email this log file using the information specified in the email
+section of the config file.
+
+<h3>Directory structure</h3>
+
+
 <h3>Usage</h3>
 
 The main program that triggers the update is MotifAtlas.py

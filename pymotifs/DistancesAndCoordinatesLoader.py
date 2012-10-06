@@ -1,6 +1,6 @@
 """
 
-About
+Loads distances and coordinates into the database.
 
 """
 
@@ -33,7 +33,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
                 pdb_list = self.filter_out_analyzed_pdbs(pdbs,'distances')
 
             if pdb_list:
-                MotifAtlasBaseClass._setup_matlab(self)
+                self._setup_matlab()
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
@@ -46,14 +46,14 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
                 else:
                     logging.warning('Matlab error code %i when analyzing %s',
                                      status, pdb_file)
-                    MotifAtlasBaseClass._crash(self,err_msg)
+                    self._crash(err_msg)
 
                 self.mark_pdb_as_analyzed(pdb_file,'distances')
 
             logging.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
-            MotifAtlasBaseClass._crash(self,e)
+            self._crash(e)
 
     def __import_distances_from_csv(self, ifn):
         """Reads the csv file, imports all distances, deletes the file when done
@@ -98,7 +98,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
                 self.__delete_coordinates(pdbs)
 
             if pdb_list:
-                MotifAtlasBaseClass._setup_matlab(self)
+                self._setup_matlab()
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
@@ -112,14 +112,14 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
                 else:
                     logging.warning('Matlab error code %i when analyzing %s',
                                      status, pdb_file)
-                    MotifAtlasBaseClass._crash(self,err_msg)
+                    self._crash(err_msg)
 
                 self.mark_pdb_as_analyzed(pdb_file,'coordinates')
 
             logging.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
-            MotifAtlasBaseClass._crash(self,e)
+            self._crash(e)
 
     def __import_coordinates_from_csv(self, ifn):
         """
@@ -157,18 +157,17 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
 def usage():
     print __doc__
 
+
 def main(argv):
     """
     """
     logging.basicConfig(level=logging.DEBUG)
 
-    pdbs = ['1EKA','1HLX','1A9N','1S72','2AVY']
-#     pdbs = ['1VSP', '1ML5'] # these pdbs have case-sensitive nt_ids
+    pdbs = ['1EKA','1HLX']
 
     D = DistancesAndCoordinatesLoader()
     D.import_distances(pdbs, recalculate=False)
     D.import_coordinates(pdbs, recalculate=False)
-
 
 
 if __name__ == "__main__":

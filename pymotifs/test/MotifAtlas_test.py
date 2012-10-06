@@ -38,7 +38,7 @@ class TestMotifAtlas(unittest.TestCase):
         p.get_all_rna_pdbs()
 
         """override pdb files with a smaller set"""
-        p.pdbs = ['1EKA','1HLX']
+        p.pdbs = ['1FG0','1HLX']
 
         """extract all loops and import into the database"""
         e = LoopExtractor()
@@ -75,6 +75,8 @@ class TestMotifAtlas(unittest.TestCase):
         """
         session = models.session
         session.query(models.PdbAnalysisStatus).delete()
+        session.query(models.LoopRelease).delete()
+        session.query(models.LoopQA).delete()
         session.query(models.PairwiseInteractions).delete()
         session.query(models.Distances).delete()
         session.query(models.Coordinates).delete()

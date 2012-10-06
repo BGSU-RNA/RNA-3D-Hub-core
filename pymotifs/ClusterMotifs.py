@@ -1,6 +1,35 @@
 """
 
-Main entry point for motif clustering
+The main entry point for motif clustering.
+
+
+* Usage:
+
+To run clustering on a single PDB file:
+python ClusterMotifs.py 1FG0
+
+To cluster all representative loops from the current non-redundant list:
+python ClusterMotifs.py
+
+
+* Notes on parallelization:
+
+The program will split all-against-all searches into an approximately equal
+batch jobs and submit them to several Matlab processes running in parallel.
+
+In most other programs supporting RNA 3D Hub, Matlab is called via mlabwrap. In
+this program, however, matlab is called directly using subprocesses. This is
+done in order to parallelize and speed up all-against-all searches, but it is
+inherently less reliable.
+
+Although other parts of the RNA 3D Hub pipeline also yield themselves to
+parallelization, it might be more appropriate to use it in this context because
+motif clustering will be run less often than the rest of the pipeline, and the
+potential errors will have smaller impact.
+
+If matlab fails, python tries to restart the same process several times. This is
+done based on the observation that sometimes a FR3D search can crash, but will
+run smoothly the next time round without any intervention.
 
 """
 
@@ -13,6 +42,7 @@ import getopt
 import logging
 import math
 import time
+import glob
 from time import localtime, strftime
 from subprocess import Popen, list2cmdline
 
@@ -25,22 +55,29 @@ from MotifLoader import MotifLoader
 class ClusterMotifs(MotifAtlasBaseClass):
     """
     """
-    def __init__(self, loop_type=None):
+    def __init__(self):
         MotifAtlasBaseClass.__init__(self)
-        self.num_jobs = 4
-        self.loop_type = loop_type
-        self.pdb_ids = []
-        self.loop_ids = []
-        self.best_loops = [] # these loops will be clustered
-        self.mlab_input_filename = os.path.join(os.getcwd(), 'loops.txt')
-        self.__make_output_directory()
+        self.success    = False
+        self.num_jobs   = 4
+        self.pdb_ids    = []
+        self.loop_ids   = []
+        self.best_loops = [] # loops to be clustered
+        self.fr3d_root  = self.config['locations']['fr3d_root']
+        self.retries_left  = 3
+        self.script_prefix = 'aAa_script_'
+        self.mlab_input_filename = os.path.join(self.fr3d_root, 'loops.txt')
 
-    def __make_output_directory(self):
+    def set_loop_type(self, loop_type):
+        """
+        """
+        self.loop_type = loop_type
+
+    def _make_release_directory(self):
         """make a directory for the release files"""
         self.output_dir = os.path.join( self.config['locations']['releases_dir'],
-                                         self.loop_type + '_' + strftime("%Y%m%d_%H%M", localtime() ))
+                                        self.loop_type + '_' + strftime("%Y%m%d_%H%M", localtime() ))
         if not os.path.exists(self.output_dir):
-            os.mkdir( self.output_dir )
+            os.makedirs( self.output_dir )
         logging.info('Files will be saved in %s' % self.output_dir)
 
     def get_pdb_ids_for_clustering(self):
@@ -95,34 +132,51 @@ class ClusterMotifs(MotifAtlasBaseClass):
         logging.info('Saved loop_ids in file %s' % self.mlab_input_filename)
 
     def parallel_exec_commands(self, cmds):
-        """Exec commands in parallel in multiple process.
-        Borrowed from:
-        http://code.activestate.com/recipes/577376-simple-way-to-execute-multiple-process-in-parallel/
+        """
+            Exec commands in parallel in multiple process.
+            Adapted from:
+            http://code.activestate.com/recipes/577376-simple-way-to-execute-multiple-process-in-parallel/
+
+            It at least one of the parallel tasks fails and can't recover, the
+            program will abort.
         """
         if not cmds:
             logging.critical('No commands to execute')
-            return
+            self._crash()
 
         def done(p):
             return p.poll() is not None
         def success(p):
             return p.returncode == 0
-        def fail():
-            sys.exit(1)
 
         processes = []
+        tasks = {}
         while True:
             while cmds and len(processes) < self.num_jobs:
                 task = cmds.pop()
                 list2cmdline(task)
-                processes.append(Popen(task))
+                p = Popen(task)
+                tasks[p.pid] = task # associate task with a pid
+                logging.info('%i %s' % (p.pid, task))
+                processes.append(p)
 
             for p in processes:
                 if done(p):
                     if success(p):
+                        logging.info('Parallel task completed successfully')
                         processes.remove(p)
                     else:
-                        fail()
+                        self.retries_left -= 1
+                        if self.retries_left == 0:
+                            logging.critical('Parallel task failed')
+                            self._crash()
+                        else:
+                            logging.warning('Parallel task will be restarted')
+                            task = tasks[p.pid] # retrieve the failed task
+                            processes.remove(p)
+                            p = Popen(task) # new process with the same task
+                            tasks[p.pid] = task # save the new task's pid
+                            processes.append(p)
 
             if not processes and not cmds:
                 break
@@ -130,70 +184,106 @@ class ClusterMotifs(MotifAtlasBaseClass):
                 time.sleep(0.05)
 
     def prepare_aAa_commands(self):
-        """a list of matlab commands to run all-against-all searches in parallel
+        """
+            Creates a list of matlab commands to run all-against-all searches
+            in parallel. To avoid matlab hanging at the command prompt in case
+            of errors in the matlab code, the script must be written out to a
+            file, and then this file is launched wrapped up in a try/catch
+            statement.
         """
         N = len(self.best_loops)
         interval = int(math.ceil( N / float(self.num_jobs)))
         logging.info('%i loops, will process in groups of %i' % (N, interval))
         commands = []
-        mlab_app = '/Applications/MATLAB_R2007b/bin/matlab'
-        mlab_params = '-nodisplay -nojvm -nodesktop -r '
+        mlab_params = ' -nodisplay -nojvm -r '
         current_max = 0
 
+        os.chdir(self.fr3d_root)
+
+        i = 1
         while current_max < N:
+            # prepare matlab code
+            cd_command = "cd '%s'" % self.fr3d_root
             aAa_command = "aAaSearches('%s', %i, %i)" % (self.mlab_input_filename,
                                                          current_max + 1,
                                                          current_max + interval)
-            mlab_command = ';'.join(['"setup', aAa_command, 'quit"'])
-            commands.append([mlab_app, mlab_params + mlab_command]) #"'setup; disp(rand(10)); quit();'"
+            mlab_command = ';'.join([cd_command, 'setup', aAa_command, 'exit(0)'])
+            script_name = '%s%i.m' % (self.script_prefix, i)
+            i += 1
+            # save matlab code to a temporary m script
+            script_path = os.path.join(self.fr3d_root, script_name)
+            f = open(script_path, 'w')
+            f.write(mlab_command)
+            f.close()
+            # prepare bash command to run the matlab script
+            try_catch  = 'try %s; catch, exit(1); end' % script_name[:-2]
+            bash_command = '"' + ';'.join([cd_command, try_catch]) + '"'
+            commands.append([self.config['locations']['mlab_app'],
+                            mlab_params + bash_command])
             current_max += interval
+        [logging.info(x[1]) for x in commands]
         return commands
+
+    def _clean_up(self):
+        """
+            remove temporary file with loop ids and temporary .m scripts
+        """
+        os.remove(self.mlab_input_filename)
+        temp_scripts = os.path.join(self.fr3d_root,
+                                    self.script_prefix + '*.m')
+        [os.remove(x) for x in glob.glob( temp_scripts )]
 
     def cluster_loops(self):
         """
+            Launch the main matlab motif clustering pipeline.
         """
         try:
-            MotifAtlasBaseClass._setup_matlab(self)
+            self._setup_matlab()
             [status, err_msg] = self.mlab.MotifAtlasPipeline(self.mlab_input_filename,
                                                              self.output_dir,
                                                              nout=2)
-            os.remove(self.mlab_input_filename)
+            self._clean_up()
+            if err_msg == '':
+                self.success = True
+                logging.info('Successful clustering')
         except:
             e = sys.exc_info()[1]
-            MotifAtlasBaseClass._crash(self,e)
+            self._crash(e)
 
-    def manually_get_loops_for_clustering(self):
+    def _manually_get_loops_for_clustering(self, pdb_id):
         """
+            For testing purposes.
         """
         self.best_loops = [loop.id for loop in session.query(AllLoops).
-                                                       filter(AllLoops.pdb=='1S72').
+                                                       filter(AllLoops.pdb==pdb_id).
                                                        filter(AllLoops.type=='il').
                                                        all()]
+        logging.info('Selected %s loops from %s' % (len(self.best_loops), pdb_id) )
 
 
 def main(argv):
     """
     """
 
-    logging.basicConfig(level=logging.DEBUG)
+    M = ClusterMotifs()
+    M.start_logging()
+    M.set_loop_type('IL')
+    M._make_release_directory()
 
-    M = ClusterMotifs(loop_type='IL')
-
-    M.get_pdb_ids_for_clustering()
-    M.get_loops_for_clustering()
-
-#     M.manually_get_loops_for_clustering()
+    if len(argv) > 0:
+        M._manually_get_loops_for_clustering(argv[0])
+    else:
+        M.get_pdb_ids_for_clustering()
+        M.get_loops_for_clustering()
 
     M.make_input_file_for_matlab()
 
-#     M.parallel_exec_commands( M.prepare_aAa_commands() )
+    M.parallel_exec_commands( M.prepare_aAa_commands() )
 
     M.cluster_loops()
-#
-#     L = MotifLoader(motif_type='il')
-#     L.import_data()
+
+    M.send_report()
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
