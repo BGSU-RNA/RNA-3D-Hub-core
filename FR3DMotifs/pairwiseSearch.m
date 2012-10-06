@@ -160,10 +160,9 @@ function [Query,S] = aConstructPairwiseSearch(File1, File2, P)
         Query.Diff{i+1,i} = '>';       
     end                   
 
-    Query.Edges{1,Query.NumNT} = 'cWW';
-    
-    chainbreak = find(Indices==File1.chain_breaks);
-    if ~isempty(chainbreak) %IL
+    if strcmp(File1.Filename(1:2), 'IL')
+        Query.Edges{1,Query.NumNT} = 'cWW';        
+        chainbreak = find(Indices==File1.chain_breaks);        
         Query.Diff{chainbreak+1,chainbreak} = '';    
         Query.Edges{chainbreak,chainbreak+1} = 'cWW';
         
@@ -174,6 +173,8 @@ function [Query,S] = aConstructPairwiseSearch(File1, File2, P)
         if File1.Flank(File1.chain_breaks+1, end) == 1
             Query.Edges{find(Indices==File1.chain_breaks+1), end} = 'flankSS';
         end
+    else % HL
+        Query.Edges{1, Query.NumNT} = 'cWW flankSS';
     end
 
 end
