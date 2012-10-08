@@ -74,4 +74,5 @@ section of the config file.
 The main program that triggers the update is MotifAtlas.py
 
 When run as a cronjob, need to export a system variable like so:
-export MLABRAW_CMD_STR=/Applications/MATLAB_R2007b/bin/matlab;
+
+    export MLABRAW_CMD_STR=/Applications/MATLAB_R2007b/bin/matlab

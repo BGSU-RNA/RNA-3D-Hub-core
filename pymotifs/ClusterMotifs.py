@@ -207,7 +207,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
             aAa_command = "aAaSearches('%s', %i, %i)" % (self.mlab_input_filename,
                                                          current_max + 1,
                                                          current_max + interval)
-            mlab_command = ';'.join([cd_command, 'setup', aAa_command, 'exit(0)'])
+            mlab_command = ';'.join([cd_command, 'setup', aAa_command])
             script_name = '%s%i.m' % (self.script_prefix, i)
             i += 1
             # save matlab code to a temporary m script
@@ -216,7 +216,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
             f.write(mlab_command)
             f.close()
             # prepare bash command to run the matlab script
-            try_catch  = 'try %s; catch, exit(1); end' % script_name[:-2]
+            try_catch  = 'try %s, catch, exit(1), end, exit(0)' % script_name[:-2]
             bash_command = '"' + ';'.join([cd_command, try_catch]) + '"'
             commands.append([self.config['locations']['mlab_app'],
                             mlab_params + bash_command])
