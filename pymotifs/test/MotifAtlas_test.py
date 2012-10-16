@@ -29,7 +29,6 @@ class TestMotifAtlas(unittest.TestCase):
         self.clean_up_database()
 
         m = MotifAtlasBaseClass()
-        os.chdir(m.config['locations']['fr3d_root'])
         m.start_logging()
         logging.info('Initializing update')
 

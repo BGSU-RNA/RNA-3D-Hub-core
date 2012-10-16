@@ -17,8 +17,6 @@ class TestPairwiseInteractionsLoader(unittest.TestCase):
     def setUp(self):
         self.pdbs = ['1FG0','1HLX']
         self.loader = loader.PairwiseInteractionsLoader()
-        # required by mlabwrap
-        os.chdir(self.loader.config['locations']['fr3d_root'])
 
     def clean_up_database(self):
         """delete data from nr_tables"""
