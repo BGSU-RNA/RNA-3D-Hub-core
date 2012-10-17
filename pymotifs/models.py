@@ -15,7 +15,6 @@ import os
 import ConfigParser
 
 import collections
-import logging
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
@@ -35,48 +34,43 @@ def drop_all():
 def create_all():
     Base.metadata.create_all(engine)
 
-def get_session(env):
+def get_session():
     """
         looks up the connection parameters in a config file, which must be
-        located in the same directory as the python scripts
+        located in the same directory as the python scripts.
     """
 
     filename = 'motifatlas.cfg'
-    environments = ['production', 'dev', 'test']
-    if env not in environments:
-        logging.error('Error: environment not specified.')
-        sys.exit(2)
-
     script_path = os.path.dirname(os.path.abspath( __file__ ))
     configfile = os.path.join(script_path, filename)
     config = ConfigParser.RawConfigParser()
     config.read(configfile)
 
-    if env == 'production':
-        db = 'database'
-    elif env == 'test':
+    # use the test database when run from unittests
+    if 'unittest' in sys.modules:
+        env = 'test'
+    else:
+        env = config.get('general', 'environment')
+
+    if env == 'test':
         db = 'database_test'
-    elif env == 'dev':
-        db = 'database_dev'
+    else:
+        db = 'database'
+
+    print '%s environment' % env
+    print 'Connecting to the `%s` database' % config.get('database', db)
 
     engine = create_engine('mysql://' + config.get('database','user')     + ':' +
-                                      config.get('database','password') + '@' +
-                                      config.get('database','host')     + '/' +
-                                      config.get('database', db))
+                                        config.get('database','password') + '@' +
+                                        config.get('database','host')     + '/' +
+                                        config.get('database', db))
 
     Session = sessionmaker(bind=engine)
     return Session(), engine
 
 
-# should only use the test database when run from unittests
-if 'unittest' in sys.modules:
-    session, engine = get_session('test')
-else:
-    # define the default database here
-    session, engine = get_session('test')
-#     session, engine = get_session('dev')
-#     session, engine = get_session('production')
-
+session, engine = get_session()
+pdb.set_trace()
 
 class PdbBestChainsAndModels(Base):
     """

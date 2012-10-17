@@ -87,6 +87,10 @@ class MotifAtlasBaseClass:
         try:
             config = ConfigParser.RawConfigParser()
             config.read(self.configfile)
+            """general settings"""
+            section = 'general'
+            keys = ['environment']
+            for k in keys: self.config[section][k] = config.get(section,k)
             """email settings"""
             section = 'email'
             keys = ['from','to','login','password','subject']

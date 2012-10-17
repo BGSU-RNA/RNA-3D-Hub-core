@@ -1,3 +1,7 @@
+[general]
+# production, test, dev
+environment:
+
 # for emailing logs
 [email]
 subject: Motif Atlas Update
@@ -43,5 +47,4 @@ user:
 password:
 host: localhost
 database: rna3dhub
-database_dev: rna3dhub_dev
 database_test: rna3dhub_test
