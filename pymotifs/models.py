@@ -70,7 +70,7 @@ def get_session():
 
 
 session, engine = get_session()
-pdb.set_trace()
+
 
 class PdbBestChainsAndModels(Base):
     """
