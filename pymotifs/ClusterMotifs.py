@@ -216,7 +216,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
             f.write(mlab_command)
             f.close()
             # prepare bash command to run the matlab script
-            try_catch  = 'try %s, catch, exit(1), end, exit(0)' % script_name[:-2]
+            try_catch  = 'try %s(), catch, exit(1), end, exit(0)' % script_name[:-2]
             bash_command = '"' + ';'.join([cd_command, try_catch]) + '"'
             commands.append([self.config['locations']['mlab_app'],
                             mlab_params + bash_command])
