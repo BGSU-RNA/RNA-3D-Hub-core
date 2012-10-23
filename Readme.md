@@ -1,43 +1,47 @@
-<h3>About</h3>
-PyFR3DMotifs is the backend for the <a href="http://rna.bgsu.edu/rna3dhub">RNA 3D Hub</a>.
+# About
+RNA-3D-Hub-core is the backend for the [RNA 3D Hub](http://rna.bgsu.edu/rna3dhub).
 
-PyFR3DMotifs contains:
+RNA-3D-Hub-core contains:
 
-1. core FR3D modules written in Matlab. In the near future PyFR3DMotifs will be
-integrated with the main <a href="https://github.com/BGSU-RNA/FR3D">FR3D Github repo</a>.
+1. [FR3D](https://github.com/BGSU-RNA/FR3D) is included as a submodule.
 
-2. additional Matlab code for extraction and clustering of RNA 3D motifs.
+2. Matlab code for extracting and clustering RNA 3D motifs.
 
 3. Python code responsible for importing non-redundant lists and motif atlas
 releases into the database, and id assignment to motifs and non-redundant
 equivalence classes.
 
-<h3>Requirements</h3>
+## Requirements
 * python 2.5 or newer (not tested with Python 3)
 * matlab R2007b or newer
 * MySQL server
-* <a href="http://mlabwrap.sourceforge.net/">mlabwap</a> for linking Matlab with Python
+* [mlabwap](http://mlabwrap.sourceforge.net) for linking Matlab with Python
 * SQLAlchemy for connecting to the database
-* <a href="http://varna.lri.fr">VARNA</a> v3.7 is included to allow for 2D structure generation
-* <i>optional</i>: nosetests for running Python unit tests
+* [VARNA](http://varna.lri.fr) v3.7 is included to allow for 2D structure generation
+* _optional_: nosetests for running Python unit tests
 
-<h3>Installation</h3>
+## Installation
 
 1. Download the source code:
 
-    git clone https://github.com/AntonPetrov/PyFR3DMotifs.git
+    git clone https://github.com/AntonPetrov/RNA-3D-Hub-core.git
 
 2. Create a config file
 
-    pymotifs/motifatlas.cfg
+        pymotifs/motifatlas.cfg
 
-according to the template found in:
+    according to the template found in:
 
-    pymotifs/motifatlas.cfg.txt
+        pymotifs/motifatlas.cfg.txt
 
 3. Create the MySQL database(s) specified in the config file.
 
-<h3>Testing</h3>
+4. Submodule initialization
+
+        git submodule init
+        git submodule update
+
+## Testing
 
 The software suite includes test datasets for motifs and non-redundant lists.
 
@@ -50,12 +54,12 @@ To run unit tests with nosetests:
 
     nosetests --nologcapture -s pymotifs
 
-* The --nologcapture option ensures that all output is logged to a file and is
+* The `--nologcapture` option ensures that all output is logged to a file and is
 not intercepted by nosetests. The log file is emailed at the end of the test.
-* The -s option routes all STDOUT output to the screen for easier monitoring
+* The `-s` option routes all STDOUT output to the screen for easier monitoring
 of test progress.
 
-<h3>Logging and email notifications</h3>
+## Logging and email notifications
 
 Both Python and Matlab programs add their log messages to a file
 
@@ -66,12 +70,13 @@ The log file is refreshed each time the programs are run.
 Some programs email this log file using the information specified in the email
 section of the config file.
 
-<h3>Directory structure</h3>
+## Directory structure
 
+Write later
 
-<h3>Usage</h3>
+## Usage
 
-The main program that triggers the update is MotifAtlas.py
+The main program that triggers the update is `MotifAtlas.py`
 
 When run as a cronjob, need to export a system variable like so:
 
