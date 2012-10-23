@@ -49,7 +49,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         """
         p = PdbInfoLoader.PdbInfoLoader()
         p.get_all_rna_pdbs()
-        self.pdbs = p.pdbs[:3]
+        self.pdbs = p.pdbs
         logging.info('%i RNA 3D structures found in PDB' % len(self.pdbs))
 
     def set_locations(self, locations):
