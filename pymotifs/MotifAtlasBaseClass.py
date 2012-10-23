@@ -13,6 +13,10 @@ import ConfigParser
 import collections
 import datetime
 import os
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEBase import MIMEBase
+from email.MIMEText import MIMEText
+from email import Encoders
 from email.mime.text import MIMEText
 from time import localtime, strftime
 
@@ -42,6 +46,7 @@ class MotifAtlasBaseClass:
             os.makedirs(log_dir)
         logging.basicConfig(filename=self.log,
                             level=logging.DEBUG,
+                            format='%(levelname)s:%(message)s',
                             filemode='w')
         print 'Log file %s' % self.log
 
@@ -120,11 +125,22 @@ class MotifAtlasBaseClass:
         """
         """
         try:
-            fp = open(self.log, 'rb')
-            msg = MIMEText(fp.read())
-            fp.close()
+            msg = MIMEMultipart()
+
+            msg['To'] = self.config['email']['to']
+            msg['From'] = self.config['email']['login']
             msg['Subject'] = ' '.join([self.config['email']['subject'],
                                  strftime("%Y-%m-%d", localtime())])
+            text = 'Log file attached'
+            msg.attach(MIMEText(text))
+
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(open(self.log, 'rb').read())
+            Encoders.encode_base64(part)
+            part.add_header('Content-Disposition',
+                            'attachment; filename="%s"' % os.path.basename(self.log))
+            msg.attach(part)
+
             server = smtplib.SMTP('smtp.gmail.com:587')
             server.ehlo()
             server.starttls()
