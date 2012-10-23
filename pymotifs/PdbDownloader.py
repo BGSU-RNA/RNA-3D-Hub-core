@@ -1,7 +1,11 @@
 """
 
-A class for downloading .pdb, .cif, and .pdb1 files for all RNA-containing
+A program for downloading .pdb, .cif, and .pdb1 files for all RNA-containing
 3D structures.
+
+Downloads the files specified in self.filetypes in all directories supplied
+as arguments. The file is downloaded to the first folder if necessary
+and then copied to the other directories.
 
 Example:
 python PdbDownloader.py ~/Desktop/f1 ~/Desktop/f2 ~/Desktop/f3
@@ -15,6 +19,7 @@ import urllib2
 import gzip
 import shutil
 import glob
+import xml.dom.minidom
 
 
 import PdbInfoLoader
@@ -31,11 +36,12 @@ class PdbDownloader(MotifAtlasBaseClass):
         """
         MotifAtlasBaseClass.__init__(self)
         self.baseurl = 'http://www.rcsb.org/pdb/files/'
+        self.ba_url  = 'http://www.pdb.org/pdb/rest/getBioAssemblies?structureId='
         self.filetypes = ['.pdb', '.pdb1']
 #         self.filetypes = ['.pdb', '.pdb1', '.cif']
         self.locations = []
         self.pdbs = []
-        self.config['email']['subject'] = 'Pdb file sync'
+        self.config['email']['subject'] = 'Pdb File Sync'
 
     def get_pdb_list(self):
         """
@@ -43,7 +49,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         """
         p = PdbInfoLoader.PdbInfoLoader()
         p.get_all_rna_pdbs()
-        self.pdbs = p.pdbs
+        self.pdbs = p.pdbs[:3]
         logging.info('%i RNA 3D structures found in PDB' % len(self.pdbs))
 
     def set_locations(self, locations):
@@ -70,16 +76,34 @@ class PdbDownloader(MotifAtlasBaseClass):
             if len(self.locations) > 1:
                 self.make_copies(pdb_id)
 
+    def get_bio_assemblies_count(self, pdb_id):
+        """
+            Find the number of biological assemblies associated with a pdb id.
+        """
+        try:
+            response = urllib2.urlopen(self.ba_url + pdb_id)
+        except urllib2.HTTPError:
+            logging.critical('Bioassembly query failed for  %s' % pdb_id)
+            self.send_report()
+            sys.exit(1)
+
+        dom = xml.dom.minidom.parseString(response.read())
+        return int(dom.getElementsByTagName('PDB')[0].attributes['bioAssemblies'].value)
+
     def download(self, pdb_id, file_type):
         """
             Tries to download the gzipped version of the file. Will crash if
             .pdb or .cif files are not found.
         """
+        if file_type == '.pdb1' and self.get_bio_assemblies_count(pdb_id) == 0:
+            logging.info('No bio assemblies for %s' % pdb_id)
+            return
+
         filename = pdb_id + file_type
         destination = os.path.join(self.locations[0], filename)
 
         if os.path.exists(destination):
-            logging.info('Pdb %s already downloaded' % filename)
+            logging.info('%s already downloaded' % filename)
             return
         try:
             response = urllib2.urlopen(self.baseurl + filename + '.gz')
@@ -118,9 +142,10 @@ class PdbDownloader(MotifAtlasBaseClass):
                 (head, tail) = os.path.split(source)
                 destination = os.path.join(location, tail)
                 if os.path.exists(destination):
+                    logging.info('%s already exists in %s' % (tail, location))
                     continue
                 shutil.copy(source, destination)
-            logging.info('Copied %s files to %s' % (pdb_id, location))
+                logging.info('Copied %s files to %s' % (pdb_id, location))
 
 
 def main(argv):
