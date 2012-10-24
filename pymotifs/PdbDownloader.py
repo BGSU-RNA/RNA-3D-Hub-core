@@ -20,6 +20,7 @@ import gzip
 import shutil
 import glob
 import xml.dom.minidom
+import pdb
 
 
 import PdbInfoLoader
@@ -86,9 +87,12 @@ class PdbDownloader(MotifAtlasBaseClass):
             logging.critical('Bioassembly query failed for  %s' % pdb_id)
             self.send_report()
             sys.exit(1)
-
-        dom = xml.dom.minidom.parseString(response.read())
-        return int(dom.getElementsByTagName('PDB')[0].attributes['bioAssemblies'].value)
+        try:
+            dom = xml.dom.minidom.parseString(response.read())
+            return int(dom.getElementsByTagName('PDB')[0].attributes['bioAssemblies'].value)
+        except:
+            logging.warning('REST query for %s biological assemblies failed' % pdb_id)
+            return None
 
     def download(self, pdb_id, file_type):
         """
