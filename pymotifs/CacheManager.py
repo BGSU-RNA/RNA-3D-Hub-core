@@ -20,7 +20,7 @@ from sqlalchemy import distinct
 
 
 from PdbInfoLoader import PdbInfoLoader
-from models import AllLoops, Motif, Release, NR_release, NR_class
+from models import AllLoops, Motif, Release, NR_release, NR_class, session
 
 
 class CacheManager():
