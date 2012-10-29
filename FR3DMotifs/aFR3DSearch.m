@@ -8,6 +8,12 @@ MaxNumberOfCandidates = Inf;
 if nargin < 2
 
     [File,SIndex] = zAddNTData(Filenames,0,[],Verbose);   % load PDB data
+
+    % File.NumNT = -1 when the PDB file could not be found locally or in PDB.
+    if File.NumNT < 0
+        error('PDB file %s was not properly read', File.Filename);
+    end
+
     % don't search if there are no nucleotides in the file, otherwise will crash.
     if isempty(File(1).NT)
         Search = [];
@@ -53,7 +59,7 @@ Candidates = xFindCandidates(File(SIndex),Query,Verbose);  % screen for candidat
 if ~isempty(Candidates)                         % some candidate(s) found
 
     if Query.Geometric > 0
-        
+
         [Discrepancy, Candidates] = xRankCandidates(File(SIndex),Query,Candidates);
         fprintf('Found %d candidates in the desired discrepancy range\n',length(Discrepancy));
 
@@ -78,7 +84,7 @@ if ~isempty(Candidates)                         % some candidate(s) found
         [y,i] = sortrows(A,[N+1 N+2 1:N]);         % sort by file, then this sum
         Candidates = Candidates(i,:);              % put all permutations together
         Discrepancy = (1:length(Candidates(:,1)))';% helps identify candidates
-        
+
     else
 
         if (Query.ExcludeOverlap > 0)
@@ -92,12 +98,12 @@ if ~isempty(Candidates)                         % some candidate(s) found
         [y,i] = sortrows(Candidates,[N+1 1 2]);
         Candidates = Candidates(i,:);              % put all permutations together
         Discrepancy = (1:length(Candidates(:,1)))';% helps identify candidates
-        
+
     end
 
     % -------------------------------------------------- Save results of search
 
-    Search.SaveName    = [datestr(now,31) '-' Query.Name];    
+    Search.SaveName    = [datestr(now,31) '-' Query.Name];
     Search.Query       = Query;
     Search.Filenames   = Filenames;
     Search.TotalTime   = cputime - starttime;
@@ -108,7 +114,7 @@ if ~isempty(Candidates)                         % some candidate(s) found
 
     Search = xAddFiletoSearch(File(SIndex),Search);
 
-    if ~isempty(Search.Candidates)    
+    if ~isempty(Search.Candidates)
         if isfield(Query,'SaveDir')
             outdir = Query.SaveDir;
         else
@@ -121,96 +127,11 @@ if ~isempty(Candidates)                         % some candidate(s) found
         save([outdir filesep Query.Name], 'Search');
     end
 
-    
+
 else
-    
+
     Search.Query = Query;
 
 end
 
 end
-
-
-% drawnow
-
-
-% if isfield(Query,'Verbose') && isequal(Query.Verbose,1)
-%     disp(Query);
-% else
-
-% end
-%     Search.SaveName    = strrep(Search.SaveName,' ','_');
-%     Search.SaveName    = strrep(Search.SaveName,':','_');
-%     Search.SaveName    = strrep(Search.SaveName,'<','_');
-%     Search.SaveName    = strrep(Search.SaveName,'>','_');
-%     Search.SaveName    = strrep(Search.SaveName,'?','_');
-%     Search.SaveName    = strrep(Search.SaveName,'*','_');
-%     Search.SaveName    = strrep(Search.SaveName,'&','_');
-
-
-    % ------------------------------------------------ Display results
-%     if Verbose > 0
-%         fprintf('Entire search took %8.4f seconds, or %8.4f minutes\n', (cputime-starttime), (cputime-starttime)/60);
-%     end
-% 
-%     if Verbose > 0
-%         xListCandidates(Search,20,1); %outputs the first 20 candidates
-%     end
-
-
-% Search = struct;
-% if isfield(Query,'Description'),
-%     fprintf(' %s\n', Query.Description);
-% else
-%     fprintf('\n');
-% end
-
-
-%             if Verbose > 0,
-%                 fprintf('Removed highly overlapping candidates, kept %d\n', length(Candidates(:,1)));
-%             end
-
-
-%             tt = cputime;
-
-            %     fprintf('%d candidates after xExcludeRedundantCandidates, time %8.6f\n', length(Discrepancy),(cputime-tt));
-
-%             tt = cputime;
-
-            %     fprintf('%d candidates after xExcludeOverlap, time %8.6f\n', length(Discrepancy),(cputime-tt));
-
-%             tt = cputime;
-
-            %      [C, D] = xReduceOverlap(Candidates,Discrepancy);
-
-
-% C1 = xFindCandidates_old(File(SIndex),Query,Verbose);  % screen for candidates
-% if ~isequal(sortrows(Candidates),sortrows(C1))
-%     keyboard;
-% end
-
-
-% else
-% %    File = GenericFile.SmallFile;
-% %    SIndex = GenericFile.SmallQIndex;
-%     File = GenericFile.File;
-%     SIndex = GenericFile.QIndex;
-% end
-% % ------------------------------------------- Store actual filenames
-% %                                             rather than list name(s)
-%
-% clear Filenames;
-%
-% for i = 1:length(SIndex),
-%   Filenames{i} = File(SIndex(i)).Filename;
-% end
-%
-% %------------------------------------------- Construct details of search
-%  if isfield(Query,'Filename'),                % if query motif is from a file
-%   [File,QIndex] = zAddNTData(Query.Filename,0,File);
-%   Query = xConstructQuery(Query,File(QIndex)); % preliminary calculations
-%  else
-%   Query = xConstructQuery(Query);              % preliminary calculations
-%  end
-
-
