@@ -13,6 +13,8 @@ import ConfigParser
 import collections
 import datetime
 import os
+import zipfile
+import tempfile
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
@@ -125,21 +127,27 @@ class MotifAtlasBaseClass:
         """
         """
         try:
-            msg = MIMEMultipart()
+            filename = os.path.basename(self.log)
 
-            msg['To'] = self.config['email']['to']
-            msg['From'] = self.config['email']['login']
-            msg['Subject'] = ' '.join([self.config['email']['subject'],
-                                 strftime("%Y-%m-%d", localtime())])
+            zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
+            zip = zipfile.ZipFile(zf, 'w')
+            zip.write(self.log, arcname = filename)
+            zip.close()
+            zf.seek(0)
+
+            themsg = MIMEMultipart()
+            themsg['To']      = self.config['email']['to']
+            themsg['From']    = self.config['email']['login']
+            themsg['Subject'] = ' '.join([self.config['email']['subject'],
+                                    strftime("%Y-%m-%d", localtime())])
+            msg = MIMEBase('application', 'zip')
+            msg.set_payload(zf.read())
+            Encoders.encode_base64(msg)
+            msg.add_header('Content-Disposition', 'attachment',
+                           filename=filename[:-4] + '.zip')
+            themsg.attach(msg)
             text = 'Log file attached'
-            msg.attach(MIMEText(text))
-
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(open(self.log, 'rb').read())
-            Encoders.encode_base64(part)
-            part.add_header('Content-Disposition',
-                            'attachment; filename="%s"' % os.path.basename(self.log))
-            msg.attach(part)
+            themsg.attach(MIMEText(text))
 
             server = smtplib.SMTP('smtp.gmail.com:587')
             server.ehlo()
@@ -149,7 +157,7 @@ class MotifAtlasBaseClass:
                          self.config['email']['password'])
             server.sendmail(self.config['email']['from'],
                             self.config['email']['to'],
-                            msg.as_string())
+                            themsg.as_string())
             server.quit()
         except:
             e = sys.exc_info()[1]
