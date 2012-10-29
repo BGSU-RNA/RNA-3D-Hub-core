@@ -59,6 +59,7 @@ class MotifAtlasBaseClass:
         os.chdir(self.config['locations']['fr3d_root'])
         from mlabwrap import mlab
         self.mlab = mlab
+        self.mlab._autosync_dirs = False
         self.mlab.setup() # add matlab paths
         # self.mlab._dont_proxy["cell"] = True
         logging.info('Matlab started')
