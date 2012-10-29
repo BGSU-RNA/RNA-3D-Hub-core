@@ -20,15 +20,17 @@ from sqlalchemy import distinct
 
 
 from PdbInfoLoader import PdbInfoLoader
+from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import AllLoops, Motif, Release, NR_release, NR_class, session
 
 
-class CacheManager():
+class CacheManager(MotifAtlasBaseClass):
 
     def __init__(self, env):
         """
             env = rna3dhub or rna3dhub_dev
         """
+        MotifAtlasBaseClass.__init__(self)
         self.cache_dir = os.path.join('/Servers', 'rna.bgsu.edu', env ,'application', 'cache')
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
@@ -120,9 +122,9 @@ class CacheManager():
 def main(argv):
     """
     """
-    logging.basicConfig(level=logging.DEBUG)
 
     C = CacheManager( argv[0] )
+    C.start_logging()
 
     if argv[1] == 'pdb':
         C.update_pdb_cache()
@@ -133,7 +135,11 @@ def main(argv):
     elif argv[1] == 'loops':
         C.update_loop_cache()
     else:
-        logging.error("Unrecognized option")
+        logging.critical("Unrecognized option")
+        sys.exit(1)
+
+    C.config['email']['subject'] = '%s cache updated' % argv[1]
+    C.send_report()
 
 
 if __name__ == "__main__":
