@@ -23,50 +23,50 @@
 function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
     % status codes
-    VALID      = 1;    
+    VALID      = 1;
     MISSING    = 2;
     MODIFIED   = 3;
-    ABNORMAL   = 4;    
+    ABNORMAL   = 4;
     INCOMPLETE = 5;
     SELFCOMPL  = 6;
 
     try
         % initialize return values
-        FILENAME = 'LoopQA.csv';
+        FILENAME = fullfile(pwd, 'LoopQA.csv');
         result  = struct();
         err_msg = '';
-        
+
         LOOPMATFILES = fullfile('MotifAtlas','PrecomputedData');
-        
+
         list = dir(fullfile(LOOPMATFILES, pdb_id, '*.mat'));
         L = length(list);
-        
+
         % preallocate memory for results
         result = struct('id', cell(1,L), 'status', 0, 'modres', '', 'nt_sig', '', 'compl', '');
-                    
+
         % read in the pdb file as a character array
         T = readPDBFile(pdb_id);
-                    
+
         % get an array of shortened ids of missing nucleotides
         missing_ids = readRemark465();
-        
+
         for f = 1:L % loop over .mat files
-            
+
             load(fullfile(LOOPMATFILES, pdb_id, list(f).name));
-            
+
             result(f).id = File.Filename;
 
-            covalent_breaks = aFindBreaks(File); % based on .Covalent matrix     
+            covalent_breaks = aFindBreaks(File); % based on .Covalent matrix
             flank_breaks    = File.chain_breaks; % based on the FR3D search
             % analyze only suspicious breaks
-            breaks          = setdiff(covalent_breaks,flank_breaks); 
-            
-            % some covalent_breaks are spurious. Nts are adjacent, 
+            breaks          = setdiff(covalent_breaks,flank_breaks);
+
+            % some covalent_breaks are spurious. Nts are adjacent,
             % but the covalent matrix says that they are not.
-            
-            nt_sig = aImplode({File.NT.Number}); % nt signature            
-            result(f).nt_sig = nt_sig;            
-            
+
+            nt_sig = aImplode({File.NT.Number}); % nt signature
+            result(f).nt_sig = nt_sig;
+
             if isempty(breaks) % no suspicious breaks
                 [isSelfComplementary, compl] = checkSelfComplementarity();
                 if isSelfComplementary
@@ -78,13 +78,13 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                 end
             else
 
-                fprintf('Suspicious loop %s, %s\n',File.Filename,nt_sig);                
+                fprintf('Suspicious loop %s, %s\n',File.Filename,nt_sig);
 
                 if foundChainAbnormalities % abnormalities in chain number
                     result(f).status = ABNORMAL;
                     fprintf('Abnormal chain number\n');
                 else
-                    [real_breaks, modifications] = checkSuspiciousBreaks;            
+                    [real_breaks, modifications] = checkSuspiciousBreaks;
 
                     if ~isempty(modifications)
                         modres = aImplode(modifications);
@@ -94,7 +94,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                     else
                         if ~isempty(missing_ids) && missingNtsFound
                             result(f).status = MISSING;
-                            fprintf('Missing nucleotides\n');                
+                            fprintf('Missing nucleotides\n');
                         else
                             if real_breaks > 0
                                 result(f).status = INCOMPLETE;
@@ -106,30 +106,30 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                                     result(f).compl  = compl;
                                     fprintf('Self-complementary %s: %s\n',File.Filename,compl);
                                 else
-                                    fprintf('Valid loop\n');                                    
+                                    fprintf('Valid loop\n');
                                     result(f).status = VALID;
                                 end
                             end
-                        end        
+                        end
                     end
                 end
-            end                        
-                                    
+            end
+
         end % loop over .mat files
-        
-        outputToCsv();        
+
+        outputToCsv();
 
     catch err
         err_msg = sprintf('Error "%s" on line %i (%s)\n', err.message, err.stack.line, pdb_id);
-        disp(err_msg);      
-    end    
-    
+        disp(err_msg);
+    end
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Nested functions
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
     function [] = outputToCsv()
-        
+
         fid = fopen(FILENAME, 'w');
         for i = 1:f
             fprintf(fid, '"%s","%i","%s","%s","%s"\n', result(i).id, ...
@@ -137,15 +137,15 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                     result(i).compl);
         end
         fclose(fid);
-        
+
     end
-    
+
     function [disqualify] = missingNtsFound()
 
         disqualify = 0;
         for b = 1:length(breaks)
 
-            NT = getNtsAtBreakPoint(breaks(b));            
+            NT = getNtsAtBreakPoint(breaks(b));
 
             if checkRemark465
                 disqualify = 1;
@@ -153,7 +153,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
             end
 
         end
-                
+
         % compare next_ids with missing ids.
         function [isMissing] = checkRemark465()
 
@@ -163,13 +163,13 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
             if isempty(intersect(missing_ids, next_ids))
                 isMissing = 0;
             else
-                isMissing = 1;        
+                isMissing = 1;
             end
 
             % return a list of plausible next ids given any nt
             function [next_ids] = getNextIds()
 
-                next_ids = {'', '', ''};        
+                next_ids = {'', '', ''};
                 number = str2double(NT.Number);
 
                 if isnan(number) % insertion code present
@@ -188,10 +188,10 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                     next_ids{3} = sprintf('%i_%s_%i%s',NT.ModelNum, NT.Chain, number, 'a');
                 end
 
-            end            
+            end
 
         end
-                        
+
     end % missingNtsPresent
 
     % Return the number of real breaks + all modifications, if any.
@@ -202,21 +202,21 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
         for b = 1:length(breaks)
 
-            [nt1, nt2] = getNtsAtBreakPoint(breaks(b));            
+            [nt1, nt2] = getNtsAtBreakPoint(breaks(b));
 
             [isAdjacent, modif] = checkAdjacencyInPDB(nt1, nt2);
 
             if ~isempty(modif)
-                modifications = [modifications modif]; %#ok<AGROW>            
+                modifications = [modifications modif]; %#ok<AGROW>
             end
 
             if ~isAdjacent
                 real_breaks  = real_breaks + 1;
-            end        
-        end        
-        
+            end
+        end
+
         % Check if two nucleotides, NT1 and NT2, are adjacent in the PDB text file.
-        % Return codes: 
+        % Return codes:
         % 1 for adjecent (need to check that there are no missing nts in between)
         % 0 for non-adjacent nts, which could be due to an allowed chain break
         % or a missing nt or an incomplete nt.
@@ -239,7 +239,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                         i = i + 1;
                     end
                     next_line = T(i,:);
-                    % I = inosine, DU = deoxiribose U, DNA form            
+                    % I = inosine, DU = deoxiribose U, DNA form
                     if strcmp(next_line(1:6),'HETATM') || ...
                        strcmp(next_line(20),'I')       || ...
                        strcmp(next_line(19:20),'DA')   || ...
@@ -251,7 +251,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                         while ~strcmp(next_line(18:27), after)
                             modres{end+1} = next_line(18:27); %#ok<AGROW> % 7MG B 745
                             i = i + 1;
-                            next_line = T(i,:);                    
+                            next_line = T(i,:);
                         end
                         modres = unique(modres);
                         modres = cellfun(@(x) x(1:3),modres,'UniformOutput',false);
@@ -259,10 +259,10 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
                         isAdjacent = 0; % modified nt
 
-                    elseif strcmp(next_line(18:27),after)                
+                    elseif strcmp(next_line(18:27),after)
                         isAdjacent = 1; % next nucleotide matches NT2
                     else
-                        isAdjacent = 0; % NT1 and NT2 are not adjacent. 
+                        isAdjacent = 0; % NT1 and NT2 are not adjacent.
                     end
                     return;
                 end
@@ -273,21 +273,21 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
             function [pattern] = make_pattern(NT)
                 if isnan(str2double(NT.Number))
-                    pattern = [sprintf('%3s',NT.Base) ' ' NT.Chain sprintf('%5s',NT.Number)];        
+                    pattern = [sprintf('%3s',NT.Base) ' ' NT.Chain sprintf('%5s',NT.Number)];
                 else
                     pattern = [sprintf('%3s',NT.Base) ' ' NT.Chain sprintf('%4s',NT.Number) ' '];
                 end
             end
 
-        end        
-        
+        end
+
     end % checkSuspiciousBreaks
 
     % get nucleotides before and after the chainbreak
     function [nt1, nt2] = getNtsAtBreakPoint(breakpoint)
 
         nt1 = File.NT(breakpoint);
-        nt2 = File.NT(breakpoint+1);               
+        nt2 = File.NT(breakpoint+1);
 
         % make sure that the order is correct
         if nt1.Chain == nt2.Chain
@@ -297,8 +297,8 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                 temp = nt1;
                 nt1  = nt2;
                 nt2  = temp;
-            end        
-        end        
+            end
+        end
 
     end % getNtsAtBreakPoint
 
@@ -308,7 +308,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
     function [isAbnormal] = foundChainAbnormalities()
 
         isAbnormal    = 0;
-        loop_type     = File.Filename(1:2);        
+        loop_type     = File.Filename(1:2);
         unique_chains = length(unique({File.NT.Chain}));
 
         if strcmp(loop_type,'HL') && unique_chains > 1
@@ -336,7 +336,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
         chbr = File.chain_breaks;
 
         seq1 = [File.NT(1:chbr).Base];
-        seq2 = [File.NT(chbr+1:end).Base]; 
+        seq2 = [File.NT(chbr+1:end).Base];
 
         % sequences must be of the same length
         if length(seq1) ~= length(seq2)
@@ -345,20 +345,20 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
         % no true non-wc pairs
         nWC_pairs = 2:12;
-        File.Edge = fix(abs(File.Edge));        
+        File.Edge = fix(abs(File.Edge));
         if ~isempty(intersect(File.Edge(:),nWC_pairs))
-            return;    
-        end    
+            return;
+        end
 
         % all opposing nucleotides match canonical pairs +GU/UG
         wc = {'AU','UA','CG','GC','GU','UG'};
         for i = 1:length(seq1)
             if ~ismember([seq1(i) seq2(end-i+1)], wc)
                 return;
-            end        
+            end
         end
 
-        % all conditions met    
+        % all conditions met
         isSelfCompl = 1;
         seqs = [seq1 ',' seq2];
 
@@ -366,8 +366,8 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
     % return a list of shortened ids of missing nucleotides from remark 465
     function [ids] = readRemark465()
-                
-        ids = {};        
+
+        ids = {};
 
         if isempty(T)
             error('PDB file could not be read');
@@ -378,31 +378,31 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
             if strcmp(T(i,1:10),'REMARK 465') % found the first line of 465
                 j = i + 7; % skip 7 lines with general info
                 while strcmp(T(j,1:10),'REMARK 465')
-                    s = T(j,1:27);                    
+                    s = T(j,1:27);
                     model   = s(14);
                     chain   = s(20);
                   % unit    = s(17:18);
                     number  = strtrim(s(22:26));
                     inscode = s(27);
-                    
+
                     if model == ' '
                         model = '1';
-                    end                    
+                    end
                     if inscode == ' '
                         inscode = '';
                     end
                     ids{end+1} = [model '_' chain '_' number inscode]; %#ok<AGROW>
                     j = j + 1;
-                end                
+                end
                 return; % reached the end of remark 465, return
             end
-            
+
             if strcmp(T(i,1:4),'ATOM') % no remark 465
                 return;
             end
             i = i + 1;
         end
-        
+
     end % readRemark465
 
 end % LoopQualityAssurance
@@ -434,7 +434,7 @@ function [T] = readPDBFile(PDB)
                     end
                 end
             end
-            fclose(fid);            
+            fclose(fid);
         end
     else
         fprintf('Attempting to download %s from PDB\n', PDB);
@@ -455,13 +455,13 @@ end
 
 % http://www.wwpdb.org/documentation/format23/remarks2.html#REMARK470
 
-% REMARK 465                                                                      
-% REMARK 465 MISSING RESIDUES                                                     
-% REMARK 465 THE FOLLOWING RESIDUES WERE NOT LOCATED IN THE                       
-% REMARK 465 EXPERIMENT. (M=MODEL NUMBER; RES=RESIDUE NAME; C=CHAIN               
-% REMARK 465 IDENTIFIER; SSSEQ=SEQUENCE NUMBER; I=INSERTION CODE.)                
-% REMARK 465                                                                      
-% REMARK 465   M RES C SSSEQI 
+% REMARK 465
+% REMARK 465 MISSING RESIDUES
+% REMARK 465 THE FOLLOWING RESIDUES WERE NOT LOCATED IN THE
+% REMARK 465 EXPERIMENT. (M=MODEL NUMBER; RES=RESIDUE NAME; C=CHAIN
+% REMARK 465 IDENTIFIER; SSSEQ=SEQUENCE NUMBER; I=INSERTION CODE.)
+% REMARK 465
+% REMARK 465   M RES C SSSEQI
 % _________________________________________________________________________
 
 % http://www.wwpdb.org/documentation/format32/sect9.html

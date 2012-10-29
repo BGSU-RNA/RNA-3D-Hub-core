@@ -2,7 +2,7 @@
 
 % input: pdb id
 % output: filename with output, exit status and error message
-% exit codes: 
+% exit codes:
 %   0 = success
 %   1 = failure
 %   2 = no nucleotides in pdb file
@@ -12,27 +12,27 @@
 function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
 
     try
-        FILENAME = 'Coordinates.csv';
+        FILENAME = fullfile(pwd, 'Coordinates.csv');
         status   = 2;
-        err_msg  = '';        
-                
+        err_msg  = '';
+
         F = zAddNTData(pdb_id);
 
         if isempty(F.NT)
             return;
         end
-        
+
         fid = fopen(FILENAME,'w');
-        
+
         if isfield(F,'Het') && ~isempty(F.Het)
             F.Het = aParseHetEntities(F);
         else
             F.Het = [];
         end
-        
+
         N = length(F.NT);
         A = length(F.AA);
-        H = length(F.Het);        
+        H = length(F.Het);
 
         C = struct('id',  cell(1,N+A+H), ...
                    'pdb',     '', ...
@@ -44,18 +44,18 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
                    'ins_code','', ...
                    'index',   '', ...
                    'coordinates','');
-                       
+
         for i = 1:N
             id   = aGetNTId(F,i);
             C(i) = aParseId(id,i);
-            C(i).coordinates = aGetNucleotideAsPdbText(F.NT(i));            
+            C(i).coordinates = aGetNucleotideAsPdbText(F.NT(i));
             print_line(fid, C(i));
         end
 
         for i = 1:A
             id         = aGetAAId(F,i);
             current    = N+i;
-            C(current) = aParseId(id,i);        
+            C(current) = aParseId(id,i);
             C(current).coordinates = aGetAsPdbText(F.AA(i),'aa');
             print_line(fid, C(current));
         end
@@ -64,20 +64,20 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
         for i = 1:H
             id         = aGetHetId(F,i);
             current    = S+i;
-            C(current) = aParseId(id,i);        
-            C(current).coordinates = aGetAsPdbText(F.Het(i),'het');        
-            print_line(fid, C(current));            
+            C(current) = aParseId(id,i);
+            C(current).coordinates = aGetAsPdbText(F.Het(i),'het');
+            print_line(fid, C(current));
         end
 
         fclose(fid);
         status = 0;
-        
+
     catch err
         err_msg = sprintf('Error "%s" in aGetCoordinates on line %i (%s)\n', err.message, err.stack.line, pdb_id);
         disp(err_msg);
-        status = 1;        
+        status = 1;
     end
-    
+
 end
 
 function [line] = print_line(fid,C)
@@ -108,26 +108,26 @@ end
 function [Text] = aGetAsPdbText(AA, aa_or_het)
 
     N = length(AA.Atom(:,1));
-    
+
     if strcmp(aa_or_het,'het')
         prefix = 'HETATM %4d';
-    elseif strcmp(aa_or_het,'aa')        
+    elseif strcmp(aa_or_het,'aa')
         prefix = 'ATOM %6d';
     else
         error('Incorrect mode');
     end
-    
+
     lines = cell(1,N);
-    
+
     for i = 1:N
         lines{i} = sprintf([prefix '  %-3s %3s %1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f\n'], ...
                             i, AA.Atom{i}, AA.Unit, AA.Chain, AA.Number, ...
                             AA.Loc(i,1), AA.Loc(i,2), AA.Loc(i,3), 1, AA.Beta(i));
     end
-    
+
     Text = [lines{:}];
     Text = strtrim(Text);
-    
+
 end
 
 % slightly modified zWriteNucleotidePDB.m
@@ -203,7 +203,7 @@ function [Text] = aGetNucleotideAsPdbText(NT)
     end
 
     Text = strtrim(Text);
-    
+
 end
 
 % COLUMNS        DATA  TYPE    FIELD        DEFINITION
