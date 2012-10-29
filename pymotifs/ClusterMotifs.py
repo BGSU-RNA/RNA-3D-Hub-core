@@ -40,6 +40,7 @@ import pdb
 import sys
 import getopt
 import logging
+import shutil
 import math
 import time
 import glob
@@ -79,6 +80,10 @@ class ClusterMotifs(MotifAtlasBaseClass):
         if not os.path.exists(self.output_dir):
             os.makedirs( self.output_dir )
         logging.info('Files will be saved in %s' % self.output_dir)
+
+    def _remove_release_directory(self):
+        """Especially useful for tests"""
+        shutil.rmtree(self.output_dir)
 
     def get_pdb_ids_for_clustering(self):
         """get latest nr release"""

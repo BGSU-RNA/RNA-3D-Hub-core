@@ -65,6 +65,7 @@ class TestClusterMotifs(unittest.TestCase):
         commands = self.loader.prepare_aAa_commands()
         self.loader.parallel_exec_commands( commands )
         self.loader.cluster_loops()
+        self.loader._remove_release_directory()
 
     def test_internal_loops(self):
         """
