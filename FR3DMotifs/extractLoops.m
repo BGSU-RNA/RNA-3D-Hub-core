@@ -5,7 +5,7 @@
 % All motifs, including noncontiguous and ncWW are stored. Postprocessing
 % should be done separately.
 %==========================================================================
-function [Loops, L, err_msg] = aGetLoops(pdb_id,loopType)
+function [Loops, L, err_msg] = extractLoops(pdb_id,loopType)
 
     global loop_type;
 
@@ -27,7 +27,7 @@ function [Loops, L, err_msg] = aGetLoops(pdb_id,loopType)
         aCleanUp;
 
     catch err
-        err_msg = sprintf('Error "%s" in aGetLoops on line %i (%s)\n', ...
+        err_msg = sprintf('Error "%s" in extractLoops on line %i (%s)\n', ...
                            err.message, err.stack.line, pdb_id);
         disp(err_msg);
     end

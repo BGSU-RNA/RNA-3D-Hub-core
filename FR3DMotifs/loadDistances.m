@@ -10,7 +10,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [FILENAME, status, err_msg] = aGetDistances(pdb_id)
+function [FILENAME, status, err_msg] = loadDistances(pdb_id)
 
     try
 
@@ -86,7 +86,7 @@ function [FILENAME, status, err_msg] = aGetDistances(pdb_id)
         status = 0;
 
     catch err
-        err_msg = sprintf('Error "%s" in aGetDistances on line %i (%s)\n', err.message, err.stack.line, pdb_id);
+        err_msg = sprintf('Error "%s" in loadDistances on line %i (%s)\n', err.message, err.stack.line, pdb_id);
         disp(err_msg);
         status = 1;
     end

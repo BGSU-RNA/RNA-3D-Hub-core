@@ -38,7 +38,7 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
 
             for pdb_file in pdb_list:
                 logging.info('Running matlab on %s', pdb_file)
-                ifn, status, err_msg = self.mlab.getInteractions(pdb_file,nout=3)
+                ifn, status, err_msg = self.mlab.loadInteractions(pdb_file,nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_interactions_from_csv(ifn, pdb_file)

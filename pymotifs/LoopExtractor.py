@@ -52,7 +52,7 @@ class LoopExtractor(MotifAtlasBaseClass):
         try:
             MotifAtlasBaseClass._setup_matlab(self)
             """Loops - array of FR3D File structures. l - its length"""
-            [Loops, l, err_msg] = self.mlab.aGetLoops(pdb_id, loop_type, nout=3)
+            [Loops, l, err_msg] = self.mlab.extractLoops(pdb_id, loop_type, nout=3)
 
             if err_msg != '':
                 MotifAtlasBaseClass._crash(self,err_msg)

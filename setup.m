@@ -10,7 +10,7 @@ function [] = setup()
     fr3d_dir = fullfile(current_dir, 'FR3D');
     cd(fr3d_dir);
     addpath(current_dir);
-    addpath(fullfile(current_dir, 'FR3DMotifs'));
+    addpath(genpath(fullfile(current_dir, 'FR3DMotifs')));
     addpath(fullfile(fr3d_dir, 'FR3DSource'));
     addpath(fullfile(fr3d_dir, 'PrecomputedData'));
     addpath(fullfile(fr3d_dir, 'PDBFiles'));

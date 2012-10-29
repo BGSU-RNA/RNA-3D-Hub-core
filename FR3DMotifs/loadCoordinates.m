@@ -9,7 +9,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
+function [FILENAME, status, err_msg] = loadCoordinates(pdb_id)
 
     try
         FILENAME = fullfile(pwd, 'Coordinates.csv');
@@ -73,7 +73,7 @@ function [FILENAME, status, err_msg] = aGetCoordinates(pdb_id)
         status = 0;
 
     catch err
-        err_msg = sprintf('Error "%s" in aGetCoordinates on line %i (%s)\n', err.message, err.stack.line, pdb_id);
+        err_msg = sprintf('Error "%s" in loadCoordinates on line %i (%s)\n', err.message, err.stack.line, pdb_id);
         disp(err_msg);
         status = 1;
     end

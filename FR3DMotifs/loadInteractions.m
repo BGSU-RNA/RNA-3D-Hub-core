@@ -9,7 +9,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [FILENAME, status, err_msg] = getInteractions(pdb_id)
+function [FILENAME, status, err_msg] = loadInteractions(pdb_id)
 
     try
 
@@ -35,7 +35,7 @@ function [FILENAME, status, err_msg] = getInteractions(pdb_id)
         status = 0;
 
     catch err
-        err_msg = sprintf('Error "%s" in getInteractions on line %i (%s)\n', err.message, err.stack.line, pdb_id);
+        err_msg = sprintf('Error "%s" in loadInteractions on line %i (%s)\n', err.message, err.stack.line, pdb_id);
         disp(err_msg);
         status = 1;
     end
