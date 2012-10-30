@@ -4,3 +4,6 @@
 [submodule "UnitIdTranslation"]
 	path = UnitIdTranslation
 	url = git@github.com:BGSU-RNA/UnitIdTranslation.git
+[submodule "pdbx"]
+	path = pdbx
+	url = git@github.com:BGSU-RNA/pdbx.git
