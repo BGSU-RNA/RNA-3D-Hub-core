@@ -38,8 +38,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         MotifAtlasBaseClass.__init__(self)
         self.baseurl = 'http://www.rcsb.org/pdb/files/'
         self.ba_url  = 'http://www.pdb.org/pdb/rest/getEntityInfo?structureId='
-        self.filetypes = ['.pdb', '.pdb1']
-#         self.filetypes = ['.pdb', '.pdb1', '.cif']
+        self.filetypes = ['.pdb', '.pdb1', '.cif']
         self.locations = []
         self.pdbs = []
         self.config['email']['subject'] = 'Pdb File Sync'

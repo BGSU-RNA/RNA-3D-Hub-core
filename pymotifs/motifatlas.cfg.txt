@@ -22,6 +22,7 @@ Hl: False
 J3: False
 redundant_nts: False
 best_chains_and_models: False
+unit_ids: False
 
 # provide full paths
 [locations]

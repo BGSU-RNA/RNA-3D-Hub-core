@@ -106,7 +106,7 @@ class MotifAtlasBaseClass:
             """recalculation settings"""
             section = 'recalculate'
             keys = ['coordinates','distances','interactions','IL','HL','J3',
-                    'redundant_nts','best_chains_and_models']
+                    'redundant_nts','best_chains_and_models', 'unit_ids']
             for k in keys: self.config[section][k] = config.getboolean(section,k)
             """logging"""
             self.config['logfile'] = 'motifatlas.log'
