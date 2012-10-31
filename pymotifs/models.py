@@ -80,8 +80,8 @@ class PdbBestChainsAndModels(Base):
 
     id          = Column(Integer, primary_key=True, autoincrement=True)
     pdb_id      = Column(String(4), index=True)
-    best_chains = Column(VARCHAR(20, binary=True)) # case-sensitive
-    best_models = Column(String(10))
+    best_chains = Column(VARCHAR(50, binary=True)) # case-sensitive
+    best_models = Column(String(50))
 
 
 class RedundantNucleotide(Base):
