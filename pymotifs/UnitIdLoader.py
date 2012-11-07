@@ -63,7 +63,7 @@ class UnitIdLoader(MotifAtlasBaseClass):
                 cif_file = os.path.join(self.pdb_files_folder, pdb_id + '.cif')
 
                 if not os.path.exists(pdb_file):
-                    logging.warning('Skipping %s because %s.pdb was not found in %s' % (pdb_id, pdb_id, self.pdb_files_folder))
+                    logging.warning('Skipping %s because %s%s was not found in %s' % (pdb_id, pdb_id, file_type, self.pdb_files_folder))
                     continue
                 elif not os.path.exists(cif_file):
                     logging.warning('Skipping %s because %s.cif was not found in %s' % (pdb_id, pdb_id, self.pdb_files_folder))
@@ -87,9 +87,11 @@ class UnitIdLoader(MotifAtlasBaseClass):
     def __delete_unit_ids(self, pdbs):
         """
         """
+        logging.info('Deleting unit id correspondence data')
         session.query(PdbUnitIdCorrespondence). \
                 filter(PdbUnitIdCorrespondence.pdb.in_(pdbs)). \
                 delete(synchronize_session='fetch')
+        logging.info('Resetting unit id analysis status')
         for statusObj in session.query(PdbAnalysisStatus). \
                                  filter(PdbAnalysisStatus.id.in_(pdbs)). \
                                  all():
