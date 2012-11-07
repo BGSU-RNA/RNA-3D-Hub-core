@@ -160,6 +160,7 @@ def main(argv):
     d.get_pdb_list()
     d.download_files()
     logging.info('Successful update')
+    d.set_email_subject('Pdb files successfully synchronized')
     d.send_report()
 
 
