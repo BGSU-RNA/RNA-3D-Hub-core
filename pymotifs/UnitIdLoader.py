@@ -164,7 +164,7 @@ def main(argv):
     P.get_all_rna_pdbs()
 
     try:
-        U.import_unit_ids(P.pdbs, recalculate=True)
+        U.import_unit_ids(P.pdbs)
     except:
         e = sys.exc_info()[1]
         U.set_email_subject('Unit id update failed')
