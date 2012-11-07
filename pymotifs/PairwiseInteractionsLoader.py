@@ -1,6 +1,7 @@
 """
 
-About
+Program for loading pairwise interactions produced by FR3D into the RNA 3D Hub
+database.
 
 """
 

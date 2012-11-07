@@ -1,6 +1,9 @@
 """
 
-About
+Program for importing loop quality assurance data into the RNA 3D Hub database.
+
+Some loops should be disqualified because they have unresolved or missing
+nucleotides. See matlab code for disqualification codes.
 
 """
 
