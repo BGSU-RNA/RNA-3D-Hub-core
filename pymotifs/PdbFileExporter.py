@@ -91,19 +91,20 @@ class PdbFileExporter(MotifAtlasBaseClass):
         f_out.writelines(f_in)
         f_out.close()
 
-    def export_interactions(self, output_file):
+    def export_interactions(self, output_file, pdb_ids=None):
         """
             Pdb files for which new-style unit ids haven't been generated are
             skipped for now.
         """
-        pdb_ids = self._get_all_pdbs_with_interactions()
+        if not pdb_ids:
+            pdb_ids = self._get_all_pdbs_with_interactions()
 
         temp = tempfile.TemporaryFile()
         headers = ['unit_id1', 'unit_id2', 'FR3D basepair (f_lwbp)',
                    'FR3D stacking (f_stacks)', 'FR3D base phosphate (f_bphs)']
         temp.write( '"' + '","'.join(headers) + '"\n')
 
-        for pdb_id in pdb_ids[:4]:
+        for pdb_id in pdb_ids:
             logging.info('Writing out interactions for %s' % pdb_id)
             interactions = self._get_interactions(pdb_id)
             unit_id = self._get_id_correspondence(pdb_id)
