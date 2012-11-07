@@ -32,6 +32,7 @@ from ClusterMotifs import ClusterMotifs
 from LoopSearchesLoader import LoopSearchesLoader
 from CacheManager import CacheManager
 from PdbFileExporter import PdbFileExporter
+from UnitIdLoader import UnitIdLoader
 
 
 def main(argv):
@@ -61,9 +62,13 @@ def main(argv):
         q = LoopQualityChecker()
         q.check_loop_quality(p.pdbs)
 
-         """import pairwise interactions annotated by FR3D"""
+        """import pairwise interactions annotated by FR3D"""
         i = PairwiseInteractionsLoader()
         i.import_interactions(p.pdbs)
+
+        """create new-style ids, must be done before exporting interactions"""
+        u = UnitIdLoader()
+        u.import_unit_ids(p.pdbs)
 
         """export pairwise interactions to a compressed file for NDB"""
         f = PdbFileExporter()
