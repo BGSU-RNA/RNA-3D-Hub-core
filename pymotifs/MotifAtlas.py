@@ -31,6 +31,7 @@ from MotifAtlasBaseClass import MotifAtlasBaseClass
 from ClusterMotifs import ClusterMotifs
 from LoopSearchesLoader import LoopSearchesLoader
 from CacheManager import CacheManager
+from PdbFileExporter import PdbFileExporter
 
 
 def main(argv):
@@ -60,9 +61,13 @@ def main(argv):
         q = LoopQualityChecker()
         q.check_loop_quality(p.pdbs)
 
-        """import pairwise interactions annotated by FR3D"""
+         """import pairwise interactions annotated by FR3D"""
         i = PairwiseInteractionsLoader()
         i.import_interactions(p.pdbs)
+
+        """export pairwise interactions to a compressed file for NDB"""
+        f = PdbFileExporter()
+        f.export_interactions(m.config['locations']['interactions_gz'])
 
         """import coordinates and distances into the database"""
         d = DistancesAndCoordinatesLoader()

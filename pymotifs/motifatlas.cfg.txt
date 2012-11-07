@@ -34,6 +34,7 @@ nrlists_dir:
 fr3d_root:
 2ds_destination:
 mlab_app: /Applications/MATLAB_R2007b/bin/matlab
+interactions_gz:
 
 # minor releases: 0.1, 0.2, 0.3 etc
 # major releases: 1.0, 2.0, 3.0 etc
