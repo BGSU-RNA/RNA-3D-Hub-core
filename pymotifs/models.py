@@ -72,6 +72,26 @@ def get_session():
 session, engine = get_session()
 
 
+class PdbUnitIdCorrespondence(Base):
+    """
+    """
+    __tablename__  = 'pdb_unit_id_correspondence'
+    __table_args__ = ( UniqueConstraint('unit_id', 'old_id'), )
+
+    id       = Column(Integer, primary_key=True, autoincrement=True)
+    old_id   = Column(VARCHAR(30, binary=True), index=True)
+    unit_id  = Column(VARCHAR(30, binary=True), index=True)
+    pdb      = Column(String(4), index=True)
+    model    = Column(Integer)    # defaults to 1
+    chain    = Column(VARCHAR(1, binary=True)) # chain id, case sensitive
+    seq_id   = Column(Integer)    # residue number
+    comp_id  = Column(String(3))  # component id: ALA, A, HOH
+    alt_id   = Column(String(1))  # occupancy: blank, A, B, or 0
+    ins_code = Column(String(1))  # A for residues like 109A
+    sym_op   = Column(String(20)) # 1_555, 6_555
+    pdb_file = Column(String(6))  # .pdb, .pdb10
+
+
 class PdbBestChainsAndModels(Base):
     """
     """
@@ -363,7 +383,6 @@ class PdbAnalysisStatus(Base):
        keep track of asymmetric units and biological assemblies."""
     __tablename__ = 'pdb_analysis_status'
     id            = Column(String(4),  primary_key=True)
-#     pdb_file    = Column(String(10), primary_key=True)
     distances     = Column(DateTime)
     coordinates   = Column(DateTime)
     interactions  = Column(DateTime)
@@ -374,6 +393,7 @@ class PdbAnalysisStatus(Base):
     motifs        = Column(DateTime)
     redundant_nts = Column(DateTime)
     best_chains_and_models = Column(DateTime)
+    unit_ids      = Column(DateTime)
 
 
 class LoopQA(Base):

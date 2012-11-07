@@ -64,6 +64,12 @@ class MotifAtlasBaseClass:
         # self.mlab._dont_proxy["cell"] = True
         logging.info('Matlab started')
 
+    def set_email_subject(self, new_subject):
+        """
+            Setter method for customizing email subject.
+        """
+        self.config['email']['subject'] = new_subject
+
     def filter_out_analyzed_pdbs(self, pdbs, column_name):
         """Checks whether the pdb files were processed . Returns only the files
         that need to be analyzed. The `column_name` parameter corresponds to
@@ -106,7 +112,7 @@ class MotifAtlasBaseClass:
             """recalculation settings"""
             section = 'recalculate'
             keys = ['coordinates','distances','interactions','IL','HL','J3',
-                    'redundant_nts','best_chains_and_models']
+                    'redundant_nts','best_chains_and_models', 'unit_ids']
             for k in keys: self.config[section][k] = config.getboolean(section,k)
             """logging"""
             self.config['logfile'] = 'motifatlas.log'
@@ -114,7 +120,7 @@ class MotifAtlasBaseClass:
             section = 'locations'
             keys = ['loops_mat_files', 'loops_search_dir', 'log_dir',
                     'releases_dir', 'nrlists_dir', 'fr3d_root',
-                    '2ds_destination', 'mlab_app']
+                    '2ds_destination', 'mlab_app', 'interactions_gz']
             for k in keys: self.config[section][k] = config.get(section,k)
             """release modes"""
             section = 'release_mode'
