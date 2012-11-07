@@ -62,6 +62,7 @@ class PdbDownloader(MotifAtlasBaseClass):
                 self.locations.append(location)
             else:
                 logging.critical("Location %s doesn't exist" % location)
+                self.set_email_subject('Pdb sync failed')
                 self.send_report()
                 sys.exit(1)
         logging.info('Saving files in %s' % ', '.join(locations))
@@ -84,6 +85,7 @@ class PdbDownloader(MotifAtlasBaseClass):
             response = urllib2.urlopen(self.ba_url + pdb_id)
         except urllib2.HTTPError:
             logging.critical('Bioassembly query failed for  %s' % pdb_id)
+            self.set_email_subject('Pdb sync failed')
             self.send_report()
             sys.exit(1)
         try:
@@ -113,6 +115,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         except urllib2.HTTPError:
             if file_type in ['.pdb', '.cif']:
                 logging.critical('Pdb file %s could not be downloaded' % pdb_id)
+                self.set_email_subject('Pdb sync failed')
                 self.send_report()
                 sys.exit(1)
             else:

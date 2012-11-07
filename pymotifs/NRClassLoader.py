@@ -191,6 +191,7 @@ def main(argv):
     L.start_logging()
     L.import_data()
     logging.info( '%s completed' % __file__ )
+    L.set_email_subject('NR list successfully imported')
     L.send_report()
 
 

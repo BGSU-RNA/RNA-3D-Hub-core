@@ -287,6 +287,7 @@ def main(argv):
 
     M.cluster_loops()
 
+    M.set_email_subject('Successful clustering')
     M.send_report()
 
 

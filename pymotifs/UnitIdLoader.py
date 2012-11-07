@@ -167,10 +167,10 @@ def main(argv):
         U.import_unit_ids(P.pdbs, recalculate=True)
     except:
         e = sys.exc_info()[1]
-        U.config['email']['subject'] = 'Unit id update failed'
+        U.set_email_subject('Unit id update failed')
         U._crash(e)
 
-    U.config['email']['subject'] = 'Unit ids successfully updated'
+    U.set_email_subject('Unit ids successfully updated')
     U.send_report()
 
 if __name__ == "__main__":

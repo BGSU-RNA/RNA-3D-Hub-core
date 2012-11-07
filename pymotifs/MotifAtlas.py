@@ -96,6 +96,7 @@ def main(argv):
 
         logging.info('SUCCESSFUL UPDATE')
 
+        m.set_email_subject('Successful RNA 3D Hub update')
         m.send_report()
 
         """cluster motifs"""
@@ -119,6 +120,7 @@ def main(argv):
     except:
         try:
             logging.critical('Update FAILED')
+            m.set_email_subject('RNA 3D Hub update failed')
             m.send_report()
         except:
             pass
