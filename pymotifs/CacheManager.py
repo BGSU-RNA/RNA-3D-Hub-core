@@ -138,7 +138,9 @@ def main(argv):
         logging.critical("Unrecognized option")
         sys.exit(1)
 
-    C.set_email_subject('%s cache updated' % argv[1])
+    status = '%s cache updated' % argv[1]
+    logging.info(status)
+    C.set_email_subject(status)
     C.send_report()
 
 
