@@ -43,9 +43,9 @@ class CacheManager(MotifAtlasBaseClass):
         self._refresh_cache('pdb')
         P = PdbInfoLoader()
         P.get_all_rna_pdbs()
-        for pdb in P.pdbs:
-            logging.info(pdb)
-            subpages = [pdb, pdb + '/motifs']
+        for pdb_id in P.pdbs:
+            logging.info(pdb_id)
+            subpages = [pdb_id, pdb_id + '/motifs']
             for subpage in subpages:
                 self._refresh_cache('pdb/' + subpage)
 
