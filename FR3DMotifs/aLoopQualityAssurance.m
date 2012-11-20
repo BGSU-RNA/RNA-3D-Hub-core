@@ -36,7 +36,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
         result  = struct();
         err_msg = '';
 
-        LOOPMATFILES = fullfile('MotifAtlas','PrecomputedData');
+        LOOPMATFILES = fullfile(getenv('MA_root'), 'PrecomputedData');
 
         list = dir(fullfile(LOOPMATFILES, pdb_id, '*.mat'));
         L = length(list);

@@ -9,7 +9,14 @@ nucleotides. See matlab code for disqualification codes.
 
 __author__ = 'Anton Petrov'
 
-import pdb, sys, getopt, logging, datetime, csv, os
+import pdb
+import sys
+import getopt
+import logging
+import datetime
+import csv
+import os
+
 
 from models import session, LoopQA, LoopRelease
 from MotifAtlasBaseClass import MotifAtlasBaseClass
@@ -81,13 +88,13 @@ def usage():
 def main(argv):
     """
     """
-
-    logging.basicConfig(level=logging.DEBUG)
     Q = LoopQualityChecker()
+    Q.start_logging()
 
 #     pdbs = ['1HLX','124D','2AW4']
 #     pdbs = ['1HLX']
-    pdbs = ['1ASY']
+#     pdbs = ['1ASY']
+    pdbs = ['1FG0']
 
     Q.check_loop_quality(pdbs)
 

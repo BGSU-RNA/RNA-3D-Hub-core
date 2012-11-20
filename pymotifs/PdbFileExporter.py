@@ -17,6 +17,7 @@ import logging
 import sys
 import gzip
 import tempfile
+import shutil
 
 from sqlalchemy import distinct, or_
 
@@ -86,10 +87,13 @@ class PdbFileExporter(MotifAtlasBaseClass):
         """
             Take the file handle and send its contents to a gzipped output file.
         """
+        temp_output_file = output_file + 'temp'
         f_in.seek(0)
-        f_out = gzip.open(output_file, 'wb')
+        f_out = gzip.open(temp_output_file, 'wb')
         f_out.writelines(f_in)
         f_out.close()
+        # rename file only when it's ready
+        shutil.move(temp_output_file, output_file)
 
     def export_interactions(self, output_file, pdb_ids=None):
         """
