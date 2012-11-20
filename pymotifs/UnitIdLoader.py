@@ -62,11 +62,14 @@ class UnitIdLoader(MotifAtlasBaseClass):
                 pdb_file = os.path.join(self.pdb_files_folder, pdb_id + file_type)
                 cif_file = os.path.join(self.pdb_files_folder, pdb_id + '.cif')
 
+                skipped = False
                 if not os.path.exists(pdb_file):
                     logging.warning('Skipping %s because %s%s was not found in %s' % (pdb_id, pdb_id, file_type, self.pdb_files_folder))
+                    skipped = True
                     continue
                 elif not os.path.exists(cif_file):
                     logging.warning('Skipping %s because %s.cif was not found in %s' % (pdb_id, pdb_id, self.pdb_files_folder))
+                    skipped = True
                     continue
 
                 try:
@@ -80,7 +83,8 @@ class UnitIdLoader(MotifAtlasBaseClass):
                 logging.info('Found %i id pairs' % len(unit_ids))
 
                 self.__store_unit_ids(unit_ids)
-            self.mark_pdb_as_analyzed(pdb_id, 'unit_ids')
+            if not skipped:
+                self.mark_pdb_as_analyzed(pdb_id, 'unit_ids')
 
         logging.info('%s', '='*40)
 
@@ -164,7 +168,7 @@ def main(argv):
     P.get_all_rna_pdbs()
 
     try:
-        U.import_unit_ids(P.pdbs, recalculate=True)
+        U.import_unit_ids(P.pdbs)
     except:
         e = sys.exc_info()[1]
         U.set_email_subject('Unit id update failed')
