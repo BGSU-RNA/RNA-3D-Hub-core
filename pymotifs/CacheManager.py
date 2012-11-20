@@ -134,6 +134,11 @@ def main(argv):
         C.update_motif_cache()
     elif argv[1] == 'loops':
         C.update_loop_cache()
+    elif argv[1] == 'all':
+        C.update_pdb_cache()
+        C.update_nrlist_cache()
+        C.update_motif_cache()
+        C.update_loop_cache()
     else:
         logging.critical("Unrecognized option")
         sys.exit(1)
