@@ -75,7 +75,8 @@ class Uploader(MotifAtlasBaseClass):
                     self.added_groups.append(group_id) # otherwise the new temporary id is committed
                 else:
                     self.added_groups.append(motif.id)
-                logging.info('Group %s assigned new id %s' % (group_id, motif.id))
+                if self.upload_mode != 'release_diff':                    
+	                logging.info('Group %s assigned new id %s' % (group_id, motif.id))
 
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
@@ -87,7 +88,8 @@ class Uploader(MotifAtlasBaseClass):
                 parents = ','.join(set([old_id] + self.c.parents[group_id]))
                 self.updated_groups.append(motif.id)
                 self.old_updated_groups.append(old_id)
-                logging.info('Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id))
+                if self.upload_mode != 'release_diff':
+                    logging.info('Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id))
 
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
