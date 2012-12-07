@@ -112,22 +112,18 @@ class UnitIdLoader(MotifAtlasBaseClass):
             (pdb_id,au_ba,model,chain,seq_id,comp_id,ins_code) = old_id.split('_')
             pdb_file = 'pdb' if au_ba == 'AU' else 'pdb' + au_ba[2:] # BA1, BA10
 
-            underscores = new_id.count('_')
+            underscores = new_id.count('|')
             if underscores == 8: # all fields present
-                (pdb_id,model,chain,comp_id,seq_id,alt_id,ins_code,sym_op1,sym_op2) = new_id.split('_')
-                sym_op = sym_op1 + '_' + sym_op2
-            elif underscores == 6: # default sym_op
-                (pdb_id,model,chain,comp_id,seq_id,alt_id,ins_code) = new_id.split('_')
+                (pdb_id,model,chain,comp_id,seq_id,atom,alt_id,ins_code,sym_op) = new_id.split('|')
+            elif underscores == 7: # default sym_op
+                (pdb_id,model,chain,comp_id,seq_id,atom,alt_id,ins_code) = new_id.split('|')
                 sym_op = '1_555'
-            elif underscores == 5: # default sym_op and ins_code
-                (pdb_id,model,chain,comp_id,seq_id,alt_id) = new_id.split('_')
-                sym_op   = '1_555'
-                ins_code = ''
-            elif underscores == 4: # default sym_op, ins_code, alt_id
-                (pdb_id,model,chain,comp_id,seq_id) = new_id.split('_')
+            elif underscores == 4: # default sym_op, ins_code, alt_id, all atoms
+                (pdb_id,model,chain,comp_id,seq_id) = new_id.split('|')
                 sym_op   = '1_555'
                 ins_code = ''
                 alt_id   = ''
+                atom     = ''
             else:
                 msg = 'Unknown id format %s' % new_id
                 logging.critical(msg)
@@ -140,6 +136,7 @@ class UnitIdLoader(MotifAtlasBaseClass):
                                         model    = model,
                                         chain    = chain,
                                         seq_id   = seq_id,
+                                        atom     = atom,
                                         comp_id  = comp_id,
                                         alt_id   = alt_id,
                                         ins_code = ins_code,
@@ -173,7 +170,7 @@ def main(argv):
         e = sys.exc_info()[1]
         U.set_email_subject('Unit id update failed')
         U._crash(e)
-
+#
     U.set_email_subject('Unit ids successfully updated')
     U.send_report()
 

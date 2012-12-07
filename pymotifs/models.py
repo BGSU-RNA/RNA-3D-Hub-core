@@ -86,6 +86,7 @@ class PdbUnitIdCorrespondence(Base):
     chain    = Column(VARCHAR(1, binary=True)) # chain id, case sensitive
     seq_id   = Column(Integer)    # residue number
     comp_id  = Column(String(3))  # component id: ALA, A, HOH
+    atom     = Column(String(3))  # atom name. If blank, all atoms in residue
     alt_id   = Column(String(1))  # occupancy: blank, A, B, or 0
     ins_code = Column(String(1))  # A for residues like 109A
     sym_op   = Column(String(20)) # 1_555, 6_555
