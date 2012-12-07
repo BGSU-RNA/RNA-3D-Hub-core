@@ -79,7 +79,7 @@ class LoopQualityChecker(MotifAtlasBaseClass):
         os.remove(ifn)
         session.add_all(QA)
         session.commit()
-        logging.info('Csv file successfully imported')
+        logging.info('%s loops checked and imported' % len(QA))
 
 
 def usage():

@@ -178,7 +178,8 @@ class MotifAtlasBaseClass:
             logging.critical(msg)
         try:
             session.rollback()
+            logging.critical('Session rolled back')
         except:
-            pass
+            logging.critical('Session rollback failed')
         self.send_report()
         sys.exit(2)
