@@ -57,33 +57,33 @@ class UnitIdLoader(MotifAtlasBaseClass):
             pdb_list = self.filter_out_analyzed_pdbs(pdbs,'unit_ids')
 
         for pdb_id in pdb_list:
+            analyzed = False
             for file_type in self.pdb_file_types:
                 logging.info('Analyzing %s%s' % (pdb_id, file_type))
                 pdb_file = os.path.join(self.pdb_files_folder, pdb_id + file_type)
                 cif_file = os.path.join(self.pdb_files_folder, pdb_id + '.cif')
 
-                skipped = False
+                # skip .pdb1 file if it doesn't exist
                 if not os.path.exists(pdb_file):
                     logging.warning('Skipping %s because %s%s was not found in %s' % (pdb_id, pdb_id, file_type, self.pdb_files_folder))
-                    skipped = True
                     continue
                 elif not os.path.exists(cif_file):
                     logging.warning('Skipping %s because %s.cif was not found in %s' % (pdb_id, pdb_id, self.pdb_files_folder))
-                    skipped = True
                     continue
 
                 try:
                     unit_ids = idt.get_id_correspondences(pdb_file, cif_file)
+                    self.__store_unit_ids(unit_ids)
+                    logging.info('Found %i id pairs' % len(unit_ids))
+                    analyzed = True
                 except idt.LooksLikeAVirusStructureError:
                     logging.warning('%s looks like a viral structure' % pdb_id)
                     continue
                 except Exception, err:
                     logging.critical('Crash on %s' % pdb_id)
                     continue
-                logging.info('Found %i id pairs' % len(unit_ids))
 
-                self.__store_unit_ids(unit_ids)
-            if not skipped:
+            if analyzed:
                 self.mark_pdb_as_analyzed(pdb_id, 'unit_ids')
 
         logging.info('%s', '='*40)
