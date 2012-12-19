@@ -16,9 +16,10 @@ class CollectionsMerger:
     """
     """
 
-    def __init__(self, c1, c2):
+    def __init__(self, c1, c2, verbose=True):
         self.c1 = c1
         self.c2 = c2
+        self.verbose = verbose
 
         self.intersection   = collections.defaultdict(dict)
         self.noIntersection = dict()
@@ -73,7 +74,8 @@ class CollectionsMerger:
                        self.overlap[motifId][groupId] == 1:
                        self.exact_match[groupId] = motifId
                        self.explanation[groupId] = 'Exact match'
-                       logging.info('Groups %s and motif %s match up exactly' % (groupId, motifId))
+                       if self.verbose:
+                           logging.info('Groups %s and motif %s match up exactly' % (groupId, motifId))
                     # and the match is not perfect
                     else:
                         self.parents[groupId].append(motifId)
@@ -108,7 +110,8 @@ class CollectionsMerger:
 
                 # with more than 2 motifs - assign new id
                 elif len(match) > 2:
-                    logging.info('Group %s has more than 2 parents' % groupId)
+                    if self.verbose:
+                        logging.info('Group %s has more than 2 parents' % groupId)
                     self.explanation[groupId] = '> 2 parents'
                     self.new_ids.append(groupId)
                     for motifId,v in match.iteritems():

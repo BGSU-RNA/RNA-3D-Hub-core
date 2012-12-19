@@ -106,7 +106,8 @@ class Loader(MotifAtlasBaseClass):
                 c1 = NR_eqclass_collection(release='latest', resolution=resolution)
                 c2 = NR_eqclass_collection(release=release,  resolution=resolution)
                 logging.info('%s, %s, %s' % (c1.release, c2.release, resolution))
-                A = Uploader(ensembles=NRCollectionMerger(c1,c2), upload_mode='release_diff')
+                A = Uploader(ensembles=NRCollectionMerger(c1,c2,verbose=False),
+                             upload_mode='release_diff')
                 A.update_database()
 
     def import_lists(self,folder):
