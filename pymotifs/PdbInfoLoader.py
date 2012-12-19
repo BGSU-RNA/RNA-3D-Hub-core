@@ -165,18 +165,28 @@ class PdbInfoLoader():
            from the pdb_info table"""
 
         TEMPFILE = 'obsolete.dat'
+        REPEAT = 10
+        done = False
 
         """download the data file from PDB"""
-        try:
-            ftp = FTP('ftp.wwpdb.org')
-            ftp.login()
-            ftp.cwd('/pub/pdb/data/status')
-            ftp.retrbinary("RETR %s" % TEMPFILE, open(TEMPFILE,"wb").write)
-            ftp.quit()
-            logging.info('Downloaded obsolete.dat')
-        except:
-            logging.critical('Ftp download failed')
-            sys.exit(2)
+        for i in xrange(REPEAT):
+            try:
+                ftp = FTP('ftp.wwpdb.org')
+                ftp.login()
+                ftp.cwd('/pub/pdb/data/status')
+                ftp.retrbinary("RETR %s" % TEMPFILE, open(TEMPFILE,"wb").write)
+                ftp.quit()
+                done = True
+                logging.info('Downloaded obsolete.dat')
+                break
+            except Exception, e:
+                logging.warning(e)
+                logging.warning('Ftp download failed. Retrying...')
+
+        if not done:
+            logging.critical('All attempts to download obsolete.dat over ftp failed')
+            logging.critical('Obsolete PDB files not updated')
+            return
 
         """parse the data file"""
         obsolete_ids = []
