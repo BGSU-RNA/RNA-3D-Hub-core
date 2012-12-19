@@ -661,7 +661,7 @@ class NR_pdb(Base): # = loop
     __tablename__ = 'nr_pdbs'
     id         = Column(String(4),  primary_key=True)
     class_id   = Column(String(17), primary_key=True)
-    release_id = Column(String(4),  primary_key=True)
+    release_id = Column(String(6),  primary_key=True)
     rep        = Column(Boolean)
 
     def __repr__(self):
@@ -674,7 +674,7 @@ class NR_class(Base): # = motif
     __tablename__ = 'nr_classes'
 
     id         = Column(String(17), primary_key=True)
-    release_id = Column(String(4),  primary_key=True)
+    release_id = Column(String(6),  primary_key=True)
     resolution = Column(String(4))
     handle     = Column(String(5))
     version    = Column(String(3))
@@ -734,7 +734,7 @@ class NR_release(Base):
     """
     __tablename__ = 'nr_releases'
 
-    id          = Column(String(4), primary_key=True)
+    id          = Column(String(6), primary_key=True)
     date        = Column(DateTime)
     description = Column(Text)
 
@@ -771,7 +771,7 @@ class NR_setdiff(Base):
 
     nr_class1     = Column(String(17), primary_key=True)
     nr_class2     = Column(String(17), primary_key=True)
-    release_id    = Column(String(4),  primary_key=True)
+    release_id    = Column(String(6),  primary_key=True)
     intersection  = Column(Text)
     overlap       = Column(Float)
     one_minus_two = Column(Text)
@@ -799,8 +799,8 @@ class NR_release_diff(Base):
     """
     __tablename__ = 'nr_release_diff'
 
-    nr_release_id1 = Column(String(4), primary_key=True)
-    nr_release_id2 = Column(String(4), primary_key=True)
+    nr_release_id1 = Column(String(6), primary_key=True)
+    nr_release_id2 = Column(String(6), primary_key=True)
     resolution     = Column(String(4), primary_key=True)
     direct_parent  = Column(Boolean)
     added_groups   = Column(Text)
