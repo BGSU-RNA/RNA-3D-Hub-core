@@ -33,7 +33,7 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         self.precomputedData = self.config['locations']['loops_mat_files']
         self.loop_regex = '(IL|HL)_\w{4}_\d{3}'
         self.pdb_regex = '^[0-9A-Za-z]{4}$'
-        self.update = True # determines whether to update existing values in the db
+        self.update = False # determines whether to update existing values in the db
 
     def load_loop_positions(self):
         """update loop_positions table by loading data from the mat files
@@ -44,29 +44,34 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
                 logging.info('Importing loop annotations from %s', folder)
             else:
                 continue
-            [outputFile, err_msg] = self.mlab.loadLoopAnnotations(os.path.join(self.precomputedData, folder), nout=2)
+            [outputFile, err_msg] = self.mlab.loadLoopPositions(os.path.join(self.precomputedData, folder), nout=2)
             if err_msg != '':
                 MotifAtlasBaseClass._crash(self, err_msg)
             else:
                 reader = csv.reader(open(outputFile), delimiter=',', quotechar='"')
                 for row in reader:
-                    (loop_id, position, nt_id, bulge, flanking) = row
+                    (loop_id, position, nt_id, bulge, flanking, border) = row
                     existing = session.query(LoopPositions). \
                                        filter(LoopPositions.loop_id==loop_id). \
                                        filter(LoopPositions.position==position). \
+                                       filter(LoopPositions.border==border). \
                                        first()
                     if existing:
                         if self.update:
                             existing.flanking = int(flanking)
                             existing.bulge = int(bulge)
                             existing.nt_id = nt_id
+                            existing.border = int(border)
                             session.merge(existing)
+                        else:
+                            logging.info('Keeping existing annotations')
                     else:
                         session.add(LoopPositions(loop_id=loop_id,
                                                   position=position,
                                                   nt_id=nt_id,
                                                   flanking=int(flanking),
-                                                  bulge=int(bulge)))
+                                                  bulge=int(bulge),
+                                                  border=int(border)))
                 session.commit()
                 os.remove(outputFile) # delete temporary csv file
 

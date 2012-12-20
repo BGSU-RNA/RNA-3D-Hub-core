@@ -140,6 +140,7 @@ class LoopPositions(Base):
     nt_id    = Column(Text)
     bulge    = Column(Boolean)
     flanking = Column(Boolean)
+    border   = Column(Boolean)
 
 
 class LoopSearchQA(Base):
