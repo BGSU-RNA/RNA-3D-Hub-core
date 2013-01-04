@@ -269,7 +269,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
                 i = i + 1;
             end
 
-            assert(status ~= -1, 'Nucleotide not found in pdb file');
+            assert(isAdjacent ~= -1, 'Nucleotide not found in pdb file');
 
             function [pattern] = make_pattern(NT)
                 if isnan(str2double(NT.Number))

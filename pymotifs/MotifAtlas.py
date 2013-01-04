@@ -59,8 +59,8 @@ def main(argv):
 
         """do loop QA, import into the database.
         This will always create a new loop release."""
-#         q = LoopQualityChecker()
-#         q.check_loop_quality(p.pdbs)
+        q = LoopQualityChecker()
+        q.check_loop_quality(p.pdbs)
 
         """import pairwise interactions annotated by FR3D"""
         i = PairwiseInteractionsLoader()

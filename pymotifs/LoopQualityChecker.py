@@ -20,6 +20,7 @@ import os
 
 from models import session, LoopQA, LoopRelease
 from MotifAtlasBaseClass import MotifAtlasBaseClass
+from PdbInfoLoader import PdbInfoLoader
 
 
 class LoopQualityChecker(MotifAtlasBaseClass):
@@ -53,7 +54,7 @@ class LoopQualityChecker(MotifAtlasBaseClass):
         [ifn, err_msg] = self.mlab.aLoopQualityAssurance(pdb_id, nout=2)
 
         if err_msg != '':
-            MotifAtlasBaseClass._crash(self,err_msg)
+            logging.warning('Error %s in pdb %s' % (err_msg, pdb_id))
         else:
             self.__import_qa_from_csv(ifn, release_id)
             self.mark_pdb_as_analyzed(pdb_id,'qa')
@@ -91,10 +92,11 @@ def main(argv):
     Q = LoopQualityChecker()
     Q.start_logging()
 
-#     pdbs = ['1HLX','124D','2AW4']
-#     pdbs = ['1HLX']
-#     pdbs = ['1ASY']
-    pdbs = ['1FG0']
+#     pdbs = ['1FG0']
+
+    p = PdbInfoLoader()
+    p.get_all_rna_pdbs()
+    pdbs = p.pdbs
 
     Q.check_loop_quality(pdbs)
 
