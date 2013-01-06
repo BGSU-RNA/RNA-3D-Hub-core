@@ -44,12 +44,14 @@ import shutil
 import math
 import time
 import glob
+import pdb
 from time import localtime, strftime
 from subprocess import Popen, list2cmdline
 
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import session, AllLoops, PdbBestChainsAndModels, NR_release, NR_pdb
+from models import session, AllLoops, PdbBestChainsAndModels, NR_release, \
+                   NR_pdb, LoopRelease, LoopQA
 from MotifLoader import MotifLoader
 
 
@@ -101,18 +103,28 @@ class ClusterMotifs(MotifAtlasBaseClass):
         self.pdb_ids = [x.id for x in pdbs]
 
     def get_loops_for_clustering(self):
+        """ideally this should be achieved with joins, but it requires adjusting
+        the models"""
+        """get latest loop release"""
+        latest_loop_release = session.query(LoopRelease).\
+                                      order_by(LoopRelease.date.desc()).\
+                                      first()
+        """get all valid loops"""
+        valid_ids = [loop.id for loop in session.query(LoopQA).\
+                              filter(LoopQA.status==1).\
+                              filter(LoopQA.release_id==latest_loop_release.id).\
+                              filter(LoopQA.id.like(self.loop_type + '%')).\
+                              all()]
         """get all loops from non-redundant pdbs"""
         loops = session.query(AllLoops). \
                         filter(AllLoops.pdb.in_(self.pdb_ids)). \
                         filter_by(type=self.loop_type). \
                         all()
-        self.loop_ids = [loop.id for loop in loops]
-        logging.info('Found %i loops' % len(loops) )
-
-        """TODO: join with loop_qa table to filter out modified loops etc"""
-
-
-
+        logging.info('Found %i loops' % len(loops))
+        """filter out invalid loops"""
+        loops = [loop for loop in loops if loop.id in valid_ids]
+        self.loop_ids = [loop.id for loop in loops if loop.id in valid_ids]
+        logging.info('Kept %i valid loops' % len(loops))
         """get info about best chains"""
         best_chains = dict()
         for x in session.query(PdbBestChainsAndModels).all():
@@ -272,7 +284,7 @@ def main(argv):
 
     M = ClusterMotifs()
     M.start_logging()
-    M.set_loop_type('IL')
+    M.set_loop_type('HL')
     M._make_release_directory()
 
     if len(argv) > 0:
