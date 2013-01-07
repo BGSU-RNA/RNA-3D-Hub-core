@@ -573,8 +573,8 @@ class MotifAnnotation(Base):
     motif_id     = Column(String(11), primary_key=True)
     common_name  = Column(Text)
     annotation   = Column(Text)
-    author       = Column(String(20))
-    bp_signature = Column(String(100))
+    author       = Column(Text)
+    bp_signature = Column(Text)
     date         = Column(DateTime)
 
 
