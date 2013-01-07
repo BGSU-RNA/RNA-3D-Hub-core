@@ -7,7 +7,9 @@ import logging
 import csv
 import os
 import shutil
+import re
 
+from sqlalchemy.sql import or_
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import Release, session, ML_handle, LoopOrder, LoopPosition, \
@@ -136,19 +138,24 @@ class Uploader(MotifAtlasBaseClass):
         annotation = []
         author = []
         for parent in parent_motifs:
-            parent_motif = session.query(MotifAnnotation).filter(MotifAnnotation.motif_id==parent).first()
+            parent_motif = session.query(MotifAnnotation).\
+                                   filter(MotifAnnotation.motif_id==parent).\
+                                   first()
             if parent_motif:
                 if parent_motif.common_name is not None and parent_motif.common_name != '':
-                    common_name.append(parent_motif.common_name + ' [' + parent + ']')
+                    # delete grandparent motif ids, add parent id
+                    common_name.append(re.sub('\s?\[.+?\]\s?', '', parent_motif.common_name) \
+                                       + ' [' + parent + ']')
                 if parent_motif.annotation is not None and parent_motif.annotation != '':
-                    annotation.append(parent_motif.annotation + ' [' + parent + ']')
+                    annotation.append(re.sub('\s?\[.+?\]\s?', '', parent_motif.annotation) \
+                                       + ' [' + parent + ']')
                 if parent_motif.author is not None and parent_motif.author != '':
                     author.append(parent_motif.author)
 
         session.merge(MotifAnnotation(motif_id=motif.id,
                                       common_name=', '.join(common_name),
                                       annotation=', '.join(annotation),
-                                      author=', '.join(author)))
+                                      author=', '.join(set(author))))
 
     def __process_release_diff(self):
         """
