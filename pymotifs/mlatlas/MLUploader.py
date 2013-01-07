@@ -8,8 +8,11 @@ import csv
 import os
 import shutil
 import re
+import sys
 
 from sqlalchemy.sql import or_
+from sqlalchemy import *
+import sqlalchemy.exc
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import Release, session, ML_handle, LoopOrder, LoopPosition, \
@@ -382,7 +385,7 @@ class Uploader(MotifAtlasBaseClass):
             if os.path.exists(src):
                 shutil.copyfile(src, dst)
             else:
-                logging.info("File %s wasn't found" % src)
+                logging.warning("File %s wasn't found" % src)
 
     def __move_2d_files(self):
         """
@@ -397,7 +400,7 @@ class Uploader(MotifAtlasBaseClass):
             if os.path.exists(src):
                 shutil.copyfile(src, dst)
             else:
-                logging.info("File %s wasn't found" % src)
+                logging.warning("File %s wasn't found" % src)
 
     def __process_graphml_file(self):
         """
