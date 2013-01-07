@@ -163,7 +163,7 @@ class MotifAtlasBaseClass:
             server.login(self.config['email']['login'],
                          self.config['email']['password'])
             server.sendmail(self.config['email']['from'],
-                            self.config['email']['to'],
+                            self.config['email']['to'].split(','),
                             themsg.as_string())
             server.quit()
         except:
