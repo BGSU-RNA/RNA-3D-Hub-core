@@ -1,6 +1,6 @@
 function [Text] = motifToVarna(Search, Location, execute)
 
-    javaCommand = 'java -Djava.awt.headless=true -cp VARNAv3-7.jar fr.orsay.lri.varna.applications.VARNAcmd';
+    javaCommand = 'java -Djava.awt.headless=true -cp ../VARNAv3-7.jar fr.orsay.lri.varna.applications.VARNAcmd';
     destination = [Location filesep '2ds'];
     if ~exist(destination,'dir'), mkdir(destination); end
 
@@ -11,7 +11,7 @@ function [Text] = motifToVarna(Search, Location, execute)
     Text = [];
 
     nts = get_sequence_consensus(Search);
-    str(1:length(nts)-2) = '.';   
+    str(1:length(nts)-2) = '.';
 
     Text = [Text sprintf('-sequenceDBN "%s" ',nts)];
     Text = [Text sprintf('-structureDBN "(%s)" ',str)];
@@ -23,7 +23,7 @@ function [Text] = motifToVarna(Search, Location, execute)
     if isfield(Search,'consensusEdge')
         Edge = Search.consensusEdge;
     else
-        Edge = pConsensusInteractions(Search);    
+        Edge = pConsensusInteractions(Search);
     end
 
     EdgeAbsFix = fix(abs(Edge));
@@ -38,7 +38,7 @@ function [Text] = motifToVarna(Search, Location, execute)
                 if mod(EdgeAbsFix(i,j),2) ~= 0
                     stericity = 'cis';
                 else
-                    stericity = 'trans';                
+                    stericity = 'trans';
                 end
 
                 int = zEdgeText(Edge(i,j));
@@ -46,7 +46,7 @@ function [Text] = motifToVarna(Search, Location, execute)
                 edge3 = lower(int(3));
                 if edge5 == 'w'
                     edge5 = 'wc';
-                end    
+                end
                 if edge3 == 'w'
                     edge3 = 'wc';
                 end
@@ -71,28 +71,28 @@ function [consensus] = get_sequence_consensus(Search)
 
     [r,c] = size(Search.Candidates);
     ind = c-1;
-    
+
     nts = zeros(r,ind);
-    
+
     for i = 1:r
-        
+
         if isfield(Search,'QIndex')
             targetFile = Search.File(Search.QIndex((Search.Candidates(i,end))));
-        else    
+        else
             targetFile = Search.File(Search.Candidates(i,end));
         end
-        
-        indices = Search.Candidates(i,1:end-1);               
+
+        indices = Search.Candidates(i,1:end-1);
         nts(i,1:ind) = [targetFile.NT(indices).Base];
     end
 
     nts = char(nts);
-    
+
     consensus = '';
     for i = 1:ind
         consensus(i) = analyze_sequence_column(nts(:,i));
     end
-    
+
 end
 
 function [consensus] = analyze_sequence_column(nts)
@@ -150,22 +150,22 @@ function [consensus] = analyze_sequence_column(nts)
         consensus = 'H'; % not G
     elseif A == 0 && G == 1 && C == 1 && U == 1
         consensus = 'B'; % not A
-    else 
-        error('Unexpected case');                
+    else
+        error('Unexpected case');
     end
-        
+
 end
 
 
 %     if isfield(Search,'QIndex')
 %         targetFile = Search.File(Search.QIndex((Search.Candidates(1,end))));
-%     else    
+%     else
 %         targetFile = Search.File(Search.Candidates(1,end));
 %     end
-% 
-% 
+%
+%
 %     indices = Search.Candidates(1,1:end-1);
-% 
+%
 %     nts = [targetFile.NT(indices).Base];
 %     str(1:length(targetFile.NT(indices))-2) = '.';
 
@@ -174,7 +174,7 @@ end
     % Text = [Text sprintf('<param name="title" value="LIBI%04d" />\n',order)];
     % Text = [Text sprintf('<param name="auxBPs%i" value="',order)];
     % Text = [Text '"/>\n'];
-% <parameter name="applyBasesStyle5on" 
+% <parameter name="applyBasesStyle5on"
 % value="1,6,7,10"/>
-% <parameter name="basesStyle3" 
+% <parameter name="basesStyle3"
 % value="fill=#FF0000,outline=#00FF00"/>
