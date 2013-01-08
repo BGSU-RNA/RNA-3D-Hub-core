@@ -87,7 +87,7 @@ class Uploader(MotifAtlasBaseClass):
                               type=self.motif_type)
                 self.added_groups.append(motif.id)
                 if self.c.parents.has_key(group_id):
-                    parents = ','.join(self.c.parents[group_id])
+                    parents = ','.join(set(self.c.parents[group_id]))
                 else:
                     parents = ''
                 logging.info('Group %s assigned new id %s' % (group_id, motif.id))
@@ -156,9 +156,9 @@ class Uploader(MotifAtlasBaseClass):
                     author.append(parent_motif.author)
 
         session.merge(MotifAnnotation(motif_id=motif.id,
-                                      common_name=', '.join(common_name),
-                                      annotation=', '.join(annotation),
-                                      author=', '.join(set(author))))
+                                      common_name=' | '.join(set(common_name)),
+                                      annotation=' | '.join(set(annotation)),
+                                      author=' | '.join(set(author))))
 
     def __process_release_diff(self):
         """
