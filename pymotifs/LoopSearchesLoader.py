@@ -17,6 +17,7 @@ import logging
 import os
 import re
 import csv
+import glob
 
 from models import session, LoopSearch, LoopSearchQA, LoopPositions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
@@ -27,7 +28,6 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
     """
     def __init__(self):
         MotifAtlasBaseClass.__init__(self)
-        MotifAtlasBaseClass._setup_matlab(self)
 
         self.loopSearchDir = self.config['locations']['loops_search_dir']
         self.precomputedData = self.config['locations']['loops_mat_files']
@@ -38,6 +38,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
     def load_loop_positions(self):
         """update loop_positions table by loading data from the mat files
         stored in the PrecomputedData folder"""
+        if not self.mlab:
+            self._setup_matlab()
+
         # loop over directories
         for folder in os.listdir(self.precomputedData):
             if re.search(self.pdb_regex, folder):
@@ -75,18 +78,69 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
                 session.commit()
                 os.remove(outputFile) # delete temporary csv file
 
+    def _get_imported_loop_searches(self, loop_id):
+        """
+            get loop pairs for which search data has been stored in the database
+        """
+        done = []
+        for search in session.query(LoopSearch).\
+                              filter(LoopSearch.loop_id1==loop_id).\
+                              filter(LoopSearch.disc>=0).\
+                              all():
+            done.append('_'.join([search.loop_id1, search.loop_id2]))
+        return set(done)
+
+    def _get_stored_no_candidates(self, loop_id):
+        """
+            get loops pairs that didn't match in all-against-all searches
+        """
+        done = []
+        for search in session.query(LoopSearch).\
+                              filter(LoopSearch.loop_id1==loop_id).\
+                              filter(LoopSearch.disc==-1).\
+                              all():
+            done.append('_'.join([search.loop_id1, search.loop_id2]))
+        return set(done)
+
+    def _get_saved_mat_files(self, folder):
+        """
+            list all mat files in a given folder
+        """
+        mat = []
+        for f in glob.glob(folder):
+            mat.append(os.path.splitext(os.path.basename(f))[0])
+        return set(mat)
+
     def load_loop_searches(self):
         """
             directory structure: loopSearchDir filesep IL_1S72_001 filesep IL_1S72_001_IL_1J5E_001.mat
         """
         # loop over directories
-        for folder in os.listdir(self.loopSearchDir):
-            if re.search(self.loop_regex, folder):
-                logging.info('Importing %s searches', folder)
+        for loop_id in os.listdir(self.loopSearchDir):
+            if re.search(self.loop_regex, loop_id):
+                logging.info('Importing %s searches', loop_id)
             else:
                 continue
+
+            # read in No_candidates.txt if it exists
+            self._read_no_candidates_file(loop_id)
+
+            # get stored loop searches and list all matfiles
+            imported = self._get_imported_loop_searches(loop_id)
+            matfiles = self._get_saved_mat_files(os.path.join(self.loopSearchDir, loop_id, '*.mat'))
+            toImport = matfiles - imported;
+
+            if len(toImport) == 0:
+                continue
+
+            toImport = [os.path.join(self.loopSearchDir, loop_id, x + '.mat') for x in toImport]
+
+            if not self.mlab:
+                self._setup_matlab()
+
             # run matlab to create a temporary csv file with results
-            [outputFile, err_msg] = self.mlab.loadLoopSearchFile(os.path.join(self.loopSearchDir, folder), nout=2)
+            [outputFile, err_msg] = self.mlab.loadLoopSearchFile(','.join(toImport), os.path.join(self.loopSearchDir, loop_id), nout=2)
+
             if err_msg != '':
                 MotifAtlasBaseClass._crash(self, err_msg)
             else:
@@ -95,9 +149,6 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
                     (loop_id1, loop_id2, disc, nt_list1, nt_list2) = row
                     self._store_in_database(loop_id1, loop_id2, disc, nt_list1, nt_list2)
                 os.remove(outputFile) # delete temporary csv file
-
-            # read in No_candidates.txt if exists
-            self._read_no_candidates_file(folder)
 
     def _store_in_database(self, loop_id1, loop_id2, disc=-1, nt_list1=None, nt_list2=None):
         """
@@ -130,8 +181,10 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
             loop_id1 = folder
             loops = open(no_candidates_file, 'r').readlines()
             loops = [x.rstrip() for x in loops]
+            imported = self._get_stored_no_candidates(loop_id1)
             for loop_id2 in loops:
-                self._store_in_database(loop_id1, loop_id2)
+                if '_'.join([loop_id1, loop_id2]) not in imported:
+                    self._store_in_database(loop_id1, loop_id2)
 
     def load_loop_search_qa_text_file(self, file):
         """independent method used to load search QA data (disqualification
@@ -158,14 +211,13 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
 def main(argv):
     """
     """
-    logging.basicConfig(level=logging.DEBUG)
-
     S = LoopSearchesLoader()
+    S.start_logging()
     S.load_loop_searches()
     S.load_loop_positions()
 
-    S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_extraNTs.txt')
-    S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_symmetrize.txt')
+#     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_extraNTs.txt')
+#     S.load_loop_search_qa_text_file('/Users/anton/FR3D/MM_symmetrize.txt')
 
 
 
