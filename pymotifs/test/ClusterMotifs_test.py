@@ -61,7 +61,7 @@ class TestClusterMotifs(unittest.TestCase):
         # comes from a database.
         self.loader.best_loops = self._list_loops(src, loop_type)
         self.loader.make_input_file_for_matlab()
-        self.loader._make_release_directory()
+        self.loader.make_release_directory()
         commands = self.loader.prepare_aAa_commands()
         self.loader.parallel_exec_commands( commands )
         self.loader.cluster_loops()

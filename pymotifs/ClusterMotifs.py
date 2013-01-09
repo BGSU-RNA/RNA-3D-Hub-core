@@ -75,7 +75,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
         """
         self.loop_type = loop_type
 
-    def _make_release_directory(self):
+    def make_release_directory(self):
         """make a directory for the release files"""
         self.output_dir = os.path.join( self.config['locations']['releases_dir'],
                                         self.loop_type + '_' + strftime("%Y%m%d_%H%M", localtime() ))
@@ -285,7 +285,7 @@ def main(argv):
     M = ClusterMotifs()
     M.start_logging()
     M.set_loop_type('HL')
-    M._make_release_directory()
+    M.make_release_directory()
 
     if len(argv) > 0:
         M._manually_get_loops_for_clustering(argv[0])
