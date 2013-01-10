@@ -138,7 +138,7 @@ class MotifAtlasBaseClass:
             filename = os.path.basename(self.log)
 
             zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
-            zip = zipfile.ZipFile(zf, 'w')
+            zip = zipfile.ZipFile(zf, 'w', compression=zipfile.ZIP_DEFLATED)
             zip.write(self.log, arcname = filename)
             zip.close()
             zf.seek(0)
