@@ -3,8 +3,7 @@
 A python script for managing the RNA 3D Hub cache.
 
 Usage:
-python manage_cache.py rna3dhub [option]
-python manage_cache.py rna3dhub_dev [option]
+python manage_cache.py [option]
 
 where [option] is nrlist/motifs/loops/pdb
 
@@ -26,15 +25,14 @@ from models import AllLoops, Motif, Release, NR_release, NR_class, session
 
 class CacheManager(MotifAtlasBaseClass):
 
-    def __init__(self, env):
+    def __init__(self):
         """
-            env = rna3dhub or rna3dhub_dev
         """
         MotifAtlasBaseClass.__init__(self)
-        self.cache_dir = os.path.join('/Servers', 'rna.bgsu.edu', env ,'application', 'cache')
+        self.cache_dir = self.config['locations']['cache']
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
-        self.baseurl = 'http://rna.bgsu.edu/' + env
+        self.baseurl = 'http://rna.bgsu.edu/rna3dhub'
 
     def update_pdb_cache(self):
         """
@@ -123,18 +121,18 @@ def main(argv):
     """
     """
 
-    C = CacheManager( argv[0] )
+    C = CacheManager()
     C.start_logging()
 
-    if argv[1] == 'pdb':
+    if argv[0] == 'pdb':
         C.update_pdb_cache()
-    elif argv[1] == 'nrlist':
+    elif argv[0] == 'nrlist':
         C.update_nrlist_cache()
-    elif argv[1] == 'motifs':
+    elif argv[0] == 'motifs':
         C.update_motif_cache()
-    elif argv[1] == 'loops':
+    elif argv[0] == 'loops':
         C.update_loop_cache()
-    elif argv[1] == 'all':
+    elif argv[0] == 'all':
         C.update_pdb_cache()
         C.update_nrlist_cache()
         C.update_motif_cache()
