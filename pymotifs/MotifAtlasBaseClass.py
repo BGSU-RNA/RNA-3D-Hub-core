@@ -8,6 +8,7 @@ __author__ = 'Anton Petrov'
 
 import sys
 import logging
+import traceback
 import smtplib
 import ConfigParser
 import collections
@@ -167,9 +168,7 @@ class MotifAtlasBaseClass:
                             themsg.as_string())
             server.quit()
         except:
-            e = sys.exc_info()[1]
-            logging.critical(e)
-            sys.exit(2)
+            logging.critical(traceback.format_exc(sys.exc_info()))
 
     def _crash(self, msg=None):
         """
