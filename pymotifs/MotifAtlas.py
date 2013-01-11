@@ -1,16 +1,11 @@
 """
 
-Main entry point for launching a Motif Atlas update.
-
-Does not yet include NR list update and motif clustering.
+Main entry point for RNA 3D Hub updates.
 
 Examples:
 
 * to launch the pipeline:
     python MotifAtlas.py
-
-* to run just on one test pdb file:
-    python MotifAtlas.py test
 
 """
 
@@ -18,7 +13,9 @@ __author__ = 'Anton Petrov'
 
 import sys
 import logging
+import traceback
 import pdb
+
 
 from DistancesAndCoordinatesLoader import DistancesAndCoordinatesLoader
 from PdbInfoLoader import PdbInfoLoader
@@ -33,98 +30,248 @@ from LoopSearchesLoader import LoopSearchesLoader
 from CacheManager import CacheManager
 from PdbFileExporter import PdbFileExporter
 from UnitIdLoader import UnitIdLoader
+from MotifLoader import MotifLoader
+
+
+def cluster_motifs(motif_type):
+    """
+        cluster motifs
+    """
+    try:
+        c = ClusterMotifs()
+        c.set_loop_type(motif_type)
+        c.make_release_directory()
+        c.get_pdb_ids_for_clustering()
+        c.get_loops_for_clustering()
+        c.make_input_file_for_matlab()
+        c.parallel_exec_commands( c.prepare_aAa_commands() )
+        c.cluster_loops()
+
+        l = LoopSearchesLoader()
+        l.load_loop_search_qa_text_file(os.path.join(c.output_dir, 'MM_extraNTs.txt'))
+        l.load_loop_search_qa_text_file(os.path.join(c.output_dir, 'MM_symmetrize.txt'))
+
+        logging.info('%s loops successfully clustered' % motif_type)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('%s clustering failed' % motif_type)
+
+
+def import_motifs(motif_type):
+    """
+        import loop clusters into the database
+    """
+    try:
+        m = MotifLoader(motif_type=motif_type)
+        m.import_data()
+        logging.info('%s loops imported' % motif_type)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('%s loop import failed' % motif_type)
+
+def get_pdb_info():
+    """
+        get new pdb files, import descriptions into the database.
+        Return an empty list if something goes wrong, then all following
+        steps that rely on pdb_ids will be skipped.
+    """
+    try:
+        p = PdbInfoLoader()
+        p.get_all_rna_pdbs()
+        pdb_ids = p.pdbs
+        p.update_rna_containing_pdbs()
+        p.check_obsolete_structures()
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        pdb_ids = []
+
+    return pdb_ids
+
+def update_loops(pdb_ids):
+    """
+    """
+    try:
+        """extract all loops and import into the database"""
+        e = LoopExtractor()
+        e.extract_and_import_loops(pdb_ids)
+        """do loop qa, create a new loop release. It only makes sense
+        to do this if loop extraction worked"""
+        q = LoopQualityChecker()
+        q.check_loop_quality(pdb_ids)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Loop extraction or loop QA failed')
+
+def update_pairwise_annotations(pdb_ids):
+    """
+    """
+    try:
+        """import pairwise interactions annotated by FR3D"""
+        i = PairwiseInteractionsLoader()
+        i.import_interactions(pdb_ids)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Pairwise interactions import failed')
+
+def update_unit_ids(pdb_ids):
+    """
+        create new-style ids, must be done before exporting any data to files.
+    """
+    try:
+        u = UnitIdLoader()
+        u.import_unit_ids(pdb_ids)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Unit id import failed')
+
+def update_cache():
+    """
+        update CodeIgniter cache
+    """
+    try:
+        c = CacheManager()
+    except:
+        logging.warning("Skipping CodeIgniter cache update")
+        return
+
+    try:
+        c.update_pdb_cache()
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Pdb cache update failed')
+
+    try:
+        c.update_nrlist_cache()
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Nrlist cache update failed')
+
+    try:
+        c.update_motif_cache()
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Motif cache update failed')
+
+    try:
+        c.update_loop_cache()
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Loop cache update failed')
+
+def export_data():
+    """
+        export data to static compressed files.
+    """
+    try:
+        """export pairwise interactions to a compressed file for NDB"""
+        f = PdbFileExporter()
+        f.export_interactions(f.config['locations']['interactions_gz'])
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Pairwise interactions export failed')
+
+def update_coordinates(pdb_ids):
+    """
+        import coordinates and distances into the database
+    """
+    try:
+        d = DistancesAndCoordinatesLoader()
+        d.import_distances(pdb_ids)
+        d.import_coordinates(pdb_ids)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Distances or coordinates import failed')
+
+def update_redundant_nucleotides(pdb_ids):
+    """
+        import info about redundant nucleotides
+    """
+    try:
+        r = RedundantNucleotidesLoader()
+        r.import_redundant_nucleotides(pdb_ids)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Redundant nt import failed')
+
+def update_best_chains_and_models(pdb_ids):
+    """
+        import best chains and models
+    """
+    try:
+        b = BestChainsAndModelsLoader()
+        b.import_best_chains_and_models(pdb_ids)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Redundant nt import failed')
+
+def update_loop_annotations():
+    """
+        Must follow loop clustering because it imports all-against-all search
+        data.
+    """
+    try:
+        """import loop-level annotations"""
+        LoopLoader = LoopSearchesLoader()
+        LoopLoader.load_loop_positions()
+        """import all-against-all search results from IL and HL clustering"""
+        LoopLoader.load_loop_searches()
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Hairpin loop import failed')
 
 
 def main(argv):
+    """
+        RNA 3D Hub update entry point.
+    """
 
     try:
-        """set up logging"""
         m = MotifAtlasBaseClass()
         m.start_logging()
-        logging.info('Initializing update')
 
-        """get new pdb files, import descriptions into the database"""
-        p = PdbInfoLoader()
+        pdb_ids = get_pdb_info()
 
-        if argv and argv[0] == 'test':
-            p.pdbs = ['1FG0']
-        else:
-            p.get_all_rna_pdbs()
-            p.update_rna_containing_pdbs()
-            p.check_obsolete_structures()
+        update_loops(pdb_ids)
 
-        """extract all loops and import into the database"""
-        e = LoopExtractor()
-        e.extract_and_import_loops(p.pdbs)
+        update_pairwise_annotations(pdb_ids)
 
-        """do loop QA, import into the database.
-        This will always create a new loop release."""
-        q = LoopQualityChecker()
-        q.check_loop_quality(p.pdbs)
+        update_unit_ids(pdb_ids)
+        # must follow unit id updates
+        export_data()
 
-        """import pairwise interactions annotated by FR3D"""
-        i = PairwiseInteractionsLoader()
-        i.import_interactions(p.pdbs)
+        update_coordinates(pdb_ids)
 
-        """create new-style ids, must be done before exporting interactions"""
-        u = UnitIdLoader()
-        u.import_unit_ids(p.pdbs)
+        update_redundant_nucleotides(pdb_ids)
 
-        """export pairwise interactions to a compressed file for NDB"""
-        f = PdbFileExporter()
-        f.export_interactions(m.config['locations']['interactions_gz'])
+        update_best_chains_and_models(pdb_ids)
 
-        """import coordinates and distances into the database"""
-        d = DistancesAndCoordinatesLoader()
-        d.import_distances(p.pdbs)
-        d.import_coordinates(p.pdbs)
+        # must follow best chain and model update
+        cluster_motifs('IL')
+        import_motifs('IL')
 
-        """import info about redundant nucleotides"""
-        r = RedundantNucleotidesLoader()
-        r.import_redundant_nucleotides(p.pdbs)
+        cluster_motifs('HL')
+        import_motifs('HL')
 
-        """import best chains and models"""
-        b = BestChainsAndModelsLoader()
-        b.import_best_chains_and_models(p.pdbs)
+        # must follow motif clustering
+        update_loop_annotations()
 
-        """update cache"""
-        c = CacheManager('rna3dhub')
-        c.update_pdb_cache()
-        c.update_nrlist_cache()
-        c.update_motif_cache()
-        c.update_loop_cache()
+        # TODO annotate all pdb files with motifs
 
-        logging.info('SUCCESSFUL UPDATE')
+        # TODO compute new non-redundant lists, import into the database
 
-        m.set_email_subject('Successful RNA 3D Hub update')
+#         update_cache()
+
+        logging.info('Update completed')
         m.send_report()
-
-        """cluster motifs"""
-        #     c = ClusterMotifs(loop_type='IL')
-        #     c.get_pdb_ids_for_clustering()
-        #     print c.pdb_ids
-        #     c.pdb_ids = ['1S72']
-        #     c.get_loops_for_clustering()
-        #     c.make_input_file_for_matlab()
-        #     c.cluster_loops()
-        # import motif atlas release into the database
-        # import loop_searches, loop_positions and loop_searches_qa
-        #     s = LoopSearchesLoader()
-        #     s.load_loop_searches()
-        #     s.load_loop_positions()
-        #     s.load_loop_search_qa_text_file('FR3D/MM_extraNTs.txt')
-        #     s.load_loop_search_qa_text_file('FR3D/MM_symmetrize.txt')
-        # annotate all pdb files with these clusters
-        # compute new non-redundant lists, import into the database
 
     except:
         try:
-            logging.critical('Update FAILED')
+            logging.critical('Update failed')
+            logging.critical(traceback.format_exc(sys.exc_info()))
             m.set_email_subject('RNA 3D Hub update failed')
             m.send_report()
         except:
             pass
-        sys.exit(1)
 
 
 if __name__ == "__main__":
