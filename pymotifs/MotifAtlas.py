@@ -158,14 +158,14 @@ def update_cache():
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('Loop cache update failed')
 
-def export_data():
+def export_data(pdb_ids):
     """
         export data to static compressed files.
     """
     try:
         """export pairwise interactions to a compressed file for NDB"""
         f = PdbFileExporter()
-        f.export_interactions(f.config['locations']['interactions_gz'])
+        f.export_interactions(f.config['locations']['interactions_gz'], pdb_ids)
     except:
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('Pairwise interactions export failed')
@@ -237,7 +237,7 @@ def main(argv):
 
         update_unit_ids(pdb_ids)
         # must follow unit id updates
-        export_data()
+        export_data(pdb_ids)
 
         update_coordinates(pdb_ids)
 
