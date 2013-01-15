@@ -13,6 +13,17 @@ function [disc] = pairwiseSearch(file1, file2)
         catch
             fprintf('Corrupted file %s\n',name);
         end
+    else
+        noCandidates = fullfile(getSearchFolder, file1, 'No_candidates.txt');
+        if exist(noCandidates, 'file')
+        	fid = fopen(noCandidates, 'r');
+        	no_candidates = textscan(fid, '%s');
+        	fclose(fid);
+            if ~isempty(find(ismember(no_candidates{1}, file2), 1))
+                disc = Inf;
+                return;
+            end            
+        end
     end
 
     % Parameters structure
