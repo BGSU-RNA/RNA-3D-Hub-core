@@ -36,17 +36,15 @@ class MotifAtlasBaseClass:
         script_path = os.path.dirname(os.path.abspath( __file__ ))
         self.configfile = os.path.join(script_path, 'motifatlas.cfg')
         self.import_config()
-        self.log = ''
         self.log_filename = 'rna3dhub_log.txt'
+        self.log = os.path.join(self.config['locations']['log_dir'], self.log_filename)
 
     def start_logging(self):
         """
             Overwrites the old log file.
         """
-        log_dir = self.config['locations']['log_dir']
-        self.log = os.path.join(log_dir, self.log_filename)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
+        if not os.path.exists(self.config['locations']['log_dir']):
+            os.makedirs(self.config['locations']['log_dir'])
         logging.basicConfig(filename=self.log,
                             level=logging.DEBUG,
                             format='%(levelname)s:%(message)s',
