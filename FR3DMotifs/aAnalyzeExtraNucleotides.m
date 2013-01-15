@@ -16,7 +16,7 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids)
     
     N = length(MM(1,:));
     
-    fid = fopen(LOGFILE, 'w');
+    fid = fopen(LOGFILE, 'a');
 
     for i = 1:N        
         

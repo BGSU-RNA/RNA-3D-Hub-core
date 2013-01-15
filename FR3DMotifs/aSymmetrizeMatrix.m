@@ -17,7 +17,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
     FILENAME = 'MM_symmetrize.mat';
     LOGFILE  = 'MM_symmetrize.txt';
     
-    fid = fopen(LOGFILE, 'w');
+    fid = fopen(LOGFILE, 'a');
 
     for iLoop = 1:N
         
