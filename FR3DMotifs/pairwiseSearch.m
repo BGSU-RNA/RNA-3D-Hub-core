@@ -1,14 +1,19 @@
 function [disc] = pairwiseSearch(file1, file2)
 
-    [File1, file1] = getNameAndData(file1);
-    [File2, file2] = getNameAndData(file2);    
-
+    % defer loading loop Precomputed data if not necessary
+    if ~ischar(file1)        
+        [File1, file1] = getNameAndData(file1);
+    end
+    if ~ischar(file2)
+        [File2, file2] = getNameAndData(file2);        
+    end
+    
     result = getSearchAddress(file1, file2);
 
     % Parameters structure
     P.Discrepancy   = 1;
     P.Subdir        = fullfile(getSearchFolder, file1, '');    
-    P.no_candidates = fullfile(P.Subdir, 'No_candidates.txt');    
+    P.no_candidates = [P.Subdir filesep 'No_candidates.txt'];
     P.maxNtToSearch = 25;
     if ~exist(P.Subdir,'dir'), mkdir(P.Subdir); end
     
@@ -33,7 +38,15 @@ function [disc] = pairwiseSearch(file1, file2)
             end            
         end
     end
-
+    
+    % if file1 and file2 are never compared before loop ids
+    if ~exist('File1', 'var')
+        [File1, file1] = getNameAndData(file1);        
+    end
+    if ~exist('File2', 'var')
+        [File2, file2] = getNameAndData(file2);        
+    end
+    
     % don't analyze huge spurious loops
     if File1.NumNT > P.maxNtToSearch || File2.NumNT > P.maxNtToSearch
         fprintf('Large loop: %s vs %s, %i vs %i\n', file1, file2, File1.NumNT, File2.NumNT);
