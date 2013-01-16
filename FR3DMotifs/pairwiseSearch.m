@@ -3,20 +3,28 @@ function [disc] = pairwiseSearch(file1, file2)
     [File1, file1] = getNameAndData(file1);
     [File2, file2] = getNameAndData(file2);    
 
-    name = getSearchAddress(file1, file2);
+    result = getSearchAddress(file1, file2);
+
+    % Parameters structure
+    P.Discrepancy   = 1;
+    P.Subdir        = fullfile(getSearchFolder, file1, '');    
+    P.no_candidates = fullfile(P.Subdir, 'No_candidates.txt');    
+    P.maxNtToSearch = 25;
+    if ~exist(P.Subdir,'dir'), mkdir(P.Subdir); end
     
-    if exist(name,'file')
+    % look up existing results
+    if exist(result,'file')
         try 
-            load(name);
+            load(result);
             disc = Search.Discrepancy(1);
             return;
         catch
-            fprintf('Corrupted file %s\n',name);
+            fprintf('Corrupted file %s\n',result);
         end
     else
-        noCandidates = fullfile(getSearchFolder, file1, 'No_candidates.txt');
-        if exist(noCandidates, 'file')
-        	fid = fopen(noCandidates, 'r');
+        P.no_candidates = fullfile(getSearchFolder, file1, 'No_candidates.txt');
+        if exist(P.no_candidates, 'file')
+        	fid = fopen(P.no_candidates, 'r');
         	no_candidates = textscan(fid, '%s');
         	fclose(fid);
             if ~isempty(find(ismember(no_candidates{1}, file2), 1))
@@ -26,9 +34,27 @@ function [disc] = pairwiseSearch(file1, file2)
         end
     end
 
-    % Parameters structure
-    P.Discrepancy  = 1;
-    P.Subdir       = fullfile(getSearchFolder, file1, '');    
+    % don't analyze huge spurious loops
+    if File1.NumNT > P.maxNtToSearch || File2.NumNT > P.maxNtToSearch
+        fprintf('Large loop: %s vs %s, %i vs %i\n', file1, file2, File1.NumNT, File2.NumNT);
+        if file1 == file2
+            disc = 0;            
+        else
+            addToNoCandidatesFile(file2, P);
+            disc = Inf;
+        end
+        return;        
+    end
+    
+    % don't search large in small
+    if ~isSizeCompatible(File1, File2)
+        fprintf('Query %s is larger than target %s\n', file1, file2);
+        addToNoCandidatesFile(file2, P);
+        disc = Inf;
+        return;
+    end    
+    
+    % try searching
     Search = struct;
     
     if aSearchFlankingBases(File1,File2,P) == 1   
@@ -41,17 +67,38 @@ function [disc] = pairwiseSearch(file1, file2)
         end
     end
 
-    if ~isfield(Search,'Candidates') || isempty(Search.Candidates)
-
-        if ~exist(P.Subdir,'dir'), mkdir(P.Subdir); end
-        
-        fid = fopen(fullfile(P.Subdir, 'No_candidates.txt'),'a');        
-        fprintf(fid,'%s\n',file2);
-        fclose(fid); 
+    if ~isfield(Search,'Candidates') || isempty(Search.Candidates)        
+        addToNoCandidatesFile(file2, P);        
         disc = Inf;
     else
         disc = min(Search.Discrepancy);
     end
+
+end
+
+function [searchPossible] = isSizeCompatible(File1, File2)
+
+    L1 = File1.NumNT;
+    B1 = length(aDetectBulgedBases(File1));
+    effectiveLength1 = L1 - B1;
+
+    L2 = File2.NumNT;
+    B2 = length(aDetectBulgedBases(File2));
+    effectiveLength2 = L2 - B2;    
+    
+    if effectiveLength1 < effectiveLength2
+        searchPossible = 1;
+    else
+        searchPossible = 0;
+    end    
+
+end
+
+function [] = addToNoCandidatesFile(loop_id, P)
+
+    fid = fopen(P.no_candidates, 'a');
+    fprintf(fid,'%s\n', loop_id);
+    fclose(fid); 
 
 end
 
