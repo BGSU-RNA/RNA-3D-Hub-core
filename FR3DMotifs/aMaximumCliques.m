@@ -1,3 +1,7 @@
+% Returns a cell array with loop ids making cliques. The first entry in 
+% each clique is the motif exemplar, which has the lowest discrepacy
+% to all other members of the clique.
+
 function [groups] = aMaximumCliques(M, names, cutoff)
 
     M_original = M;
@@ -25,6 +29,12 @@ function [groups] = aMaximumCliques(M, names, cutoff)
         end
                 
         aCompareAlternativeCliques;
+        
+        % put exemplar first
+        exemplar = findExemplar(M_original(clique, clique));
+        temp = clique(1);
+        clique(1) = clique(exemplar);
+        clique(exemplar) = temp;
         
         M(clique,:) = 10;
         M(:,clique) = 10;
@@ -83,7 +93,16 @@ function [groups] = aMaximumCliques(M, names, cutoff)
 
 end
 
+function [index] = findExemplar(M)
+    
+    N = length(M);
+    
+    vals = zeros(1, N);
+    
+    for i = 1:N
+        vals(i) = sum(M(i,:)) + sum(M(:,i));
+    end
 
+    [minVal, index] = min(vals);
 
-
-
+end
