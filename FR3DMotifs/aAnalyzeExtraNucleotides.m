@@ -1,6 +1,10 @@
-function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids)
+function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, saveMatFile)
 
     disp('Analyzing extra nucleotides...');
+    
+    if nargin < 3
+        saveMatFile = 1;
+    end
     
     Location = getSearchFolder;
 
@@ -93,7 +97,9 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids)
         end                
     end
 
-    save(FILENAME, 'MM', 'loop_ids');
+    if saveMatFile
+        save(FILENAME, 'MM', 'loop_ids');
+    end
     fclose(fid);
     
     % nested functions

@@ -1,7 +1,11 @@
-function [MM] = aSymmetrizeMatrix(MM, loop_ids)
+function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
 
     disp('Making the matrix symmetric...');
 
+    if nargin < 3
+        saveMatFile = 1;
+    end
+    
     N = length(MM);
     Location = getSearchFolder;
     verbose = 1;
@@ -52,7 +56,9 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids)
         
     end
     
-    save(FILENAME,'MM','loop_ids');
+    if saveMatFile
+        save(FILENAME,'MM','loop_ids');
+    end
     fclose(fid);
     checkMatchingMatrix(MM);
     
