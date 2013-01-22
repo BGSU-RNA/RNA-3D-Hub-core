@@ -95,6 +95,7 @@ class PdbInfoLoader():
             except:
                 logging.critical("Failed to retrieve results")
                 retries += 1
+                result = None
                 continue
         if result:
             logging.info("Retrieved custom report for %s", pdb_id)
