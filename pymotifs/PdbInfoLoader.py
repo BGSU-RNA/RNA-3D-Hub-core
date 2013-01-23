@@ -49,7 +49,7 @@ class PdbInfoLoader():
                 report = self._get_custom_report(pdb_id)
                 self.__load_into_db(report)
             except:
-                logging.error("Could not get report for: %s", pdb_id)
+                logging.error("Could not get and upate report for: %s", pdb_id)
                 failures += 1
         if not failures:
             logging.info('Successful update of RNA-containing pdbs')
