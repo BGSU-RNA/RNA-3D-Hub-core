@@ -54,6 +54,7 @@ class PdbInfoLoader():
         if not failures:
             logging.info('Successful update of RNA-containing pdbs')
         else:
+            logging.info('Partially successful update of RNA-containing pdbs')
             logging.info('Failed to update %s pdbs', failures)
         logging.info('%s', '+'*40)
         return True
