@@ -158,8 +158,8 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
         end                        
         
         function [] = annotate_conflicting_interactions()
-            nt1 = [Search.File(pdb).NT(i).Base Search.File(pdb).NT(i).Number];
-            nt2 = [Search.File(pdb).NT(j).Base Search.File(pdb).NT(j).Number];
+            nt1 = [Search.File(pdb).NT(nts(i)).Base Search.File(pdb).NT(nts(i)).Number];
+            nt2 = [Search.File(pdb).NT(nts(j)).Base Search.File(pdb).NT(nts(j)).Number];
             int1 = strtrim(zEdgeText(foundEdgesFixAbs(i,j)));
             nt3 = [Search.Query.NT(i).Base Search.Query.NT(i).Number];
             nt4 = [Search.Query.NT(j).Base Search.Query.NT(j).Number];

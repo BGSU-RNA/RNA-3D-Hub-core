@@ -33,7 +33,7 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         self.precomputedData = self.config['locations']['loops_mat_files']
         self.loop_regex = '(IL|HL)_\w{4}_\d{3}'
         self.pdb_regex = '^[0-9A-Za-z]{4}$'
-        self.update = False # determines whether to update existing values in the db
+        self.update = True # determines whether to update existing values in the db
 
     def load_loop_positions(self):
         """update loop_positions table by loading data from the mat files
