@@ -43,10 +43,18 @@ class PdbInfoLoader():
            load into the database."""
         if not self.pdbs:
             self.get_all_rna_pdbs()
+        failures = 0
         for pdb_id in self.pdbs:
-            report = self._get_custom_report(pdb_id)
-            self.__load_into_db(report)
-        logging.info('Successful update of RNA-containing pdbs')
+            try:
+                report = self._get_custom_report(pdb_id)
+                self.__load_into_db(report)
+            except:
+                logging.error("Could not get report for: %s", pdb_id)
+                failures += 1
+        if not failures:
+            logging.info('Successful update of RNA-containing pdbs')
+        else:
+            logging.info('Failed to update %s pdbs', failures)
         logging.info('%s', '+'*40)
         return True
 
