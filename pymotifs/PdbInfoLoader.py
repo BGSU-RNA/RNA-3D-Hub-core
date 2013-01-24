@@ -12,6 +12,7 @@ __author__ = 'Anton Petrov'
 
 import csv
 import logging
+import traceback
 import re
 import urllib2
 import sys
@@ -102,7 +103,8 @@ class PdbInfoLoader():
                 result = f.read()
                 success = True
             except:
-                logging.critical("Failed to retrieve results")
+                logging.warning(traceback.format_exc(sys.exc_info()))
+                logging.warning("Failed to retrieve results")
                 retries += 1
                 result = None
                 continue
