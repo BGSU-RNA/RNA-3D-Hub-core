@@ -35,7 +35,13 @@ function [] = exportMotifRelease(location)
             Search = xMutualDiscrepancy(Search.File,Search,300);
             p = zOrderbySimilarity(Search.Disc);    
             Search.Disc = Search.Disc(p,p);
-            Search.LoopsOrdered = LoopIds(p);
+
+            % get correct loop_id ordering
+            discOrder = reshape(Search.Candidates(:, end), 1, []);
+            Search.LoopsOrdered = LoopIds(discOrder);
+
+            % apply similarity ordering to correct loop_ids
+            Search.LoopsOrdered = Search.LoopsOrdered(p);
             save( fullfile(groups_location, list{i}),'Search');  
         end
         if N == 1            
