@@ -138,6 +138,12 @@ class ClusterMotifs(MotifAtlasBaseClass):
                 self.best_loops.append(loop.id)
                 logging.info('Loop %s from chains %s belongs to best chains %s' \
                 % (loop.id, chains, best_chains[loop.pdb] ))
+        """remove manually blacklisted loops. In future use database"""
+        blacklist = ['HL_3ICQ_004']
+        for bad_loop in blacklist:
+            if bad_loop in self.best_loops:
+                self.best_loops.remove(bad_loop)
+                log.info('Removed blacklisted loop %s' % bad_loop)
         logging.info('Selected %i loops', len(self.best_loops))
 
     def make_input_file_for_matlab(self):
