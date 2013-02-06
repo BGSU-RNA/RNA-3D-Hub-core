@@ -16,6 +16,7 @@ import datetime
 import os
 import zipfile
 import tempfile
+import re
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
@@ -129,11 +130,38 @@ class MotifAtlasBaseClass:
             e = sys.exc_info()[1]
             self._crash(e)
 
+    def _compose_email_text(self):
+        """
+            Report errors in the email content. Add links. Html-formatted.
+        """
+        f = open(self.log, "r")
+        warnings = []
+        for line in f:
+            if re.match("(warning|critical)", line, re.IGNORECASE):
+                warnings.append(line)
+        f.close()
+
+        text = []
+        if len(warnings) > 0:
+            text.append('Warnings found')
+            text += warnings
+        else:
+            text.append('No warnings found')
+        if self.config['general']['environment'] == 'dev':
+            text.append('<a href="http://rna.bgsu.edu/rna3dhub_dev">RNA 3D Hub</a>')
+        else:
+            text.append('<a href="http://rna.bgsu.edu/rna3dhub">RNA 3D Hub</a>')
+        text.append('Log file attached')
+        text = '<br>'.join(text)
+        return text
+
     def send_report(self):
         """
         """
         try:
             filename = os.path.basename(self.log)
+
+            text = self._compose_email_text()
 
             zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
             zip = zipfile.ZipFile(zf, 'w', compression=zipfile.ZIP_DEFLATED)
@@ -152,8 +180,7 @@ class MotifAtlasBaseClass:
             msg.add_header('Content-Disposition', 'attachment',
                            filename=filename[:-4] + '.zip')
             themsg.attach(msg)
-            text = 'Log file attached'
-            themsg.attach(MIMEText(text))
+            themsg.attach(MIMEText(text, 'html'))
 
             server = smtplib.SMTP('smtp.gmail.com:587')
             server.ehlo()
