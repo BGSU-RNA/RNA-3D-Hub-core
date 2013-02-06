@@ -143,7 +143,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
         for bad_loop in blacklist:
             if bad_loop in self.best_loops:
                 self.best_loops.remove(bad_loop)
-                log.info('Removed blacklisted loop %s' % bad_loop)
+                logging.info('Removed blacklisted loop %s' % bad_loop)
         logging.info('Selected %i loops', len(self.best_loops))
 
     def make_input_file_for_matlab(self):
