@@ -46,8 +46,17 @@ function [] = exportMotifRelease(location)
         end
         if N == 1            
             Search.LoopsOrdered = LoopIds;            
+            Search.Disc = 0;
         end
                 
+        % determine final candidate ordering
+        % initial ordering is based on discrepancies from the all-against-all searches, 
+        % but those values are calculated for all matched nucleotides, not just the core
+        % kept in the motif group, so they can be higher than the final values.
+        exemplar = find(ismember(Search.LoopsOrdered, Search.File(1).Filename)==1, 1);
+        [a, final_order] = sort(Search.Disc(exemplar, :));
+        FinalLoopIds = Search.LoopsOrdered(final_order);        
+        
         for j = 1:N
 
             loopid = LoopIds{Search.Candidates(j,end)};
@@ -60,8 +69,9 @@ function [] = exportMotifRelease(location)
             end
         
             reordered = find(ismember(Search.LoopsOrdered,loopid)==1,1);
+            final_loop_order = find(ismember(FinalLoopIds,loopid)==1,1);
 
-            fprintf(CandOrder,'%s,%s,%i,%i\n',motif_id,loopid,j,reordered);
+            fprintf(CandOrder,'%s,%s,%i,%i\n',motif_id,loopid,final_loop_order,reordered);
             if N > 1
                 for k = 1:N
                     fprintf(DiscValues,'%s,%.04f,%s\n',....
