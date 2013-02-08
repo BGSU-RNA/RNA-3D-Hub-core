@@ -66,6 +66,7 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
         for i,row in enumerate(reader):
             I = PairwiseInteractions(iPdbSig=row[0], jPdbSig=row[1])
             I.pdb_id = pdb_file
+            I.f_crossing = int(row[3])
             interaction = row[2].strip()
             if interaction[0] == 's' or interaction[0:2] == 'ns':
                 I.f_stacks = interaction

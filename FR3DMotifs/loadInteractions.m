@@ -53,12 +53,13 @@ function [FILENAME, status, err_msg] = loadInteractions(pdb_id)
             nt_id2 = aGetNTId(File, nt2);
 
             textAnnotation = functionHandle( matrix(nt1, nt2) );
+            crossing = File.Crossing(nt1, nt2);
 
             if strcmp(textAnnotation,'---- ') || strcmp(textAnnotation,'----')
                 continue;
             end
 
-            fprintf(fid, '"%s","%s","%s"\n', nt_id1, nt_id2, textAnnotation);
+            fprintf(fid, '"%s","%s","%s","%i"\n', nt_id1, nt_id2, textAnnotation, crossing);
 
         end
 
