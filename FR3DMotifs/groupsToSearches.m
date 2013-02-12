@@ -1,5 +1,7 @@
-function [] = groupsToSearches(Location,groups)
+% Form consensus structural alignment for motif groups based on pairwise
+% searches.
 
+function [] = groupsToSearches(Location,groups)
     
     destination = [Location filesep 'Groups'];
     if ~exist(destination,'dir')
@@ -10,6 +12,9 @@ function [] = groupsToSearches(Location,groups)
     for i = 1:length(groups)   
                                   
         disp(i);
+
+        clear Group Search;
+
         Group.Candidates = [];
         Group.File = [];
         Group.Discrepancy = [];
@@ -81,11 +86,29 @@ function [] = groupsToSearches(Location,groups)
             Group.Query.NumNT = length(Group.Candidates(1,:)) - 1;
             Group.Query.Name  = ['Group_' sprintf('%03d',i)];
 
-            % sort by discrepancy
-            if length(Group.Discrepancy) > 1
-                [Group.Discrepancy,b] = sort(Group.Discrepancy);
-                Group.Candidates = Group.Candidates(b,:);
-            end                
+            % order by similarity
+            if length(Group.Candidates(:,1)) > 1
+                Group.DiscComputed = zeros(1,length(Group.Candidates(:,1)));
+
+                Group = xMutualDiscrepancy(Group.File,Group,400);
+                p = zOrderbySimilarity(Group.Disc);    
+                Group.Disc = Group.Disc(p,p);
+                Group.Candidates = Group.Candidates(p,:);
+
+                temp = {Group.File.Filename};
+                Group.LoopsOrderedBySimilarity = temp(p);
+
+            else
+                Group.Disc = 0;
+                Group.LoopsOrderedBySimilarity = {Group.File.Filename};
+            end
+
+            % order relative to the exemplar
+            exemplar = findExemplar(Group.Disc);
+            [Group.Discrepancy, exemplar_order] = sort(Group.Disc(exemplar, :));
+            Group.LoopsOrderedByDiscrepancy = Group.LoopsOrderedBySimilarity(exemplar_order);   
+            Group.Candidates = Group.Candidates(exemplar_order, :);
+
             Search = Group;
             
             if ~isfield(Search.File(1),'LooseCoplanar')     
@@ -103,6 +126,20 @@ function [] = groupsToSearches(Location,groups)
         
     end
         
+end
+
+function [index] = findExemplar(M)
+
+    N = length(M);
+
+    vals = zeros(1, N);
+
+    for i = 1:N
+        vals(i) = sum(M(i,:));
+    end
+
+    [minVal, index] = min(vals);
+
 end
 
 function [Search] = aAddLooseCoplanar(Search)
@@ -137,17 +174,3 @@ function [Search] = aAddLooseCoplanar(Search)
     end
 
 end
-
-%             Model = Search.File(1);
-%             nts = Search.Candidates(1,1:end-1);            
-%             fn = fieldnames(Model);
-%             for j = 1:length(fn)
-%                 [r,c] = size(Model.(fn{j}));
-%                 if r == c && r == Model.NumNT
-%                     Model.(fn{j}) = Model.(fn{j})(nts,nts);
-%                 end            
-%             end            
-%             Model.NumNT = length(nts);    
-%             Model = xPrecomputeForDiscrepancy(Model);
-% 
-%             [Search.Discrepancy, Search.Candidates] = xRankCandidates(Search.File,Model,Search.Candidates);
