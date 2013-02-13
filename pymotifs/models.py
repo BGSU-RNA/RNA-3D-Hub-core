@@ -825,6 +825,7 @@ class PdbUnitOrdering(Base):
     """
     Stores the ordering of units in a PDB file. The id used is an old style ID.
     """
+    __tablename__ = 'pdb_unit_ordering'
     nt_id = Column(String(30, binary=True), primary_key=True)
     index = Column(Integer)
 
