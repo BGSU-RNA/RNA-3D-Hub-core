@@ -821,4 +821,14 @@ class NR_release_diff(Base):
         return "<NRReleaseDiff('%s','%s')>" % (self.nr_release_id1, self.nr_release_id2)
 
 
+class PdbUnitOrdering(Base):
+    """
+    Stores the ordering of units in a PDB file. The id used is an old style ID.
+    """
+    nt_id = Column(String(30, binary=True), primary_key=True)
+    index = Column(Integer)
+
+    def __repr__(self):
+        return "<PdbUnitOrdering('%s','%s')>" % (self.nt_id, self.index)
+
 Base.metadata.create_all(engine)
