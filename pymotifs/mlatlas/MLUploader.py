@@ -146,19 +146,16 @@ class Uploader(MotifAtlasBaseClass):
                                    first()
             if parent_motif:
                 if parent_motif.common_name is not None and parent_motif.common_name != '':
-                    # delete grandparent motif ids, add parent id
-                    common_name.append(re.sub('\s?\[.+?\]\s?', '', parent_motif.common_name) \
-                                       + ' [' + parent + ']')
+                    common_name.append(parent_motif.common_name)
                 if parent_motif.annotation is not None and parent_motif.annotation != '':
-                    annotation.append(re.sub('\s?\[.+?\]\s?', '', parent_motif.annotation) \
-                                       + ' [' + parent + ']')
+                    annotation.append(parent_motif.annotation)
                 if parent_motif.author is not None and parent_motif.author != '':
                     author.append(parent_motif.author)
 
-        session.merge(MotifAnnotation(motif_id=motif.id,
-                                      common_name=' | '.join(set(common_name)),
-                                      annotation=' | '.join(set(annotation)),
-                                      author=' | '.join(set(author))))
+        session.merge(MotifAnnotation(motif_id    = motif.id,
+                                      common_name = ' | '.join(set(common_name)),
+                                      annotation  = ' | '.join(set(annotation)),
+                                      author      = ' | '.join(set(author))))
 
     def __process_release_diff(self):
         """
