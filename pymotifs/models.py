@@ -832,4 +832,14 @@ class PdbUnitOrdering(Base):
     def __repr__(self):
         return "<PdbUnitOrdering('%s','%s')>" % (self.nt_id, self.index)
 
+
+class PdbModifiedCorrespondecies(Base):
+    """
+    Stores what modified bases correspond to which standard RNA bases.
+    """
+    __tablename__ = 'pdb_modified_correspondecies'
+    id = Column(Integer)
+    modified_unit = Column(String(10))
+    standard_unit = Column(String(1))
+
 Base.metadata.create_all(engine)
