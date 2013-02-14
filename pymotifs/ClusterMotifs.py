@@ -269,6 +269,8 @@ class ClusterMotifs(MotifAtlasBaseClass):
             if err_msg == '':
                 self.success = True
                 logging.info('Successful clustering')
+            else:
+                logging.critical(err_msg)
         except:
             e = sys.exc_info()[1]
             self._crash(e)
