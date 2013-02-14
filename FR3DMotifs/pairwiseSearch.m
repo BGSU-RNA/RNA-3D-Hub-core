@@ -91,6 +91,11 @@ end
 
 function [searchPossible] = isSizeCompatible(File1, File2)
 
+    if strcmp(File1.Filename, File2.Filename)
+        searchPossible = 1;
+        return;
+    end
+
     L1 = File1.NumNT;
     B1 = length(aDetectBulgedBases(File1));
     effectiveLength1 = L1 - B1;
