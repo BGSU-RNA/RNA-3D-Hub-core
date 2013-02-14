@@ -98,13 +98,10 @@ function [searchPossible] = isSizeCompatible(File1, File2)
 
     L1 = File1.NumNT;
     B1 = length(aDetectBulgedBases(File1));
-    effectiveLength1 = L1 - B1;
+    queryEffectiveLength = L1 - B1;
 
-    L2 = File2.NumNT;
-    B2 = length(aDetectBulgedBases(File2));
-    effectiveLength2 = L2 - B2;    
-    
-    if effectiveLength1 < effectiveLength2
+    % check if the query without bulges is <= than the entire target loop
+    if queryEffectiveLength <= File2.NumNT
         searchPossible = 1;
     else
         searchPossible = 0;
