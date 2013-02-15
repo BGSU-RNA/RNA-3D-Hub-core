@@ -182,6 +182,7 @@ class PairwiseInteractions(Base):
     f_stacks   = Column(String(4))
     f_bphs     = Column(String(5)) # n0BPh - can be 5 characters
     f_brbs     = Column(String(4))
+    f_crossing = Column(Integer)
     m_lwbp     = Column(String(3))
     m_mclw     = Column(String(10))
     m_mcOther  = Column(String(10))
