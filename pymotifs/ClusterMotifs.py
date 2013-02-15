@@ -87,11 +87,18 @@ class ClusterMotifs(MotifAtlasBaseClass):
         """Especially useful for tests"""
         shutil.rmtree(self.output_dir)
 
-    def get_pdb_ids_for_clustering(self):
-        """get latest nr release"""
-        latest_nr_release = session.query(NR_release). \
-                                    order_by(NR_release.date.desc()). \
-                                    first()
+    def get_pdb_ids_for_clustering(self, nr_release_id=None):
+        """
+            Use the specified NR release or the latest one by default.
+        """
+        if nr_release_id:
+            latest_nr_release = session.query(NR_release). \
+                                        filter(NR_release.id==nr_release_id). \
+                                        first()
+        else:
+            latest_nr_release = session.query(NR_release). \
+                                        order_by(NR_release.date.desc()). \
+                                        first()
         logging.info('Will use NR release %s' % latest_nr_release.id)
         """get all pdbs from that nr release"""
         pdbs = session.query(NR_pdb). \

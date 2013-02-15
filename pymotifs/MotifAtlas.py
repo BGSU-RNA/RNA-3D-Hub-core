@@ -34,7 +34,7 @@ from UnitIdLoader import UnitIdLoader
 from MotifLoader import MotifLoader
 
 
-def cluster_motifs(motif_type):
+def cluster_motifs(motif_type, nr_release_id=None):
     """
         cluster motifs
     """
@@ -42,7 +42,7 @@ def cluster_motifs(motif_type):
         c = ClusterMotifs()
         c.set_loop_type(motif_type)
         c.make_release_directory()
-        c.get_pdb_ids_for_clustering()
+        c.get_pdb_ids_for_clustering(nr_release_id)
         c.get_loops_for_clustering()
         c.make_input_file_for_matlab()
         c.parallel_exec_commands( c.prepare_aAa_commands() )
