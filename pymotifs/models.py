@@ -462,6 +462,7 @@ class Release(Base):
     type        = Column(String(2), primary_key=True)
     date        = Column(DateTime)
     description = Column(Text)
+    annotation  = Column(Text)
     graphml     = Column(LONGTEXT)
 
     def __init__(self, mode='', description='', type=''):
