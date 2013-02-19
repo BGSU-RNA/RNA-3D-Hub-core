@@ -104,8 +104,15 @@ def main(argv):
 
     pdbs = ['3V11', '1J5E']
 
+    from PdbInfoLoader import PdbInfoLoader
+    p = PdbInfoLoader()
+    p.get_all_rna_pdbs()
+    pdbs = p.pdbs
+
     A = PairwiseInteractionsLoader()
-    A.import_interactions(pdbs, recalculate=False)
+
+    for pdb_id in pdbs:
+        A.import_interactions([pdb_id], recalculate=True)
 
 
 

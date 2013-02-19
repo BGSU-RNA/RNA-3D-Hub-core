@@ -15,6 +15,7 @@ import pdb
 import sys
 import getopt
 import logging
+import warnings
 
 
 from models import session, PdbUnitIdCorrespondence, PdbAnalysisStatus
@@ -72,6 +73,7 @@ class UnitIdLoader(MotifAtlasBaseClass):
                     continue
 
                 try:
+                    warnings.simplefilter("ignore") # ignore Biopython warnings
                     unit_ids = idt.get_id_correspondences(pdb_file, cif_file)
                     self.__store_unit_ids(unit_ids)
                     logging.info('Found %i id pairs' % len(unit_ids))
@@ -165,12 +167,12 @@ def main(argv):
     P.get_all_rna_pdbs()
 
     try:
-        U.import_unit_ids(P.pdbs)
+        U.import_unit_ids(P.pdbs, recalculate=True)
     except:
         e = sys.exc_info()[1]
         U.set_email_subject('Unit id update failed')
         U._crash(e)
-#
+
     U.set_email_subject('Unit ids successfully updated')
     U.send_report()
 
