@@ -32,6 +32,16 @@ from CacheManager import CacheManager
 from PdbFileExporter import PdbFileExporter
 from UnitIdLoader import UnitIdLoader
 from MotifLoader import MotifLoader
+from unit_ordering_loader import UnitOrderingLoader
+
+
+def update_unit_ordering(pdb_ids):
+    loader = UnitOrderingLoader()
+    try:
+        loader.import_ordering(pdb_ids)
+    except:
+        logging.error(traceback.format_exc(sys.exc_info()))
+        logging.error('Could not compute ordering')
 
 
 def cluster_motifs(motif_type):
@@ -237,6 +247,9 @@ def main(argv):
         update_pairwise_annotations(pdb_ids)
 
         update_unit_ids(pdb_ids)
+
+        update_unit_ordering(pdb_ids)
+
         # must follow unit id updates
         export_data(pdb_ids)
 
