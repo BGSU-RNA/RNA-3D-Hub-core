@@ -828,6 +828,7 @@ class PdbUnitOrdering(Base):
     """
     __tablename__ = 'pdb_unit_ordering'
     nt_id = Column(VARCHAR(30, binary=True), primary_key=True)
+    pdb = Column(String(4), index=True)
     index = Column(Integer)
 
     def __repr__(self):
