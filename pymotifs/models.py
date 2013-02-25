@@ -396,6 +396,7 @@ class PdbAnalysisStatus(Base):
     redundant_nts = Column(DateTime)
     best_chains_and_models = Column(DateTime)
     unit_ids      = Column(DateTime)
+    unit_ordering = Column(DateTime)
 
 
 class LoopQA(Base):
