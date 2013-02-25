@@ -838,7 +838,7 @@ class PdbModifiedCorrespondecies(Base):
     Stores what modified bases correspond to which standard RNA bases.
     """
     __tablename__ = 'pdb_modified_correspondecies'
-    id = Column(Integer)
+    id = Column(Integer, primary_key=True)
     modified_unit = Column(String(10))
     standard_unit = Column(String(1))
 
