@@ -89,8 +89,8 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
             session.commit()
             logging.info("ID ordering added")
         except Exception as err:
-            raise err
             logging.info("Could not commit all ids")
+            raise err
 
     def __pdb_ordering__(self, raw, pdb_id, pdb_type):
         """Generate a dict of the form: { unit_id: {index: index, pdb: pdb }
