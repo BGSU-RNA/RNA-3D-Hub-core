@@ -41,6 +41,8 @@ def cluster_motifs(motif_type, nr_release_id=None):
     try:
         c = ClusterMotifs()
         c.set_loop_type(motif_type)
+        if not c.is_four_weeks_since_last_update():
+            return
         c.make_release_directory()
         c.get_pdb_ids_for_clustering(nr_release_id)
         c.get_loops_for_clustering()

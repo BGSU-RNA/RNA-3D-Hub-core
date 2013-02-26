@@ -3,7 +3,7 @@ function [] = setup()
     current_dir = fileparts(which(mfilename));
 
     % set the environmental variable with the path to the MotifAtlas folder
-    motifatlas_path = fullfile(current_dir, 'MotifAtlas');
+    motifatlas_path = '/Code/RNA-3D-Hub-core/MotifAtlas';
     if ~exist(motifatlas_path, 'dir'), mkdir(motifatlas_path); end
     setenv('MA_root', motifatlas_path);
 
