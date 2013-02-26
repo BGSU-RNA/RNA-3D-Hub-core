@@ -12,7 +12,6 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
         
     BASEPAIR_MISMATCH  = 7;
     BASESTACK_MISMATCH = 8;
-    PAIRNPAIR_MISMATCH = 9;    
 
     PAIRS  = 1:12;
     STACKS = 21:23;
@@ -34,10 +33,6 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
             motif1 = loop_ids{iLoop};
             motif2 = loop_ids{jLoop};
             
-%             if isequal(iLoop, jLoop) %|| isequal(MM(iLoop,jLoop), MM(jLoop,iLoop)) %|| MM(iLoop,jLoop) < 0
-%                 continue;
-%             end                                                   
-            
             switch aCompareInteractions
                 case BASEPAIR_MISMATCH
                     MM(iLoop,jLoop) = BASEPAIR_MISMATCH;
@@ -45,9 +40,6 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
                 case BASESTACK_MISMATCH
                     MM(iLoop,jLoop) = BASESTACK_MISMATCH;
                     MM(jLoop,iLoop) = BASESTACK_MISMATCH;                
-%                 case PAIRNPAIR_MISMATCH
-%                 MM(iLoop,jLoop) = PAIRNPAIR_MISMATCH;
-%                 MM(jLoop,iLoop) = PAIRNPAIR_MISMATCH;                
                 otherwise                    
                     MM(jLoop,iLoop) = MM(iLoop,jLoop);
             end
@@ -78,13 +70,6 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
         nts  = Search.Candidates(cand,1:end-1);
         
         foundEdgesFix = fix(Search.File(pdb).Edge(nts,nts));
-        
-%         if ~isfield(Search.Query,'Edge')
-%             load(getPrecomputedDataAddress(Search.Query.Filename));
-%             Search.Query.Edge = File.Edge(Search.Query.Indices, Search.Query.Indices);
-%             save(filename,'Search');
-%         end
-        
         queryEdgesFix = fix(Search.Query.Edge);
         foundEdgesFixAbs = abs(foundEdgesFix);
         queryEdgesFixAbs = abs(queryEdgesFix);
@@ -121,38 +106,40 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
                     end
                 end
 
-                % pair in one structure matches a stack in another
-                is_pair_stack_conflict = ismember(foundEdgesFixAbs(i,j), PAIRS) && ...
-                                         ismember(queryEdgesFixAbs(i,j), STACKS);
-                                     
+                % a coplanar pair in one structure matches a stack in another
+                is_pair_stack_conflict = (ismember(foundEdgesFixAbs(i,j), PAIRS)   && ...
+                                          ismember(queryEdgesFixAbs(i,j), STACKS)) || ...
+                                         (ismember(queryEdgesFixAbs(i,j), PAIRS)   && ...
+                                          ismember(foundEdgesFixAbs(i,j), STACKS));
+
+                % disqualify only if the basepair IS coplanar
                 if is_pair_stack_conflict
-                    disqualify = BASESTACK_MISMATCH;
-                    if verbose                    
-                        fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
-                                          zEdgeText(queryEdgesFixAbs(i,j)));
+                    % one of the two values is a pair
+                    if ismember(foundEdgesFixAbs(i,j), PAIRS)
+                        % use Search.Candidates ordering to get the right nucleotides
+                        pair = zLooseCoplanar(Search.File(pdb).NT(nts(i)), Search.File(pdb).NT(nts(j)));
+                        if isfield(pair, 'Coplanar') && pair.Coplanar ~= 0
+                            disqualify = BASESTACK_MISMATCH;
+                        end
+                    else
+                        % queryEdges is in the same order as Search.Query.NT
+                        pair = zLooseCoplanar(Search.Query.NT(i), Search.Query.NT(j));
+                        if isfield(pair, 'Coplanar') && pair.Coplanar ~= 0
+                            disqualify = BASESTACK_MISMATCH;
+                        end
                     end
                     
-                    annotate_conflicting_interactions();                    
+                    if disqualify == BASESTACK_MISMATCH
+                        if verbose
+                            fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
+                                              zEdgeText(queryEdgesFixAbs(i,j)));
+                        end
+
+                        annotate_conflicting_interactions();
                     
-                    return;
+                        return;
+                    end
                 end
-
-
-    %             if (queryEdgesFixAbs(i,j) <= 12 && queryEdgesFixAbs(i,j) > 0) || (foundEdgesFixAbs(i,j) <= 12 && foundEdgesFixAbs(i,j) > 0)
-    %                 
-    %                 if foundEdgesFixAbs(i,j) ~= queryEdgesFixAbs(i,j) 
-    %                     if foundEdgesFixAbs(i,j) ~= queryEdgesFixAbs(i,j)+100 
-    %                         if foundEdgesFixAbs(i,j)+100 ~= queryEdgesFixAbs(i,j)
-    % %                             fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)),zEdgeText(queryEdgesFixAbs(i,j)));    
-    %                             disqualify = PAIRNPAIR_MISMATCH;
-    %                             return;
-    %                         end
-    %                     end
-    %                 end
-    %                 
-    %             end
-
-
 
             end
         end                        
