@@ -1,3 +1,4 @@
+from __future__ import with_statement
 """
 Compute the ordering of units in a PDB file.
 
@@ -9,8 +10,7 @@ import os
 import logging
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import session, PdbUnitOrdering
-from models import PdbModifiedCorrespondecies
+from models import session, PdbUnitOrdering, PdbModifiedCorrespondecies
 
 from Bio.PDB.PDBParser import PDBParser
 
@@ -44,10 +44,9 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
             for file_type in self.file_types:
                 try:
                     self.__import_file__(pdb, file_type)
-                except Exception as err:
+                except:
                     logging.error("Failed ordering import: %s%s",
                                   pdb, file_type)
-                    raise err
 
     def __import_file__(self, pdb, extension):
         """Attempt to import a file. If the file does not exists, a warning is
@@ -67,9 +66,8 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
                 ordering = self.__pdb_ordering__(raw, pdb, pdb_type)
                 self.__store__(ordering)
                 self.mark_pdb_as_analyzed(pdb, 'unit_ordering')
-        except Exception as err:
+        except:
             logging.critical('Crash on: %s', filename)
-            raise err
 
     def __store__(self, data):
         """Store the results of generating an ordering.
@@ -83,14 +81,12 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
                     session.add(entry)
                     if count % self.commit_every == 0:
                         session.commit()
-                except Exception as err:
+                except:
                     logging.error("Failed to add: %s", unit_id)
-                    raise err
             session.commit()
             logging.info("ID ordering added")
-        except Exception as err:
+        except:
             logging.info("Could not commit all ids")
-            raise err
 
     def __pdb_ordering__(self, raw, pdb_id, pdb_type):
         """Generate a dict of the form: { unit_id: {index: index, pdb: pdb }
