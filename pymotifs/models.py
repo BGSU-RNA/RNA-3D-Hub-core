@@ -397,6 +397,7 @@ class PdbAnalysisStatus(Base):
     redundant_nts = Column(DateTime)
     best_chains_and_models = Column(DateTime)
     unit_ids      = Column(DateTime)
+    unit_ordering = Column(DateTime)
 
 
 class LoopQA(Base):
@@ -822,5 +823,27 @@ class NR_release_diff(Base):
     def __repr__(self):
         return "<NRReleaseDiff('%s','%s')>" % (self.nr_release_id1, self.nr_release_id2)
 
+
+class PdbUnitOrdering(Base):
+    """
+    Stores the ordering of units in a PDB file. The id used is an old style ID.
+    """
+    __tablename__ = 'pdb_unit_ordering'
+    nt_id = Column(VARCHAR(30, binary=True), primary_key=True)
+    pdb = Column(String(4), index=True)
+    index = Column(Integer)
+
+    def __repr__(self):
+        return "<PdbUnitOrdering('%s','%s')>" % (self.nt_id, self.index)
+
+
+class PdbModifiedCorrespondecies(Base):
+    """
+    Stores what modified bases correspond to which standard RNA bases.
+    """
+    __tablename__ = 'pdb_modified_correspondecies'
+    id = Column(Integer, primary_key=True)
+    modified_unit = Column(String(10))
+    standard_unit = Column(String(1))
 
 Base.metadata.create_all(engine)
