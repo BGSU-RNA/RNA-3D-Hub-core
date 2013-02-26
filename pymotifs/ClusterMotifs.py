@@ -45,13 +45,14 @@ import math
 import time
 import glob
 import pdb
+import datetime
 from time import localtime, strftime
 from subprocess import Popen, list2cmdline
 
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import session, AllLoops, PdbBestChainsAndModels, NR_release, \
-                   NR_pdb, LoopRelease, LoopQA
+                   NR_pdb, LoopRelease, LoopQA, Release
 from MotifLoader import MotifLoader
 
 
@@ -74,6 +75,28 @@ class ClusterMotifs(MotifAtlasBaseClass):
         """
         """
         self.loop_type = loop_type
+
+    def is_four_weeks_since_last_update(self):
+        """
+            Get the latest release of the correct loop type and see if the
+            specified amount of time has elapsed since it was produced.
+            Return true or false.
+        """
+        previous = session.query(Release).filter(Release.type==self.loop_type).\
+                                          order_by(Release.date.desc()).\
+                                          first()
+        logging.info('Last %s release occurred on %s'
+                          % (self.loop_type,
+                             datetime.datetime.strftime(previous.date, "%Y-%m-%d %H:%M")))
+        # 27 days is after 3 weekly update cycles
+        if (previous.date + datetime.timedelta(days=27)) > datetime.datetime.now():
+            logging.info('Next %s release will occur on %s, now skipping.' \
+                          % (self.loop_type,
+                             datetime.datetime.strftime(previous.date + datetime.timedelta(weeks=4), "%Y-%m-%d %H:%M")))
+            return False
+        else:
+            logging.info('Time for new %s clustering' % self.loop_type)
+            return True
 
     def make_release_directory(self):
         """make a directory for the release files"""
