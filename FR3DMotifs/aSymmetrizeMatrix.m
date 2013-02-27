@@ -112,33 +112,16 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, saveMatFile)
                                          (ismember(queryEdgesFixAbs(i,j), PAIRS)   && ...
                                           ismember(foundEdgesFixAbs(i,j), STACKS));
 
-                % disqualify only if the basepair IS coplanar
                 if is_pair_stack_conflict
-                    % one of the two values is a pair
-                    if ismember(foundEdgesFixAbs(i,j), PAIRS)
-                        % use Search.Candidates ordering to get the right nucleotides
-                        pair = zLooseCoplanar(Search.File(pdb).NT(nts(i)), Search.File(pdb).NT(nts(j)));
-                        if isfield(pair, 'Coplanar') && pair.Coplanar ~= 0
-                            disqualify = BASESTACK_MISMATCH;
-                        end
-                    else
-                        % queryEdges is in the same order as Search.Query.NT
-                        pair = zLooseCoplanar(Search.Query.NT(i), Search.Query.NT(j));
-                        if isfield(pair, 'Coplanar') && pair.Coplanar ~= 0
-                            disqualify = BASESTACK_MISMATCH;
-                        end
+                    disqualify = BASESTACK_MISMATCH;
+                    if verbose
+                        fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
+                                          zEdgeText(queryEdgesFixAbs(i,j)));
                     end
-                    
-                    if disqualify == BASESTACK_MISMATCH
-                        if verbose
-                            fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
-                                              zEdgeText(queryEdgesFixAbs(i,j)));
-                        end
 
-                        annotate_conflicting_interactions();
-                    
-                        return;
-                    end
+                    annotate_conflicting_interactions();
+
+                    return;
                 end
 
             end
