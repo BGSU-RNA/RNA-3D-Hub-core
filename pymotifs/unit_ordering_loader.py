@@ -29,7 +29,7 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
         for entry in query.all():
             self.known.append(entry.modified_unit)
 
-    def load(self, pdbs, recalculate=False):
+    def import_ordering(self, pdbs, recalculate=False):
         """Imports the unit id ordering for the given pdb files. Will only
         import things if their unit is in the list of known units.
         """
