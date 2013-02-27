@@ -224,7 +224,7 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
 
             isAdjacent = -1;
             modres = {};
-        %     T = aReadPDBFile(PDB);
+
             if isempty(T)
                 error('PDB file could not be read');
             end
