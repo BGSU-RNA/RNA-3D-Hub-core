@@ -33,7 +33,7 @@ from sqlalchemy import desc
 from CollectionsMerger import CollectionsMerger as MotifCollectionMerger
 from mlatlas.MLCollections import MotifCollection
 from mlatlas.MLUploader import Uploader
-from models import session, Release
+from models import session, Release, Release_diff
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
@@ -115,10 +115,37 @@ class MotifLoader(MotifAtlasBaseClass):
                         motif_type=self.motif_type)
         A.import_release()
 
+    def redo_compare_all_releases(self):
+        """
+            When problems in release comparisons are discovered, use this
+            function in manual mode to recompute the release difference table.
+        """
+        all_releases = self.list_all_releases(self.motif_type)
+        for i in xrange(len(all_releases)):
+            release = all_releases[i]
+            c1 = MotifCollection(release=release,type=self.motif_type)
+            for j in xrange((i+1),len(all_releases)):
+                print '%s vs %s' % (all_releases[i], all_releases[j])
+
+                c2 = MotifCollection(release=all_releases[j],type=self.motif_type)
+                logging.info('Comparing %s and %s' % (c1.release, c2.release))
+                A = Uploader(ensembles=MotifCollectionMerger(c1,c2),
+                             upload_mode='release_diff',
+                             motif_type=self.motif_type)
+                A.import_release()
+
+                # set direct parent flag
+                if j == i+1:
+                    a = session.query(Release_diff).filter(Release_diff.release_id1==release)\
+                                                   .filter(Release_diff.release_id2==all_releases[j])\
+                                                   .first()
+                    a.direct_parent = 1;
+                    session.merge(a)
+                    session.commit()
+
     def compare_all_releases(self):
         """
         """
-        all_releases = self.list_all_releases(self.motif_type)
         if len(all_releases) <= 2:
             return
         all_releases = all_releases[2:]
@@ -191,6 +218,7 @@ def main(argv):
 
     L = MotifLoader(motif_type=motif_type)
     L.start_logging()
+#     L.redo_compare_all_releases() # use in manual mode only
     L.import_data()
     L.send_report()
 
