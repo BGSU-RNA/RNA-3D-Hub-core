@@ -3,9 +3,12 @@
 A python script for managing the RNA 3D Hub cache.
 
 Usage:
-python manage_cache.py [option]
+python CacheManager.py [option]
 
 where [option] is nrlist/motifs/loops/pdb
+
+To update a single url:
+python CacheManager.py url http://rna.bgsu.edu/rna3dhub/motifs/release/il/current
 
 """
 
@@ -116,6 +119,15 @@ class CacheManager(MotifAtlasBaseClass):
             except:
                 logging.error('Failed to retrieve %s' % url)
 
+    def refresh_url(self, url):
+        """
+            Update cached url in production.
+        """
+        if 'rna3dhub_dev' in url:
+            print 'No cache in development'
+            return
+        self._refresh_cache(url.replace('http://rna.bgsu.edu/rna3dhub/', ''))
+
 
 def main(argv):
     """
@@ -132,6 +144,8 @@ def main(argv):
         C.update_motif_cache()
     elif argv[0] == 'loops':
         C.update_loop_cache()
+    elif argv[0] == 'url':
+        C.refresh_url(argv[1])
     elif argv[0] == 'all':
         C.update_pdb_cache()
         C.update_nrlist_cache()
