@@ -146,6 +146,7 @@ class MotifLoader(MotifAtlasBaseClass):
     def compare_all_releases(self):
         """
         """
+        all_releases = self.list_all_releases(self.motif_type)
         if len(all_releases) <= 2:
             return
         all_releases = all_releases[2:]
