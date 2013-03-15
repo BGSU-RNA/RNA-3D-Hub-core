@@ -275,7 +275,7 @@ def main(argv):
 
         # TODO compute new non-redundant lists, import into the database
 
-#         update_cache()
+        update_cache()
 
         logging.info('Update completed')
         m.send_report()
