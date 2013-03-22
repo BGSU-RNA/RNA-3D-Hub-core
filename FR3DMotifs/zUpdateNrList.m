@@ -202,7 +202,7 @@ function [t,n] = zUpdateNrList(filename,current,ReadCode)
 
     %zGrowthOfNRDataset
 
-    zFileRedundancy_2(reportdate,t,n)
+    zFileRedundancy(t,n)
 
     zWriteHTMLFileList(reportdate)              % write out NR lists as HTML
 

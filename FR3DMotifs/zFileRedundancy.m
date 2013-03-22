@@ -1,9 +1,14 @@
-% zFileRedundancy(Filenames) explores possible redundancy between PDB files listed in Filenames.  It sorts the files by number of nucleotides, then compares files with similar numbers of nucleotides, performing a Needleman-Wunsch alignment of their bases.  If the percentage of bases which align exceeds the parameter p, the pair is kept for further examination.  It groups together structures connected by chains of greater than p percent sequence identify, then geometrically superimposes all pairs in each group, then prints a report so a human can decide which structures to keep.
+% zFileRedundancy(Filenames) explores possible redundancy between PDB files listed in Filenames.  
+% It sorts the files by number of nucleotides, then compares files with similar numbers of nucleotides, 
+% performing a Needleman-Wunsch alignment of their bases.  
+% If the percentage of bases which align exceeds the parameter p, 
+% the pair is kept for further examination.  
+% It groups together structures connected by chains of greater than p percent sequence identify, 
+% then geometrically superimposes all pairs in each group, 
+% then prints a report so a human can decide which structures to keep.
 
-% zFileRedundancy('Allfiles_list') % should give a huge report
-% zFileRedundancy('NonRedundant_2008_02_21_list') % should show very little possible redundancy
 
-function [t,n] = zFileRedundancy(reportdate,t,n)
+function [t,n] = zFileRedundancy(t,n)
 
 if nargin < 3,
      load PDBInfo
@@ -40,9 +45,9 @@ end
 % n(i,10)   Number of non-cWW basepairs in structure
 
 
-if ~exist('reportdate')
-  reportdate = datestr(date,'yyyy-mm-dd');
-end
+
+reportdate = datestr(date,'yyyy-mm-dd');
+
 
 tot = cputime;                    % keep track of total time
 
@@ -593,10 +598,6 @@ end
 if Criterion == 5 && length(t(:,1)) == OriginalNumStruct,
 
   save([pwd filesep 'FR3DSource' filesep 'PDBInfo.mat'],'n','t'); % Matlab version 7
-
-  if exist('Dropboxroot') && (nargin > 1),
-    save([DropboxRoot filesep 'FR3DSource' filesep 'PDBInfo.mat'],'n','t'); % Matlab version 7
-  end
 
 else
 
