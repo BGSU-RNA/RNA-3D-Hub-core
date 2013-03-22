@@ -25,7 +25,7 @@ CompareOrg = 0;                               % cannot say they are different
 if ic(i+1)-ic(i) > 7 && jc(j+1)-jc(j) > 7,      % enough text to compare
   is = in((ic(i)+1) : (ic(i+1)-1));
   js = jn((jc(j)+1) : (jc(j+1)-1));
-  [namematches,na,nb,nss,ntt] = dNeedlemanWunsch(is,js,0.99,2); 
+  [namematches,na,nb,nss,ntt] = dNeedlemanWunsch(is,js,0.99,2);
   namematches = sum(is(na) == js(nb));
 
   namelength = min(length(is), length(js));
@@ -49,7 +49,7 @@ for i = 1:(length(ic)-1),
     if ic(i+1)-ic(i) > 5 && jc(j+1)-jc(j) > 5,      % enough text
         is = in((ic(i)+1) : (ic(i+1)-1));
         js = jn((jc(j)+1) : (jc(j+1)-1));
-        [namematches,na,nb,nss,ntt] = dNeedlemanWunsch(is,js,0.99,2); 
+        [namematches,na,nb,nss,ntt] = dNeedlemanWunsch(is,js,0.99,2);
         namematches = sum(is(na) == js(nb));
 
         namelength = min(length(is), length(js));
