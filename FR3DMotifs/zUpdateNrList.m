@@ -3,10 +3,10 @@
 % saves PDBInfo.mat, then finds non-redundant lists and writes them out,
 % then finds exemplar basepairs.
 % Examples:
-% zUpdatePDBDatabase('2010-11-12',600);
-% zUpdatePDBDatabase('2010-11-12');
+% zUpdatePDBDatabase('path_to_report_file',600);
+% zUpdatePDBDatabase('path_to_report_file');
 
-function [t,n] = zUpdateNrList(reportdate,current,ReadCode)
+function [t,n] = zUpdateNrList(filename,current,ReadCode)
 
     if nargin < 3,
       ReadCode = 0;
@@ -19,10 +19,6 @@ function [t,n] = zUpdateNrList(reportdate,current,ReadCode)
     initial = current;
 
     Verbose = 1;
-
-    reportdate = strrep(reportdate,'.txt','');           % in case it was a file
-    reportdate = strrep(reportdate,'report_','');        % with a long filename
-    filename = ['report_' reportdate '.txt'];
 
     if current == 1,
       fid = fopen(filename,'r');
