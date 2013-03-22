@@ -1,7 +1,7 @@
-% zUpdatePDBDatabase reads a file holding the current list of PDB files and metadata, 
-% reads all 3D structure files, shares information between these two sources, 
-% saves PDBInfo.mat, then finds non-redundant lists and writes them out, 
-% then finds exemplar basepairs. 
+% zUpdatePDBDatabase reads a file holding the current list of PDB files and metadata,
+% reads all 3D structure files, shares information between these two sources,
+% saves PDBInfo.mat, then finds non-redundant lists and writes them out,
+% then finds exemplar basepairs.
 % Examples:
 % zUpdatePDBDatabase('2010-11-12',600);
 % zUpdatePDBDatabase('2010-11-12');
@@ -39,7 +39,7 @@ function [t,n] = zUpdateNrList(reportdate,current,ReadCode)
           else
             t{i,j} = temp{j}{i};
           end
-        end    
+        end
       end
     else
        load PDBInfo
@@ -61,7 +61,7 @@ function [t,n] = zUpdateNrList(reportdate,current,ReadCode)
     % 7 G	Resolution (Å)
     % 8 H	Source
 
-    % We should add an additional column for NDB ID	
+    % We should add an additional column for NDB ID
     % Later in this program, other columns are set in t and in n:
     % 11    Sequence of longest chain
     % 12    Best chains, as determined by zBestChains
@@ -124,7 +124,7 @@ function [t,n] = zUpdateNrList(reportdate,current,ReadCode)
           if d(min(10,length(d))) < 1,
             fprintf('%s might have overlapping nucleotides, loading it again\n',File.Filename);
             File = zAddNTData(t{i,1},4,[],1);          % load file
-          end        
+          end
         end
       end
 
