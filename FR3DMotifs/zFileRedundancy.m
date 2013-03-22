@@ -213,11 +213,11 @@ clear Previous
 
 fprintf('took %7.1f minutes.\n\n', (cputime-ttime)/60);
 
-figure(2)
-clf
-spy(Close)
-title(['Structures connected by a chain of more than ' num2str(p*100) '% similarity']);
-drawnow
+% figure(2)
+% clf
+% spy(Close)
+% title(['Structures connected by a chain of more than ' num2str(p*100) '% similarity']);
+% drawnow
 
 save('FileRedundancy.mat')
 whos
@@ -414,11 +414,11 @@ end
 
 clear Previous
 
-figure(3)
-clf
-spy(Close)
-title(['Structures connected by ' num2str(p*100) '% sequence similarity and ' num2str(maxd) ' discrepancy']);
-drawnow
+% figure(3)
+% clf
+% spy(Close)
+% title(['Structures connected by ' num2str(p*100) '% sequence similarity and ' num2str(maxd) ' discrepancy']);
+% drawnow
 
 for i = 1:F,
   fprintf('%4s is in a group with %8d files\n', t{i,1}, full(sum(Close(i,:) > 0)));
