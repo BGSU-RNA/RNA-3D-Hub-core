@@ -20,7 +20,7 @@ end
 % 7 G	Resolution (Å)
 % 8 H	Source
 
-% We should add an additional column for NDB ID	
+% We should add an additional column for NDB ID
 % 11    Sequence of longest chain
 % 12    Best chains, as determined by zBestChains
 
@@ -53,9 +53,9 @@ NTLimit = 30000;                  % above this limit, do not align sequences
 MaxRes  = 100;                    % maximum resolution value to use
 SL = 4000;                        % upper limit on # bases to align
 
-Criterion = 5;                   
-                                  % 1-earliest release date 
-                                  % 2-resolution 
+Criterion = 5;
+                                  % 1-earliest release date
+                                  % 2-resolution
                                   % 3-number of nucleotides
                                   % 4-#pairs
                                   % 5-highest #BP / #nucleotides
@@ -127,7 +127,7 @@ for i = 1:(F-1),                          % loop through all files
       in = lower(t{i,8});                     % biological source
       jn = lower(t{j,8});                     % biological source
 
-      CompareOrg = zCompareOrganismNames(in,jn);  % 1 if definitely diff't, 
+      CompareOrg = zCompareOrganismNames(in,jn);  % 1 if definitely diff't,
                                               % 0 if could be the same
 
       ni = n(i,10);                           % number of non-cWW pairs
@@ -326,8 +326,8 @@ end
 
           if ~(d <= maxd),                  % allow for d = NaN
             closeseq(j(m),j(nn)) = 0;       % these are not that close!
-            closeseq(j(nn),j(m)) = 0;  
-          end     
+            closeseq(j(nn),j(m)) = 0;
+          end
         end
       end
 
@@ -361,7 +361,7 @@ end
         fprintf('%s\n',T);
       end
       fprintf('\n');
-    end      
+    end
   end
   drawnow
 end
@@ -455,7 +455,7 @@ for i = 1:F,                      % loop through all files
       t{i,10} = t{i,1};           % this file represents itself
       j = 1;
     else
-       
+
       crit = [];                   % criterion for sorting and choosing
 
       for f = 1:length(j),
