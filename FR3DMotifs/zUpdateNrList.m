@@ -204,6 +204,6 @@ function [t,n] = zUpdateNrList(filename,current,ReadCode)
 
     zFileRedundancy(t,n)
 
-    zWriteHTMLFileList(reportdate)              % write out NR lists as HTML
+%     zWriteHTMLFileList(reportdate)              % write out NR lists as HTML
 
 end
