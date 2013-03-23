@@ -47,6 +47,35 @@ class Loader(MotifAtlasBaseClass):
         self.lists = sorted(os.listdir(self.nrlists_root))
         self.success = False # status of the current update
 
+    def make_report_file(self):
+        """
+            Prepare a text file to be read in Matlab for NR lists
+        """
+        f = open('/Users/anton/Desktop/report_python.txt', 'w')
+        """loop over all pdb files"""
+        for id in session.query(PdbInfo.structureId).distinct():
+            """get all chains for this pdb"""
+            chains = session.query(PdbInfo).\
+                             filter(PdbInfo.structureId==id[0]).\
+                             filter(PdbInfo.entityMacromoleculeType.like('%RNA%')).\
+                             order_by(desc(PdbInfo.chainLength)).\
+                             all()
+            """list organisms with the longest chain first"""
+            organisms = []
+            for chain in chains:
+                if chain.source is not None:
+                    organisms.append(chain.source)
+
+            f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (chain.structureId,
+                                                          chain.structureTitle,
+                                                          chain.experimentalTechnique,
+                                                          chain.releaseDate,
+                                                          chain.structureAuthor,
+                                                          '', # leave keywords field blank
+                                                          chain.resolution,
+                                                          ','.join(organisms)))
+        f.close()
+
     def list_done(self):
         """
         """
@@ -163,6 +192,10 @@ def usage():
 def main(argv):
     """
     """
+
+    L = Loader()
+    L.make_report_file()
+    sys.exit()
 
     try:
         opts, args = getopt.getopt(argv, "dcr:", ['help'])
