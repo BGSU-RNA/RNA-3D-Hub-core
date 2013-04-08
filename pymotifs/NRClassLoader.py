@@ -66,14 +66,16 @@ class Loader(MotifAtlasBaseClass):
                 if chain.source is not None:
                     organisms.append(chain.source)
 
-            f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (chain.structureId,
-                                                          chain.structureTitle,
-                                                          chain.experimentalTechnique,
-                                                          chain.releaseDate,
-                                                          chain.structureAuthor,
-                                                          '', # leave keywords field blank
-                                                          chain.resolution,
-                                                          ','.join(organisms)))
+            f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+                (chain.structureId,
+                 chain.structureTitle,
+                 chain.experimentalTechnique,
+                 chain.releaseDate,
+                 chain.structureAuthor,
+                 '', # leave keywords field blank
+                 chain.resolution if chain.resolution is not None else '',
+                 ','.join(organisms))
+            )
         f.close()
 
     def list_done(self):
