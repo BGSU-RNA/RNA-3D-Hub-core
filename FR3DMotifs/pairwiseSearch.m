@@ -51,12 +51,12 @@ function [disc] = pairwiseSearch(file1, file2)
     if File1.NumNT > P.maxNtToSearch || File2.NumNT > P.maxNtToSearch
         fprintf('Large loop: %s vs %s, %i vs %i\n', file1, file2, File1.NumNT, File2.NumNT);
         if file1 == file2
-            disc = 0;            
+            P.Discrepancy = 0.1; % can search in itself with very low disc
         else
             addToNoCandidatesFile(file2, P);
             disc = Inf;
+            return;
         end
-        return;        
     end
     
     % don't search large in small
