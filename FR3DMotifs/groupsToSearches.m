@@ -9,6 +9,8 @@ function [] = groupsToSearches(Location,groups)
     end
     notfound = 0;    
     
+    save([Location filesep 'groups.mat'], 'groups');
+
     for i = 1:length(groups)   
                                   
         disp(i);
