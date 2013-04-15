@@ -1,3 +1,4 @@
+from __future__ import with_statement
 """
 
 Update pdb_info and pdb_obsolete tables. Pdb_info only contains the current
@@ -19,8 +20,12 @@ import sys
 import os
 from datetime import datetime
 from ftplib import FTP
+import pdb
 
 from models import session, PdbInfo, PdbObsolete
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0,parentdir)
+from pdbx.reader.PdbxParser import PdbxReader
 
 
 class GetAllRnaPdbsError(Exception):
@@ -236,6 +241,82 @@ class PdbInfoLoader():
 # keywords missing
         pass
 
+    def _read_cif_file(self, pdb_id):
+        """
+        """
+        data = []
+        filename = '/Servers/rna.bgsu.edu/nrlist/pdb/' + pdb_id + '.cif'
+        with open(filename, 'r') as raw:
+            parser = PdbxReader(raw)
+            parser.read(data)
+        cif = data[0]
+        return cif
+
+    def _get_chain_id_map(self, cif):
+        """
+        """
+        atom_site = cif.getObj('atom_site')
+        chain_map = dict()
+        for i in xrange(atom_site.getRowCount()):
+            chain = atom_site.getValue('auth_asym_id', i)
+            entity_id = atom_site.getValue('label_entity_id', i)
+            chain_map[entity_id] = chain
+        return chain_map
+
+    def _get_source_organism_map(self, cif):
+        """
+        """
+        records = {'entity_src_nat': 'pdbx_organism_scientific',
+                   'pdbx_entity_src_syn': 'organism_scientific'}
+        organism_map = dict()
+
+
+        found = 0
+        for cif_category, cif_item in records.iteritems():
+            block = cif.getObj(cif_category)
+            if block is None:
+                continue
+            for i in xrange(block.getRowCount()):
+                organism  = block.getValue(cif_item, i)
+                entity_id = block.getValue('entity_id', i)
+                organism_map[entity_id] = organism
+                found = 1
+        if found == 0:
+            print 'No info found'
+
+        return organism_map
+
+    def get_organisms_by_chain(self, pdb_id):
+        """
+        """
+        print pdb_id
+        cif = self._read_cif_file(pdb_id)
+        chain_map = self._get_chain_id_map(cif)
+        organism_map = self._get_source_organism_map(cif)
+        organisms = dict()
+
+        for entity_id, chain_id in chain_map.iteritems():
+            if entity_id in organism_map:
+                organisms[chain_map[entity_id]] = organism_map[entity_id]
+                print 'Chain %s from %s' % (chain_map[entity_id], organism_map[entity_id])
+
+        self._compare_with_database(pdb_id, organisms)
+
+        return organisms
+
+    def _compare_with_database(self, pdb_id, organisms):
+        """
+        """
+        for chain, organism in organisms.iteritems():
+            db_data = session.query(PdbInfo).\
+                              filter(PdbInfo.structureId==pdb_id).\
+                              filter(PdbInfo.chainId==chain).\
+                              one()
+            if db_data.source != organism:
+                print 'Db: %s, cif: %s' % (db.source, organism)
+            else:
+                print 'Rest and cif agree'
+
 
 def main(argv):
     """
@@ -243,8 +324,19 @@ def main(argv):
     logging.basicConfig(level=logging.DEBUG)
 
     P = PdbInfoLoader()
-    P.update_rna_containing_pdbs()
-    P.check_obsolete_structures()
+
+#     P.get_all_rna_pdbs()
+    P.pdbs = ['2B2E']
+
+    for pdb_id in P.pdbs:
+        try:
+            P.get_organisms_by_chain(pdb_id)
+        except:
+            print 'problem'
+            pass
+
+#     P.update_rna_containing_pdbs()
+#     P.check_obsolete_structures()
 
 
 if __name__ == "__main__":
