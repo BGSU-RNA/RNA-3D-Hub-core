@@ -95,9 +95,7 @@ class PdbInfoLoader():
     def _get_custom_report(self, pdb_id):
         """Gets a custom report in csv format for a single pdb file. Each chain
            is described in a separate line"""
-        custom_report = '&customReportColumns=structureId,chainId,structureTitle,experimentalTechnique,depositionDate,releaseDate,revisionDate,ndbId,resolution,classification,structureMolecularWeight,macromoleculeType,structureAuthor,entityId,sequence,chainLength,db_id,db_name,molecularWeight,secondaryStructure,entityMacromoleculeType,hetId,Ki,Kd,EC50,IC50,deltaG,deltaH,deltaS,Ka,compound,plasmid,source,taxonomyId,biologicalProcess,cellularComponent,molecularFunction,ecNo,expressionHost,cathId,cathDescription,scopId,scopDomain,scopFold,pfamAccession,pfamId,pfamDescription,crystallizationMethod,crystallizationTempK,phValue,densityMatthews,densityPercentSol,pdbxDetails,unitCellAngleAlpha,unitCellAngleBeta,unitCellAngleGamma,spaceGroup,lengthOfUnitCellLatticeA,lengthOfUnitCellLatticeB,lengthOfUnitCellLatticeC,Z_PDB,rObserved,rAll,rWork,rFree,refinementResolution,highResolutionLimit,reflectionsForRefinement,structureDeterminationMethod,conformerId,selectionCriteria,contents,solventSystem,ionicStrength,ph,pressure,pressureUnits,temperature,softwareAuthor,softwareName,version,method,details,conformerSelectionCriteria,totalConformersCalculated,totalConformersSubmitted,emdbId,emResolution,aggregationState,symmetryType,reconstructionMethod,specimenType&format=csv'
-#         custom_report = '&customReportColumns=structureId,chainId,structureTitle,experimentalTechnique,depositionDate,releaseDate,revisionDate,ndbId,resolution,classification,structureMolecularWeight,macromoleculeType,structureAuthor,entityId,sequence,chainLength,db_id,db_name,molecularWeight,secondaryStructure,entityMacromoleculeType,hetId,Ki,Kd,EC50,IC50,deltaG,deltaH,deltaS,Ka,compound,plasmid,source,taxonomyId,biologicalProcess,cellularComponent,molecularFunction,ecNo,expressionHost,cathId,cathDescription,scopId,scopDomain,scopFold,pfamAccession,pfamId,pfamDescription,crystallizationMethod,crystallizationTempK,phValue,densityMatthews,densityPercentSol,pdbxDetails,unitCellAngleAlpha,unitCellAngleBeta,unitCellAngleGamma,spaceGroup,lengthOfUnitCellLatticeA,lengthOfUnitCellLatticeB,lengthOfUnitCellLatticeC,Z_PDB,rObserved,rAll,rWork,rFree,refinementResolution,highResolutionLimit,reflectionsForRefinement,structureDeterminationMethod,conformerId,selectionCriteria,fieldStrength,manufacturer,model,contents,solventSystem,ionicStrength,ph,pressure,pressureUnits,temperature,softwareAuthor,softwareName,version,method,details,conformerSelectionCriteria,totalConformersCalculated,totalConformersSubmitted,emdbId,emResolution,aggregationState,symmetryType,reconstructionMethod,specimenType&format=csv'
-#         custom_report = '&customReportColumns=structureId,chainId,structureTitle,experimentalTechnique,depositionDate,releaseDate,revisionDate,ndbId,resolution,classification,structureMolecularWeight,macromoleculeType,structureAuthor,entityId,sequence,chainLength,db_id,db_name,molecularWeight,secondaryStructure,entityMacromoleculeType,ligandId,ligandIdImage,ligandMolecularWeight,ligandFormula,ligandName,ligandSmiles,InChI,InChIKey,hetId,Ki,Kd,EC50,IC50,deltaG,deltaH,deltaS,Ka,compound,plasmid,source,taxonomyId,biologicalProcess,cellularComponent,molecularFunction,ecNo,expressionHost,cathId,cathDescription,scopId,scopDomain,scopFold,pfamAccession,pfamId,pfamDescription,crystallizationMethod,crystallizationTempK,phValue,densityMatthews,densityPercentSol,pdbxDetails,unitCellAngleAlpha,unitCellAngleBeta,unitCellAngleGamma,spaceGroup,lengthOfUnitCellLatticeA,lengthOfUnitCellLatticeB,lengthOfUnitCellLatticeC,Z_PDB,rObserved,rAll,rWork,rFree,refinementResolution,highResolutionLimit,reflectionsForRefinement,structureDeterminationMethod,conformerId,selectionCriteria,fieldStrength,manufacturer,model,contents,solventSystem,ionicStrength,ph,pressure,pressureUnits,temperature,softwareAuthor,softwareName,version,method,details,conformerSelectionCriteria,totalConformersCalculated,totalConformersSubmitted,emdbId,emResolution,aggregationState,symmetryType,reconstructionMethod,specimenType&format=csv'
+        custom_report = '&customReportColumns=emResolution,structureId,chainId,structureTitle,experimentalTechnique,depositionDate,releaseDate,revisionDate,ndbId,resolution,classification,structureMolecularWeight,macromoleculeType,structureAuthor,entityId,sequence,chainLength,db_id,db_name,molecularWeight,secondaryStructure,entityMacromoleculeType,hetId,Ki,Kd,EC50,IC50,deltaG,deltaH,deltaS,Ka,compound,plasmid,source,taxonomyId,biologicalProcess,cellularComponent,molecularFunction,ecNo,expressionHost,cathId,cathDescription,scopId,scopDomain,scopFold,pfamAccession,pfamId,pfamDescription,crystallizationMethod,crystallizationTempK,phValue,densityMatthews,densityPercentSol,pdbxDetails,unitCellAngleAlpha,unitCellAngleBeta,unitCellAngleGamma,spaceGroup,lengthOfUnitCellLatticeA,lengthOfUnitCellLatticeB,lengthOfUnitCellLatticeC,Z_PDB,rObserved,rAll,rWork,rFree,refinementResolution,highResolutionLimit,reflectionsForRefinement,structureDeterminationMethod,conformerId,selectionCriteria,contents,solventSystem,ionicStrength,ph,pressure,pressureUnits,temperature,softwareAuthor,softwareName,version,method,details,conformerSelectionCriteria,totalConformersCalculated,totalConformersSubmitted,emdbId,emResolution,aggregationState,symmetryType,reconstructionMethod,specimenType&format=csv'
         url = '%s?pdbids=%s%s' % (self.custom_report_url, pdb_id, custom_report)
         logging.info('Getting custom report for %s', pdb_id)
         success = False
@@ -153,7 +151,10 @@ class PdbInfoLoader():
                     if not part:
                         part = None # to save as NULL in the db
                     chain_dict[keys[i]] = part
-
+            """to save emResolution in resolution column"""
+            if chain_dict['emResolution'] and not chain_dict['resolution']:
+                chain_dict['resolution'] = chain_dict['emResolution']
+            del(chain_dict['emResolution'])
             logging.info('%s %s', chain_dict['structureId'], chain_dict['chainId'])
             """check if this chain from this pdb is present in the db"""
             existing_chain = session.query(PdbInfo). \
@@ -229,20 +230,9 @@ class PdbInfoLoader():
         """delete tempfile"""
         os.remove(TEMPFILE)
 
-    def create_report_for_matlab(self):
+    def read_cif_file(self, pdb_id):
         """
-        """
-# SELECT structureId,`structureTitle`,`experimentalTechnique`,`releaseDate`,`structureAuthor`, `resolution`,`source`,`chainLength`,
-# group_concat(source ORDER BY chainLength DESC) AS source_
-# FROM `pdb_info_copy`
-# WHERE `entityMacromoleculeType` LIKE '%RNA%'
-# AND structureId='2HGP'
-# GROUP BY structureId
-# keywords missing
-        pass
-
-    def _read_cif_file(self, pdb_id):
-        """
+            Open cif file with cif reader and return the object.
         """
         data = []
         filename = '/Servers/rna.bgsu.edu/nrlist/pdb/' + pdb_id + '.cif'
@@ -254,6 +244,8 @@ class PdbInfoLoader():
 
     def _get_chain_id_map(self, cif):
         """
+            Loop over the coordinates section to map chain ids to entity ids
+            used internally in cif files. Inefficient, but guaranteed to work.
         """
         atom_site = cif.getObj('atom_site')
         chain_map = dict()
@@ -265,44 +257,34 @@ class PdbInfoLoader():
 
     def _get_source_organism_map(self, cif):
         """
+            Get organism name for each internal cif entity id.
+            entity_src_nat:
+            Scientific name of the organism of the natural source.
+            pdbx_entity_src_syn:
+            Scientific name of the organism from which the entity was isolated.
+
+            There are two additional fields:
+            _pdbx_entity_src_syn.organism_scientific
+            _em_entity_assembly.ebi_organism_scientific
         """
         records = {'entity_src_nat': 'pdbx_organism_scientific',
                    'pdbx_entity_src_syn': 'organism_scientific'}
         organism_map = dict()
-
-
-        found = 0
+        found = False
         for cif_category, cif_item in records.iteritems():
             block = cif.getObj(cif_category)
             if block is None:
                 continue
+            else:
+                found = True
             for i in xrange(block.getRowCount()):
                 organism  = block.getValue(cif_item, i)
                 entity_id = block.getValue('entity_id', i)
                 organism_map[entity_id] = organism
-                found = 1
-        if found == 0:
-            print 'No info found'
-
+            break # don't check other cif_categories
+        if not found:
+            logging.info('No cif source organisms')
         return organism_map
-
-    def get_organisms_by_chain(self, pdb_id):
-        """
-        """
-        print pdb_id
-        cif = self._read_cif_file(pdb_id)
-        chain_map = self._get_chain_id_map(cif)
-        organism_map = self._get_source_organism_map(cif)
-        organisms = dict()
-
-        for entity_id, chain_id in chain_map.iteritems():
-            if entity_id in organism_map:
-                organisms[chain_map[entity_id]] = organism_map[entity_id]
-                print 'Chain %s from %s' % (chain_map[entity_id], organism_map[entity_id])
-
-        self._compare_with_database(pdb_id, organisms)
-
-        return organisms
 
     def _compare_with_database(self, pdb_id, organisms):
         """
@@ -313,9 +295,67 @@ class PdbInfoLoader():
                               filter(PdbInfo.chainId==chain).\
                               one()
             if db_data.source != organism:
-                print 'Db: %s, cif: %s' % (db.source, organism)
+                if db_data.source is None and organism == '?':
+                    continue
+                logging.info('Conflict found. Chain %s. Db: %s, cif: %s'
+                              % (chain, db_data.source, organism))
             else:
-                print 'Rest and cif agree'
+                logging.info('Rest and cif agree')
+
+    def get_organisms_by_chain(self, cif, pdb_id):
+        """
+        """
+        chain_map = self._get_chain_id_map(cif)
+        organism_map = self._get_source_organism_map(cif)
+        organisms = dict()
+        for entity_id, chain_id in chain_map.iteritems():
+            if entity_id in organism_map:
+                organisms[chain_map[entity_id]] = organism_map[entity_id]
+                logging.info('Chain %s from %s'
+                              % (chain_map[entity_id], organism_map[entity_id]))
+        self._compare_with_database(pdb_id, organisms)
+        return organisms
+
+    def update_source_organisms(pdb_id, organisms):
+        """
+        """
+        pass
+
+    def get_resolution(self, cif, pdb_id):
+        """
+        """
+        resolution = ''
+        method = cif.getObj('exptl').getValue('method')
+        if 'NMR' in method:
+            print 'NMR structure'
+            return resolution
+        records = {'refine': 'ls_d_res_high',
+                   'em_3d_reconstruction': 'resolution'}
+        found = False
+        for cif_category, cif_item in records.iteritems():
+            block = cif.getObj(cif_category)
+            if block is None:
+                continue
+            else:
+                found = True
+            resolution = block.getValue(cif_item)
+            db_data = session.query(PdbInfo).\
+                              filter(PdbInfo.structureId==pdb_id).\
+                              first()
+            if float(resolution) != db_data.resolution:
+                logging.info('Conflict found. Db: %s, cif: %s'
+                              % (db_data.resolution, resolution))
+            else:
+                logging.info('Cif and rest agree')
+            break
+        if not found:
+            logging.info('Resolution not found in cif')
+        return resolution
+
+    def update_resolution(pdb_id, resolution):
+        """
+        """
+        pass
 
 
 def main(argv):
@@ -323,17 +363,24 @@ def main(argv):
     """
     logging.basicConfig(level=logging.DEBUG)
 
+# NB! remove hardcoded cif location
+
     P = PdbInfoLoader()
 
 #     P.get_all_rna_pdbs()
-    P.pdbs = ['2B2E']
+#     P.pdbs = ['1MJ1']
 
-    for pdb_id in P.pdbs:
-        try:
-            P.get_organisms_by_chain(pdb_id)
-        except:
-            print 'problem'
-            pass
+#     P.pdbs = ['1E8S', '1S72']
+
+#     for pdb_id in P.pdbs:
+#         logging.info(pdb_id)
+#         cif = P.read_cif_file(pdb_id)
+#         organisms = P.get_organisms_by_chain(cif, pdb_id)
+# #         P.update_source_organisms(pdb_id, organisms)
+#         resolution = P.get_resolution(cif, pdb_id)
+#
+#         print '"' + '","'.join([pdb_id, resolution, ','.join(organisms.values())]) + '"'
+# #         P.update_resolution(pdb_id, resolution)
 
 #     P.update_rna_containing_pdbs()
 #     P.check_obsolete_structures()
