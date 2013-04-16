@@ -324,6 +324,21 @@ class PdbInfoLoader():
         """
         pass
 
+    def fix_organism_names(self, pdb_id):
+        """
+        """
+        logging.info(pdb_id)
+        try:
+            cif = self.read_cif_file(pdb_id)
+            organisms = self.get_organisms_by_chain(cif, pdb_id)
+    #         self.update_source_organisms(pdb_id, organisms)
+            print '"' + '","'.join([pdb_id, ','.join(organisms.values())]) + '"'
+        except:
+            logging.warning(traceback.format_exc(sys.exc_info()))
+            logging.warning('There was a problem with %s' % pdb_id)
+
+
+
 
 def main(argv):
     """
@@ -336,15 +351,13 @@ def main(argv):
 
     P.get_all_rna_pdbs()
 #     P.pdbs = ['1MJ1']
-
 #     P.pdbs = ['1E8S', '1S72']
 
+    lastdone = P.pdbs.index('2LQZ')
+    P.pdbs = P.pdbs[lastdone:]
+
     for pdb_id in P.pdbs:
-        logging.info(pdb_id)
-        cif = P.read_cif_file(pdb_id)
-        organisms = P.get_organisms_by_chain(cif, pdb_id)
-#         P.update_source_organisms(pdb_id, organisms)
-        print '"' + '","'.join([pdb_id, ','.join(organisms.values())]) + '"'
+        P.fix_organism_names(pdb_id)
 
 #     P.update_rna_containing_pdbs()
 #     P.check_obsolete_structures()

@@ -20,6 +20,8 @@ import getopt
 import os
 import re
 import logging
+import datetime
+import shutil
 
 from models import *
 from nratlas.NRUploader import Uploader
@@ -83,15 +85,48 @@ class Loader(MotifAtlasBaseClass):
         """
         """
         logging.info('Updating NR lists in Matlab')
+
+        # TODO: remove hardcoded variable
         self.report = '/Users/anton/Desktop/report_current.txt'
         self._setup_matlab()
-
         status, err_msg = self.mlab.zUpdateNrList(self.report, nout=2)
         status = status[0][0]
         if status == 0:
             logging.info('NR lists successfully ran in matlab')
         else:
             logging.critical('Problem with nrlists %s' % err_msg)
+
+    def __get_report_folder(self):
+        """
+        """
+        today = datetime.date.today()
+        return today.strftime('%Y%m%d')
+
+    def __clean_up_old_style_nrlist_output(self, folder):
+        """
+            Move pdb and html files to the destination on the server.
+        """
+        dst = os.path.join(self.config['locations']['nrlists_dir'], folder)
+        web_folder = os.path.join(self.config['locations']['fr3d_root'], 'FR3D', 'Web')
+        src = os.path.join(web_folder, 'AnalyzedStructures')
+        shutil.move(src, dst)
+        os.removedirs(web_folder)
+
+    def make_old_style_html_tables(self):
+        """
+            Create html tables and PDB files with NR lists using Matlab.
+            Maintained for legacy reasons.
+        """
+        folder = self.__get_report_folder()
+        self._setup_matlab()
+        status, err_msg = self.mlab.zWriteHTMLFileList(nout=2)
+        status = status[0][0]
+        if status == 0:
+            logging.info('NR output files generated successfully')
+        else:
+            logging.critical('Problem with generating NR output files %s' % err_msg)
+        self.__clean_up_old_style_nrlist_output(folder)
+        # todo: update old nr list index file
 
     def list_done(self):
         """
@@ -212,7 +247,9 @@ def main(argv):
     L = Loader()
     L.start_logging()
 #     L.make_report_file()
-    L.launch_matlab_nrlist_update()
+    L.make_old_style_html_tables()
+#     L.launch_matlab_nrlist_update()
+
 #     sys.exit()
 #
 #     try:
