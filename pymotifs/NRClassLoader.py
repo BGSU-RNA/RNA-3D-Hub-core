@@ -38,6 +38,7 @@ class Loader(MotifAtlasBaseClass):
         """
         """
         MotifAtlasBaseClass.__init__(self)
+        self.report             = ''
         self.temp_file          = 'temp.csv'
         self.nrlists_root       = self.config['locations']['nrlists_dir']
         self.resolutions        = ['1,5A','2A','2,5A','3A','3,5A','4A','20A','All_Resolution']
@@ -77,6 +78,20 @@ class Loader(MotifAtlasBaseClass):
                  ','.join(organisms))
             )
         f.close()
+
+    def launch_matlab_nrlist_update(self):
+        """
+        """
+        logging.info('Updating NR lists in Matlab')
+        self.report = '/Users/anton/Desktop/report_current.txt'
+        self._setup_matlab()
+
+        status, err_msg = self.mlab.zUpdateNrList(self.report, nout=2)
+        status = status[0][0]
+        if status == 0:
+            logging.info('NR lists successfully ran in matlab')
+        else:
+            logging.critical('Problem with nrlists %s' % err_msg)
 
     def list_done(self):
         """
@@ -194,41 +209,42 @@ def usage():
 def main(argv):
     """
     """
-
-    L = Loader()
-    L.make_report_file()
-    sys.exit()
-
-    try:
-        opts, args = getopt.getopt(argv, "dcr:", ['help'])
-    except getopt.GetoptError:
-        usage()
-        sys.exit(2)
-
-    for opt, arg in opts:
-        if opt == '-d':
-            print 'Confirm dropping all tables and reloading the data by pressing c or press q to abort:'
-            pdb.set_trace()
-            drop_all()
-            Base.metadata.create_all(engine)
-        elif opt == '-r':
-            print 'Confirm removing NR release %s by pressing c or press q to abort:' % arg
-            pdb.set_trace()
-            U = Uploader()
-            U.start_logging()
-            U.remove_release(arg)
-            logging.info('Release removed')
-            sys.exit()
-        else:
-            usage()
-            sys.exit()
-
     L = Loader()
     L.start_logging()
-    L.import_data()
-    logging.info( '%s completed' % __file__ )
-    L.set_email_subject('NR list successfully imported')
-    L.send_report()
+#     L.make_report_file()
+    L.launch_matlab_nrlist_update()
+#     sys.exit()
+#
+#     try:
+#         opts, args = getopt.getopt(argv, "dcr:", ['help'])
+#     except getopt.GetoptError:
+#         usage()
+#         sys.exit(2)
+#
+#     for opt, arg in opts:
+#         if opt == '-d':
+#             print 'Confirm dropping all tables and reloading the data by pressing c or press q to abort:'
+#             pdb.set_trace()
+#             drop_all()
+#             Base.metadata.create_all(engine)
+#         elif opt == '-r':
+#             print 'Confirm removing NR release %s by pressing c or press q to abort:' % arg
+#             pdb.set_trace()
+#             U = Uploader()
+#             U.start_logging()
+#             U.remove_release(arg)
+#             logging.info('Release removed')
+#             sys.exit()
+#         else:
+#             usage()
+#             sys.exit()
+#
+#     L = Loader()
+#     L.start_logging()
+#     L.import_data()
+#     logging.info( '%s completed' % __file__ )
+#     L.set_email_subject('NR list successfully imported')
+#     L.send_report()
 
 
 if __name__ == "__main__":

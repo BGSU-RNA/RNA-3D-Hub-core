@@ -267,7 +267,9 @@ class PdbInfoLoader():
             _pdbx_entity_src_syn.organism_scientific
             _em_entity_assembly.ebi_organism_scientific
         """
-        records = {'entity_src_nat': 'pdbx_organism_scientific',
+        records = {'entity_src_nat': 'pdbx_organism_scientific', # Corresponds to SOURCE
+                   'pdbx_entity_src_syn': 'organism_scientific', # chemically synthesized
+                   'em_entity_assembly': 'ebi_organism_scientific',
                    'pdbx_entity_src_syn': 'organism_scientific'}
         organism_map = dict()
         found = False
@@ -281,7 +283,8 @@ class PdbInfoLoader():
                 organism  = block.getValue(cif_item, i)
                 entity_id = block.getValue('entity_id', i)
                 organism_map[entity_id] = organism
-            break # don't check other cif_categories
+                logging.info('%s %s %s' %(entity_id, cif_category, organism))
+
         if not found:
             logging.info('No cif source organisms')
         return organism_map
@@ -321,42 +324,6 @@ class PdbInfoLoader():
         """
         pass
 
-    def get_resolution(self, cif, pdb_id):
-        """
-        """
-        resolution = ''
-        method = cif.getObj('exptl').getValue('method')
-        if 'NMR' in method:
-            print 'NMR structure'
-            return resolution
-        records = {'refine': 'ls_d_res_high',
-                   'em_3d_reconstruction': 'resolution'}
-        found = False
-        for cif_category, cif_item in records.iteritems():
-            block = cif.getObj(cif_category)
-            if block is None:
-                continue
-            else:
-                found = True
-            resolution = block.getValue(cif_item)
-            db_data = session.query(PdbInfo).\
-                              filter(PdbInfo.structureId==pdb_id).\
-                              first()
-            if float(resolution) != db_data.resolution:
-                logging.info('Conflict found. Db: %s, cif: %s'
-                              % (db_data.resolution, resolution))
-            else:
-                logging.info('Cif and rest agree')
-            break
-        if not found:
-            logging.info('Resolution not found in cif')
-        return resolution
-
-    def update_resolution(pdb_id, resolution):
-        """
-        """
-        pass
-
 
 def main(argv):
     """
@@ -367,20 +334,17 @@ def main(argv):
 
     P = PdbInfoLoader()
 
-#     P.get_all_rna_pdbs()
+    P.get_all_rna_pdbs()
 #     P.pdbs = ['1MJ1']
 
 #     P.pdbs = ['1E8S', '1S72']
 
-#     for pdb_id in P.pdbs:
-#         logging.info(pdb_id)
-#         cif = P.read_cif_file(pdb_id)
-#         organisms = P.get_organisms_by_chain(cif, pdb_id)
-# #         P.update_source_organisms(pdb_id, organisms)
-#         resolution = P.get_resolution(cif, pdb_id)
-#
-#         print '"' + '","'.join([pdb_id, resolution, ','.join(organisms.values())]) + '"'
-# #         P.update_resolution(pdb_id, resolution)
+    for pdb_id in P.pdbs:
+        logging.info(pdb_id)
+        cif = P.read_cif_file(pdb_id)
+        organisms = P.get_organisms_by_chain(cif, pdb_id)
+#         P.update_source_organisms(pdb_id, organisms)
+        print '"' + '","'.join([pdb_id, ','.join(organisms.values())]) + '"'
 
 #     P.update_rna_containing_pdbs()
 #     P.check_obsolete_structures()
