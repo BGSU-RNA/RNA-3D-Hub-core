@@ -120,7 +120,7 @@ class MotifAtlasBaseClass:
             """locations"""
             section = 'locations'
             keys = ['loops_mat_files', 'loops_search_dir', 'log_dir',
-                    'releases_dir', 'nrlists_dir', 'fr3d_root',
+                    'releases_dir', 'nrlists_dir', 'fr3d_root', 'cif_dir',
                     '2ds_destination', 'mlab_app', 'interactions_gz', 'cache']
             for k in keys: self.config[section][k] = config.get(section,k)
             """release modes"""

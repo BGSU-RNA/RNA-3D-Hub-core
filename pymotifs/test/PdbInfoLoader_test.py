@@ -47,7 +47,7 @@ class TestPdbInfoLoader(unittest.TestCase):
         """Make sure there are no errors when loading into the db"""
         temp = self.loader.pdbs
         self.loader.pdbs = self.loader.pdbs[:3]
-        status = self.loader.update_rna_containing_pdbs()
+        status = self.loader.update_pdb_info()
         self.loader.pdbs = temp
         self.assertTrue(status)
 

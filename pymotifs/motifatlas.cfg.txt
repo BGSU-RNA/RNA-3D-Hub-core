@@ -37,6 +37,7 @@ fr3d_root:
 mlab_app: /Applications/MATLAB_R2007b/bin/matlab
 interactions_gz:
 cache:
+cif_dir:
 
 # minor releases: 0.1, 0.2, 0.3 etc
 # major releases: 1.0, 2.0, 3.0 etc

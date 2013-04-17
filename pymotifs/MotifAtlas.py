@@ -92,8 +92,9 @@ def get_pdb_info():
         p = PdbInfoLoader()
         p.get_all_rna_pdbs()
         pdb_ids = p.pdbs
-        p.update_rna_containing_pdbs()
+        p.update_pdb_info()
         p.check_obsolete_structures()
+        p.update_organism_names()
     except:
         logging.warning(traceback.format_exc(sys.exc_info()))
         pdb_ids = []
