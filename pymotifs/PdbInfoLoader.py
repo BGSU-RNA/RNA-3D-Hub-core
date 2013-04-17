@@ -21,6 +21,7 @@ import os
 from datetime import datetime
 from ftplib import FTP
 import pdb
+import collections
 
 from models import session, PdbInfo, PdbObsolete
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -263,15 +264,17 @@ class PdbInfoLoader():
             pdbx_entity_src_syn:
             Scientific name of the organism from which the entity was isolated.
 
-            There are two additional fields:
+            There are two additional fields related to source organisms:
             _pdbx_entity_src_syn.organism_scientific
             _em_entity_assembly.ebi_organism_scientific
+            They seem to be empty for all RNA-containing 3D structures.
         """
-        records = {'entity_src_nat': 'pdbx_organism_scientific', # Corresponds to SOURCE
-                   'pdbx_entity_src_syn': 'organism_scientific', # chemically synthesized
-                   'em_entity_assembly': 'ebi_organism_scientific',
-                   'pdbx_entity_src_syn': 'organism_scientific'}
+        records = {'entity_src_nat':      'pdbx_organism_scientific', # Corresponds to SOURCE
+                   'pdbx_entity_src_syn': 'organism_scientific',      # chemically synthesized
+                   'em_entity_assembly':  'ebi_organism_scientific',
+                   'pdbx_reference_entity_src_nat': 'organism_scientific'}
         organism_map = dict()
+        organism_data = collections.defaultdict(dict)
         found = False
         for cif_category, cif_item in records.iteritems():
             block = cif.getObj(cif_category)
@@ -283,11 +286,10 @@ class PdbInfoLoader():
                 organism  = block.getValue(cif_item, i)
                 entity_id = block.getValue('entity_id', i)
                 organism_map[entity_id] = organism
-                logging.info('%s %s %s' %(entity_id, cif_category, organism))
-
+                organism_data[entity_id][cif_category] = organism
         if not found:
             logging.info('No cif source organisms')
-        return organism_map
+        return (organism_map, organism_data)
 
     def _compare_with_database(self, pdb_id, organisms):
         """
@@ -302,20 +304,32 @@ class PdbInfoLoader():
                     continue
                 logging.info('Conflict found. Chain %s. Db: %s, cif: %s'
                               % (chain, db_data.source, organism))
-            else:
-                logging.info('Rest and cif agree')
 
     def get_organisms_by_chain(self, cif, pdb_id):
         """
         """
         chain_map = self._get_chain_id_map(cif)
-        organism_map = self._get_source_organism_map(cif)
+        organism_map, organism_data = self._get_source_organism_map(cif)
         organisms = dict()
         for entity_id, chain_id in chain_map.iteritems():
             if entity_id in organism_map:
                 organisms[chain_map[entity_id]] = organism_map[entity_id]
                 logging.info('Chain %s from %s'
                               % (chain_map[entity_id], organism_map[entity_id]))
+            """Output all four cif categories for comparison"""
+            if entity_id in organism_data:
+                output = [
+                    pdb_id,
+                    chain_map[entity_id],
+                    organism_data[entity_id]['entity_src_nat']                if 'entity_src_nat' in organism_data[entity_id] else '',
+                    organism_data[entity_id]['pdbx_entity_src_syn']           if 'pdbx_entity_src_syn' in organism_data[entity_id] else '',
+                    organism_data[entity_id]['em_entity_assembly']            if 'em_entity_assembly' in organism_data[entity_id] else '',
+                    organism_data[entity_id]['pdbx_reference_entity_src_nat'] if 'pdbx_reference_entity_src_nat' in organism_data[entity_id] else ''
+                ]
+                print '"' + '","'.join(output) + '"'
+
+
+
         self._compare_with_database(pdb_id, organisms)
         return organisms
 
@@ -332,7 +346,7 @@ class PdbInfoLoader():
             cif = self.read_cif_file(pdb_id)
             organisms = self.get_organisms_by_chain(cif, pdb_id)
     #         self.update_source_organisms(pdb_id, organisms)
-            print '"' + '","'.join([pdb_id, ','.join(organisms.values())]) + '"'
+#             print '"' + '","'.join([pdb_id, ','.join(organisms.values())]) + '"'
         except:
             logging.warning(traceback.format_exc(sys.exc_info()))
             logging.warning('There was a problem with %s' % pdb_id)
@@ -353,8 +367,7 @@ def main(argv):
 #     P.pdbs = ['1MJ1']
 #     P.pdbs = ['1E8S', '1S72']
 
-    lastdone = P.pdbs.index('2LQZ')
-    P.pdbs = P.pdbs[lastdone:]
+#     P.pdbs = P.pdbs[100:200]
 
     for pdb_id in P.pdbs:
         P.fix_organism_names(pdb_id)
