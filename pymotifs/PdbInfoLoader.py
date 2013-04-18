@@ -21,6 +21,7 @@ import os
 from datetime import datetime
 from ftplib import FTP
 import pdb
+from sqlalchemy import orm
 
 from models import session, PdbInfo, PdbObsolete
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -241,6 +242,9 @@ class PdbInfoLoader(MotifAtlasBaseClass):
         """
         data = []
         filename = os.path.join(self.config['locations']['cif_dir'], pdb_id + '.cif')
+        if not os.path.exists(filename):
+            logging.info('Cif file %s not found' % filename)
+            return None
         with open(filename, 'r') as raw:
             parser = PdbxReader(raw)
             parser.read(data)
@@ -308,10 +312,17 @@ class PdbInfoLoader(MotifAtlasBaseClass):
             Save source organisms in the database.
         """
         for chain, organism in organisms.iteritems():
-            pdb_info = session.query(PdbInfo).\
-                               filter(PdbInfo.structureId==pdb_id).\
-                               filter(PdbInfo.chainId==chain).\
-                               one()
+            try:
+                pdb_info = session.query(PdbInfo).\
+                                   filter(PdbInfo.structureId==pdb_id).\
+                                   filter(PdbInfo.chainId==chain).\
+                                   one()
+            except orm.exc.NoResultFound:
+                """The pdb_info table is based on the information retrieved
+                    over REST. For a small number of files not all chains are
+                    reported, which causes this error. For example, 1ML5"""
+                logging.info('PdbInfo does not have %s chain %s' %(pdb_id, chain))
+                continue
             if organism == '?':
                 organism = 'synthetic'
             pdb_info.source = organism
@@ -329,8 +340,9 @@ class PdbInfoLoader(MotifAtlasBaseClass):
         """
         try:
             cif = self.read_cif_file(pdb_id)
-            organisms = self._get_organisms_by_chain(cif, pdb_id)
-            self.__store_source_organisms(pdb_id, organisms)
+            if cif:
+                organisms = self._get_organisms_by_chain(cif, pdb_id)
+                self.__store_source_organisms(pdb_id, organisms)
         except:
             logging.warning(traceback.format_exc(sys.exc_info()))
             logging.warning('There was a problem with %s' % pdb_id)
@@ -354,7 +366,6 @@ def main(argv):
     P = PdbInfoLoader()
 
     P.get_all_rna_pdbs()
-
     P.update_pdb_info()
     P.update_organism_names()
     P.check_obsolete_structures()
