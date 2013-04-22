@@ -263,7 +263,7 @@ class PdbInfoLoader(MotifAtlasBaseClass):
             chain     = atom_site.getValue('auth_asym_id', i)
             entity_id = atom_site.getValue('label_entity_id', i)
             if entity_id in chain_map and chain in chain_map[entity_id]:
-                chain_map[entity_id][chain] += 1
+                chain_map[entity_id][chain] += 1 # record the number of atoms
             else:
                 chain_map[entity_id][chain] = 1
         return chain_map
@@ -283,7 +283,7 @@ class PdbInfoLoader(MotifAtlasBaseClass):
         """
         records = {'entity_src_nat':      'pdbx_organism_scientific', # Corresponds to SOURCE
                    'pdbx_entity_src_syn': 'organism_scientific',      # chemically synthesized
-                   'entity_src_gen':      'pdbx_gene_src_scientific_name'}
+                   'entity_src_gen':      'pdbx_gene_src_scientific_name'} # gene source
         organism_map = dict()
         found = False
         for cif_category, cif_item in records.iteritems():
@@ -295,6 +295,9 @@ class PdbInfoLoader(MotifAtlasBaseClass):
             for i in xrange(block.getRowCount()):
                 organism  = block.getValue(cif_item, i)
                 entity_id = block.getValue('entity_id', i)
+                # don't overwrite organisms in some categories with ?
+                if entity_id in organism_map and organism == '?' and organism_map[entity_id] != '?':
+                    continue
                 organism_map[entity_id] = organism
         if not found:
             logging.info('No cif source organisms for %s' % pdb_id)
@@ -303,8 +306,12 @@ class PdbInfoLoader(MotifAtlasBaseClass):
     def _get_organisms_by_chain(self, cif, pdb_id):
         """
             Map chain ids to organism names.
+            1N8R has several chains with different organisms mapped to the same
+            entity. The goal is to pick the chain with the largest number of
+            atoms.
         """
         organisms = dict()
+        num_atoms_max = dict()
         organism_map = self._get_source_organism_map(cif, pdb_id)
         if not organism_map:
             return organisms # if no source organisms, return immediately
@@ -312,7 +319,15 @@ class PdbInfoLoader(MotifAtlasBaseClass):
         for entity_id, chains in chain_map.iteritems():
             for chain, val in chains.iteritems():
                 if entity_id in organism_map:
-                    organisms[chain] = organism_map[entity_id]
+                    if chain in num_atoms_max:
+                        # make assignment only if the number of atoms is larger
+                        # than in any of the previous assignments
+                        if chain_map[entity_id][chain] > num_atoms_max[chain]:
+                            organisms[chain] = organism_map[entity_id]
+                            num_atoms_max[chain] = chain_map[entity_id][chain]
+                    else:
+                        organisms[chain] = organism_map[entity_id]
+                        num_atoms_max[chain] = chain_map[entity_id][chain]
         pdb.set_trace()
         return organisms
 
@@ -376,13 +391,11 @@ def main(argv):
 
     P = PdbInfoLoader()
 
-#     P.get_all_rna_pdbs()
+    P.get_all_rna_pdbs()
 
-    P.pdbs = ['1N8R']
-
-#     P.update_pdb_info()
+    P.update_pdb_info()
     P.update_organism_names()
-#     P.check_obsolete_structures()
+    P.check_obsolete_structures()
 
 
 if __name__ == "__main__":
