@@ -33,6 +33,7 @@ from PdbFileExporter import PdbFileExporter
 from UnitIdLoader import UnitIdLoader
 from MotifLoader import MotifLoader
 from unit_ordering_loader import UnitOrderingLoader
+from NrListLoader import NrListLoader
 
 
 def update_unit_ordering(pdb_ids):
@@ -82,7 +83,7 @@ def import_motifs(motif_type):
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('%s loop import failed' % motif_type)
 
-def get_pdb_info():
+def update_pdb_info():
     """
         get new pdb files, import descriptions into the database.
         Return an empty list if something goes wrong, then all following
@@ -233,6 +234,18 @@ def update_loop_annotations():
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('Hairpin loop import failed')
 
+def update_nrlists():
+    """
+        import non-redundant lists of RNA 3D structures.
+    """
+    try:
+        """"""
+        NrListLoader = NrListLoader()
+        NrListLoader.update_nrlists()
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('NR list update failed')
+
 
 def main(argv):
     """
@@ -243,7 +256,12 @@ def main(argv):
         m = MotifAtlasBaseClass()
         m.start_logging()
 
-        pdb_ids = get_pdb_info()
+        # todo: download pdb and cif files
+
+        pdb_ids = update_pdb_info()
+
+        # must follow update_pdb_info
+        update_nrlists()
 
         update_loops(pdb_ids)
 
@@ -273,8 +291,6 @@ def main(argv):
         update_loop_annotations()
 
         # TODO annotate all pdb files with motifs
-
-        # TODO compute new non-redundant lists, import into the database
 
         update_cache()
 
