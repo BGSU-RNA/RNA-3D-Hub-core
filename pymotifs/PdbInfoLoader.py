@@ -22,6 +22,7 @@ from datetime import datetime
 from ftplib import FTP
 import pdb
 from sqlalchemy import orm
+import collections
 
 from models import session, PdbInfo, PdbObsolete
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -257,11 +258,14 @@ class PdbInfoLoader(MotifAtlasBaseClass):
             used internally in cif files. Inefficient, but guaranteed to work.
         """
         atom_site = cif.getObj('atom_site')
-        chain_map = dict()
+        chain_map = collections.defaultdict(dict)
         for i in xrange(atom_site.getRowCount()):
             chain     = atom_site.getValue('auth_asym_id', i)
             entity_id = atom_site.getValue('label_entity_id', i)
-            chain_map[entity_id] = chain
+            if entity_id in chain_map and chain in chain_map[entity_id]:
+                chain_map[entity_id][chain] += 1
+            else:
+                chain_map[entity_id][chain] = 1
         return chain_map
 
     def _get_source_organism_map(self, cif, pdb_id):
@@ -278,7 +282,8 @@ class PdbInfoLoader(MotifAtlasBaseClass):
             They seem to be empty for all RNA-containing 3D structures.
         """
         records = {'entity_src_nat':      'pdbx_organism_scientific', # Corresponds to SOURCE
-                   'pdbx_entity_src_syn': 'organism_scientific'}      # chemically synthesized
+                   'pdbx_entity_src_syn': 'organism_scientific',      # chemically synthesized
+                   'entity_src_gen':      'pdbx_gene_src_scientific_name'}
         organism_map = dict()
         found = False
         for cif_category, cif_item in records.iteritems():
@@ -299,12 +304,16 @@ class PdbInfoLoader(MotifAtlasBaseClass):
         """
             Map chain ids to organism names.
         """
-        chain_map = self._get_chain_id_map(cif)
-        organism_map = self._get_source_organism_map(cif, pdb_id)
         organisms = dict()
-        for entity_id, chain_id in chain_map.iteritems():
-            if entity_id in organism_map:
-                organisms[chain_map[entity_id]] = organism_map[entity_id]
+        organism_map = self._get_source_organism_map(cif, pdb_id)
+        if not organism_map:
+            return organisms # if no source organisms, return immediately
+        chain_map = self._get_chain_id_map(cif)
+        for entity_id, chains in chain_map.iteritems():
+            for chain, val in chains.iteritems():
+                if entity_id in organism_map:
+                    organisms[chain] = organism_map[entity_id]
+        pdb.set_trace()
         return organisms
 
     def __store_source_organisms(self, pdb_id, organisms):
@@ -336,7 +345,8 @@ class PdbInfoLoader(MotifAtlasBaseClass):
             RESTful services don't return organisms for synthetic constructs.
             Parsing PDB files is unreliable, and using external tools
             introduces additional dependencies and may also be unreliable.
-            Here we get the data from CIF files using the pdbx parser.
+            Here we get the data from cif files using the pdbx parser that
+            is also used for generating unit ids.
         """
         try:
             cif = self.read_cif_file(pdb_id)
@@ -353,6 +363,7 @@ class PdbInfoLoader(MotifAtlasBaseClass):
         """
         logging.info('Updating organism names')
         for pdb_id in self.pdbs:
+            logging.info(pdb_id)
             self._get_organism_names_from_cif(pdb_id)
         logging.info('Successful update of organism names')
         logging.info('%s', '+'*40)
@@ -365,10 +376,13 @@ def main(argv):
 
     P = PdbInfoLoader()
 
-    P.get_all_rna_pdbs()
-    P.update_pdb_info()
+#     P.get_all_rna_pdbs()
+
+    P.pdbs = ['1N8R']
+
+#     P.update_pdb_info()
     P.update_organism_names()
-    P.check_obsolete_structures()
+#     P.check_obsolete_structures()
 
 
 if __name__ == "__main__":
