@@ -69,6 +69,43 @@ class NrListLoader(MotifAtlasBaseClass):
         self.import_data()
         """create old style output using Matlab"""
         self._make_old_style_html_tables()
+        self.__update_old_website()
+
+    def __update_old_website(self):
+        """
+            Update old website for legacy reasons.
+        """
+        (head, tail) = os.path.split(self.config['locations']['nrlists_dir'])
+        filename = os.path.join(head, 'oldsite_test.html')
+        if os.path.exists(filename):
+            f = open(filename, 'r+')
+            contents = f.read()
+            f.seek(0)
+            folder = self.__get_html_folder()
+            formatted_date = datetime.date.today().strftime('%Y-%m-%d')
+            div = """
+<div name="insert">
+<div class='update'>
+<i><a name="folder">formatted_date</a></i><br>
+<strong>X-ray:</strong>
+<a href="./lists/folder/Nonredundant_1A.html">1A</a> &nbsp;|&nbsp;
+<a href="./lists/folder/Nonredundant_1,5A.html">1.5A</a> &nbsp;|&nbsp;
+<a href="./lists/folder/Nonredundant_2A.html">2A</a> &nbsp;|&nbsp;
+<a href="./lists/folder/Nonredundant_2,5A.html">2.5A</a> &nbsp;|&nbsp;
+<a href="./lists/folder/Nonredundant_3A.html">3A</a> &nbsp;|&nbsp;
+<a href="./lists/folder/Nonredundant_3,5A.html">3.5A</a> &nbsp;|&nbsp;
+<a href="./lists/folder/Nonredundant_4A.html">4A</a>
+<br>
+<a href="./lists/folder/Nonredundant_20A.html">X-ray+cryoEM</a> &nbsp;|&nbsp;
+<a href="./lists/folder/Nonredundant_All_Resolution.html">X-ray+cryoEM+NMR</a>
+</div><br>"""
+            div = div.replace('folder', folder).replace('formatted_date', formatted_date)
+            contents = contents.replace('<div name="insert">', div)
+            f.write(contents)
+            f.close()
+        else:
+            logging.warning('File %s not found' % filename)
+
 
     def _make_report_file(self):
         """
@@ -137,7 +174,6 @@ class NrListLoader(MotifAtlasBaseClass):
             logging.critical('Problem with generating NR output files %s' % err_msg)
         """move all created files to the final destination"""
         self.__clean_up_old_style_nrlist_output(folder)
-        # todo: update old nr list index file
 
     def list_done(self):
         """
@@ -259,7 +295,7 @@ def main(argv):
     L.start_logging()
 
 #     L.make_report_file()
-    L.make_old_style_html_tables()
+#     L.make_old_style_html_tables()
 #     L.update_nrlists()
 
 #     sys.exit()
