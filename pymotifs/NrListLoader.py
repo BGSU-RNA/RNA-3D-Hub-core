@@ -32,7 +32,7 @@ from MotifAtlasBaseClass import MotifAtlasBaseClass
 __author__ = 'Anton Petrov'
 
 
-class Loader(MotifAtlasBaseClass):
+class NrListLoader(MotifAtlasBaseClass):
     """
     """
 
@@ -50,11 +50,32 @@ class Loader(MotifAtlasBaseClass):
         self.lists = sorted(os.listdir(self.nrlists_root))
         self.success = False # status of the current update
 
-    def make_report_file(self):
+    def update_nrlists(self):
+        """
+            Main entry point for updating the NR lists.
+        """
+        logging.info('Updating NR lists in Matlab')
+        """create input file for Matlab"""
+        self.report = self._make_report_file()
+        """run main computations in Matlab"""
+        self._setup_matlab()
+        status, err_msg = self.mlab.zUpdateNrList(self.report, nout=2)
+        status = status[0][0]
+        if status == 0:
+            logging.info('NR lists successfully ran in matlab')
+        else:
+            logging.critical('Problem with nrlists %s' % err_msg)
+        """import NR data into the database"""
+        self.import_data()
+        """create old style output using Matlab"""
+        self._make_old_style_html_tables()
+
+    def _make_report_file(self):
         """
             Prepare a text file to be read in Matlab for NR lists
         """
-        f = open('/Users/anton/Desktop/report_python.txt', 'w')
+        filename = os.path.join(os.getcwd(), 'report.txt')
+        f = open(filename, 'w')
         """loop over all pdb files"""
         for id in session.query(PdbInfo.structureId).distinct():
             """get all chains for this pdb"""
@@ -80,24 +101,12 @@ class Loader(MotifAtlasBaseClass):
                  ','.join(organisms))
             )
         f.close()
+        return filename
 
-    def launch_matlab_nrlist_update(self):
+    def __get_html_folder(self):
         """
-        """
-        logging.info('Updating NR lists in Matlab')
-
-        # TODO: remove hardcoded variable
-        self.report = '/Users/anton/Desktop/report_current.txt'
-        self._setup_matlab()
-        status, err_msg = self.mlab.zUpdateNrList(self.report, nout=2)
-        status = status[0][0]
-        if status == 0:
-            logging.info('NR lists successfully ran in matlab')
-        else:
-            logging.critical('Problem with nrlists %s' % err_msg)
-
-    def __get_report_folder(self):
-        """
+            Get the location of the folder where the old style html tables and
+            pdb files should be placed.
         """
         today = datetime.date.today()
         return today.strftime('%Y%m%d')
@@ -112,19 +121,21 @@ class Loader(MotifAtlasBaseClass):
         shutil.move(src, dst)
         os.removedirs(web_folder)
 
-    def make_old_style_html_tables(self):
+    def _make_old_style_html_tables(self):
         """
             Create html tables and PDB files with NR lists using Matlab.
             Maintained for legacy reasons.
         """
-        folder = self.__get_report_folder()
+        folder = self.__get_html_folder()
         self._setup_matlab()
+        """loads PDBInfo.mat, creates output files using current date"""
         status, err_msg = self.mlab.zWriteHTMLFileList(nout=2)
         status = status[0][0]
         if status == 0:
             logging.info('NR output files generated successfully')
         else:
             logging.critical('Problem with generating NR output files %s' % err_msg)
+        """move all created files to the final destination"""
         self.__clean_up_old_style_nrlist_output(folder)
         # todo: update old nr list index file
 
@@ -244,11 +255,12 @@ def usage():
 def main(argv):
     """
     """
-    L = Loader()
+    L = NrListLoader()
     L.start_logging()
+
 #     L.make_report_file()
     L.make_old_style_html_tables()
-#     L.launch_matlab_nrlist_update()
+#     L.update_nrlists()
 
 #     sys.exit()
 #
