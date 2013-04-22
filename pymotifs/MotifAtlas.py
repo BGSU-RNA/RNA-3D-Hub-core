@@ -34,6 +34,7 @@ from UnitIdLoader import UnitIdLoader
 from MotifLoader import MotifLoader
 from unit_ordering_loader import UnitOrderingLoader
 from NrListLoader import NrListLoader
+from PdbDownloader import PdbDownloader
 
 
 def update_unit_ordering(pdb_ids):
@@ -246,6 +247,20 @@ def update_nrlists():
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('NR list update failed')
 
+def download_files(pdb_ids):
+    """
+        download pdb and cif files from PDB.
+    """
+    try:
+        d = PdbDownloader()
+        d.pdbs = pdb_ids
+        d.set_locations([d.config['locations']['nrlists_dir']])
+        d.download_files()
+        logging.info('Pdb and cif files successfully downloaded')
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Downloading pdb and cif files failed')
+
 
 def main(argv):
     """
@@ -256,9 +271,9 @@ def main(argv):
         m = MotifAtlasBaseClass()
         m.start_logging()
 
-        # todo: download pdb and cif files
-
         pdb_ids = update_pdb_info()
+
+        download_files(pdb_ids)
 
         # must follow update_pdb_info
         update_nrlists()
