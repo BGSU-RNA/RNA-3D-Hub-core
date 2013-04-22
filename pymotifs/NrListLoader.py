@@ -76,7 +76,7 @@ class NrListLoader(MotifAtlasBaseClass):
             Update old website for legacy reasons.
         """
         (head, tail) = os.path.split(self.config['locations']['nrlists_dir'])
-        filename = os.path.join(head, 'oldsite_test.html')
+        filename = os.path.join(head, 'oldsite.html')
         if os.path.exists(filename):
             f = open(filename, 'r+')
             contents = f.read()
