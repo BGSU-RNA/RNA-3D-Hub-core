@@ -328,7 +328,6 @@ class PdbInfoLoader(MotifAtlasBaseClass):
                     else:
                         organisms[chain] = organism_map[entity_id]
                         num_atoms_max[chain] = chain_map[entity_id][chain]
-        pdb.set_trace()
         return organisms
 
     def __store_source_organisms(self, pdb_id, organisms):
@@ -393,7 +392,7 @@ def main(argv):
 
     P.get_all_rna_pdbs()
 
-    P.update_pdb_info()
+#     P.update_pdb_info()
     P.update_organism_names()
     P.check_obsolete_structures()
 
