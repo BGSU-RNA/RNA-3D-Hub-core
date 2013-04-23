@@ -65,13 +65,8 @@ class NrListLoader(MotifAtlasBaseClass):
             logging.info('NR lists successfully ran in matlab')
         else:
             logging.critical('Problem with nrlists %s' % err_msg)
-        """import NR data into the database"""
-        self.import_data()
-        """create old style output using Matlab"""
-        self._make_old_style_html_tables()
-        self.__update_old_website()
 
-    def __update_old_website(self):
+    def update_old_website(self):
         """
             Update old website for legacy reasons.
         """
@@ -121,6 +116,15 @@ class NrListLoader(MotifAtlasBaseClass):
                              filter(PdbInfo.entityMacromoleculeType.like('%RNA%')).\
                              order_by(desc(PdbInfo.chainLength)).\
                              all()
+            """currently PDB REST API has a bug when only one chain is returned
+            in case there are both upper- and lowercase chains. As a result,
+            the database is missing RNA chains for some files, for example,
+            2WJ8, 4H6F, 4H6G and maybe others. To deal with this, try to get
+            at least some information about the structure for the report."""
+            if not chains:
+                chain = session.query(PdbInfo).\
+                                filter(PdbInfo.structureId==id[0]).\
+                                first()
             """list organisms with the longest chain first"""
             organisms = []
             for chain in chains:
@@ -131,7 +135,8 @@ class NrListLoader(MotifAtlasBaseClass):
                 (chain.structureId,
                  chain.structureTitle,
                  chain.experimentalTechnique,
-                 chain.releaseDate,
+                  # before changing the date format, make sure that it is parsed correctly by matlab
+                 chain.releaseDate.strftime('%Y-%m-%d'),
                  chain.structureAuthor,
                  '', # leave keywords field blank
                  chain.resolution if chain.resolution is not None else '',
@@ -158,7 +163,7 @@ class NrListLoader(MotifAtlasBaseClass):
         shutil.move(src, dst)
         os.removedirs(web_folder)
 
-    def _make_old_style_html_tables(self):
+    def make_old_style_html_tables(self):
         """
             Create html tables and PDB files with NR lists using Matlab.
             Maintained for legacy reasons.
@@ -294,9 +299,18 @@ def main(argv):
     L = NrListLoader()
     L.start_logging()
 
+    L.update_nrlists()
+
+    """import NR data into the database"""
+    L.import_data()
+    """create old style output using Matlab"""
+    L.make_old_style_html_tables()
+    L.update_old_website()
+
+
 #     L.make_report_file()
 #     L.make_old_style_html_tables()
-#     L.update_nrlists()
+
 
 #     sys.exit()
 #
