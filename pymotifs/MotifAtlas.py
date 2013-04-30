@@ -18,23 +18,23 @@ import traceback
 import pdb
 
 
+from BestChainsAndModelsLoader import BestChainsAndModelsLoader
+from CacheManager import CacheManager
+from ClusterMotifs import ClusterMotifs
 from DistancesAndCoordinatesLoader import DistancesAndCoordinatesLoader
-from PdbInfoLoader import PdbInfoLoader
 from LoopExtractor import LoopExtractor
 from LoopQualityChecker import LoopQualityChecker
-from PairwiseInteractionsLoader import PairwiseInteractionsLoader
-from RedundantNucleotidesLoader import RedundantNucleotidesLoader
-from BestChainsAndModelsLoader import BestChainsAndModelsLoader
-from MotifAtlasBaseClass import MotifAtlasBaseClass
-from ClusterMotifs import ClusterMotifs
 from LoopSearchesLoader import LoopSearchesLoader
-from CacheManager import CacheManager
-from PdbFileExporter import PdbFileExporter
-from UnitIdLoader import UnitIdLoader
+from MotifAtlasBaseClass import MotifAtlasBaseClass
 from MotifLoader import MotifLoader
-from unit_ordering_loader import UnitOrderingLoader
 from NrListLoader import NrListLoader
+from PairwiseInteractionsLoader import PairwiseInteractionsLoader
 from PdbDownloader import PdbDownloader
+from PdbFileExporter import PdbFileExporter
+from PdbInfoLoader import PdbInfoLoader
+from RedundantNucleotidesLoader import RedundantNucleotidesLoader
+from unit_ordering_loader import UnitOrderingLoader
+from UnitIdLoader import UnitIdLoader
 
 
 def update_unit_ordering(pdb_ids):
