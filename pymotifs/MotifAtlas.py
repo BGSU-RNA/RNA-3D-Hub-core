@@ -240,21 +240,28 @@ def update_nrlists():
         import non-redundant lists of RNA 3D structures.
     """
     try:
-        """"""
-        NrListLoader = NrListLoader()
-        NrListLoader.update_nrlists()
+        """update Matlab files"""
+        n = NrListLoader()
+        n.update_nrlists()
+        """import into the database"""
+#         n.import_data()
+        """create old style output using Matlab"""
+        n.make_old_style_html_tables()
+        n.update_old_website()
     except:
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('NR list update failed')
 
 def download_files(pdb_ids):
     """
-        download pdb and cif files from PDB.
+        download pdb and cif files from PDB. This has to be done independently
+        from Matlab because there were connectivity problems between PDB and
+        Matlab R2007b in the past.
     """
     try:
         d = PdbDownloader()
         d.pdbs = pdb_ids
-        d.set_locations([d.config['locations']['nrlists_dir']])
+        d.set_locations([d.config['locations']['cif_dir']])
         d.download_files()
         logging.info('Pdb and cif files successfully downloaded')
     except:
