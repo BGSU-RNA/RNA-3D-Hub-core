@@ -52,11 +52,9 @@ class NrListLoader(MotifAtlasBaseClass):
 
     def update_nrlists(self):
         """
-            Main entry point for updating the NR lists.
+            Update the NR lists in Matlab.
         """
         logging.info('Updating NR lists in Matlab')
-        """create input file for Matlab"""
-        self.report = self._make_report_file()
         """run main computations in Matlab"""
         self._setup_matlab()
         status, err_msg = self.mlab.zUpdateNrList(self.report, nout=2)
@@ -102,7 +100,7 @@ class NrListLoader(MotifAtlasBaseClass):
             logging.warning('File %s not found' % filename)
 
 
-    def _make_report_file(self):
+    def make_report_file(self):
         """
             Prepare a text file to be read in Matlab for NR lists
         """
@@ -143,6 +141,7 @@ class NrListLoader(MotifAtlasBaseClass):
                  ','.join(organisms))
             )
         f.close()
+        self.report = filename
         return filename
 
     def __get_html_folder(self):
@@ -153,10 +152,11 @@ class NrListLoader(MotifAtlasBaseClass):
         today = datetime.date.today()
         return today.strftime('%Y%m%d')
 
-    def __clean_up_old_style_nrlist_output(self, folder):
+    def __clean_up_old_style_nrlist_output(self):
         """
             Move pdb and html files to the destination on the server.
         """
+        folder = self.__get_html_folder()
         dst = os.path.join(self.config['locations']['nrlists_dir'], folder)
         web_folder = os.path.join(self.config['locations']['fr3d_root'], 'FR3D', 'Web')
         src = os.path.join(web_folder, 'AnalyzedStructures')
@@ -178,7 +178,7 @@ class NrListLoader(MotifAtlasBaseClass):
         else:
             logging.critical('Problem with generating NR output files %s' % err_msg)
         """move all created files to the final destination"""
-        self.__clean_up_old_style_nrlist_output(folder)
+        self.__clean_up_old_style_nrlist_output()
 
     def list_done(self):
         """
@@ -196,7 +196,7 @@ class NrListLoader(MotifAtlasBaseClass):
             all_releases.append(release.id)
         return all_releases
 
-    def parse_file(self, file=''):
+    def parse_html_file(self, file=''):
         """
         """
         f = open(file, 'r')
@@ -243,6 +243,37 @@ class NrListLoader(MotifAtlasBaseClass):
                              upload_mode='release_diff')
                 A.update_database()
 
+    def generate_output_files(self):
+        """
+            Generate output in text format to avoid parsing html files. Relies
+            on the PDBInfo.mat file updated by Matlab.
+        """
+        folder = self.__get_html_folder()
+        self._setup_matlab()
+        dst = os.path.join(self.config['locations']['nrlists_dir'], folder)
+        for resolution in self.resolution_labels:
+            filename, status, err_msg = self.mlab.getNrList(resolution, nout=3)
+            status = status[0][0]
+            if status == 0:
+                shutil.move(filename, dst)
+                logging.info('NR output %s generated' % resolution)
+            else:
+                logging.critical('Problem %s with %s' % (err_msg, resolution))
+
+    def archive_files(self):
+        """
+            Save the report text file and the PDBInfo.mat file.
+        """
+        folder = self.__get_html_folder()
+        """PDBInfo file"""
+        dst = os.path.join(self.config['locations']['nrlists_dir'], folder)
+        pdbinfo = os.path.join(self.config['locations']['fr3d_root'], 'FR3D', 'FR3DSource', 'PDBInfo.mat')
+        shutil.copy(pdbinfo, dst)
+        """report file"""
+        shutil.move(self.report, dst)
+
+    # todo: parse text files if present, if not, then parse html files
+
     def import_lists(self,folder):
         """
         """
@@ -250,7 +281,7 @@ class NrListLoader(MotifAtlasBaseClass):
             nr_html = 'Nonredundant_' + resolution + '.html'
             full_nr_html = os.path.join(self.nrlists_root, folder, nr_html)
             if os.path.isfile(full_nr_html):
-                self.parse_file(file=full_nr_html) # creates self.temp_file
+                self.parse_html_file(file=full_nr_html) # creates self.temp_file
 
                 c1 = NR_eqclass_collection(file=self.temp_file,
                                            resolution=self.resolution_labels[res_id])
@@ -280,7 +311,7 @@ class NrListLoader(MotifAtlasBaseClass):
                 continue
 
             self.import_lists(folder)
-            self.compare_all_releases()
+#             self.compare_all_releases()
 
         if os.path.exists(self.temp_file):
             os.remove(self.temp_file)

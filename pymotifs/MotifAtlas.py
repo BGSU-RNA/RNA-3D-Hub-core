@@ -96,7 +96,7 @@ def update_pdb_info():
         pdb_ids = p.pdbs
         p.update_pdb_info()
         p.check_obsolete_structures()
-        p.update_organism_names()
+#         p.update_organism_names()
     except:
         logging.warning(traceback.format_exc(sys.exc_info()))
         pdb_ids = []
@@ -242,12 +242,18 @@ def update_nrlists():
     try:
         """update Matlab files"""
         n = NrListLoader()
-        n.update_nrlists()
+        """create file with resolution and source organism info"""
+#         n.make_report_file()
+#         n.update_nrlists()
+        """create text files with equivalence classes"""
+#         n.generate_output_files()
+        """clean up"""
+#         n.archive_files()
         """import into the database"""
-#         n.import_data()
+        n.import_data()
         """create old style output using Matlab"""
-        n.make_old_style_html_tables()
-        n.update_old_website()
+#         n.make_old_style_html_tables()
+#         n.update_old_website()
     except:
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('NR list update failed')
@@ -278,12 +284,14 @@ def main(argv):
         m = MotifAtlasBaseClass()
         m.start_logging()
 
-        pdb_ids = update_pdb_info()
+#         pdb_ids = update_pdb_info()
 
-        download_files(pdb_ids)
+#         download_files(pdb_ids)
 
         # must follow update_pdb_info
         update_nrlists()
+
+        pdb.set_trace()
 
         update_loops(pdb_ids)
 

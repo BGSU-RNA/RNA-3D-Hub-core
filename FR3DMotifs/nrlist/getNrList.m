@@ -29,7 +29,7 @@ try
     end
 
     % load mat file with the data prepared by NR pipeline
-    load /Code/RNA-3D-Hub-core/FR3D/FR3DSource/PDBInfo;
+    load PDBInfo;
 
     % get equivalence classes
     if MaxRes == Inf,
