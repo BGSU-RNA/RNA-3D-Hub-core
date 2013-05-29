@@ -149,7 +149,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
     def _get_all_pdbs_with_loops(self):
         """Get all pdbs with loops.
         """
-        return [loop.pdb for loop in session.query(distinct(AllLoops.pdb))]
+        return [loop[0] for loop in session.query(distinct(AllLoops.pdb))]
 
     def _get_loops(self, pdb):
         """Get all loops in the given pdb file.
