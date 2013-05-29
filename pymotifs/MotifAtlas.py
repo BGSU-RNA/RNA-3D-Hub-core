@@ -178,10 +178,20 @@ def export_data(pdb_ids):
     try:
         """export pairwise interactions to a compressed file for NDB"""
         f = PdbFileExporter()
-        f.export_interactions(f.config['locations']['interactions_gz'], pdb_ids)
+        filename = f.config['locations']['interactions_gz']
+        f.export_interactions(filename, pdb_ids)
     except:
         logging.warning(traceback.format_exc(sys.exc_info()))
         logging.warning('Pairwise interactions export failed')
+
+    try:
+        # Export loops data to a compressed file for NDB
+        f = PdbFileExporter()
+        filename = f.config['locations']['loops_gz']
+        f.export_loops(filename, pdb_ids)
+    except:
+        logging.warning(traceback.format_exc(sys.exc_info()))
+        logging.warning('Loops export failed')
 
 def update_coordinates(pdb_ids):
     """
