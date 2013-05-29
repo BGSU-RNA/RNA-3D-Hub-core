@@ -159,15 +159,18 @@ class PdbFileExporter(MotifAtlasBaseClass):
     def _get_loops(self, pdb):
         """Get all loops in the given pdb file.
         """
+
         loops = []
         unit_ids = self._get_id_correspondence(pdb)
         query = session.query(AllLoops.id, AllLoops.pdb, AllLoops.nt_ids).\
             filter_by(pdb=pdb)
+
         for loop in query:
             data = {'id': loop.id, 'pdb': loop.pdb}
             nts = loop.nt_ids.split(',')
             data['nts'] = ','.join([unit_ids[nt] for nt in nts])
             loops.append(data)
+
         return loops
 
 
