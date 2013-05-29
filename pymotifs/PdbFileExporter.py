@@ -13,17 +13,27 @@ TODO: add motifs and loops.
 
 """
 
+import csv
 import logging
 import sys
 import gzip
 import tempfile
 import shutil
 
-from sqlalchemy import distinct, or_
+from collections import namedtuple
+
+from sqlalchemy import distinct, or_, desc
 
 
 from models import session, PairwiseInteractions, PdbUnitIdCorrespondence
+from models import AllLoops
+from models import LoopPositions
+from models import Loop
+from models import Release
 from MotifAtlasBaseClass import MotifAtlasBaseClass
+
+
+LoopData = namedtuple('loop_id', 'pdb', 'motif_id', 'nts')
 
 
 class PdbFileExporter(MotifAtlasBaseClass):
@@ -122,6 +132,55 @@ class PdbFileExporter(MotifAtlasBaseClass):
 
         self._create_compressed_output_file(temp, output_file)
         temp.close()
+
+    def export_loops(self, output_file, pdb_ids=None):
+        """Export all loops in the given list of PDB ids. If no loops are given
+        we get all pdbs with loops.
+        """
+        pdb_ids = pdb_ids or self._get_all_pdbs_with_loops()
+        temp = tempfile.TemporaryFile()
+        headers = ['loop_id', 'pdb', 'motif_id', 'nt_ids']
+        writer = csv.writer(temp)
+        writer.writerow(headers)
+
+        for pdb in pdb_ids:
+            logging.info("Writing loops for %s" % pdb)
+            loops = self._get_loops(pdb)
+
+            if len(loops) == 0:
+                logging.warning("No loops found for %s" % pdb)
+                continue
+
+            for loop in loops:
+                data = [loop.id, loop.pdb, loop.motif_id, ','.join(loop.nts)]
+                writer.writerow(data)
+
+        writer.flush()
+        self._create_compressed_output_file(temp, output_file)
+        temp.close()
+
+    def _get_loops(self, pdb):
+        """Get all loops in the given pdb.
+        """
+
+        loops = []
+        release_id = session.query(Release.id).\
+            filter(Release.type == self.type).\
+            order_by(desc(Release.date)).scalar()
+
+        for loop in session.query(AllLoops.id).filter_by(pdb_id=pdb):
+
+            nts = session.query(LoopPositions.nt_id).\
+                filter(LoopPositions.loop_id == loop.id).\
+                order_by(LoopPositions.position).scalar()
+
+            motif_id = session.query(Loop).\
+                filter(Loop.id == loop.id).\
+                filter(Loop.release_id == release_id).scalar()
+            motif_id = motif_id or ''
+
+            loops.append(LoopData(loop.id, pdb, motif_id, nts))
+        return loops
 
 
 def main(argv):
