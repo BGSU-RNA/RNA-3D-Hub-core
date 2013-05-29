@@ -8,8 +8,8 @@ python PdbFileExporter.py <data_type> <path>
 
 Example PdbFileExporter.py interactions ~/interactions.csv.gz
 
-data types: interactions
-TODO: add motifs and loops.
+data types: interactions loops
+TODO: add motifs
 
 """
 
@@ -52,11 +52,11 @@ class PdbFileExporter(MotifAtlasBaseClass):
             that all of the desired interactions are not empty.
         """
         return session.query(PairwiseInteractions).\
-                       filter_by(pdb_id=pdb_id).\
-                       filter(or_(PairwiseInteractions.f_lwbp   != None,
-                                  PairwiseInteractions.f_stacks != None,
-                                  PairwiseInteractions.f_bphs   != None)).\
-                       all()
+            filter_by(pdb_id=pdb_id).\
+            filter(or_(PairwiseInteractions.f_lwbp   != None,
+                       PairwiseInteractions.f_stacks != None,
+                       PairwiseInteractions.f_bphs   != None)).\
+            all()
 
     def _get_id_correspondence(self, pdb_id):
         """
@@ -86,8 +86,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
                                       self._format_nones(interaction.f_bphs)])
 
     def _create_compressed_output_file(self, f_in, output_file):
-        """
-            Take the file handle and send its contents to a gzipped output file.
+        """Take the file handle and send its contents to a gzipped output file.
         """
         temp_output_file = output_file + 'temp'
         f_in.seek(0)
@@ -108,7 +107,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
         temp = tempfile.TemporaryFile()
         headers = ['unit_id1', 'unit_id2', 'FR3D basepair (f_lwbp)',
                    'FR3D stacking (f_stacks)', 'FR3D base phosphate (f_bphs)']
-        temp.write( '"' + '","'.join(headers) + '"\n')
+        temp.write('"' + '","'.join(headers) + '"\n')
 
         for pdb_id in pdb_ids:
             logging.info('Writing out interactions for %s' % pdb_id)
