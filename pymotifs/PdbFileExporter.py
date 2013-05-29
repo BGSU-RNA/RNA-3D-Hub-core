@@ -134,9 +134,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
         """
         pdb_ids = pdb_ids or self._get_all_pdbs_with_loops()
         temp = tempfile.TemporaryFile()
-        headers = ['loop_id', 'pdb', 'motif_id', 'nt_ids']
-        writer = csv.writer(temp)
-        writer.writerow(headers)
+        writer = csv.DictWriter(temp, ['id', 'pdb', 'nts'])
 
         for pdb in pdb_ids:
             logging.info("Writing loops for %s" % pdb)
@@ -147,38 +145,29 @@ class PdbFileExporter(MotifAtlasBaseClass):
                 continue
 
             for loop in loops:
-                data = [loop['id'], loop['pdb'], loop['motif_id'],
-                        ','.join(loop['nts'])]
-                writer.writerow(data)
+                writer.writerow(loop)
 
         writer.flush()
         self._create_compressed_output_file(temp, output_file)
         temp.close()
 
-    def _get_loops(self, pdb):
-        """Get all loops in the given pdb.
+    def _get_all_pdbs_with_loops(self):
+        """Get all pdbs with loops.
         """
+        return [loop.pdb for loop in session.query(distinct(AllLoops.pdb))]
 
+    def _get_loops(self, pdb):
+        """Get all loops in the given pdb file.
+        """
         loops = []
-        release_id = session.query(Release.id).\
-            filter(Release.type == self.type).\
-            order_by(desc(Release.date)).scalar()
-
-        for loop in session.query(AllLoops.id).filter_by(pdb_id=pdb):
-
-            nts = session.query(LoopPositions.nt_id).\
-                filter(LoopPositions.loop_id == loop.id).\
-                order_by(LoopPositions.position).scalar()
-
-            motif_id = session.query(Loop).\
-                filter(Loop.id == loop.id).\
-                filter(Loop.release_id == release_id).scalar()
-            motif_id = motif_id or ''
-
-            loops.append({'id': loop.id,
-                          'pdb': pdb,
-                          'motif_id': motif_id,
-                          'nts': nts})
+        unit_ids = self._get_id_correspondence(pdb)
+        query = session.query(AllLoops.id, AllLoops.pdb, AllLoops.nt_ids).\
+            filter_by(pdb=pdb)
+        for loop in query:
+            data = {'id': loop.id, 'pdb': loop.pdb}
+            nts = loop.nt_ids.split(',')
+            data['nts'] = ','.join([unit_ids[nt] for nt in nts])
+            loops.append(data)
         return loops
 
 
@@ -191,7 +180,7 @@ def main(argv):
     method_name = 'export_%s' % argv[0]
     if hasattr(d, method_name):
         method = getattr(d, method_name)
-        method(argv[1:])
+        method(argv[1], argv[2:])
     else:
         print "Unrecognized option"
         sys.exit(1)
