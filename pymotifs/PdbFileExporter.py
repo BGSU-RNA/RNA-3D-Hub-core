@@ -63,9 +63,8 @@ class PdbFileExporter(MotifAtlasBaseClass):
             Get a dictionary with old and new ids.
         """
         unit_id = dict()
-        for ids in session.query(PdbUnitIdCorrespondence).\
-                           filter_by(pdb=pdb_id).\
-                           all():
+        query = session.query(PdbUnitIdCorrespondence).filter_by(pdb=pdb_id)
+        for ids in query:
             unit_id[ids.old_id] = ids.unit_id
         return unit_id
 
