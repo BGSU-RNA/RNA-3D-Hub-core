@@ -20,8 +20,6 @@ import gzip
 import tempfile
 import shutil
 
-from collections import namedtuple
-
 from sqlalchemy import distinct, or_, desc
 
 
@@ -31,9 +29,6 @@ from models import LoopPositions
 from models import Loop
 from models import Release
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-
-
-LoopData = namedtuple('loop_id', 'pdb', 'motif_id', 'nts')
 
 
 class PdbFileExporter(MotifAtlasBaseClass):
@@ -152,7 +147,8 @@ class PdbFileExporter(MotifAtlasBaseClass):
                 continue
 
             for loop in loops:
-                data = [loop.id, loop.pdb, loop.motif_id, ','.join(loop.nts)]
+                data = [loop['id'], loop['pdb'], loop['motif_id'],
+                        ','.join(loop['nts'])]
                 writer.writerow(data)
 
         writer.flush()
@@ -179,7 +175,10 @@ class PdbFileExporter(MotifAtlasBaseClass):
                 filter(Loop.release_id == release_id).scalar()
             motif_id = motif_id or ''
 
-            loops.append(LoopData(loop.id, pdb, motif_id, nts))
+            loops.append({'id': loop.id,
+                          'pdb': pdb,
+                          'motif_id': motif_id,
+                          'nts': nts})
         return loops
 
 
