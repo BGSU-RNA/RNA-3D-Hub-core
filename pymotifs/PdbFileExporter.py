@@ -188,8 +188,10 @@ def main(argv):
     d = PdbFileExporter()
     d.start_logging()
 
-    if argv[0] == 'interactions':
-        d.export_interactions(argv[1])
+    method_name = 'export_%s' % argv[0]
+    if hasattr(d, method_name):
+        method = getattr(d, method_name)
+        method(argv[1:])
     else:
         print "Unrecognized option"
         sys.exit(1)
