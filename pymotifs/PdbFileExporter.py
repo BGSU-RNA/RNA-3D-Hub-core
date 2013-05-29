@@ -130,6 +130,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
         pdb_ids = pdb_ids or self._get_all_pdbs_with_loops()
         temp = tempfile.TemporaryFile()
         writer = csv.DictWriter(temp, ['id', 'pdb', 'nts'])
+        writer.writeheader()
 
         for pdb in pdb_ids:
             logging.info("Writing loops for %s" % pdb)
