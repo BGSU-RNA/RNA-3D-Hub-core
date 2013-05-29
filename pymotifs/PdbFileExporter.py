@@ -129,9 +129,10 @@ class PdbFileExporter(MotifAtlasBaseClass):
         """
         pdb_ids = pdb_ids or self._get_all_pdbs_with_loops()
         temp = tempfile.TemporaryFile()
-        writer = csv.DictWriter(temp, ['id', 'pdb', 'nts'],
-                                quoting=csv.QUOTE_ALL)
-        writer.writeheader()
+        headers = ['id', 'pdb', 'nts']
+
+        writer = csv.DictWriter(temp, headers, quoting=csv.QUOTE_ALL)
+        writer.writerow(dict(zip(headers, headers)))
 
         for pdb in pdb_ids:
             logging.info("Writing loops for %s" % pdb)
@@ -141,8 +142,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
                 logging.warning("No loops found for %s" % pdb)
                 continue
 
-            for loop in loops:
-                writer.writerow(loop)
+            writer.writerows(loops)
 
         self._create_compressed_output_file(temp, output_file)
         temp.close()
