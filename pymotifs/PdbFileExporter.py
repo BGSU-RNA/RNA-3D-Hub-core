@@ -20,14 +20,11 @@ import gzip
 import tempfile
 import shutil
 
-from sqlalchemy import distinct, or_, desc
+from sqlalchemy import distinct, or_
 
 
 from models import session, PairwiseInteractions, PdbUnitIdCorrespondence
 from models import AllLoops
-from models import LoopPositions
-from models import Loop
-from models import Release
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
