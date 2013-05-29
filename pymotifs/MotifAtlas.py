@@ -262,9 +262,6 @@ def main(argv):
 
         update_unit_ordering(pdb_ids)
 
-        # must follow unit id updates
-        export_data(pdb_ids)
-
         update_coordinates(pdb_ids)
 
         update_redundant_nucleotides(pdb_ids)
@@ -280,6 +277,9 @@ def main(argv):
 
         # must follow motif clustering
         update_loop_annotations()
+
+        # must follow unit id updates
+        export_data(pdb_ids)
 
         # TODO annotate all pdb files with motifs
 
