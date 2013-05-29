@@ -163,8 +163,11 @@ class PdbFileExporter(MotifAtlasBaseClass):
         for loop in query:
             data = {'id': loop.id, 'pdb': loop.pdb}
             nts = loop.nt_ids.split(',')
-            data['nts'] = ','.join([unit_ids[nt] for nt in nts])
-            loops.append(data)
+            try:
+                data['nts'] = ','.join([unit_ids[nt] for nt in nts])
+                loops.append(data)
+            except:
+                logging.warning("Missing new style id for: %s" % loop.id)
 
         return loops
 
