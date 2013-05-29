@@ -180,9 +180,9 @@ def main(argv):
     method_name = 'export_%s' % argv[0]
     if hasattr(d, method_name):
         method = getattr(d, method_name)
-        method(argv[1], argv[2:])
+        method(argv[1])
     else:
-        print "Unrecognized option"
+        print("Unrecognized option")
         sys.exit(1)
 
     status = 'Data files successfully created'
