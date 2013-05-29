@@ -142,7 +142,6 @@ class PdbFileExporter(MotifAtlasBaseClass):
             for loop in loops:
                 writer.writerow(loop)
 
-        writer.flush()
         self._create_compressed_output_file(temp, output_file)
         temp.close()
 
