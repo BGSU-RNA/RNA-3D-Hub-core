@@ -25,6 +25,7 @@ from sqlalchemy import distinct, or_
 
 from models import session, PairwiseInteractions, PdbUnitIdCorrespondence
 from models import AllLoops
+from models import PdbObsolete
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
@@ -150,7 +151,9 @@ class PdbFileExporter(MotifAtlasBaseClass):
     def _get_all_pdbs_with_loops(self):
         """Get all pdbs with loops.
         """
-        return [loop[0] for loop in session.query(distinct(AllLoops.pdb))]
+        possible = [loop[0] for loop in session.query(distinct(AllLoops.pdb))]
+        obsolete = set([p[0] for p in session.query(PdbObsolete.obsolete_id)])
+        return [pdb for pdb in possible if pdb not in obsolete]
 
     def _get_loops(self, pdb):
         """Get all loops in the given pdb file.
