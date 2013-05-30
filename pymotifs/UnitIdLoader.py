@@ -162,12 +162,15 @@ def main(argv):
     U = UnitIdLoader()
     U.start_logging()
 
-    from PdbInfoLoader import PdbInfoLoader
-    P = PdbInfoLoader()
-    P.get_all_rna_pdbs()
+    pdbs = argv
+    if not pdbs:
+        from PdbInfoLoader import PdbInfoLoader
+        P = PdbInfoLoader()
+        P.get_all_rna_pdbs()
+        pdbs = P.pdbs
 
     try:
-        U.import_unit_ids(P.pdbs, recalculate=True)
+        U.import_unit_ids(pdbs, recalculate=True)
     except:
         e = sys.exc_info()[1]
         U.set_email_subject('Unit id update failed')
