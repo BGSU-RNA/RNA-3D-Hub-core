@@ -20,12 +20,14 @@ import gzip
 import tempfile
 import shutil
 
-from sqlalchemy import distinct, or_
+from sqlalchemy import distinct, or_, desc
 
 
 from models import session, PairwiseInteractions, PdbUnitIdCorrespondence
 from models import AllLoops
 from models import PdbObsolete
+from models import Loop
+from models import Release
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
@@ -130,7 +132,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
         """
         pdb_ids = pdb_ids or self._get_all_pdbs_with_loops()
         temp = tempfile.TemporaryFile()
-        headers = ['id', 'pdb', 'nts']
+        headers = ['id', 'motif_id', 'pdb', 'nts']
 
         writer = csv.DictWriter(temp, headers, quoting=csv.QUOTE_ALL)
         writer.writerow(dict(zip(headers, headers)))
@@ -161,12 +163,28 @@ class PdbFileExporter(MotifAtlasBaseClass):
 
         loops = []
         unit_ids = self._get_id_correspondence(pdb)
-        query = session.query(AllLoops.id, AllLoops.pdb, AllLoops.nt_ids).\
-            filter_by(pdb=pdb)
+        query = session.query(AllLoops.id, AllLoops.pdb, AllLoops.type,
+                              AllLoops.nt_ids).filter_by(pdb=pdb)
+
+        releases = {}
+        for loop_type in ['IL', 'HL']:
+            releases[loop_type] = session.query(Release).\
+                filter(Release.type == loop_type).\
+                order_by(desc(Release.date)).first().id
 
         for loop in query:
             data = {'id': loop.id, 'pdb': loop.pdb}
             nts = loop.nt_ids.split(',')
+            motif_id = ''
+
+            query = session.query(Loop.motif_id).\
+                filter(Loop.id == loop.id).\
+                filter(Loop.release_id == releases[loop.type])
+
+            if query.count() != 0:
+                motif_id = query.scalar()
+
+            data['motif_id'] = motif_id
             try:
                 data['nts'] = ','.join([unit_ids[nt] for nt in nts])
                 loops.append(data)
