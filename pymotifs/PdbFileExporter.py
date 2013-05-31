@@ -176,12 +176,13 @@ class PdbFileExporter(MotifAtlasBaseClass):
             data = {'id': loop.id, 'pdb': loop.pdb, 'motif_id': ''}
             nts = loop.nt_ids.split(',')
 
-            query = session.query(Loop.motif_id).\
-                filter(Loop.id == loop.id).\
-                filter(Loop.release_id == releases[loop.type])
+            if loop.type in releases:
+                query = session.query(Loop.motif_id).\
+                    filter(Loop.id == loop.id).\
+                    filter(Loop.release_id == releases[loop.type])
 
-            if query.count() != 0:
-                data['motif_id'] = query.scalar()
+                if query.count() != 0:
+                    data['motif_id'] = query.scalar()
 
             try:
                 data['nts'] = ','.join([unit_ids[nt] for nt in nts])
