@@ -142,7 +142,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
             loops = self._get_loops(pdb)
 
             if len(loops) == 0:
-                logging.warning("No loops found for %s" % pdb)
+                logging.info("No loops found for %s" % pdb)
                 continue
 
             writer.writerows(loops)
