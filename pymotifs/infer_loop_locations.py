@@ -49,8 +49,11 @@ class InferLocations(MotifAtlasBaseClass):
             locations = self.loop_locations(loop, features)
 
             annotations = self.generate_annotations(loop, locations)
-            logging.info("Found %s annotations for %s", len(annotations),
-                         loop.id)
+            if len(annotations) == 0:
+                logging.error("Did not find any annotaitons for %s", loop.id)
+            else:
+                logging.info("Found %s annotations for %s", len(annotations),
+                             loop.id)
 
             logging.info("Storing all annotations")
 
