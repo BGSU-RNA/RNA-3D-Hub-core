@@ -42,7 +42,15 @@ class InferLocations(MotifAtlasBaseClass):
         """Infer the location annotations for a single pdb.
         """
 
-        for loop in self.loops(pdb):
+        loops = self.loops(pdb)
+        query = session.query(LoopLocationAnnotation).\
+            filter(LoopLocationAnnotation.loop_id.in_(loops))
+
+        if query.count() != 0:
+            logging.info("Removing previous annotations for %s", pdb)
+            query.delete()
+
+        for loop in loops:
             logging.info("Processing loop: %s", loop.id)
 
             features = self.loop_features(loop)
