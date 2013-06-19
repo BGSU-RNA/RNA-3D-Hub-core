@@ -8,31 +8,34 @@ creating all tables. Also contains declarative sqlalchemy table definitions.
 
 import random
 import datetime
-import math
+#import math
 import sys
-import pdb
+#import pdb
 import os
 import ConfigParser
 
-import collections
+#import collections
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
-from sqlalchemy.sql import or_
+#from sqlalchemy.sql import or_
 
-import sqlalchemy.exc
+#import sqlalchemy.exc
 
 
 Base = declarative_base()
+
 
 # Utility functions
 def drop_all():
     Base.metadata.drop_all(engine)
 
+
 def create_all():
     Base.metadata.create_all(engine)
+
 
 def get_session():
     """
@@ -375,6 +378,11 @@ class AllLoops(Base):
     nt_ids        = Column(Text)
     loop_name     = Column(Text)
 
+    def nucleotides(self):
+        """Get a list of all nucleotide ids in this loop.
+        """
+        return self.nt_ids.split(',')
+
     def __repr__(self):
         return "<Loop('%s','%s')>" % (self.id, self.seq)
 
@@ -398,7 +406,7 @@ class PdbAnalysisStatus(Base):
     best_chains_and_models = Column(DateTime)
     unit_ids      = Column(DateTime)
     unit_ordering = Column(DateTime)
-
+    loop_annotation = Column(DateTime)
 
 class LoopQA(Base):
     """
@@ -860,24 +868,49 @@ class FeatureType(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
 
+    def loop_location(self, loop):
+        """Create a LoopLocation for the given loop using this FeatureType.
+        This requrires the loop type be of IL, HL or J3. Anything else will
+        return None.
+        """
 
-class FeatureNucleotides(Base):
+        long_name = '?'
+        if loop.type == 'HL':
+            long_name = 'Hairpin Loop'
+        elif loop.type == 'IL':
+            long_name = 'Internal Loop'
+        elif loop.type == 'J3':
+            long_name = 'Junction Loop'
+        else:
+            return None
+
+        name = '%s %s' % (self.name, long_name)
+        return LoopLocation(name=name, featue_type_id=self.id)
+
+
+class FeatureNucleotide(Base):
     __tablename__ = 'feature_nucleotides'
     id = Column(Integer, primary_key=True)
     unit_id = Column(VARCHAR(30, binary=True))
     feature_id = Column(Integer, ForeignKey('feature_info.id'))
 
 
-class LoopLocations(Base):
+class LoopLocation(Base):
     __tablename__ = 'loop_locations'
+    id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
     featue_type_id = Column(Integer, ForeignKey('feature_type.id'))
+
+    def location(self, loop):
+        return LoopLocationAnnotation(loop_id=loop.id,
+                                      loop_location_id=self.id)
 
 
 class LoopLocationAnnotation(Base):
     __tablename__ = 'loop_location_annotation'
+    id = Column(Integer, primary_key=True)
     loop_id = Column(String(11))
-    location_id = Column(Integer, ForeignKey('loop_locations.id'))
+    loop_location_id = Column(Integer, ForeignKey('loop_locations.id'))
 
 
 Base.metadata.create_all(engine)
