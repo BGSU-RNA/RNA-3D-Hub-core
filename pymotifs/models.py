@@ -908,6 +908,8 @@ class LoopLocation(Base):
 
 class LoopLocationAnnotation(Base):
     __tablename__ = 'loop_location_annotation'
+    __table_args__ = (UniqueConstraint('loop_id', 'loop_location_id'),)
+
     id = Column(Integer, primary_key=True)
     loop_id = Column(String(11))
     loop_location_id = Column(Integer, ForeignKey('loop_locations.id'))
