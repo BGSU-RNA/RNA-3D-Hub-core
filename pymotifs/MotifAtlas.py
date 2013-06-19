@@ -33,6 +33,16 @@ from PdbFileExporter import PdbFileExporter
 from UnitIdLoader import UnitIdLoader
 from MotifLoader import MotifLoader
 from unit_ordering_loader import UnitOrderingLoader
+from infer_loop_locations import InferLocations
+
+
+def infer_locations():
+    loader = InferLocations()
+    try:
+        loader.load()
+    except:
+        logging.error(traceback.format_exc(sys.exc_info()))
+        logging.error('Could not infer locations')
 
 
 def update_unit_ordering(pdb_ids):
@@ -277,6 +287,8 @@ def main(argv):
 
         # must follow motif clustering
         update_loop_annotations()
+
+        infer_locations()
 
         # must follow unit id updates
         export_data(pdb_ids)
