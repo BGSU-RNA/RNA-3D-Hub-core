@@ -846,4 +846,38 @@ class PdbModifiedCorrespondecies(Base):
     modified_unit = Column(String(10))
     standard_unit = Column(String(1))
 
+
+class Feature(Base):
+    __tablename__ = 'feature_info'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    pdb = Column(String(4))
+    type_id = Column(Integer, ForeignKey('feature_type.id'))
+
+
+class FeatureType(Base):
+    __tablename__ = 'feature_type'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+
+
+class FeatureNucleotides(Base):
+    __tablename__ = 'feature_nucleotides'
+    id = Column(Integer, primary_key=True)
+    unit_id = Column(VARCHAR(30, binary=True))
+    feature_id = Column(Integer, ForeignKey('feature_info.id'))
+
+
+class LoopLocations(Base):
+    __tablename__ = 'loop_locations'
+    name = Column(String(50), unique=True)
+    featue_type_id = Column(Integer, ForeignKey('feature_type.id'))
+
+
+class LoopLocationAnnotation(Base):
+    __tablename__ = 'loop_location_annotation'
+    loop_id = Column(String(11))
+    location_id = Column(Integer, ForeignKey('loop_locations.id'))
+
+
 Base.metadata.create_all(engine)
