@@ -43,12 +43,13 @@ class InferLocations(MotifAtlasBaseClass):
         """
 
         loops = self.loops(pdb)
+        ids = [loop.id for loop in loops]
         query = session.query(LoopLocationAnnotation).\
-            filter(LoopLocationAnnotation.loop_id.in_(loops))
+            filter(LoopLocationAnnotation.loop_id.in_(ids))
 
         if query.count() != 0:
             logging.info("Removing previous annotations for %s", pdb)
-            query.delete()
+            query.delete(synchronize_session=False)
 
         for loop in loops:
             logging.info("Processing loop: %s", loop.id)
