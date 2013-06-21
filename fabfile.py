@@ -18,4 +18,5 @@ def prod():
 @task
 def deploy():
     with cd(env.dir):
+        run("git reset --hard")
         run("git pull origin %s" % env.branch)
