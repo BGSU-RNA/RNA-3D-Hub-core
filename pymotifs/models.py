@@ -846,4 +846,18 @@ class PdbModifiedCorrespondecies(Base):
     modified_unit = Column(String(10))
     standard_unit = Column(String(1))
 
+
+class AtomData(Base):
+    """
+    Stores information about the locations of atoms.
+    """
+    __tablename__ = 'atom_info'
+
+    id = Column(Integer, primary_key=True)
+    unit_id = Column(VARCHAR(30, binary=True))
+    name = Column(String(10))
+    x = Column(Float)
+    y = Column(Float)
+    z = Column(Float)
+
 Base.metadata.create_all(engine)
