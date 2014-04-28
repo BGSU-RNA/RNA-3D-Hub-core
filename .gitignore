@@ -31,3 +31,4 @@ publish
 
 # project specific
 *.m~
+.python-version
