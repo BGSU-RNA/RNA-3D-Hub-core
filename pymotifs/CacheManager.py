@@ -79,13 +79,15 @@ class CacheManager(MotifAtlasBaseClass):
 
     def update_motif_cache(self):
         """
-            Refresh cache
+            Refresh cache.
+            Update both uppercase and lowercase versions of current urls.
         """
         # http://rna.bgsu.edu/rna3dhub/motifs/release/IL/current
         self._refresh_cache('motifs/release/IL/current')
+        self._refresh_cache('motifs/release/il/current')
         # http://rna.bgsu.edu/rna3dhub/motifs/release/HL/current
         self._refresh_cache('motifs/release/HL/current')
-
+        self._refresh_cache('motifs/release/hl/current')
         # http://rna.bgsu.edu/rna3dhub/motifs/release/IL/0.6
         for release in session.query(Release).all():
             self._refresh_cache('motifs/release/' + release.type + '/' + release.id)
