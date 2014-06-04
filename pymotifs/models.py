@@ -1,11 +1,3 @@
-"""
-
-A script responsible for connecting to the database, managing the session,
-creating all tables. Also contains declarative sqlalchemy table definitions.
-
-"""
-
-
 import re
 import os
 import ConfigParser
