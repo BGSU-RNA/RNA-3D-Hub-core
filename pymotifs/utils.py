@@ -51,6 +51,13 @@ class CifFileFinder(object):
         return filename
 
 
+def row2dict(row):
+    d = {}
+    for column in row.__table__.columns:
+        d[column.name] = str(getattr(row, column.name))
+    return d
+
+
 def main(klass):
     import sys
     from models import Session
