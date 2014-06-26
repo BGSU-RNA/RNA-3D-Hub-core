@@ -9,10 +9,6 @@ from sqlalchemy.ext.automap import automap_base
 
 
 def camelize_classname(base, tablename, table):
-    """Produce a 'camelized' class name, e.g.
-    'words_and_underscores' -> 'WordsAndUnderscores'
-    """
-
     return str(tablename[0].upper() +
                re.sub(r'_(\w)', lambda m: m.group(1).upper(), tablename[1:]))
 
@@ -41,9 +37,12 @@ def tables(engine):
         yield klass.__name__, klass
 
 
+def reflect(engine):
+    for name, klass in tables(engine):
+        globals()[name] = klass
+
 engine = get_engine()
 Session = sessionmaker(bind=engine)
 session = Session()
 
-for name, klass in tables(engine):
-    globals()[name] = klass
+reflect(engine)
