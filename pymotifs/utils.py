@@ -2,11 +2,47 @@ import os
 import sys
 import logging
 import traceback
+import itertools as it
 from contextlib import contextmanager
+
+# import requests
 
 
 class MissingFileException(Exception):
     pass
+
+
+def grouper(n, iterable):
+    iterator = iter(iterable)
+    while True:
+        chunk = tuple(it.islice(iterator, n))
+        if not chunk:
+            return
+        yield chunk
+
+
+# class WebRequestHelper(object):
+
+#     retries = 3
+
+#     def __init__(self, method='get', retries=None):
+#         self.retries = retries or self.__class__.retries
+#         self.method = method
+
+#     def __call__(self, url, **kwargs):
+#         method = getattr(requests, self.method)
+
+#         logging.info("Sending request to %s", url)
+#         for index in xrange(self.retries):
+#             try:
+#                 response = method(url, **kwargs)
+#                 response.raise_for_status()
+#                 return response.text
+#             except:
+#                 logging.warning("Failed attempt #%s for %s", str(index), url)
+
+#         logging.error("All attempts at fetching %s failed", url)
+#         return None
 
 
 class DatabaseHelper(object):
