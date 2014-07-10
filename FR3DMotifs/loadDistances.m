@@ -79,7 +79,9 @@ function [FILENAME, status, err_msg] = loadDistances(pdb_id)
 
         fid = fopen(FILENAME,'w');
         for i = 1:length(x)
-            fprintf(fid,'"%s","%s","%.2f"\n',ids{x(i)},ids{y(i)},F.Distance(x(i),y(i)));
+            distance = full(F.Distance(x(i), y(i)));
+            distance = distance(1, 1);
+            fprintf(fid, '"%s","%s","%.2f"\n', ids{x(i)}, ids{y(i)}, distance);
         end
         fclose(fid);
 
