@@ -37,8 +37,9 @@ class LoopQualityChecker(MotifAtlasBaseClass):
             release = LoopRelease(mode=self.config['release_mode']['loops'])
             for pdb_id in pdbs:
                 self.loop_qa(pdb_id, release.id)
-            session.add(release)
-            session.commit()
+            if pdbs:
+                session.add(release)
+                session.commit()
             logging.info('Loop QA complete')
             logging.info('%s', '='*40)
         except:
@@ -103,3 +104,4 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
