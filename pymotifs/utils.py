@@ -5,7 +5,7 @@ import traceback
 import itertools as it
 from contextlib import contextmanager
 
-# import requests
+import requests
 
 
 class MissingFileException(Exception):
@@ -21,28 +21,32 @@ def grouper(n, iterable):
         yield chunk
 
 
-# class WebRequestHelper(object):
+class WebRequestHelper(object):
 
-#     retries = 3
+    retries = 3
 
-#     def __init__(self, method='get', retries=None):
-#         self.retries = retries or self.__class__.retries
-#         self.method = method
+    def __init__(self, allow_empty=False, method='get', retries=None):
+        self.retries = retries or self.__class__.retries
+        self.method = method
+        self.allow_empty = allow_empty
 
-#     def __call__(self, url, **kwargs):
-#         method = getattr(requests, self.method)
+    def __call__(self, url, **kwargs):
+        method = getattr(requests, self.method)
 
-#         logging.info("Sending request to %s", url)
-#         for index in xrange(self.retries):
-#             try:
-#                 response = method(url, **kwargs)
-#                 response.raise_for_status()
-#                 return response.text
-#             except:
-#                 logging.warning("Failed attempt #%s for %s", str(index), url)
+        logging.info("Sending request to %s", url)
+        for index in xrange(self.retries):
+            try:
+                response = method(url, **kwargs)
+                response.raise_for_status()
+                if not self.allow_empty and not response.text:
+                    logging.warning("Response body was empty. Retrying.")
+                    continue
+                return response.text
+            except:
+                logging.warning("Failed attempt #%s for %s", str(index), url)
 
-#         logging.error("All attempts at fetching %s failed", url)
-#         return None
+        logging.error("All attempts at fetching %s failed", url)
+        return None
 
 
 class DatabaseHelper(object):
