@@ -3,7 +3,7 @@ import logging
 from rnastructure.tertiary.cif import CIF
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import ChainBreaks
+from models import PolymerInfo
 from utils import DatabaseHelper
 from utils import CifFileFinder
 
@@ -34,8 +34,12 @@ class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
 
         data = []
         for unit1_id, unit2_id in endpoints:
-            data.append(ChainBreaks(start_unit_id=unit1_id,
-                                    end_unit_id=unit2_id))
+            parts = unit1_id.split('|')
+            data.append(PolymerInfo(start_unit_id=unit1_id,
+                                    end_unit_id=unit2_id,
+                                    chain=parts[2],
+                                    model=int(parts[1]),
+                                    pdb_id=pdb))
         return data
 
     def __call__(self, pdbs):
