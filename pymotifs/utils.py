@@ -9,7 +9,15 @@ import requests
 
 
 class MissingFileException(Exception):
+    """This is raised when we can't find a file. For example a cif file for a
+    pdb does not exist.
+    """
     pass
+
+
+class WebRequestFailed(Exception):
+    """Raised when we have failed all attempts at getting a url.
+    """
 
 
 def grouper(n, iterable):
@@ -22,11 +30,14 @@ def grouper(n, iterable):
 
 
 class WebRequestHelper(object):
+    """A class to help with making web requests. This deals with the retrying
+    and making sure the response body is not empty. If the max number of
+    retries is reached we raise an exception. In addition, all steps are
+    logged.
+    """
 
-    retries = 3
-
-    def __init__(self, allow_empty=False, method='get', retries=None):
-        self.retries = retries or self.__class__.retries
+    def __init__(self, allow_empty=False, method='get', retries=3):
+        self.retries = retries
         self.method = method
         self.allow_empty = allow_empty
 
@@ -46,7 +57,7 @@ class WebRequestHelper(object):
                 logging.warning("Failed attempt #%s for %s", str(index), url)
 
         logging.error("All attempts at fetching %s failed", url)
-        return None
+        raise WebRequestFailed("Failed getting %s" % url)
 
 
 class DatabaseHelper(object):
