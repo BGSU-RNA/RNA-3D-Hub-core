@@ -7,8 +7,12 @@ from contextlib import contextmanager
 
 import requests
 
+# logger = logging.getLogger('utils')
+logger = logging
+
 
 class MissingFileException(Exception):
+
     """This is raised when we can't find a file. For example a cif file for a
     pdb does not exist.
     """
@@ -16,6 +20,7 @@ class MissingFileException(Exception):
 
 
 class WebRequestFailed(Exception):
+
     """Raised when we have failed all attempts at getting a url.
     """
 
@@ -30,6 +35,7 @@ def grouper(n, iterable):
 
 
 class WebRequestHelper(object):
+
     """A class to help with making web requests. This deals with the retrying
     and making sure the response body is not empty. If the max number of
     retries is reached we raise an exception. In addition, all steps are
@@ -44,19 +50,19 @@ class WebRequestHelper(object):
     def __call__(self, url, **kwargs):
         method = getattr(requests, self.method)
 
-        logging.info("Sending request to %s", url)
+        logger.info("Sending request to %s", url)
         for index in xrange(self.retries):
             try:
                 response = method(url, **kwargs)
                 response.raise_for_status()
                 if not self.allow_empty and not response.text:
-                    logging.warning("Response body was empty. Retrying.")
+                    logger.warning("Response body was empty. Retrying.")
                     continue
                 return response.text
             except:
-                logging.warning("Failed attempt #%s for %s", str(index), url)
+                logger.warning("Failed attempt #%s for %s", str(index), url)
 
-        logging.error("All attempts at fetching %s failed", url)
+        logger.error("All attempts at fetching %s failed", url)
         raise WebRequestFailed("Failed getting %s" % url)
 
 
@@ -82,8 +88,8 @@ class DatabaseHelper(object):
             yield session
             session.commit()
         except:
-            logging.error(traceback.format_exc(sys.exc_info()))
-            logging.error("Transaction failed. Rolling back.")
+            logger.error(traceback.format_exc(sys.exc_info()))
+            logger.error("Transaction failed. Rolling back.")
             session.rollback()
             raise
         finally:
@@ -91,6 +97,7 @@ class DatabaseHelper(object):
 
 
 class CifFileFinder(object):
+
     def __init__(self, config):
         self.config = config
 
@@ -98,8 +105,8 @@ class CifFileFinder(object):
         filename = os.path.join(self.config['locations']['fr3d_root'], 'FR3D',
                                 'PDBFiles', pdb + '.cif')
         if not os.path.exists(filename):
-            logging.warning("Could not find CIF file for %s. Expected at: %s",
-                            pdb, filename)
+            logger.warning("Could not find CIF file for %s. Expected at: %s",
+                           pdb, filename)
             raise MissingFileException()
         return filename
 

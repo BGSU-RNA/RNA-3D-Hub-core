@@ -9,6 +9,9 @@ from utils import CifFileFinder
 sys.path.append('rnastructure')
 from rnastructure.tertiary.cif import CIF
 
+# logger = logging.getLogger('chain_breaks')
+logger = logging
+
 
 class ChainBreakFinder(object):
 
@@ -31,6 +34,12 @@ class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
         self.cif = CifFileFinder(self.config)
         DatabaseHelper.__init__(self, maker)
 
+    def has_breaks(self, pdb):
+        with self.session() as session:
+            query = session.query(PolymerInfo).\
+                filter_by(pdb_id=pdb)
+            return bool(query.count())
+
     def data(self, pdb):
         cif_file = self.cif(pdb)
         endpoints = self.finder(cif_file)
@@ -47,15 +56,19 @@ class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
 
     def __call__(self, pdbs):
         for pdb in pdbs:
-            logging.info("Getting breaks for %s", pdb)
+            if self.has_breaks(pdb):
+                logger.info("Skipping getting breaks for %s", pdb)
+                continue
+
+            logger.info("Getting breaks for %s", pdb)
             breaks = self.data(pdb)
-            logging.info("Found %s breaks", len(breaks))
+            logger.info("Found %s breaks", len(breaks))
 
             try:
-                logging.debug("Storing breaks for %s", pdb)
+                logger.debug("Storing breaks for %s", pdb)
                 self.store(breaks)
             except:
-                logging.error("Failed to store breaks for %s", pdb)
+                logger.error("Failed to store breaks for %s", pdb)
 
 
 if __name__ == '__main__':
