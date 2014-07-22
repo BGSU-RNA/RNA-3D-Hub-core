@@ -47,7 +47,9 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
     def reference(self, pdb):
         with self.session() as session:
             result = session.execute(CURRENT_REP_QUERY, {'val': pdb})
-            return set([rep[0] for rep in result.fetchall()])
+            rep = set([rep[0] for rep in result.fetchall()])
+        rep.discard(pdb)
+        return rep
 
     def structure_data(self, chain, pdb):
         with self.session() as session:

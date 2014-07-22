@@ -26,6 +26,10 @@ class NtNtCorrespondencesTest(unittest.TestCase):
         val = self.corr.reference('1J5E')
         self.assertEquals(set(['2VQE', '1FJG']), val)
 
+    def test_does_not_give_self_as_reference(self):
+        val = self.corr.reference('2VQE')
+        self.assertEquals(set(['1FJG']), val)
+
 
 class ExistingDataTest(unittest.TestCase):
     def test_knows_if_has_correspondence(self):
