@@ -1,11 +1,13 @@
+import sys
 import logging
-
-from rnastructure.tertiary.cif import CIF
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import PolymerInfo
 from utils import DatabaseHelper
 from utils import CifFileFinder
+
+sys.path.append('rnastructure')
+from rnastructure.tertiary.cif import CIF
 
 
 class ChainBreakFinder(object):
@@ -16,7 +18,8 @@ class ChainBreakFinder(object):
 
         breaks = []
         for polymer in cif.polymers():
-            breaks.append(polymer.first().unit_id(), polymer.last().unit_id())
+            breaks.append((polymer.first().unit_id(),
+                           polymer.last().unit_id()))
         return breaks
 
 

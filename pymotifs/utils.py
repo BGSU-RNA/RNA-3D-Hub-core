@@ -70,7 +70,7 @@ class DatabaseHelper(object):
     def store(self, data):
         with self.session() as session:
             for index, datum in enumerate(data):
-                session.insert(datum)
+                session.add(datum)
                 if index % self.insert_max == 0:
                     session.commit()
             session.commit()
