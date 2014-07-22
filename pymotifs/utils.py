@@ -91,6 +91,8 @@ class DatabaseHelper(object):
 
 
 class CifFileFinder(object):
+    def __init__(self, config):
+        self.config = config
 
     def __call__(self, pdb):
         filename = os.path.join(self.config['locations']['fr3d_root'], 'FR3D',

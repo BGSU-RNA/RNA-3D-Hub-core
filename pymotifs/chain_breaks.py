@@ -22,10 +22,10 @@ class ChainBreakFinder(object):
 
 class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
     finder = ChainBreakFinder()
-    cif = CifFileFinder()
 
     def __init__(self, maker):
         MotifAtlasBaseClass.__init__(self)
+        self.cif = CifFileFinder(self.config)
         DatabaseHelper.__init__(self, maker)
 
     def data(self, pdb):
