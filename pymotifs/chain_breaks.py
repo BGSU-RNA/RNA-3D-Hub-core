@@ -8,6 +8,7 @@ from utils import CifFileFinder
 
 sys.path.append('rnastructure')
 from rnastructure.tertiary.cif import CIF
+from rnastructure.util import unit_ids as uids
 
 # logger = logging.getLogger('chain_breaks')
 logger = logging
@@ -43,12 +44,15 @@ class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
     def data(self, pdb):
         cif_file = self.cif(pdb)
         endpoints = self.finder(cif_file)
+        converter = uids.generate_converter('unit', 'nucleotide')
 
         data = []
         for unit1_id, unit2_id in endpoints:
             parts = unit1_id.split('|')
-            data.append(PolymerInfo(start_unit_id=unit1_id,
-                                    end_unit_id=unit2_id,
+            nt1_id = converter(unit1_id, type='AU')
+            nt2_id = converter(unit2_id, type='AU')
+            data.append(PolymerInfo(start_unit_id=nt1_id,
+                                    end_unit_id=nt2_id,
                                     chain=parts[2],
                                     model=int(parts[1]),
                                     pdb_id=pdb))
