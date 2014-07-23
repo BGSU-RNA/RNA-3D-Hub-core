@@ -33,3 +33,4 @@ publish
 *.m~
 .python-version
 notes
+.agignore
