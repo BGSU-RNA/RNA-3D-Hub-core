@@ -72,6 +72,7 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, saveMatFile)
 
              % extra nucleotides in the original file
             [extra,indExtra] = setdiff(indices2, indices1);
+            indExtra         = reshape(indExtra, 1, []);
 
             F2.Edge = fix(abs(F2.Edge));
             interactions         = reshape(F2.Edge(indExtra,:),1,[]);
