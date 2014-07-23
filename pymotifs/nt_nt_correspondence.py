@@ -2,13 +2,15 @@ import csv
 import logging
 import itertools as it
 import collections as coll
+import cStringIO as sio
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import NtNtCorrespondences
+from models import NtNtCorrespondences as Corr
 from models import PdbCorrespondences
 from models import PdbCoordinates
 from utils import DatabaseHelper
 from utils import WebRequestHelper
+from utils import EmptyResponse
 
 URL = 'http://localhost:8080/services/correlations'
 
@@ -29,79 +31,33 @@ where
     P.pdb_id = :pdb
     and P.model = 1
     and P.chain = :chain
+    and P.model = :model
 order by P.polymer_id, O.index
 '''
 
 
 class CorrelationResponseParser(object):
+    def __init__(self, additional=None):
+        self.additional = additional or {}
+
     def __call__(self, text):
-        reader = csv.DictReader(text)
-        return [(row['reference'], row['target']) for row in reader]
+        if not text:
+            raise EmptyResponse()
 
-
-class Loader(MotifAtlasBaseClass, DatabaseHelper):
-    request = WebRequestHelper(method='post')
-    parse = CorrelationResponseParser()
-
-    def __init__(self, maker):
-        MotifAtlasBaseClass.__init__(self)
-        DatabaseHelper.__init__(self, maker)
-
-    def reference(self, pdb):
-        with self.session() as session:
-            result = session.execute(CURRENT_REP_QUERY, {'val': pdb})
-            rep = set([rep[0] for rep in result.fetchall()])
-        rep.discard(pdb)
-        return rep
-
-    def structure_data(self, chain, pdb):
-        with self.session() as session:
-            result = session.execute(POLYMER_UNITS_QUERY,
-                                     {'pdb': pdb, 'chain': chain})
-
-        Record = coll.namedtuple('Record', result.keys())
-        ids = []
-        sequence = []
-        results = it.imap(lambda r: Record(*r), result.fetchall())
-        for _, nts in it.groupby(results, lambda r: r.polymer_id):
-            nts = list(nts)
-            ids.extend([nt.id for nt in nts])
-            sequence.append(''.join([nt.unit for nt in nts]))
-        return {'ids': ids, 'sequence': sequence}
-
-    def correlate(self, correlation_id, reference, target):
-        payload = {
-            'reference': reference['sequence'][0],
-            'reference_ids': reference['ids'],
-            'target': target['sequence'],
-            'target_ids': target['ids']
-        }
-        response = self.request(URL, payload=payload)
-        parsed = self.parse(response)
+        reader = csv.DictReader(sio.StringIO(text))
         data = []
-        for (ref, tar) in parsed:
-            data.append(NtNtCorrespondences(unit1_id=ref,
-                                            unit2_id=tar,
-                                            correspondence_id=correlation_id))
+        for row in reader:
+            entry = {'unit1_id': row['reference'], 'unit2_id': row['target']}
+            entry.update(self.additional)
+            data.append(entry)
         return data
 
-    def has_correspondence(self, reference, pdb):
-        with self.session() as session:
-            query = session.query(PdbCorrespondences).\
-                filter_by(pdb1=reference, pdb2=pdb)
-            return bool(query.count())
 
-    def correlation_id(self, reference, pdb):
-        logging.debug("Adding entry for %s-%s", reference, pdb)
-        data = PdbCorrespondences(pdb1=reference, pdb2=pdb)
-        self.store(data)
-        logging.debug("Using ID %s", data.id)
-        return data.id
-
-    def longest_chain(self, pdb):
+class StructureUtil(DatabaseHelper):
+    def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(PdbCoordinates).\
-                filter_by(pdb=pdb, model=1).\
+                filter_by(pdb=pdb, model=model).\
                 filter(PdbCoordinates.unit.in_(['A', 'C', 'G', 'U'])).\
                 order_by(PdbCoordinates.chain)
 
@@ -109,15 +65,82 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
         max_pair = max(grouped, key=lambda (k, v): len(list(v)))
         return max_pair[0]
 
+    def representative(self, pdb):
+        with self.session() as session:
+            result = session.execute(CURRENT_REP_QUERY, {'val': pdb})
+            rep = set([rep[0] for rep in result.fetchall()])
+        rep.discard(pdb)
+        return rep
+
+    def polymer_sequences(self, pdb, chain, model=1):
+        results = self.__polymer_units__(pdb=pdb, chain=chain, model=model)
+        sequence = []
+        for _, nts in it.groupby(results, lambda r: r.polymer_id):
+            sequence.append(''.join([nt.unit for nt in nts]))
+        return sequence
+
+    def unit_ids(self, pdb, chain, model=1):
+        results = self.__polymer_units__(pdb=pdb, chain=chain, model=model)
+        return [result.id for result in results]
+
+    def __polymer_units__(self, **data):
+        with self.session() as session:
+            result = session.execute(POLYMER_UNITS_QUERY, data)
+
+        Record = coll.namedtuple('Record', result.keys())
+        return it.imap(lambda r: Record(*r), result.fetchall())
+
+
+class Loader(MotifAtlasBaseClass, DatabaseHelper):
+    request = WebRequestHelper(method='post',
+                               parser=CorrelationResponseParser())
+
+    def __init__(self, maker):
+        MotifAtlasBaseClass.__init__(self)
+        DatabaseHelper.__init__(self, maker)
+        self.util = StructureUtil(maker)
+
+    def structure_data(self, chain, pdb):
+        return {
+            'ids': self.util.unit_ids(pdb, chain),
+            'sequence': self.util.polymer_sequences(pdb, chain),
+            'pdb': pdb
+        }
+
+    def correlation_id(self, reference, pdb):
+        logging.debug("Adding entry for %s-%s", reference, pdb)
+        data = PdbCorrespondences(pdb1=reference, pdb2=pdb)
+        self.store([data])
+        with self.session() as session:
+            data = session.query(PdbCorrespondences).\
+                filter_by(pdb1=reference, pdb2=pdb).\
+                one().id
+        return data
+
+    def correlate(self, reference, target):
+        payload = {
+            'reference': reference['sequence'][0],
+            'reference_ids': reference['ids'],
+            'target': target['sequence'],
+            'target_ids': target['ids']
+        }
+        correlation_id = self.correlation_id(reference['pdb'], target['pdb'])
+        self.request.parser.additional = {'correlation_id': correlation_id}
+        return [Corr(**d) for d in self.request(URL, payload=payload)]
+
+    def has_correspondence(self, reference, pdb):
+        with self.session() as session:
+            query = session.query(PdbCorrespondences).\
+                filter_by(pdb1=reference, pdb2=pdb)
+            return bool(query.count())
+
     def data(self, pdb):
-        references = self.reference(pdb)
-        for reference in references:
+        for reference in self.util.representative(pdb):
             if not self.has_correspondence(reference, pdb):
                 logging.debug("Skipping correlating with: %s", reference)
                 continue
 
             logging.debug("Using reference: %s", reference)
-            corelation_id = self.correlation_id(reference, pdb)
 
             ref_chain = self.longest_chain(reference)
             logging.info("Using chain %s in reference %s", ref_chain,
@@ -126,11 +149,8 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
             pdb_chain = self.longest_chain(pdb)
             logging.info("Using chain %s in %s", pdb_chain, pdb)
 
-            reference_data = self.structure_data(ref_chain, reference)
-            target_data = self.structure_data(pdb_chain, pdb)
-
-            yield self.correlate(corelation_id, reference_data,
-                                 target_data)
+            yield self.correlate(self.structure_data(ref_chain, reference),
+                                 self.structure_data(pdb_chain, pdb))
 
     def __call__(self, pdbs):
         for pdb in pdbs:
@@ -139,6 +159,12 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
             try:
                 for data in self.data(pdb):
                     logging.info("Found %s correspondencies", len(data))
-                    self.store(data)
+                    print(data)
+                    # self.store(data)
             except:
                 logging.error("Failed to store correspondencies")
+
+
+if __name__ == '__main__':
+    from utils import main
+    main(Loader)

@@ -59,6 +59,9 @@ class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
         return data
 
     def __call__(self, pdbs):
+        if not pdbs:
+            raise Exception("No pdbs given")
+
         for pdb in pdbs:
             if self.has_breaks(pdb):
                 logger.info("Skipping getting breaks for %s", pdb)

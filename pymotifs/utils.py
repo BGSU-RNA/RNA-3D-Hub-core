@@ -20,8 +20,12 @@ class MissingFileException(Exception):
 
 
 class WebRequestFailed(Exception):
-
     """Raised when we have failed all attempts at getting a url.
+    """
+
+
+class EmptyResponse(Exception):
+    """Raised when processing an empty response.
     """
 
 
@@ -42,10 +46,12 @@ class WebRequestHelper(object):
     logged.
     """
 
-    def __init__(self, allow_empty=False, method='get', retries=3):
+    def __init__(self, allow_empty=False, method='get', retries=3,
+                 parser=None):
         self.retries = retries
         self.method = method
         self.allow_empty = allow_empty
+        self.parser = parser
 
     def __call__(self, url, **kwargs):
         method = getattr(requests, self.method)
@@ -58,6 +64,8 @@ class WebRequestHelper(object):
                 if not self.allow_empty and not response.text:
                     logger.warning("Response body was empty. Retrying.")
                     continue
+                if self.parser:
+                    return self.parser(response.text)
                 return response.text
             except:
                 logger.warning("Failed attempt #%s for %s", str(index), url)
@@ -119,7 +127,7 @@ def row2dict(row):
 
 
 def main(klass):
-    import sys
     from models import Session
-    loader = klass(Session)
-    loader(sys.argv[1:])
+    logging.basicConfig(level=logging.DEBUG)
+    obj = klass(Session)
+    obj(sys.argv[1:])
