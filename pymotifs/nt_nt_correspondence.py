@@ -21,12 +21,15 @@ where
 
 POLYMER_UNITS_QUERY = '''
 select *
-from polymer_units
+from polymer_units as P
+join pdb_unit_ordering as O
+on
+    O.nt_id = P.id
 where
-    pdb_id = :pdb
-    and model = 1
-    and chain = :chain
-order by polymer_id
+    P.pdb_id = :pdb
+    and P.model = 1
+    and P.chain = :chain
+order by P.polymer_id, O.index
 '''
 
 
