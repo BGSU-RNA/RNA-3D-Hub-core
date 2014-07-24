@@ -68,7 +68,8 @@ class WebRequestHelper(object):
                     return self.parser(response.text)
                 return response.text
             except:
-                logger.warning("Failed attempt #%s for %s", str(index), url)
+                logger.warning("Failed attempt #%s for %s", str(index + 1),
+                               url)
 
         logger.error("All attempts at fetching %s failed", url)
         raise WebRequestFailed("Failed getting %s" % url)
