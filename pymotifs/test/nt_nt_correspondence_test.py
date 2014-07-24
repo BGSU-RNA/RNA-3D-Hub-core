@@ -6,10 +6,10 @@ from models import PdbCorrespondences
 import nt_nt_correspondence as ntnt
 import utils as ut
 
-VALID_CORRELATIONS = '''reference,target
-A,1
-C,2
-'''
+VALID_CORRELATIONS = '''[
+{"unit1": "A", "unit2": "1"},
+{"unit1": "C", "unit2": "2"}
+]'''
 
 
 class CorrelationResponseParserTest(unittest.TestCase):

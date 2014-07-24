@@ -1,8 +1,7 @@
-import csv
+import json
 import logging
 import itertools as it
 import collections as coll
-import cStringIO as sio
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import NtNtCorrespondences as Corr
@@ -12,7 +11,7 @@ from utils import DatabaseHelper
 from utils import WebRequestHelper
 from utils import EmptyResponse
 
-URL = 'http://localhost:8080/services/correlations'
+URL = 'http://localhost:8080/api/services/correlations'
 
 CURRENT_REP_QUERY = '''
 select rep_id
@@ -44,10 +43,9 @@ class CorrelationResponseParser(object):
         if not text:
             raise EmptyResponse()
 
-        reader = csv.DictReader(sio.StringIO(text))
         data = []
-        for row in reader:
-            entry = {'unit1_id': row['reference'], 'unit2_id': row['target']}
+        for row in json.loads(text):
+            entry = {'unit1_id': row['unit1'], 'unit2_id': row['unit2']}
             entry.update(self.additional)
             data.append(entry)
         return data
@@ -124,9 +122,11 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
             'target': target['sequence'],
             'target_ids': target['ids']
         }
+        headers = {'accept': 'application/json'}
         correlation_id = self.correlation_id(reference['pdb'], target['pdb'])
-        self.request.parser.additional = {'correlation_id': correlation_id}
-        return [Corr(**d) for d in self.request(URL, payload=payload)]
+        self.request.parser.additional = {'correspondence_id': correlation_id}
+        response = self.request(URL, data=payload, headers=headers)
+        return [Corr(**d) for d in response]
 
     def has_correspondence(self, reference, pdb):
         with self.session() as session:
@@ -136,33 +136,36 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
 
     def data(self, pdb):
         for reference in self.util.representative(pdb):
-            if not self.has_correspondence(reference, pdb):
+            if self.has_correspondence(reference, pdb):
                 logging.debug("Skipping correlating with: %s", reference)
                 continue
 
             logging.debug("Using reference: %s", reference)
 
-            ref_chain = self.longest_chain(reference)
+            ref_chain = self.util.longest_chain(reference)
             logging.info("Using chain %s in reference %s", ref_chain,
                          reference)
 
-            pdb_chain = self.longest_chain(pdb)
+            pdb_chain = self.util.longest_chain(pdb)
             logging.info("Using chain %s in %s", pdb_chain, pdb)
 
             yield self.correlate(self.structure_data(ref_chain, reference),
                                  self.structure_data(pdb_chain, pdb))
 
     def __call__(self, pdbs):
+        if not pdbs:
+            raise Exception("No pdbs given")
+
         for pdb in pdbs:
             logging.info("Getting nt nt correspondence for %s", pdb)
 
             try:
                 for data in self.data(pdb):
                     logging.info("Found %s correspondencies", len(data))
-                    print(data)
-                    # self.store(data)
+                    self.store(data)
             except:
-                logging.error("Failed to store correspondencies")
+                logging.error("Failed to store correspondencies for %s", pdb)
+                raise
 
 
 if __name__ == '__main__':
