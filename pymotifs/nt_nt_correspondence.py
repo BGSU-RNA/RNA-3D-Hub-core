@@ -1,5 +1,7 @@
+import sys
 import json
 import logging
+import traceback
 import itertools as it
 import collections as coll
 
@@ -10,6 +12,8 @@ from models import PdbCoordinates
 from utils import DatabaseHelper
 from utils import WebRequestHelper
 from utils import EmptyResponse
+
+logger = logging.getLogger(__name__)
 
 URL = 'http://localhost:8080/api/services/correlations'
 
@@ -106,7 +110,6 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
         }
 
     def correlation_id(self, reference, pdb):
-        logging.debug("Adding entry for %s-%s", reference, pdb)
         data = PdbCorrespondences(pdb1=reference, pdb2=pdb)
         self.store([data])
         with self.session() as session:
@@ -128,44 +131,59 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
         response = self.request(URL, data=payload, headers=headers)
         return [Corr(**d) for d in response]
 
+    def __base_info_query__(self, session, reference, pdb):
+        # TODO: Do something to store correlation method data
+        return session.query(PdbCorrespondences).\
+            filter_by(pdb1=reference, pdb2=pdb)
+
     def has_correspondence(self, reference, pdb):
         with self.session() as session:
-            query = session.query(PdbCorrespondences).\
-                filter_by(pdb1=reference, pdb2=pdb)
+            query = self.__base_info_query__(session, reference, pdb)
             return bool(query.count())
 
-    def data(self, pdb):
+    def remove_old(self, reference, pdb):
+        with self.session() as session:
+            query = self.__base_info_query(session, reference, pdb)
+            corr_id = query.one().id
+            session.query(Corr).filter_by(correspondence_id=corr_id).delete()
+            query.delete()
+
+    def data(self, pdb, recalculate=False, **kwargs):
         for reference in self.util.representative(pdb):
             if self.has_correspondence(reference, pdb):
-                logging.debug("Skipping correlating with: %s", reference)
-                continue
+                if not recalculate:
+                    logger.debug("Skipping correlating with: %s", reference)
+                    continue
+                else:
+                    logger.debug("Deleting old correspondences for %s, %s",
+                                 reference, pdb)
+                    self.remove_old(reference, pdb)
 
-            logging.debug("Using reference: %s", reference)
+            logger.debug("Using reference: %s", reference)
 
             ref_chain = self.util.longest_chain(reference)
-            logging.info("Using chain %s in reference %s", ref_chain,
-                         reference)
+            logger.info("Using chain %s in reference %s", ref_chain, reference)
 
             pdb_chain = self.util.longest_chain(pdb)
-            logging.info("Using chain %s in %s", pdb_chain, pdb)
+            logger.info("Using chain %s in %s", pdb_chain, pdb)
 
             yield self.correlate(self.structure_data(ref_chain, reference),
                                  self.structure_data(pdb_chain, pdb))
 
-    def __call__(self, pdbs):
+    def __call__(self, pdbs, **kwargs):
         if not pdbs:
             raise Exception("No pdbs given")
 
         for pdb in pdbs:
-            logging.info("Getting nt nt correspondence for %s", pdb)
+            logger.info("Getting nt nt correspondence for %s", pdb)
 
             try:
-                for data in self.data(pdb):
-                    logging.info("Found %s correspondencies", len(data))
+                for data in self.data(pdb, **kwargs):
+                    logger.info("Found %s correspondencies", len(data))
                     self.store(data)
             except:
-                logging.error("Failed to store correspondencies for %s", pdb)
-                raise
+                logger.error("Failed to store correspondencies for %s", pdb)
+                logger.error(traceback.format_exc(sys.exc_info()))
 
 
 if __name__ == '__main__':

@@ -1,14 +1,14 @@
 import os
 import sys
 import logging
+import argparse
 import traceback
 import itertools as it
 from contextlib import contextmanager
 
 import requests
 
-# logger = logging.getLogger('utils')
-logger = logging
+logger = logging.getLogger(__name__)
 
 
 class MissingFileException(Exception):
@@ -130,6 +130,41 @@ def row2dict(row):
 
 def main(klass):
     from models import Session
-    logging.basicConfig()
+
+    parser = argparse.ArgumentParser(description="Run %s" % klass.__name__)
+    parser.add_argument('pdbs', metavar='P', nargs='+',
+                        help="PDBs to use")
+    parser.add_argument('--all', dest='_all', default=False,
+                        help="Use all RNA containing PDBS")
+    parser.add_argument('--recalculate', action='store_true',
+                        help="Force all data to be recalculated")
+    parser.add_argument('--log-file', dest='_log_file', default='',
+                        help="Log file to use")
+    parser.add_argument('--log-level', dest='_log_level', default='debug',
+                        choices=['debug', 'info', 'warning', 'error'],
+                        help="Logging level to use")
+
+    args = parser.parse_args()
+
+    pdbs = args.pdbs
+    if args._all:
+        from PdbInfoLoader import PdbInfoLoader
+        P = PdbInfoLoader()
+        P.get_all_rna_pdbs()
+        pdbs = P.pdbs
+
+    log_args = {
+        'level': getattr(logging, args._log_level.upper())
+    }
+    if args._log_file:
+        log_args['filename'] = args._log_file
+
+    logging.basicConfig(**log_args)
+
+    kwargs = {}
+    for arg, value in vars(args).items():
+        if arg != 'pdbs' and arg[0] != '_':
+            kwargs[arg] = value
+
     obj = klass(Session)
-    obj(sys.argv[1:])
+    obj(pdbs, **kwargs)
