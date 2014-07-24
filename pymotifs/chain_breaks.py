@@ -49,6 +49,7 @@ class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
         data = []
         for unit1_id, unit2_id in endpoints:
             parts = unit1_id.split('|')
+            # TODO: Do not assume AU only
             nt1_id = converter(unit1_id, type='AU')
             nt2_id = converter(unit2_id, type='AU')
             data.append(PolymerInfo(start_unit_id=nt1_id,
