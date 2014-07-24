@@ -70,6 +70,7 @@ class WebRequestHelper(object):
             except:
                 logger.warning("Failed attempt #%s for %s", str(index + 1),
                                url)
+                logger.warning(traceback.format_exc(sys.exc_info()))
 
         logger.error("All attempts at fetching %s failed", url)
         raise WebRequestFailed("Failed getting %s" % url)
@@ -129,6 +130,6 @@ def row2dict(row):
 
 def main(klass):
     from models import Session
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig()
     obj = klass(Session)
     obj(sys.argv[1:])
