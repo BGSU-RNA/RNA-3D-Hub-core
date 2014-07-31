@@ -7,8 +7,8 @@ from utils import MissingFileException
 
 class CifFileFinderTest(unittest.TestCase):
     def setUp(self):
-        self.cif = CifFileFinder()
-        self.cif.config = {'locations': {'fr3d_root': os.path.normpath("..")}}
+        path = os.path.normpath("..")
+        self.cif = CifFileFinder({'locations': {'fr3d_root': path}})
 
     def test_can_find_a_cif_file(self):
         val = self.cif("2AW7")
