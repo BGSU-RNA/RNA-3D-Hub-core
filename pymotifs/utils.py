@@ -3,6 +3,8 @@ import sys
 import logging
 import argparse
 import traceback
+from ftplib import FTP
+import cStringIO as sio
 import itertools as it
 from contextlib import contextmanager
 
@@ -12,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class MissingFileException(Exception):
-
     """This is raised when we can't find a file. For example a cif file for a
     pdb does not exist.
     """
@@ -29,6 +30,11 @@ class EmptyResponse(Exception):
     """
 
 
+class RetryFailedException(Exception):
+    """Raised when all attempts at retrying something have failed.
+    """
+
+
 def grouper(n, iterable):
     iterator = iter(iterable)
     while True:
@@ -38,42 +44,47 @@ def grouper(n, iterable):
         yield chunk
 
 
-class WebRequestHelper(object):
+class RetryHelper(object):
+    def __init__(self, retries=3):
+        self.retries = retries
 
+    def __call__(self, *args, **kwargs):
+        for index in xrange(self.retries):
+            try:
+                return self.action(*args, **kwargs)
+            except:
+                logger.warning("Failed retry attempt #%s", str(index + 1))
+                logger.warning(traceback.format_exc(sys.exc_info()))
+
+        logger.error("All attempts at retrying failed")
+        raise RetryFailedException()
+
+
+class WebRequestHelper(object):
     """A class to help with making web requests. This deals with the retrying
     and making sure the response body is not empty. If the max number of
     retries is reached we raise an exception. In addition, all steps are
     logged.
     """
 
-    def __init__(self, allow_empty=False, method='get', retries=3,
-                 parser=None):
-        self.retries = retries
+    def __init__(self, allow_empty=False, method='get', parser=None, **kwargs):
         self.method = method
         self.allow_empty = allow_empty
         self.parser = parser
+        super(WebRequestHelper, self).__init__(**kwargs)
 
-    def __call__(self, url, **kwargs):
+    def action(self, url, **kwargs):
         method = getattr(requests, self.method)
-
         logger.info("Sending request to %s", url)
-        for index in xrange(self.retries):
-            try:
-                response = method(url, **kwargs)
-                response.raise_for_status()
-                if not self.allow_empty and not response.text:
-                    logger.warning("Response body was empty. Retrying.")
-                    continue
-                if self.parser:
-                    return self.parser(response.text)
-                return response.text
-            except:
-                logger.warning("Failed attempt #%s for %s", str(index + 1),
-                               url)
-                logger.warning(traceback.format_exc(sys.exc_info()))
+        response = method(url, **kwargs)
+        response.raise_for_status()
 
-        logger.error("All attempts at fetching %s failed", url)
-        raise WebRequestFailed("Failed getting %s" % url)
+        if not self.allow_empty and not response.text:
+            logger.warning("Response body was empty. Retrying.")
+            raise WebRequestFailed("Got empty response")
+        if self.parser:
+            return self.parser(response.text)
+        return response.text
 
 
 class DatabaseHelper(object):
@@ -168,3 +179,29 @@ def main(klass):
 
     obj = klass(Session)
     obj(pdbs, **kwargs)
+
+
+class FTPFetchHelper(RetryHelper):
+    def __init__(self, uri, allow_empty=False, parser=None, **kwargs):
+        self.parser = parser
+        self.allow_empty = allow_empty
+        logger.debug("Connecting to %s", uri)
+        self.ftp = FTP(uri)
+        self.ftp.login()
+        logger.debug("Connected and logged in")
+        super(FTPFetchHelper, self).__init__(**kwargs)
+
+    def action(self, filename, **kwargs):
+        logger.info("Attempting to get %s", filename)
+        out = sio.cStringIO()
+        self.ftp.retrbinary("RETR %s" % filename, out.write)
+        logger.info("Fetched %s", filename)
+        text = out.getvalue()
+
+        if not self.allow_empty and not text:
+            logger.warning("Retrived content was empty.")
+            raise EmptyResponse("Got empty content.")
+
+        if self.parser:
+            return self.parser(text)
+        return text
