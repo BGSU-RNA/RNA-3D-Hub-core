@@ -48,14 +48,15 @@ class Parser(object):
         self.generator = uids.UnitIdGenerator()
         self.digest = md5.hexdigest()
         self.root = ET.fromstring(content)
+        print(self.root)  # .getroot()
 
     def has_rsr(self):
         entry = self.root.find("Entry")
         return 'absolute-percentile-percent-RSRZ-outliers' in entry.attrib
 
-    def nts(self, root):
+    def nts(self):
         pdb = self.root.find("Entry").attrib['pdbid'].upper()
-        for residue in root.findall("ModeledSubgroup"):
+        for residue in self.root.findall("ModelledSubgroup"):
             if 'rsr' in residue.attrib and 'rsrz' in residue.attrib:
                 yield {
                     'id': self._unit_id(pdb, residue.attrib),
