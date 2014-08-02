@@ -197,7 +197,7 @@ class FTPFetchHelper(RetryHelper):
 
     def action(self, filename, **kwargs):
         logger.info("Attempting to get %s", filename)
-        out = sio.cStringIO()
+        out = sio.StringIO()
         self.ftp.retrbinary("RETR %s" % filename, out.write)
         logger.info("Fetched %s", filename)
         text = out.getvalue()
