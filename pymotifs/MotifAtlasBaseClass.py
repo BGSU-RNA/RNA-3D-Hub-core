@@ -1,9 +1,3 @@
-"""
-
-
-
-"""
-
 __author__ = 'Anton Petrov'
 
 import sys
@@ -28,17 +22,17 @@ from models import session, PdbAnalysisStatus
 
 
 class MotifAtlasBaseClass:
-    """
-        Don't use logging anywhere in this constructor or the functions it calls
+    """Don't use logging anywhere in this constructor or the functions it calls
     """
     def __init__(self):
-        self.mlab   = False
+        self.mlab = False
         self.config = collections.defaultdict(dict)
-        script_path = os.path.dirname(os.path.abspath( __file__ ))
+        script_path = os.path.dirname(os.path.abspath(__file__))
         self.configfile = os.path.join(script_path, 'motifatlas.cfg')
         self.import_config()
         self.log_filename = 'rna3dhub_log.txt'
-        self.log = os.path.join(self.config['locations']['log_dir'], self.log_filename)
+        self.log = os.path.join(self.config['locations']['log_dir'],
+                                self.log_filename)
 
     def start_logging(self):
         """
@@ -60,7 +54,7 @@ class MotifAtlasBaseClass:
         from mlabwrap import mlab
         self.mlab = mlab
         self.mlab._autosync_dirs = False
-        self.mlab.setup() # add matlab paths
+        self.mlab.setup()  # add matlab paths
         # self.mlab._dont_proxy["cell"] = True
         logging.info('Matlab started')
 
@@ -74,11 +68,11 @@ class MotifAtlasBaseClass:
         """Checks whether the pdb files were processed . Returns only the files
         that need to be analyzed. The `column_name` parameter corresponds to
         the column name of the pdb_analysis_status table."""
-        pdb_list = pdbs[:] # copy, not reference
-        done = session.query(PdbAnalysisStatus). \
-                       filter(PdbAnalysisStatus.id.in_(pdbs)). \
-                       filter(getattr(PdbAnalysisStatus,column_name.lower()) != None). \
-                       all()
+        pdb_list = pdbs[:]  # copy, not reference
+        done = session.query(PdbAnalysisStatus).\
+            filter(PdbAnalysisStatus.id.in_(pdbs)).\
+            filter(getattr(PdbAnalysisStatus, column_name.lower()) is not None).\
+            all()
         [pdb_list.remove(x.id) for x in done]
         if pdb_list:
             logging.info('New files to analyze: ' + ','.join(pdb_list))
@@ -89,8 +83,8 @@ class MotifAtlasBaseClass:
     def mark_pdb_as_analyzed(self, pdb_id, column_name):
         """
         """
-        P = PdbAnalysisStatus(id = pdb_id)
-        setattr(P,column_name.lower(),datetime.datetime.now())
+        P = PdbAnalysisStatus(id=pdb_id)
+        setattr(P, column_name.lower(), datetime.datetime.now())
         session.merge(P)
         session.commit()
         logging.info('Updated %s status for pdb %s', column_name, pdb_id)
@@ -104,11 +98,18 @@ class MotifAtlasBaseClass:
             """general settings"""
             section = 'general'
             keys = ['environment']
+            for k in keys:
+                self.config[section][k] = config.get(section, k)
+            """email settings"""
+            section = 'email'
+            keys = ['from', 'to', 'login', 'password', 'subject']
+            for k in keys:
             for k in keys: self.config[section][k] = config.get(section,k)
             """email settings"""
             section = 'email'
-            keys = ['from','to','login','password','subject']
+            keys = ['from','to','login','password','subject', 'host']
             for k in keys: self.config[section][k] = config.get(section,k)
+            self.config[section]['login'] = config.getboolean(section, 'login')
             """recalculation settings"""
             section = 'recalculate'
             keys = ['coordinates','distances','interactions','IL','HL','J3',
@@ -184,12 +185,14 @@ class MotifAtlasBaseClass:
             themsg.attach(msg)
             themsg.attach(MIMEText(text, 'html'))
 
-            server = smtplib.SMTP('smtp.gmail.com:587')
+            server = smtplib.SMTP(self.config['email']['host'])
             server.ehlo()
             server.starttls()
             server.ehlo()
-            server.login(self.config['email']['login'],
-                         self.config['email']['password'])
+            if self.config['email']['login']:
+                server.login(self.config['email']['login'],
+                             self.config['email']['password'])
+
             server.sendmail(self.config['email']['from'],
                             self.config['email']['to'].split(','),
                             themsg.as_string())
