@@ -6,6 +6,7 @@ import traceback
 from ftplib import FTP
 import cStringIO as sio
 import itertools as it
+import collections as coll
 from contextlib import contextmanager
 
 import requests
@@ -100,10 +101,16 @@ class DatabaseHelper(object):
 
     def store(self, data):
         with self.session() as session:
-            for index, datum in enumerate(data):
-                session.add(datum)
-                if index % self.insert_max == 0:
-                    session.commit()
+            if not isinstance(data, coll.Iterable):
+                session.add(data)
+            else:
+                for index, datum in enumerate(it.chain.from_iterable(data)):
+                    session.add(datum)
+                    if index % self.insert_max == 0:
+                        logger.debug("Committing a chunk of %s",
+                                     self.insert_max)
+                        session.commit()
+                logger.debug("Final commit")
             session.commit()
 
     @contextmanager
