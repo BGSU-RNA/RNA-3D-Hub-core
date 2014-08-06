@@ -26,7 +26,7 @@ class StructureUtil(ut.DatabaseHelper):
         loops = []
         with self.session() as session:
             query = session.query(mod.LoopPositions).\
-                join(mod.LoopPositions,
+                join(mod.LoopsAll,
                      mod.LoopPositions.loop_id == mod.LoopsAll.id).\
                 filter(mod.LoopsAll.pdb == pdb).\
                 order_by(mod.LoopsAll.id)
@@ -45,9 +45,7 @@ class StructureUtil(ut.DatabaseHelper):
         """Get all correlated reference structures.
         """
         with self.session() as session:
-            query = session.query(mod.PdbCorrespondences).\
-                join(mod.PdbCorrespondences,
-                     mod.PdbCorrespondences.pdb2 == pdb)
+            query = session.query(mod.PdbCorrespondences).filter_by(pdb2=pdb)
             return [result.pdb1 for result in query]
 
 
