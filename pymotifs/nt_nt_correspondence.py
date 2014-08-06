@@ -129,6 +129,7 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
         correlation_id = self.correlation_id(reference['pdb'], target['pdb'])
         self.request.parser.additional = {'correspondence_id': correlation_id}
         response = self.request(URL, data=payload, headers=headers)
+        logger.info("Found %s correlations", len(response))
         return [Corr(**d) for d in response]
 
     def __base_info_query__(self, session, reference, pdb):
@@ -178,9 +179,8 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
             logger.info("Getting nt nt correspondence for %s", pdb)
 
             try:
-                for data in self.data(pdb, **kwargs):
-                    logger.info("Found %s correspondencies", len(data))
-                    self.store(data)
+                data = self.data(pdb, **kwargs)
+                self.store(data)
             except:
                 logger.error("Failed to store correspondencies for %s", pdb)
                 logger.error(traceback.format_exc(sys.exc_info()))
