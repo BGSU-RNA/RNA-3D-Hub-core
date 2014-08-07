@@ -30,3 +30,23 @@ class StructureUtilTest(ut.TestCase):
         val = self.util.reference('3J5F')
         ans = ['4KJA', '2AW7']
         self.assertEquals(ans, val)
+
+
+class StructureUtilMappingTest(ut.TestCase):
+    def setUp(self):
+        self.util = ll.StructureUtil(Session)
+        self.mapping = self.util.mapping('4KJA', '3J55')
+
+    def test_gives_empty_mapping_for_invalid_pair(self):
+        val = self.util.mapping('1J5E', 'bob')
+        self.assertEquals({}, val)
+
+    def test_gets_mapping_from_ref_to_given(self):
+        val = self.mapping['4KJA_AU_1_A_13_U_']
+        ans = '3J55_AU_1_A_13_U_'
+        self.assertEqual(ans, val)
+
+    def test_gets_mapping_from_given_to_ref(self):
+        val = self.mapping['3J55_AU_1_A_24_U_']
+        ans = '4KJA_AU_1_A_24_U_'
+        self.assertEqual(ans, val)

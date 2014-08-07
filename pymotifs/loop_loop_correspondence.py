@@ -48,6 +48,24 @@ class StructureUtil(ut.DatabaseHelper):
             query = session.query(mod.PdbCorrespondences).filter_by(pdb2=pdb)
             return [result.pdb1 for result in query]
 
+    def mapping(self, ref, pdb):
+        """Get the mapping from nucleotides in the reference to the nucleotides
+        in the pdb.
+        """
+    # PdbCorrespondences
+        mapping = {}
+        with self.session() as session:
+            query = session.query(mod.NtNtCorrespondences).\
+                join(mod.PdbCorrespondences,
+                     mod.PdbCorrespondences.id ==
+                     mod.NtNtCorrespondences.correspondence_id).\
+                filter(mod.PdbCorrespondences.pdb1 == ref).\
+                filter(mod.PdbCorrespondences.pdb2 == pdb)
+            for result in query:
+                mapping[result.unit1_id] = result.unit2_id
+                mapping[result.unit2_id] = result.unit1_id
+        return mapping
+
 
 class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
 
@@ -74,23 +92,6 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
             raise Exception("Unknown overlap name: " + coverage)
 
         return self._overlaps[coverage]
-
-    def mapping(self, ref, pdb):
-        """Get the mapping from nucleotides in the reference to the nucleotides
-        in the pdb.
-        """
-        mapping = {}
-        with self.session() as session:
-            query = session.query(mod.NtNtCorrespondences).\
-                join(mod.PdbCorrespondence,
-                     mod.PdbCorrespondence.id ==
-                     mod.NtNtCorrespondences.correspondence_id).\
-                filter(mod.PdbCorresondence.pdb1 == ref).\
-                filter(mod.PdbCorresondence.pdb2 == pdb)
-            for result in query:
-                mapping[query.unit1_id] = query.unit2_id
-                mapping[query.unit2_id] = query.unit1_id
-        return mapping
 
     def discrepancy(self, loop1, loop2):
         """Get the discrepancy between two loops.
