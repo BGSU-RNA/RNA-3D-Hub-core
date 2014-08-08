@@ -52,7 +52,6 @@ class StructureUtil(ut.DatabaseHelper):
         """Get the mapping from nucleotides in the reference to the nucleotides
         in the pdb.
         """
-    # PdbCorrespondences
         mapping = {}
         with self.session() as session:
             query = session.query(mod.NtNtCorrespondences).\
