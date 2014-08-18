@@ -72,6 +72,7 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
         MotifAtlasBaseClass.__init__(self)
         ut.DatabaseHelper.__init__(self, maker)
         self._overlaps = {}
+        self.utils = StructureUtil(maker)
 
     def has_data(self, reference, pdb):
         with self.session() as session:
@@ -106,13 +107,37 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
     def coverage(self, loop1, loop2, mapping):
         """Get the coverage between the two loops.
         """
-        loop_nt1 = set(loop1['nts'])
+        if not loop1:
+            logging.error("Given empty first loop")
+            return None
+
+        if not loop2:
+            logging.error("Given empty second loop")
+            return None
+
+        loop_nt1 = set(loop1.get('nts', []))
+        if not loop_nt1:
+            logging.error("Given loop had not nts")
+            return None
+
+        nts = loop2.get('nts', [])
+        if not nts:
+            logging.error("Second loop had no nts")
+            return None
 
         try:
-            mapped = set(self.map(loop2['nts'], mapping))
+            mapped = set(self.map(nts, mapping))
         except:
             logging.error("Could not map all nucleotides")
             logger.error(traceback.format_exc(sys.exc_info()))
+            return None
+
+        if not mapped:
+            logging.error("Empty mapped loop nts")
+            return None
+
+        if len(mapped) != len(loop2['nts']):
+            logging.error("Invalid mapping, mapped sizes differ")
             return None
 
         intersection = mapped.intersection(loop_nt1)
@@ -129,9 +154,9 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
         raise Exception("This should never occur")
 
     def compare(self, reference, pdb, mapping):
-        loops = self.loops(pdb)
+        loops = self.utils.loops(pdb)
 
-        for ref_loop in self.loops(reference):
+        for ref_loop in self.utils.loops(reference):
             found = False
             for loop in loops:
 
