@@ -46,7 +46,15 @@ function [disc] = pairwiseSearch(file1, file2)
     if ~exist('File2', 'var')
         [File2, file2] = getNameAndData(file2);        
     end
-    
+ 
+    % do not search some large loops because they cause Matlab to run out of memory
+    % TODO: replace this temporary fix with a more general solution  
+    if strcmp(file1, 'IL_1NBS_003') || strcmp(file1, 'IL_1NBS_010') || strcmp(file2, 'IL_1NBS_003') || strcmp(file2, 'IL_1NBS_010')        
+	disc = Inf;
+	addToNoCandidatesFile(file2, P);
+	return;
+    end
+
     % don't analyze huge spurious loops
     if File1.NumNT > P.maxNtToSearch || File2.NumNT > P.maxNtToSearch
         fprintf('Large loop: %s vs %s, %i vs %i\n', file1, file2, File1.NumNT, File2.NumNT);
