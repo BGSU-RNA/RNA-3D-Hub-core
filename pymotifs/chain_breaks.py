@@ -4,10 +4,9 @@ import traceback
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import PolymerInfo
-from utils import DatabaseHelper
-from utils import CifFileFinder
+import utils as ut
 
-sys.path.append('rnastructure')
+ut.append_libs()
 from rnastructure.tertiary.cif import CIF
 from rnastructure.util import unit_ids as uids
 
@@ -28,13 +27,13 @@ class ChainBreakFinder(object):
         return breaks
 
 
-class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
+class ChainBreakLoader(MotifAtlasBaseClass, ut.DatabaseHelper):
     finder = ChainBreakFinder()
 
     def __init__(self, maker):
         MotifAtlasBaseClass.__init__(self)
-        self.cif = CifFileFinder(self.config)
-        DatabaseHelper.__init__(self, maker)
+        self.cif = ut.CifFileFinder(self.config)
+        ut.DatabaseHelper.__init__(self, maker)
 
     def has_breaks(self, pdb):
         with self.session() as session:
@@ -77,6 +76,7 @@ class ChainBreakLoader(MotifAtlasBaseClass, DatabaseHelper):
             raise Exception("No pdbs given")
 
         for pdb in pdbs:
+            pdb = pdb.upper()
             logger.info("Getting breaks for %s", pdb)
 
             try:
