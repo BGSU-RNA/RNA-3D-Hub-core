@@ -50,3 +50,81 @@ class StructureUtilMappingTest(ut.TestCase):
         val = self.mapping['3J55_AU_1_A_24_U_']
         ans = '4KJA_AU_1_A_24_U_'
         self.assertEqual(ans, val)
+
+
+class StructureCoverageTest(ut.TestCase):
+    def setUp(self):
+        self.util = ll.StructureUtil(Session)
+        self.loader = ll.Loader(Session)
+        self.mapping = self.util.mapping('4KJA', '3J55')
+
+    def test_fails_if_given_empty_first_loop(self):
+        loop = {'id': 'A', 'nts': ['4KJA_AU_1_A_18_C_']}
+        val = self.loader.coverage({}, loop, self.mapping)
+        self.assertTrue(val is None)
+
+    def test_fails_if_given_empty_second_loop(self):
+        loop = {'id': 'A', 'nts': ['4KJA_AU_1_A_18_C_']}
+        val = self.loader.coverage(loop, {}, self.mapping)
+        self.assertTrue(val is None)
+
+    def test_fails_if_first_nts_empty(self):
+        loop = {'id': 'A', 'nts': ['4KJA_AU_1_A_18_C_']}
+        empty = {'id': None, 'nts': []}
+        val = self.loader.coverage(empty, loop, self.mapping)
+        self.assertTrue(val is None)
+
+    def test_fails_if_second_nts_empty(self):
+        loop = {'id': 'A', 'nts': ['4KJA_AU_1_A_18_C_']}
+        empty = {'id': None, 'nts': []}
+        val = self.loader.coverage(loop, empty, self.mapping)
+        self.assertTrue(val is None)
+
+    def test_fails_if_one_does_not_map(self):
+        loop = {
+            'id': 'A',
+            'nts': ['4KJA_AU_1_Q_18_C_', '4KJA_AU_1_A_18_C_']
+        }
+        val = self.loader.coverage(loop, loop, self.mapping)
+        self.assertTrue(val is None)
+
+    def test_fails_if_all_do_not_map(self):
+        loop = {'id': 'A', 'nts': ['4KJA_AU_1_Q_18_C_']}
+        val = self.loader.coverage(loop, loop, self.mapping)
+        self.assertTrue(val is None)
+
+    def test_gets_exact_coverage(self):
+        pass
+        # loop1 = {'id': 'A', 'nts': ['4KJA_AU_1_Q_18_C_']}
+        # loop2 = {'id': 'A', 'nts': ['']}
+        # val = self.loader.coverage(loop1, loop2, self.mapping)
+        # self.assertEqual('exact', val)
+
+    def test_gets_partial(self):
+        pass
+
+    def test_gets_parital_if_one_in_common(self):
+        pass
+
+    def test_finds_contained(self):
+        pass
+
+    def test_finds_enclose(self):
+        pass
+
+
+class CompareTests(ut.TestCase):
+    def setUp(self):
+        self.loader = ll.Loader(Session)
+
+    def test_process_all_loops_in_both_structures(self):
+        pass
+        # val = len(list(self.loader.compare('2AW7', '4KJA')))
+        # ans = None
+        # self.assertEqual(ans, val)
+
+    def test_assigns_unique_to_unique_loop(self):
+        pass
+
+    def test_generates_valid_objects(self):
+        pass

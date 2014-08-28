@@ -6,8 +6,8 @@ import itertools as it
 import collections as coll
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import NtNtCorrespondences as Corr
-from models import PdbCorrespondences
+from models import CorrespondenceNts as Corr
+from models import CorrespondenceInfo
 from models import PdbCoordinates
 from utils import DatabaseHelper
 from utils import WebRequestHelper
@@ -103,22 +103,45 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
         self.util = StructureUtil(maker)
 
     def structure_data(self, chain, pdb):
+        ids = self.util.unit_ids(pdb, chain)
+        sequence = self.util.polymer_sequences(pdb, chain)
+
+        if not ids:
+            logger.error("Could not load ids for PDB: %s, Chain: %s", pdb,
+                         chain)
+            logger.error("Was chain_breaks run prior to this")
+            return {}
+
+        if not chain:
+            logger.error("Could not load sequence for PDB: %s, Chain: %s", pdb,
+                         chain)
+            logger.error("Was chain_breaks run prior to this")
+            return {}
+
         return {
-            'ids': self.util.unit_ids(pdb, chain),
-            'sequence': self.util.polymer_sequences(pdb, chain),
+            'ids': ids,
+            'sequence': sequence,
             'pdb': pdb
         }
 
     def correlation_id(self, reference, pdb):
-        data = PdbCorrespondences(pdb1=reference, pdb2=pdb)
+        data = CorrespondenceInfo(pdb1=reference, pdb2=pdb)
         self.store([data])
         with self.session() as session:
-            data = session.query(PdbCorrespondences).\
+            data = session.query(CorrespondenceInfo).\
                 filter_by(pdb1=reference, pdb2=pdb).\
                 one().id
         return data
 
     def correlate(self, reference, target):
+        if not target or not reference['ids'] or not reference['sequence']:
+            logger.error("Not given complete reference: %s", reference)
+            return []
+
+        if not target or not target['ids'] or not target['sequence']:
+            logger.error("Not given complete target: %s", target)
+            return []
+
         payload = {
             'reference': reference['sequence'][0],
             'reference_ids': reference['ids'],
@@ -134,7 +157,7 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
 
     def __base_info_query__(self, session, reference, pdb):
         # TODO: Do something to store correlation method data
-        return session.query(PdbCorrespondences).\
+        return session.query(CorrespondenceInfo).\
             filter_by(pdb1=reference, pdb2=pdb)
 
     def has_correspondence(self, reference, pdb):
@@ -176,6 +199,7 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
             raise Exception("No pdbs given")
 
         for pdb in pdbs:
+            pdb = pdb.upper()
             logger.info("Getting nt nt correspondence for %s", pdb)
 
             try:

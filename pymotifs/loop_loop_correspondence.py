@@ -16,6 +16,13 @@ class MissingNucleotideException(Exception):
     pass
 
 
+class InvalidCoverageState(Exception):
+    """Raised when something happens to put is in an invalid state when getting
+    the coverage.
+    """
+    pass
+
+
 class StructureUtil(ut.DatabaseHelper):
     """Some useful methods
     """
@@ -45,8 +52,8 @@ class StructureUtil(ut.DatabaseHelper):
         """Get all correlated reference structures.
         """
         with self.session() as session:
-            query = session.query(mod.PdbCorrespondences).filter_by(pdb2=pdb)
-            return [result.pdb1 for result in query]
+            query = session.query(mod.CorrespondenceInfo).filter_by(pdb2=pdb)
+            return [ut.row2dict(result) for result in query]
 
     def mapping(self, ref, pdb):
         """Get the mapping from nucleotides in the reference to the nucleotides
@@ -54,15 +61,20 @@ class StructureUtil(ut.DatabaseHelper):
         """
         mapping = {}
         with self.session() as session:
-            query = session.query(mod.NtNtCorrespondences).\
-                join(mod.PdbCorrespondences,
-                     mod.PdbCorrespondences.id ==
-                     mod.NtNtCorrespondences.correspondence_id).\
-                filter(mod.PdbCorrespondences.pdb1 == ref).\
-                filter(mod.PdbCorrespondences.pdb2 == pdb)
+            query = session.query(mod.CorrespondenceNts).\
+                join(mod.CorrespondenceInfo,
+                     mod.CorrespondenceInfo.id ==
+                     mod.CorrespondenceNts.correspondence_id).\
+                filter(mod.CorrespondenceInfo.pdb1 == ref).\
+                filter(mod.CorrespondenceInfo.pdb2 == pdb)
             for result in query:
                 mapping[result.unit1_id] = result.unit2_id
                 mapping[result.unit2_id] = result.unit1_id
+
+        if not mapping:
+            logger.error("Could not generate mapping between %s to %s", ref,
+                         pdb)
+
         return mapping
 
 
@@ -85,7 +97,7 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
     def overlap(self, coverage):
         if not self._overlaps:
             with self.session() as session:
-                for overlap in session.query(mod.Overlaps):
+                for overlap in session.query(mod.LoopOverlapInfo):
                     self._overlaps[overlap.name] = overlap.id
 
         if coverage not in self._overlaps:
@@ -99,46 +111,50 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
         return None
 
     def map(self, nts, mapping):
+        if not mapping:
+            logger.error("Given empty mapping. Invalid state")
+            raise MissingNucleotideException("Empty mapping")
+
         for nt in nts:
             if nt not in mapping:
-                raise MissingNucleotideException("Can't map missing nt: " + nt)
+                raise MissingNucleotideException(nt)
             yield mapping[nt]
 
-    def coverage(self, loop1, loop2, mapping):
+    def map_loops(self, loops, ref, mapping):
+        mapped = []
+        for loop in loops:
+            try:
+                nts = list(self.map(loop['nts'], mapping))
+            except MissingNucleotideException as err:
+                logger.warn("Removing loop %s which cannot be mapped to %s",
+                            loop['id'], ref)
+                logger.warn("Missing nt %s", str(err))
+                continue
+
+            mapped.append({'id': loop['id'], 'nts': nts})
+
+        return mapped
+
+    def coverage(self, loop1, loop2):
         """Get the coverage between the two loops.
         """
         if not loop1:
-            logging.error("Given empty first loop")
-            return None
+            raise InvalidCoverageState("Empty first loop")
 
         if not loop2:
-            logging.error("Given empty second loop")
-            return None
+            raise InvalidCoverageState("Empty second loop")
 
         loop_nt1 = set(loop1.get('nts', []))
         if not loop_nt1:
-            logging.error("Given loop had not nts")
-            return None
+            raise InvalidCoverageState("First loop had no nts")
 
         nts = loop2.get('nts', [])
         if not nts:
-            logging.error("Second loop had no nts")
-            return None
+            raise InvalidCoverageState("Second loop has no nts")
 
-        try:
-            mapped = set(self.map(nts, mapping))
-        except:
-            logging.error("Could not map all nucleotides")
-            logger.error(traceback.format_exc(sys.exc_info()))
-            return None
-
-        if not mapped:
-            logging.error("Empty mapped loop nts")
-            return None
-
+        mapped = set(loop2['nts'])
         if len(mapped) != len(loop2['nts']):
-            logging.error("Invalid mapping, mapped sizes differ")
-            return None
+            raise InvalidCoverageState("Could not map all loop2 nts")
 
         intersection = mapped.intersection(loop_nt1)
         if not intersection:
@@ -153,49 +169,95 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
             return 'partial'
         raise Exception("This should never occur")
 
-    def compare(self, reference, pdb, mapping):
-        loops = self.utils.loops(pdb)
+    def loop_comparision_id(self, loop1, loop2, discrepancy):
+        with self.session() as session:
+            query = session.query(mod.LoopLoopComparisions).\
+                filter_by(loop1_id=loop1, loop2_id=loop2)
 
-        for ref_loop in self.utils.loops(reference):
-            found = False
-            for loop in loops:
+            if query.count() == 0:
+                session.add(mod.LoopLoopComparisions(loop1_id=loop1,
+                                                     loop2_id=loop2,
+                                                     discrepancy=discrepancy))
+                session.commit()
 
-                try:
-                    cover = self.coverage(ref_loop, loop, mapping)
-                except:
-                    logging.error("Exception in overlap between %s, %s",
-                                  ref_loop['id'], loop['id'])
-                    logger.error(traceback.format_exc(sys.exc_info()))
-                    continue
+        with self.session() as session:
+            return session.query(mod.LoopLoopComparisions).\
+                filter_by(loop1_id=loop1, loop2_id=loop2).\
+                one().id
 
-                disc = None
-                if cover:
-                    found = True
-                    if cover == 'exact':
-                        disc = self.discrepancy(ref_loop, loop)
+    def compare_loop(self, ref_loop, loops, corr_id):
+        overlapping = []
+        for loop in loops:
+            try:
+                cover = self.coverage(ref_loop, loop)
+            except:
+                logger.error("Exception in overlap between %s, %s",
+                             ref_loop['id'], loop['id'])
+                logger.error(traceback.format_exc(sys.exc_info()))
+                continue
 
-                    yield mod.LoopOverlap(loop1_id=ref_loop['id'],
-                                          loop2_id=loop['id'],
-                                          overlap_id=self.overlap(cover),
-                                          discrepancy=disc)
+            if not cover:
+                continue
 
-            if not found:
-                    yield mod.LoopOverlap(loop1_id=ref_loop['id'],
-                                          loop2_id=None,
-                                          overlap_id=self.overlap('unique'),
-                                          discrepancy=None)
+            disc = None
+            if cover == 'exact':
+                disc = self.discrepancy(ref_loop, loop)
+
+            compare_id = self.loop_comparision_id(ref_loop['id'], loop['id'],
+                                                  disc)
+
+            overlapping.append((loop['id'],
+                               mod.CorrespondenceLoops(
+                                   loop_loop_comparisions_id=compare_id,
+                                   correspondence_id=corr_id,
+                                   loop_overlap_info_id=self.overlap(cover))))
+
+        return overlapping
+
+    def compare(self, ref_loops, loops, corr_id):
+        unseen_loops = set(loop['id'] for loop in loops)
+        for ref in ref_loops:
+            overlapping = self.compare_loop(ref, loops, corr_id)
+            unseen_loops -= set(loop[0] for loop in overlapping)
+
+            if overlapping:
+                for compare in overlapping:
+                    yield compare[1]
+
+            else:
+                compare_id = self.loop_comparision_id(ref['id'], None, None)
+                yield mod.CorrespondenceLoops(
+                    loop_loop_comparisions_id=compare_id,
+                    correspondence_id=corr_id,
+                    loop_overlap_info_id=self.overlap('unique'))
+
+        for loop in unseen_loops:
+            compare_id = self.loop_comparision_id(None, loop, None)
+
+            yield mod.CorrespondenceLoops(
+                loop_loop_comparisions_id=compare_id,
+                correspondence_id=corr_id,
+                loop_overlap_info_id=self.overlap('unique'))
 
     def data(self, pdb, recalculate=False, **kwargs):
-        for ref_pdb in self.reference(pdb):
-            mapping = self.mapping(ref_pdb, pdb)
-            yield it.chain(self.compare(pdb, ref_pdb, mapping),
-                           self.compare(ref_pdb, pdb, mapping))
+        for correspondence in self.utils.reference(pdb):
+            ref_pdb = correspondence['pdb1']
+            mapping = self.utils.mapping(ref_pdb, pdb)
+            ref_loops = self.utils.loops(ref_pdb)
+            pdb_loops = self.utils.loops(pdb)
+            mapped = self.map_loops(pdb_loops, ref_pdb, mapping)
+
+            if not mapped:
+                logger.error("No loops could be mapped")
+                continue
+
+            yield self.compare(ref_loops, mapped, correspondence['id'])
 
     def __call__(self, pdbs, **kwargs):
         if not pdbs:
             raise Exception("No pdbs given")
 
-        for pdb in pdbs:
+        for pdb in it.imap(lambda p: p.upper(), pdbs):
             logger.info("Getting loop loop correspondence for %s", pdb)
 
             try:
