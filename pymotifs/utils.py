@@ -8,6 +8,7 @@ import cStringIO as sio
 import itertools as it
 import collections as coll
 from contextlib import contextmanager
+import inspect
 
 import requests
 
@@ -65,7 +66,7 @@ class RetryHelper(object):
         raise RetryFailedException()
 
 
-class WebRequestHelper(object):
+class WebRequestHelper(RetryHelper):
     """A class to help with making web requests. This deals with the retrying
     and making sure the response body is not empty. If the max number of
     retries is reached we raise an exception. In addition, all steps are
@@ -104,13 +105,20 @@ class DatabaseHelper(object):
             if not isinstance(data, coll.Iterable):
                 session.add(data)
             else:
-                for index, datum in enumerate(it.chain.from_iterable(data)):
+                iterator = enumerate(data)
+                if inspect.isgenerator(data) or \
+                   isinstance(data[0], coll.Iterable) or \
+                   inspect.isgenerator(data[0]):
+                    iterator = enumerate(it.chain.from_iterable(data))
+
+                for index, datum in iterator:
                     session.add(datum)
                     if index % self.insert_max == 0:
                         logger.debug("Committing a chunk of %s",
                                      self.insert_max)
                         session.commit()
                 logger.debug("Final commit")
+
             session.commit()
 
     @contextmanager
