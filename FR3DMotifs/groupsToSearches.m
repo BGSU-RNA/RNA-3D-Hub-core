@@ -40,6 +40,8 @@ function [] = groupsToSearches(Location,groups)
                 else
 
                     [a,b,c] = intersect(Search.Query.Indices, Group.Candidates(1,1:end-1));
+                    b = reshape(b, 1, []);
+                    c = reshape(c, 1, []);
                     
                     indices = Search.Candidates(1,b);                        
                     Group.Candidates(end+1,c) = indices;
@@ -55,6 +57,8 @@ function [] = groupsToSearches(Location,groups)
                 load(search2);
 
                 [a,b,c]=intersect(Group.Candidates(1,1:end-1),Search.Candidates(1,1:end-1));
+                b = reshape(b, 1, []);
+                c = reshape(c, 1, []);
                 
                 Group.Candidates(end+1,b) = Search.Query.Indices(c);
                                                                                                 
