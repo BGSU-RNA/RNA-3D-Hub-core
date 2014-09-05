@@ -18,6 +18,8 @@ import datetime
 from models import session, AllLoops
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class LoopExtractor(MotifAtlasBaseClass):
     """
@@ -30,7 +32,7 @@ class LoopExtractor(MotifAtlasBaseClass):
         """Loops over `pdbs`, extracts and imports all loops"""
         try:
             for loop_type in self.loop_types:
-                logging.info('Extracting %s' % loop_type)
+                logger.info('Extracting %s' % loop_type)
                 if recalculate is None:
                     recalculate = self.config['recalculate'][loop_type]
                 if recalculate:
@@ -38,10 +40,10 @@ class LoopExtractor(MotifAtlasBaseClass):
                 else:
                     pdb_list = self.filter_out_analyzed_pdbs(pdbs, loop_type)
                 for pdb_id in pdb_list:
-                    logging.info('Extracting %s from %s', loop_type, pdb_id)
+                    logger.info('Extracting %s from %s', loop_type, pdb_id)
                     (Loops,l) = self.extract_loops(pdb_id, loop_type)
                     self.import_loops(Loops, l, pdb_id, loop_type)
-                    logging.info('%s', '='*40)
+                    logger.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
             MotifAtlasBaseClass._crash(self,e)
@@ -58,10 +60,10 @@ class LoopExtractor(MotifAtlasBaseClass):
                 MotifAtlasBaseClass._crash(self,err_msg)
 
             if Loops == 0:
-                logging.info('No %s in %s', loop_type, pdb_id)
+                logger.info('No %s in %s', loop_type, pdb_id)
                 return (0, 0)
             else:
-                logging.info('Found %i loops', l)
+                logger.info('Found %i loops', l)
                 return (Loops, l)
         except:
             e = sys.exc_info()[1]
@@ -93,7 +95,7 @@ class LoopExtractor(MotifAtlasBaseClass):
                              loop_name     = Loops[i].AllLoops_table.loop_name))
             self.save_mat_files(Loops)
             self.mark_pdb_as_analyzed(pdb_id, loop_type)
-            logging.info('%s from %s successfully imported', loop_type, pdb_id)
+            logger.info('%s from %s successfully imported', loop_type, pdb_id)
         except:
             e = sys.exc_info()[1]
             MotifAtlasBaseClass._crash(self,e)
@@ -106,7 +108,7 @@ class LoopExtractor(MotifAtlasBaseClass):
                                                  self.config['locations']['loops_mat_files'],
                                                  nout=2)
         if status == 0:
-            logging.info('mat files saved')
+            logger.info('mat files saved')
         else:
             MotifAtlasBaseClass._crash(self,err_msg)
 
@@ -114,7 +116,7 @@ class LoopExtractor(MotifAtlasBaseClass):
         """returns a loop id"""
         L = session.query(AllLoops).filter(AllLoops.nt_ids==full_id).first()
         if L:
-            logging.info('Full_id %s matched %s', full_id, L.id)
+            logger.info('Full_id %s matched %s', full_id, L.id)
             return L.id
         else:
             "count the loops already in the db"""
@@ -123,7 +125,7 @@ class LoopExtractor(MotifAtlasBaseClass):
                              filter(AllLoops.type==loop_type).count()
             """format example: IL_1S72_001"""
             id = '_'.join([loop_type, pdb_id, str(seq_id+1).rjust(3,'0')])
-            logging.info('Created new loop id %s', id)
+            logger.info('Created new loop id %s', id)
             return id
 
 

@@ -31,6 +31,8 @@ os.sys.path.append(os.path.join(parent_dir, id_translation_submodule))
 # now import from the UnitIdTranslation folder
 import id_translate as idt
 
+logger = logging.getLogger(__name__)
+
 
 class UnitIdLoader(MotifAtlasBaseClass):
     """
@@ -48,7 +50,7 @@ class UnitIdLoader(MotifAtlasBaseClass):
             necessary, loops over the pdbs, generates unit ids and stores them
             in the database.
         """
-        logging.info('Inside import_unit_ids')
+        logger.info('Inside import_unit_ids')
         if not recalculate:
             recalculate = self.config['recalculate']['unit_ids']
         if recalculate:
@@ -60,44 +62,44 @@ class UnitIdLoader(MotifAtlasBaseClass):
         for pdb_id in pdb_list:
             analyzed = False
             for file_type in self.pdb_file_types:
-                logging.info('Analyzing %s%s' % (pdb_id, file_type))
+                logger.info('Analyzing %s%s' % (pdb_id, file_type))
                 pdb_file = os.path.join(self.pdb_files_folder, pdb_id + file_type)
                 cif_file = os.path.join(self.pdb_files_folder, pdb_id + '.cif')
 
                 # skip .pdb1 file if it doesn't exist
                 if not os.path.exists(pdb_file):
-                    logging.warning('Skipping %s because %s%s was not found in %s' % (pdb_id, pdb_id, file_type, self.pdb_files_folder))
+                    logger.warning('Skipping %s because %s%s was not found in %s' % (pdb_id, pdb_id, file_type, self.pdb_files_folder))
                     continue
                 elif not os.path.exists(cif_file):
-                    logging.warning('Skipping %s because %s.cif was not found in %s' % (pdb_id, pdb_id, self.pdb_files_folder))
+                    logger.warning('Skipping %s because %s.cif was not found in %s' % (pdb_id, pdb_id, self.pdb_files_folder))
                     continue
 
                 try:
                     warnings.simplefilter("ignore") # ignore Biopython warnings
                     unit_ids = idt.get_id_correspondences(pdb_file, cif_file)
                     self.__store_unit_ids(unit_ids)
-                    logging.info('Found %i id pairs' % len(unit_ids))
+                    logger.info('Found %i id pairs' % len(unit_ids))
                     analyzed = True
                 except idt.LooksLikeAVirusStructureError:
-                    logging.warning('%s looks like a viral structure' % pdb_id)
+                    logger.warning('%s looks like a viral structure' % pdb_id)
                     continue
                 except Exception, err:
-                    logging.critical('Crash on %s' % pdb_id)
+                    logger.critical('Crash on %s' % pdb_id)
                     continue
 
             if analyzed:
                 self.mark_pdb_as_analyzed(pdb_id, 'unit_ids')
 
-        logging.info('%s', '='*40)
+        logger.info('%s', '='*40)
 
     def __delete_unit_ids(self, pdbs):
         """
         """
-        logging.info('Deleting unit id correspondence data')
+        logger.info('Deleting unit id correspondence data')
         session.query(PdbUnitIdCorrespondence). \
                 filter(PdbUnitIdCorrespondence.pdb.in_(pdbs)). \
                 delete(synchronize_session='fetch')
-        logging.info('Resetting unit id analysis status')
+        logger.info('Resetting unit id analysis status')
         for statusObj in session.query(PdbAnalysisStatus). \
                                  filter(PdbAnalysisStatus.id.in_(pdbs)). \
                                  all():
@@ -108,7 +110,7 @@ class UnitIdLoader(MotifAtlasBaseClass):
     def __store_unit_ids(self, unit_ids):
         """
         """
-        logging.info('Importing unit ids')
+        logger.info('Importing unit ids')
         for (old_id, new_id) in unit_ids:
             # old id 1EKA_AU_1_B_8_C_
             (pdb_id,au_ba,model,chain,seq_id,comp_id,ins_code) = old_id.split('_')
@@ -128,7 +130,7 @@ class UnitIdLoader(MotifAtlasBaseClass):
                 atom     = ''
             else:
                 msg = 'Unknown id format %s' % new_id
-                logging.critical(msg)
+                logger.critical(msg)
                 session.rollback()
                 self._crash(msg)
 
@@ -149,7 +151,7 @@ class UnitIdLoader(MotifAtlasBaseClass):
             except:
                 pass
         session.commit()
-        logging.info('Ids successfully imported')
+        logger.info('Ids successfully imported')
 
 
 

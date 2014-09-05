@@ -14,6 +14,8 @@ from models import session, PdbUnitOrdering, PdbModifiedCorrespondecies
 
 from Bio.PDB.PDBParser import PDBParser
 
+logger = logging.getLogger(__name__)
+
 
 class UnitOrderingLoader(MotifAtlasBaseClass):
 
@@ -33,7 +35,7 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
         """Imports the unit id ordering for the given pdb files. Will only
         import things if their unit is in the list of known units.
         """
-        logging.info('Importing ordering')
+        logger.info('Importing ordering')
         analyze = pdbs
         if recalculate or self.config['recalculate']['ordering']:
             self.__delete_ordering__(pdbs)
@@ -45,7 +47,7 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
                 try:
                     self.__import_file__(pdb, file_type)
                 except:
-                    logging.error("Failed ordering import: %s%s",
+                    logger.error("Failed ordering import: %s%s",
                                   pdb, file_type)
 
     def __import_file__(self, pdb, extension):
@@ -55,7 +57,7 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
         filename = os.path.join(self.pdb_files_folder, pdb + extension)
 
         if not os.path.exists(filename):
-            logging.info("Skipping missing file: %s", filename)
+            logger.info("Skipping missing file: %s", filename)
             return None
 
         try:
@@ -67,12 +69,12 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
                 self.__store__(ordering)
                 self.mark_pdb_as_analyzed(pdb, 'unit_ordering')
         except:
-            logging.critical('Crash on: %s', filename)
+            logger.critical('Crash on: %s', filename)
 
     def __store__(self, data):
         """Store the results of generating an ordering.
         """
-        logging.info("Storing ordered ids")
+        logger.info("Storing ordered ids")
         try:
             for count, (unit_id, info) in enumerate(data.items()):
                 try:
@@ -82,11 +84,11 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
                     if count % self.commit_every == 0:
                         session.commit()
                 except:
-                    logging.error("Failed to add: %s", unit_id)
+                    logger.error("Failed to add: %s", unit_id)
             session.commit()
-            logging.info("ID ordering added")
+            logger.info("ID ordering added")
         except:
-            logging.info("Could not commit all ids")
+            logger.info("Could not commit all ids")
 
     def __pdb_ordering__(self, raw, pdb_id, pdb_type):
         """Generate a dict of the form: { unit_id: {index: index, pdb: pdb }
@@ -115,7 +117,7 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
         return data
 
     def __delete_ordering__(self, pdbs):
-        logging.info("Deleting ordering")
+        logger.info("Deleting ordering")
 
         entries = session.query(PdbUnitOrdering). \
             filter(PdbUnitOrdering.pdb.in_(pdbs))

@@ -10,8 +10,7 @@ ut.append_libs()
 from rnastructure.tertiary.cif import CIF
 from rnastructure.util import unit_ids as uids
 
-# logger = logging.getLogger('chain_breaks')
-logger = logging
+logger = logging.getLogger(__name__)
 
 
 class ChainBreakFinder(object):

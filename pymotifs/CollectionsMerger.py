@@ -11,6 +11,8 @@ c2 = Collection2, old collection
 import collections
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 class CollectionsMerger:
     """
@@ -75,7 +77,7 @@ class CollectionsMerger:
                        self.exact_match[groupId] = motifId
                        self.explanation[groupId] = 'Exact match'
                        if self.verbose:
-                           logging.info('Groups %s and motif %s match up exactly' % (groupId, motifId))
+                           logger.info('Groups %s and motif %s match up exactly' % (groupId, motifId))
                     # and the match is not perfect
                     else:
                         self.parents[groupId].append(motifId)
@@ -111,7 +113,7 @@ class CollectionsMerger:
                 # with more than 2 motifs - assign new id
                 elif len(match) > 2:
                     if self.verbose:
-                        logging.info('Group %s has more than 2 parents' % groupId)
+                        logger.info('Group %s has more than 2 parents' % groupId)
                     self.explanation[groupId] = '> 2 parents'
                     self.new_ids.append(groupId)
                     for motifId,v in match.iteritems():
@@ -125,18 +127,18 @@ class CollectionsMerger:
     def show_report(self):
         """
         """
-        logging.info('%i new loops'  % len(self.c1.loops))
-        logging.info('%i old loops'  % len(self.c2.loops))
-        logging.info('%i new groups' % len(self.c1.d.keys()))
-        logging.info('%i old groups' % len(self.c2.d.keys()))
+        logger.info('%i new loops'  % len(self.c1.loops))
+        logger.info('%i old loops'  % len(self.c2.loops))
+        logger.info('%i new groups' % len(self.c1.d.keys()))
+        logger.info('%i old groups' % len(self.c2.d.keys()))
 
-        logging.info('%i new loops not in the database' % len(self.c1.sl - self.c2.sl))
-        logging.info('%i old loops not in the new list' % len(self.c2.sl - self.c1.sl))
+        logger.info('%i new loops not in the database' % len(self.c1.sl - self.c2.sl))
+        logger.info('%i old loops not in the new list' % len(self.c2.sl - self.c1.sl))
 
         all_new = set(self.c1.groups) - set(self.intersection.keys())
         if len(all_new) > 0:
-            logging.info('%i entirely new groups' % len(all_new))
+            logger.info('%i entirely new groups' % len(all_new))
 
         only_old = set(self.c2.groups) - set(self.intersection.keys())
         if len(only_old) > 0:
-            logging.info('%i motifs only in the database' % len(only_old))
+            logger.info('%i motifs only in the database' % len(only_old))

@@ -30,6 +30,8 @@ from models import Loop
 from models import Release
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class PdbFileExporter(MotifAtlasBaseClass):
     """
@@ -112,12 +114,12 @@ class PdbFileExporter(MotifAtlasBaseClass):
         temp.write('"' + '","'.join(headers) + '"\n')
 
         for pdb_id in pdb_ids:
-            logging.info('Writing out interactions for %s' % pdb_id)
+            logger.info('Writing out interactions for %s' % pdb_id)
             interactions = self._get_interactions(pdb_id)
             unit_id = self._get_id_correspondence(pdb_id)
 
             if len(unit_id) == 0:
-                logging.warning('Unit ids not found for %s' % pdb_id)
+                logger.warning('Unit ids not found for %s' % pdb_id)
                 continue
 
             for interaction in interactions:
@@ -138,11 +140,11 @@ class PdbFileExporter(MotifAtlasBaseClass):
         writer.writerow(dict(zip(headers, headers)))
 
         for pdb in pdb_ids:
-            logging.info("Writing loops for %s" % pdb)
+            logger.info("Writing loops for %s" % pdb)
             loops = self._get_loops(pdb)
 
             if len(loops) == 0:
-                logging.info("No loops found for %s" % pdb)
+                logger.info("No loops found for %s" % pdb)
                 continue
 
             writer.writerows(loops)
@@ -188,7 +190,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
                 data['nts'] = ','.join([unit_ids[nt] for nt in nts])
                 loops.append(data)
             except:
-                logging.warning("Missing new style id for: %s" % loop.id)
+                logger.warning("Missing new style id for: %s" % loop.id)
 
         return loops
 
@@ -209,7 +211,7 @@ def main(argv):
 
     status = 'Data files successfully created'
     d.set_email_subject(status)
-    logging.info(status)
+    logger.info(status)
     d.send_report()
 
 

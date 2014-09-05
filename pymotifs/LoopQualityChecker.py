@@ -22,6 +22,8 @@ from models import session, LoopQA, LoopRelease
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from PdbInfoLoader import PdbInfoLoader
 
+logger = logging.getLogger(__name__)
+
 
 class LoopQualityChecker(MotifAtlasBaseClass):
     """
@@ -33,14 +35,14 @@ class LoopQualityChecker(MotifAtlasBaseClass):
         """
         """
         try:
-            logging.info('Loop Quality Assurance')
+            logger.info('Loop Quality Assurance')
             release = LoopRelease(mode=self.config['release_mode']['loops'])
             for pdb_id in pdbs:
                 self.loop_qa(pdb_id, release.id)
             session.add(release)
             session.commit()
-            logging.info('Loop QA complete')
-            logging.info('%s', '='*40)
+            logger.info('Loop QA complete')
+            logger.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
             MotifAtlasBaseClass._crash(self,e)
@@ -48,13 +50,13 @@ class LoopQualityChecker(MotifAtlasBaseClass):
     def loop_qa(self, pdb_id, release_id):
         """
         """
-        logging.info('QA on %s', pdb_id)
+        logger.info('QA on %s', pdb_id)
         MotifAtlasBaseClass._setup_matlab(self)
 
         [ifn, err_msg] = self.mlab.aLoopQualityAssurance(pdb_id, nout=2)
 
         if err_msg != '':
-            logging.warning('Error %s in pdb %s' % (err_msg, pdb_id))
+            logger.warning('Error %s in pdb %s' % (err_msg, pdb_id))
         else:
             self.__import_qa_from_csv(ifn, release_id)
             self.mark_pdb_as_analyzed(pdb_id,'qa')
@@ -62,7 +64,7 @@ class LoopQualityChecker(MotifAtlasBaseClass):
     def __import_qa_from_csv(self, ifn, release_id):
         """Reads the csv file, imports all distances, deletes the file when done
            to avoid stale data and free up disk space"""
-        logging.info('Importing qa')
+        logger.info('Importing qa')
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         QA = []
         for i, row in enumerate(reader):
@@ -80,7 +82,7 @@ class LoopQualityChecker(MotifAtlasBaseClass):
         os.remove(ifn)
         session.add_all(QA)
         session.commit()
-        logging.info('%s loops checked and imported' % len(QA))
+        logger.info('%s loops checked and imported' % len(QA))
 
 
 def usage():

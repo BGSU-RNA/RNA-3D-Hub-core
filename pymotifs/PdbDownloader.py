@@ -26,6 +26,8 @@ import pdb
 import PdbInfoLoader
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class PdbDownloader(MotifAtlasBaseClass):
     """
@@ -50,7 +52,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         p = PdbInfoLoader.PdbInfoLoader()
         p.get_all_rna_pdbs()
         self.pdbs = p.pdbs
-        logging.info('%i RNA 3D structures found in PDB' % len(self.pdbs))
+        logger.info('%i RNA 3D structures found in PDB' % len(self.pdbs))
 
     def set_locations(self, locations):
         """
@@ -61,11 +63,11 @@ class PdbDownloader(MotifAtlasBaseClass):
             if os.path.exists(location):
                 self.locations.append(location)
             else:
-                logging.critical("Location %s doesn't exist" % location)
+                logger.critical("Location %s doesn't exist" % location)
                 self.set_email_subject('Pdb sync failed')
                 self.send_report()
                 sys.exit(1)
-        logging.info('Saving files in %s' % ', '.join(locations))
+        logger.info('Saving files in %s' % ', '.join(locations))
 
     def download_files(self):
         """
@@ -84,7 +86,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         try:
             response = urllib2.urlopen(self.ba_url + pdb_id)
         except urllib2.HTTPError:
-            logging.critical('Bioassembly query failed for  %s' % pdb_id)
+            logger.critical('Bioassembly query failed for  %s' % pdb_id)
             self.set_email_subject('Pdb sync failed')
             self.send_report()
             sys.exit(1)
@@ -92,7 +94,7 @@ class PdbDownloader(MotifAtlasBaseClass):
             dom = xml.dom.minidom.parseString(response.read())
             return int(dom.getElementsByTagName('PDB')[0].attributes['bioAssemblies'].value)
         except:
-            logging.warning('REST query for %s biological assemblies failed' % pdb_id)
+            logger.warning('REST query for %s biological assemblies failed' % pdb_id)
             return None
 
     def download(self, pdb_id, file_type):
@@ -101,25 +103,25 @@ class PdbDownloader(MotifAtlasBaseClass):
             .pdb or .cif files are not found.
         """
         if file_type == '.pdb1' and self.get_bio_assemblies_count(pdb_id) == 0:
-            logging.info('No bio assemblies for %s' % pdb_id)
+            logger.info('No bio assemblies for %s' % pdb_id)
             return
 
         filename = pdb_id + file_type
         destination = os.path.join(self.locations[0], filename)
 
         if os.path.exists(destination):
-            logging.info('%s already downloaded' % filename)
+            logger.info('%s already downloaded' % filename)
             return
         try:
             response = urllib2.urlopen(self.baseurl + filename + '.gz')
         except urllib2.HTTPError:
             if file_type in ['.pdb', '.cif']:
-                logging.critical('Pdb file %s could not be downloaded' % pdb_id)
+                logger.critical('Pdb file %s could not be downloaded' % pdb_id)
                 self.set_email_subject('Pdb sync failed')
                 self.send_report()
                 sys.exit(1)
             else:
-                logging.info('%s file not found for %s' % (file_type, pdb_id))
+                logger.info('%s file not found for %s' % (file_type, pdb_id))
                 return
 
         # save gzip
@@ -136,7 +138,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         f = open(destination, 'w')
         f.write(decompressed)
         f.close()
-        logging.info('Downloaded %s' % destination)
+        logger.info('Downloaded %s' % destination)
 
     def make_copies(self, pdb_id):
         """
@@ -148,10 +150,10 @@ class PdbDownloader(MotifAtlasBaseClass):
                 (head, tail) = os.path.split(source)
                 destination = os.path.join(location, tail)
                 if os.path.exists(destination):
-                    logging.info('%s already exists in %s' % (tail, location))
+                    logger.info('%s already exists in %s' % (tail, location))
                     continue
                 shutil.copy(source, destination)
-                logging.info('Copied %s files to %s' % (pdb_id, location))
+                logger.info('Copied %s files to %s' % (pdb_id, location))
 
 
 def main(argv):
@@ -162,7 +164,7 @@ def main(argv):
     d.set_locations(argv)
     d.get_pdb_list()
     d.download_files()
-    logging.info('Successful update')
+    logger.info('Successful update')
     d.set_email_subject('Pdb files successfully synchronized')
     d.send_report()
 

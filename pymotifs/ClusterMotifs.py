@@ -55,6 +55,8 @@ from models import session, AllLoops, PdbBestChainsAndModels, NR_release, \
                    NR_pdb, LoopRelease, LoopQA, Release
 from MotifLoader import MotifLoader
 
+logger = logging.getLogger(__name__)
+
 
 class ClusterMotifs(MotifAtlasBaseClass):
     """
@@ -85,17 +87,17 @@ class ClusterMotifs(MotifAtlasBaseClass):
         previous = session.query(Release).filter(Release.type==self.loop_type).\
                                           order_by(Release.date.desc()).\
                                           first()
-        logging.info('Last %s release occurred on %s'
+        logger.info('Last %s release occurred on %s'
                           % (self.loop_type,
                              datetime.datetime.strftime(previous.date, "%Y-%m-%d %H:%M")))
         # 27 days is after 3 weekly update cycles
         if (previous.date + datetime.timedelta(days=27)) > datetime.datetime.now():
-            logging.info('Next %s release will occur on %s, now skipping.' \
+            logger.info('Next %s release will occur on %s, now skipping.' \
                           % (self.loop_type,
                              datetime.datetime.strftime(previous.date + datetime.timedelta(weeks=4), "%Y-%m-%d %H:%M")))
             return False
         else:
-            logging.info('Time for new %s clustering' % self.loop_type)
+            logger.info('Time for new %s clustering' % self.loop_type)
             return True
 
     def make_release_directory(self):
@@ -104,7 +106,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
                                         self.loop_type + '_' + strftime("%Y%m%d_%H%M", localtime() ))
         if not os.path.exists(self.output_dir):
             os.makedirs( self.output_dir )
-        logging.info('Files will be saved in %s' % self.output_dir)
+        logger.info('Files will be saved in %s' % self.output_dir)
 
     def _remove_release_directory(self):
         """Especially useful for tests"""
@@ -122,14 +124,14 @@ class ClusterMotifs(MotifAtlasBaseClass):
             latest_nr_release = session.query(NR_release). \
                                         order_by(NR_release.date.desc()). \
                                         first()
-        logging.info('Will use NR release %s' % latest_nr_release.id)
+        logger.info('Will use NR release %s' % latest_nr_release.id)
         """get all pdbs from that nr release"""
         pdbs = session.query(NR_pdb). \
                        filter_by(release_id=latest_nr_release.id). \
                        filter_by(rep=1). \
                        filter(NR_pdb.class_id.like('NR_4%')). \
                        all()
-        logging.info('Found %i NR pdbs' % len(pdbs))
+        logger.info('Found %i NR pdbs' % len(pdbs))
         self.pdb_ids = [x.id for x in pdbs]
 
     def get_loops_for_clustering(self):
@@ -150,11 +152,11 @@ class ClusterMotifs(MotifAtlasBaseClass):
                         filter(AllLoops.pdb.in_(self.pdb_ids)). \
                         filter_by(type=self.loop_type). \
                         all()
-        logging.info('Found %i loops' % len(loops))
+        logger.info('Found %i loops' % len(loops))
         """filter out invalid loops"""
         loops = [loop for loop in loops if loop.id in valid_ids]
         self.loop_ids = [loop.id for loop in loops if loop.id in valid_ids]
-        logging.info('Kept %i valid loops' % len(loops))
+        logger.info('Kept %i valid loops' % len(loops))
         """get info about best chains"""
         best_chains = dict()
         for x in session.query(PdbBestChainsAndModels).all():
@@ -166,15 +168,15 @@ class ClusterMotifs(MotifAtlasBaseClass):
                 chains += nt_id.split('_')[3]
             if loop.pdb in best_chains and list(set(chains) & set(best_chains[loop.pdb])):
                 self.best_loops.append(loop.id)
-                logging.info('Loop %s from chains %s belongs to best chains %s' \
+                logger.info('Loop %s from chains %s belongs to best chains %s' \
                 % (loop.id, chains, best_chains[loop.pdb] ))
         """remove manually blacklisted loops. In future use database"""
         blacklist = ['HL_3ICQ_004', 'HL_3V2F_005', 'HL_1Y0Q_002', 'HL_2IL9_002', 'HL_2IL9_005']
         for bad_loop in blacklist:
             if bad_loop in self.best_loops:
                 self.best_loops.remove(bad_loop)
-                logging.info('Removed blacklisted loop %s' % bad_loop)
-        logging.info('Selected %i loops', len(self.best_loops))
+                logger.info('Removed blacklisted loop %s' % bad_loop)
+        logger.info('Selected %i loops', len(self.best_loops))
 
     def make_input_file_for_matlab(self):
         """
@@ -182,7 +184,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
         f = open(self.mlab_input_filename, 'w')
         f.write(','.join(self.best_loops))
         f.close()
-        logging.info('Saved loop_ids in file %s' % self.mlab_input_filename)
+        logger.info('Saved loop_ids in file %s' % self.mlab_input_filename)
 
     def parallel_exec_commands(self, cmds):
         """
@@ -194,7 +196,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
             program will abort.
         """
         if not cmds:
-            logging.critical('No commands to execute')
+            logger.critical('No commands to execute')
             self._crash()
 
         def done(p):
@@ -210,21 +212,21 @@ class ClusterMotifs(MotifAtlasBaseClass):
                 list2cmdline(task)
                 p = Popen(task)
                 tasks[p.pid] = task # associate task with a pid
-                logging.info('%i %s' % (p.pid, task))
+                logger.info('%i %s' % (p.pid, task))
                 processes.append(p)
 
             for p in processes:
                 if done(p):
                     if success(p):
-                        logging.info('Parallel task completed successfully')
+                        logger.info('Parallel task completed successfully')
                         processes.remove(p)
                     else:
                         self.retries_left -= 1
                         if self.retries_left == 0:
-                            logging.critical('Parallel task failed')
+                            logger.critical('Parallel task failed')
                             self._crash()
                         else:
-                            logging.warning('Parallel task will be restarted')
+                            logger.warning('Parallel task will be restarted')
                             task = tasks[p.pid] # retrieve the failed task
                             processes.remove(p)
                             p = Popen(task) # new process with the same task
@@ -246,7 +248,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
         """
         N = len(self.best_loops)
         interval = int(math.ceil( N / float(self.num_jobs)))
-        logging.info('%i loops, will process in groups of %i' % (N, interval))
+        logger.info('%i loops, will process in groups of %i' % (N, interval))
         commands = []
         mlab_params = ' -nodisplay -nojvm -r '
         current_max = 0
@@ -274,7 +276,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
             commands.append([self.config['locations']['mlab_app'],
                             mlab_params + bash_command])
             current_max += interval
-        [logging.info(x[1]) for x in commands]
+        [logger.info(x[1]) for x in commands]
         return commands
 
     def _clean_up(self):
@@ -298,9 +300,9 @@ class ClusterMotifs(MotifAtlasBaseClass):
             self._clean_up()
             if err_msg == '':
                 self.success = True
-                logging.info('Successful clustering')
+                logger.info('Successful clustering')
             else:
-                logging.critical(err_msg)
+                logger.critical(err_msg)
         except:
             e = sys.exc_info()[1]
             self._crash(e)
@@ -313,7 +315,7 @@ class ClusterMotifs(MotifAtlasBaseClass):
                                                        filter(AllLoops.pdb==pdb_id).
                                                        filter(AllLoops.type=='il').
                                                        all()]
-        logging.info('Selected %s loops from %s' % (len(self.best_loops), pdb_id) )
+        logger.info('Selected %s loops from %s' % (len(self.best_loops), pdb_id) )
 
 
 def main(argv):

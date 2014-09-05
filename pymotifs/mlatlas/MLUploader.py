@@ -19,6 +19,7 @@ from models import Release, session, ML_handle, LoopOrder, LoopPosition, \
                    Motif, Loop, SetDiff, Parents, LoopDiscrepancy, Release_diff, \
                    MotifAnnotation
 
+logger = logging.getLogger(__name__)
 
 
 class Uploader(MotifAtlasBaseClass):
@@ -93,7 +94,7 @@ class Uploader(MotifAtlasBaseClass):
                     self.added_groups.append(group_id) # otherwise the new temporary id is committed
                 else:
                     self.added_groups.append(motif.id)
-                logging.info('Group %s assigned new id %s' % (group_id, motif.id))
+                logger.info('Group %s assigned new id %s' % (group_id, motif.id))
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
                 motif   = Motif(id=old_id,
@@ -104,7 +105,7 @@ class Uploader(MotifAtlasBaseClass):
                 parents = ','.join(set([old_id] + self.c.parents[group_id]))
                 self.updated_groups.append(motif.id)
                 self.old_updated_groups.append(old_id)
-                logging.info('Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id))
+                logger.info('Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id))
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
                 motif = Motif(id=id,
@@ -113,9 +114,9 @@ class Uploader(MotifAtlasBaseClass):
                               type=self.motif_type)
                 self.same_groups.append(motif.id)
                 parents = ''
-                logging.info('Group %s matches exactly motif %s' % (group_id, motif.id))
+                logger.info('Group %s matches exactly motif %s' % (group_id, motif.id))
             else:
-                logging.error('Major problem')
+                logger.error('Major problem')
 
             self.motifs.append(motif)
             if parents != '':
@@ -220,57 +221,57 @@ class Uploader(MotifAtlasBaseClass):
            is deleted, not both
         """
         # ml_handles
-        logging.info('Removing release %s from table %s' % (release, ML_handle.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, ML_handle.__tablename__) )
         session.query(ML_handle).delete(synchronize_session='fetch')
         # ml_loop_order
-        logging.info('Removing release %s from table %s' % (release, LoopOrder.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, LoopOrder.__tablename__) )
         session.query(LoopOrder).\
                 filter(LoopOrder.release_id==release).\
                 filter(LoopOrder.motif_id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_loop_positions
-        logging.info('Removing release %s from table %s' % (release, LoopPosition.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, LoopPosition.__tablename__) )
         session.query(LoopPosition).\
                 filter(LoopPosition.release_id==release).\
                 filter(LoopPosition.motif_id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_releases
-        logging.info('Removing release %s from table %s' % (release, Release.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, Release.__tablename__) )
         session.query(Release).\
                 filter_by(id=release).\
                 filter_by(type=self.motif_type).\
                 delete(synchronize_session='fetch')
         # ml_motifs
-        logging.info('Removing release %s from table %s' % (release, Motif.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, Motif.__tablename__) )
         session.query(Motif).\
                 filter_by(release_id=release).\
                 filter_by(type=self.motif_type).\
                 delete(synchronize_session='fetch')
         # ml_loops
-        logging.info('Removing release %s from table %s' % (release, Loop.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, Loop.__tablename__) )
         session.query(Loop).\
                 filter(Loop.release_id==release).\
                 filter(Loop.id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_set_diff
-        logging.info('Removing release %s from table %s' % (release, SetDiff.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, SetDiff.__tablename__) )
         session.query(SetDiff).\
                 filter(SetDiff.release_id==release).\
                 filter(SetDiff.motif_id1.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_history
-        logging.info('Removing release %s from table %s' % (release, Parents.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, Parents.__tablename__) )
         session.query(Parents).\
                 filter(Parents.release_id==release).\
                 filter(Parents.motif_id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_mutual_discrepancy
-        logging.info('Removing release %s from table %s' % (release, LoopDiscrepancy.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, LoopDiscrepancy.__tablename__) )
         session.query(LoopDiscrepancy).\
                 filter(LoopDiscrepancy.release_id==release).\
                 delete(synchronize_session='fetch')
         # ml_release_diff
-        logging.info('Removing release %s from table %s' % (release, Release_diff.__tablename__) )
+        logger.info('Removing release %s from table %s' % (release, Release_diff.__tablename__) )
         session.query(Release_diff).\
                 filter(or_(Release_diff.release_id1==release, Release_diff.release_id2==release)).\
                 filter_by(type=self.motif_type).\
@@ -284,10 +285,10 @@ class Uploader(MotifAtlasBaseClass):
             session.add_all(self.release_diff)
             session.query(ML_handle).delete()
             session.commit()
-            logging.info('Successful update')
+            logger.info('Successful update')
         except sqlalchemy.exc.SQLAlchemyError, e:
-            logging.error('Update failed. SQLAlchemy error. Rolling back.')
-            logging.error(str(e))
+            logger.error('Update failed. SQLAlchemy error. Rolling back.')
+            logger.error(str(e))
             session.rollback()
             sys.exit()
 
@@ -303,22 +304,22 @@ class Uploader(MotifAtlasBaseClass):
             session.add_all(self.loop_positions)
             session.add_all(self.loop_discrepancy)
             session.commit()
-            logging.info('Successful update')
+            logger.info('Successful update')
         except sqlalchemy.exc.SQLAlchemyError, e:
-            logging.error('Update failed. Rolling back.')
-            logging.error(str(e))
+            logger.error('Update failed. Rolling back.')
+            logger.error(str(e))
             session.rollback()
             self.remove_release(self.release.id)
             sys.exit()
         except sqlalchemy.exc.DBAPIError, e:
-            logging.error('Update failed. Rolling back.')
-            logging.error(str(e))
+            logger.error('Update failed. Rolling back.')
+            logger.error(str(e))
             session.rollback()
             self.remove_release(self.release.id)
             sys.exit()
         except sys.exc_info()[0]:
-            logging.error('Update failed. Rolling back.')
-            logging.error(sys.exc_info()[0])
+            logger.error('Update failed. Rolling back.')
+            logger.error(sys.exc_info()[0])
             session.rollback()
             self.remove_release(self.release.id)
             sys.exit()
@@ -385,7 +386,7 @@ class Uploader(MotifAtlasBaseClass):
             if os.path.exists(src):
                 shutil.copyfile(src, dst)
             else:
-                logging.warning("File %s wasn't found" % src)
+                logger.warning("File %s wasn't found" % src)
 
     def __move_2d_files(self):
         """
@@ -400,7 +401,7 @@ class Uploader(MotifAtlasBaseClass):
             if os.path.exists(src):
                 shutil.copyfile(src, dst)
             else:
-                logging.warning("File %s wasn't found" % src)
+                logger.warning("File %s wasn't found" % src)
 
     def __process_graphml_file(self):
         """

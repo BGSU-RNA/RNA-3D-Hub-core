@@ -34,14 +34,16 @@ from UnitIdLoader import UnitIdLoader
 from MotifLoader import MotifLoader
 from unit_ordering_loader import UnitOrderingLoader
 
+logger = logging.getLogger(__name__)
+
 
 def update_unit_ordering(pdb_ids):
     loader = UnitOrderingLoader()
     try:
         loader.import_ordering(pdb_ids)
     except:
-        logging.error(traceback.format_exc(sys.exc_info()))
-        logging.error('Could not compute ordering')
+        logger.error(traceback.format_exc(sys.exc_info()))
+        logger.error('Could not compute ordering')
 
 
 def cluster_motifs(motif_type, nr_release_id=None):
@@ -64,10 +66,10 @@ def cluster_motifs(motif_type, nr_release_id=None):
         l.load_loop_search_qa_text_file(os.path.join(c.output_dir, 'MM_extraNTs.txt'))
         l.load_loop_search_qa_text_file(os.path.join(c.output_dir, 'MM_symmetrize.txt'))
 
-        logging.info('%s loops successfully clustered' % motif_type)
+        logger.info('%s loops successfully clustered' % motif_type)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('%s clustering failed' % motif_type)
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('%s clustering failed' % motif_type)
 
 
 def import_motifs(motif_type):
@@ -77,10 +79,10 @@ def import_motifs(motif_type):
     try:
         m = MotifLoader(motif_type=motif_type)
         m.import_data()
-        logging.info('%s loops imported' % motif_type)
+        logger.info('%s loops imported' % motif_type)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('%s loop import failed' % motif_type)
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('%s loop import failed' % motif_type)
 
 def get_pdb_info():
     """
@@ -95,7 +97,7 @@ def get_pdb_info():
         p.update_rna_containing_pdbs()
         p.check_obsolete_structures()
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning(traceback.format_exc(sys.exc_info()))
         pdb_ids = []
 
     return pdb_ids
@@ -112,8 +114,8 @@ def update_loops(pdb_ids):
         q = LoopQualityChecker()
         q.check_loop_quality(pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Loop extraction or loop QA failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Loop extraction or loop QA failed')
 
 def update_pairwise_annotations(pdb_ids):
     """
@@ -123,8 +125,8 @@ def update_pairwise_annotations(pdb_ids):
         i = PairwiseInteractionsLoader()
         i.import_interactions(pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Pairwise interactions import failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Pairwise interactions import failed')
 
 def update_unit_ids(pdb_ids):
     """
@@ -134,8 +136,8 @@ def update_unit_ids(pdb_ids):
         u = UnitIdLoader()
         u.import_unit_ids(pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Unit id import failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Unit id import failed')
 
 def update_cache():
     """
@@ -144,32 +146,32 @@ def update_cache():
     try:
         c = CacheManager()
     except:
-        logging.warning("Skipping CodeIgniter cache update")
+        logger.warning("Skipping CodeIgniter cache update")
         return
 
     try:
         c.update_pdb_cache()
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Pdb cache update failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Pdb cache update failed')
 
     try:
         c.update_nrlist_cache()
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Nrlist cache update failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Nrlist cache update failed')
 
     try:
         c.update_motif_cache()
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Motif cache update failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Motif cache update failed')
 
     try:
         c.update_loop_cache()
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Loop cache update failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Loop cache update failed')
 
 def export_data(pdb_ids):
     """
@@ -181,8 +183,8 @@ def export_data(pdb_ids):
         filename = f.config['locations']['interactions_gz']
         f.export_interactions(filename, pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Pairwise interactions export failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Pairwise interactions export failed')
 
     try:
         # Export loops data to a compressed file for NDB
@@ -190,8 +192,8 @@ def export_data(pdb_ids):
         filename = f.config['locations']['loops_gz']
         f.export_loops(filename, pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Loops export failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Loops export failed')
 
 def update_coordinates(pdb_ids):
     """
@@ -202,8 +204,8 @@ def update_coordinates(pdb_ids):
         d.import_distances(pdb_ids)
         d.import_coordinates(pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Distances or coordinates import failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Distances or coordinates import failed')
 
 def update_redundant_nucleotides(pdb_ids):
     """
@@ -213,8 +215,8 @@ def update_redundant_nucleotides(pdb_ids):
         r = RedundantNucleotidesLoader()
         r.import_redundant_nucleotides(pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Redundant nt import failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Redundant nt import failed')
 
 def update_best_chains_and_models(pdb_ids):
     """
@@ -224,8 +226,8 @@ def update_best_chains_and_models(pdb_ids):
         b = BestChainsAndModelsLoader()
         b.import_best_chains_and_models(pdb_ids)
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Redundant nt import failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Redundant nt import failed')
 
 def update_loop_annotations():
     """
@@ -239,8 +241,8 @@ def update_loop_annotations():
         """import all-against-all search results from IL and HL clustering"""
         LoopLoader.load_loop_searches()
     except:
-        logging.warning(traceback.format_exc(sys.exc_info()))
-        logging.warning('Hairpin loop import failed')
+        logger.warning(traceback.format_exc(sys.exc_info()))
+        logger.warning('Hairpin loop import failed')
 
 
 def main(argv):
@@ -287,13 +289,13 @@ def main(argv):
 
         update_cache()
 
-        logging.info('Update completed')
+        logger.info('Update completed')
         m.send_report()
 
     except:
         try:
-            logging.critical('Update failed')
-            logging.critical(traceback.format_exc(sys.exc_info()))
+            logger.critical('Update failed')
+            logger.critical(traceback.format_exc(sys.exc_info()))
             m.set_email_subject('RNA 3D Hub update failed')
             m.send_report()
         except:

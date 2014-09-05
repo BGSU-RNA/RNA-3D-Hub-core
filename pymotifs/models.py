@@ -7,6 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 
+logger = logging.getLogger(__name__)
+
 
 def camelize_classname(base, tablename, table):
     return str(tablename[0].upper() +
@@ -25,7 +27,7 @@ def get_engine(filename='motifatlas.cfg'):
     config.read(configfile)
 
     uri = config.get('database', 'uri')
-    logging.info('Connecting to the `%s` database', uri)
+    logger.info('Connecting to the `%s` database', uri)
 
     return create_engine(uri)
 

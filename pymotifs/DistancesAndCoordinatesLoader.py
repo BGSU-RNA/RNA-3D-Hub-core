@@ -10,6 +10,8 @@ import os, csv, pdb, sys, getopt, logging
 from models import session, Distances, Coordinates
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
     """
@@ -23,7 +25,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
            independently, matlab generates a temporary csv file, it's imported
            and immediately deleted."""
         try:
-            logging.info('Inside import_distances')
+            logger.info('Inside import_distances')
             if recalculate is None:
                 recalculate = self.config['recalculate']['distances']
             if recalculate:
@@ -36,21 +38,21 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
                 self._setup_matlab()
 
             for pdb_file in pdb_list:
-                logging.info('Running matlab on %s', pdb_file)
+                logger.info('Running matlab on %s', pdb_file)
                 ifn, status, err_msg = self.mlab.loadDistances(pdb_file, nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_distances_from_csv(ifn)
                 elif status == 2: # no nucleotides in the pdb file
-                    logging.info('Pdb file %s has no nucleotides', pdb_file)
+                    logger.info('Pdb file %s has no nucleotides', pdb_file)
                 else:
-                    logging.warning('Matlab error code %i when analyzing %s',
+                    logger.warning('Matlab error code %i when analyzing %s',
                                      status, pdb_file)
                     self._crash(err_msg)
 
                 self.mark_pdb_as_analyzed(pdb_file,'distances')
 
-            logging.info('%s', '='*40)
+            logger.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
             self._crash(e)
@@ -58,7 +60,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
     def __import_distances_from_csv(self, ifn):
         """Reads the csv file, imports all distances, deletes the file when done
            to avoid stale data and free up disk space"""
-        logging.info('Importing distances')
+        logger.info('Importing distances')
         commit_every = 100000
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for i,row in enumerate(reader):
@@ -66,7 +68,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
             try:
                 session.add(D)
             except:
-                logging.warning('Distance value updated')
+                logger.warning('Distance value updated')
                 session.merge(D)
             """Since the files can be huge, it's unfeasible to store all
             objects in memory, have to commit regularly"""
@@ -74,11 +76,11 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
                 session.commit()
         session.commit()
         os.remove(ifn)
-        logging.info('Csv file successfully imported')
+        logger.info('Csv file successfully imported')
 
     def __delete_distances(self, pdb_list):
         """recalculate=True, so delete what's already in the database"""
-        logging.info('Deleting existing records %s', ','.join(pdb_list))
+        logger.info('Deleting existing records %s', ','.join(pdb_list))
         for pdb_file in pdb_list:
             session.query(Distances). \
                     filter(Distances.id1.like(pdb_file+'%')). \
@@ -88,7 +90,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
         """
         """
         try:
-            logging.info('Inside import_coordinates')
+            logger.info('Inside import_coordinates')
             if recalculate is None:
                 recalculate = self.config['recalculate']['coordinates']
             if recalculate is False:
@@ -101,22 +103,22 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
                 self._setup_matlab()
 
             for pdb_file in pdb_list:
-                logging.info('Running matlab on %s', pdb_file)
+                logger.info('Running matlab on %s', pdb_file)
                 ifn, status, err_msg = self.mlab.loadCoordinates(pdb_file,
                                                                  nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_coordinates_from_csv(ifn)
                 elif status == 2: # no nucleotides in the pdb file
-                    logging.info('Pdb file %s has no nucleotides', pdb_file)
+                    logger.info('Pdb file %s has no nucleotides', pdb_file)
                 else:
-                    logging.warning('Matlab error code %i when analyzing %s',
+                    logger.warning('Matlab error code %i when analyzing %s',
                                      status, pdb_file)
                     self._crash(err_msg)
 
                 self.mark_pdb_as_analyzed(pdb_file,'coordinates')
 
-            logging.info('%s', '='*40)
+            logger.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
             self._crash(e)
@@ -124,7 +126,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
     def __import_coordinates_from_csv(self, ifn):
         """
         """
-        logging.info('Importing coordinates')
+        logger.info('Importing coordinates')
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for row in reader:
             C = Coordinates(id          = row[0],
@@ -140,15 +142,15 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
             try:
                 session.add(C)
             except:
-                logging.warning('Merging for %s', C.id)
+                logger.warning('Merging for %s', C.id)
                 session.merge(C)
         session.commit()
         os.remove(ifn)
-        logging.info('Csv file successfully imported')
+        logger.info('Csv file successfully imported')
 
     def __delete_coordinates(self, pdbs):
         """recalculate everything, delete what's already in the database"""
-        logging.info('Deleting existing records before recalculation %s',
+        logger.info('Deleting existing records before recalculation %s',
                      ','.join(pdbs))
         session.query(Coordinates).filter(Coordinates.pdb.in_(pdbs)). \
                                    delete(synchronize_session=False)

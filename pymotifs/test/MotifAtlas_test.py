@@ -19,6 +19,8 @@ from BestChainsAndModelsLoader import BestChainsAndModelsLoader
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 import models
 
+logger = logging.getLogger(__name__)
+
 
 class TestMotifAtlas(unittest.TestCase):
 
@@ -30,7 +32,7 @@ class TestMotifAtlas(unittest.TestCase):
 
         m = MotifAtlasBaseClass()
         m.start_logging()
-        logging.info('Initializing update')
+        logger.info('Initializing update')
 
         """get new pdb files"""
         p = PdbInfoLoader()

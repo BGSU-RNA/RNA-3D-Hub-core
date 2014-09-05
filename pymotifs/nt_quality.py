@@ -89,7 +89,7 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
         response = self.fetcher(filename)
         parser = Parser(response)
         if not parser.has_rsr():
-            logging.info("No RsR found for %s", pdb)
+            logger.info("No RsR found for %s", pdb)
             return
 
         for entry in parser.nts():
