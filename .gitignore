@@ -36,3 +36,7 @@ notes
 .agignore
 todo.txt
 .tasks
+
+GTAGS
+GPATH
+GRTAGS
