@@ -1,4 +1,6 @@
+import re
 import os
+import csv
 import sys
 import logging
 import argparse
@@ -35,6 +37,18 @@ class EmptyResponse(Exception):
 class RetryFailedException(Exception):
     """Raised when all attempts at retrying something have failed.
     """
+
+
+class GetAllRnaPdbsError(Exception):
+    """Raised with we cannot get all RNA containing PDBS
+    """
+    pass
+
+
+class GetCustomReportError(Exception):
+    """Raised when we cannot get a custom report
+    """
+    pass
 
 
 def append_libs():
@@ -151,6 +165,111 @@ class CifFileFinder(object):
         return filename
 
 
+class RNAPdbsHelper(object):
+    url = 'http://www.rcsb.org/pdb/rest/search'
+
+    def parse_all_rna_pdbs(self, raw):
+        return filter(lambda x: len(x) == 4, raw.split("\n"))
+
+    def __call__(self):
+        """Get a list of all rna-containing pdb files, including hybrids. Raise
+           a specific error if it fails.
+        """
+
+        logger.debug('Getting a list of all rna-containing pdbs')
+        query_text = """
+        <orgPdbQuery>
+        <queryType>org.pdb.query.simple.ChainTypeQuery</queryType>
+        <containsProtein>I</containsProtein>
+        <containsDna>I</containsDna>
+        <containsRna>Y</containsRna>
+        <containsHybrid>I</containsHybrid>
+        </orgPdbQuery>
+        """
+        post = WebRequestHelper(method='post', parser=self.parse_all_rna_pdbs)
+
+        try:
+            return post(self.url, data=query_text)
+        except:
+            logger.critical("Failed to get list of RNA containing PDBs")
+            raise GetAllRnaPdbsError()
+
+
+class CustomReportHelper(object):
+    url = 'http://www.rcsb.org/pdb/rest/customReport'
+
+    fields = [
+        'structureId', 'chainId', 'structureTitle',
+        'experimentalTechnique', 'depositionDate', 'releaseDate',
+        'revisionDate', 'ndbId', 'resolution', 'classification',
+        'structureMolecularWeight', 'macromoleculeType',
+        'structureAuthor', 'entityId', 'sequence', 'chainLength',
+        'db_id', 'db_name', 'molecularWeight', 'secondaryStructure',
+        'entityMacromoleculeType', 'hetId', 'Ki', 'Kd', 'EC50', 'IC50',
+        'deltaG', 'deltaH', 'deltaS', 'Ka', 'compound', 'plasmid',
+        'source', 'taxonomyId', 'biologicalProcess', 'cellularComponent',
+        'molecularFunction', 'ecNo', 'expressionHost', 'cathId',
+        'cathDescription', 'scopId', 'scopDomain', 'scopFold',
+        'pfamAccession', 'pfamId', 'pfamDescription',
+        'crystallizationMethod', 'crystallizationTempK', 'phValue',
+        'densityMatthews', 'densityPercentSol', 'pdbxDetails',
+        'unitCellAngleAlpha', 'unitCellAngleBeta', 'unitCellAngleGamma',
+        'spaceGroup', 'lengthOfUnitCellLatticeA',
+        'lengthOfUnitCellLatticeB', 'lengthOfUnitCellLatticeC', 'Z_PDB',
+        'rObserved', 'rAll', 'rWork', 'rFree', 'refinementResolution',
+        'highResolutionLimit', 'reflectionsForRefinement',
+        'structureDeterminationMethod', 'conformerId', 'selectionCriteria',
+        'contents', 'solventSystem', 'ionicStrength', 'ph', 'pressure',
+        'pressureUnits', 'temperature', 'softwareAuthor', 'softwareName',
+        'version', 'method', 'details', 'conformerSelectionCriteria',
+        'totalConformersCalculated', 'totalConformersSubmitted', 'emdbId',
+        'emResolution', 'aggregationState', 'symmetryType',
+        'reconstructionMethod', 'specimenType'
+    ]
+
+    def __init__(self):
+        self.helper = WebRequestHelper(method='get', parser=self.parse)
+
+    def parse(self, raw):
+        lines = raw.split('<br />')
+        description = lines.pop(0)
+        keys = description.split(',')
+
+        report = []
+        for line in lines:
+            """one line per chain"""
+            if len(line) < 10:
+                continue  # skip empty lines
+
+            """replace quotechars that are not preceded and followed by commas,
+            except for the beginning and the end of the string
+            example: in 1HXL unescaped doublequotes in the details field"""
+
+            line = re.sub('(?<!^)(?<!,)"(?!,)(?!$)', "'", line)
+            reader = csv.reader([line], delimiter=',', quotechar='"')
+            chain_dict = {}
+            for read in reader:
+                for i, part in enumerate(read):
+                    if not part:
+                        part = None  # to save as NULL in the db
+                    chain_dict[keys[i]] = part
+            report.append(chain_dict)
+        return report
+
+    def __call__(self, pdb_id):
+        """Gets a custom report in csv format for a single pdb file. Each chain
+           is described in a separate line
+        """
+
+        params = {
+            'customReportColumns': ','.join(self.fields),
+            'format': 'xml',
+            'pdbsids': pdb_id
+        }
+        logger.info('Getting custom report for %s', pdb_id)
+        return self.helper(self.url, params=params)
+
+
 def row2dict(row):
     d = {}
     for column in row.__table__.columns:
@@ -162,10 +281,11 @@ def main(klass):
     from models import Session
 
     parser = argparse.ArgumentParser(description="Run %s" % klass.__name__)
-    parser.add_argument('pdbs', metavar='P', nargs='+',
+    parser.add_argument('pdbs', metavar='P', nargs='*',
                         help="PDBs to use")
     parser.add_argument('--all', dest='_all', default=False,
-                        help="Use all RNA containing PDBS")
+                        help="Use all RNA containing PDBS",
+                        action='store_true')
     parser.add_argument('--recalculate', action='store_true',
                         help="Force all data to be recalculated")
     parser.add_argument('--log-file', dest='_log_file', default='',
