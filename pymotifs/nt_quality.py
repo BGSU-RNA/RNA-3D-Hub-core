@@ -48,7 +48,6 @@ class Parser(object):
         self.generator = uids.UnitIdGenerator()
         self.digest = md5.hexdigest()
         self.root = ET.fromstring(content)
-        print(self.root)  # .getroot()
 
     def has_rsr(self):
         entry = self.root.find("Entry")
@@ -59,9 +58,9 @@ class Parser(object):
         for residue in self.root.findall("ModelledSubgroup"):
             if 'rsr' in residue.attrib and 'rsrz' in residue.attrib:
                 yield {
-                    'id': self._unit_id(pdb, residue.attrib),
-                    'rsr': float(residue.attrib['rsr']),
-                    'rsrz': float(residue.attrib['rsrz'])
+                    'unit_id': self._unit_id(pdb, residue.attrib),
+                    'real_space_r': float(residue.attrib['rsr'])
+                    # 'rsrz': float(residue.attrib['rsrz'])
                 }
 
     def _unit_id(self, pdb, attributes):
@@ -72,7 +71,6 @@ class Parser(object):
             'number': int(attributes['resnum']),
             'residue': attributes['resname'],
             'insertion_code': attributes['icode'],
-            'symmetry_operator': '*'
         })
 
 
@@ -83,7 +81,7 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
         MotifAtlasBaseClass.__init__(self)
         ut.DatabaseHelper.__init__(self, session_builder)
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         filename = self.finder(pdb)
         logger.info("Using filename %s for pdb %s ", filename, pdb)
         response = self.fetcher(filename)
@@ -100,7 +98,11 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
             logger.info("Fetching quality data for %s", pdb)
             try:
                 data = self.data(pdb, **kwargs)
-                self.store(data)
+                self.store(list(data))
             except:
                 logger.error("Error raised in getting quality for %s", pdb)
                 logger.error(traceback.format_exc(sys.exc_info()))
+
+
+if __name__ == '__main__':
+    ut.main(Loader)
