@@ -22,6 +22,8 @@ from ftplib import FTP
 
 from models import session, PdbInfo, PdbObsolete
 
+logger = logging.getLogger(__name__)
+
 
 class GetAllRnaPdbsError(Exception):
     """Raise when `get_all_rna_pdbs()` fails"""
@@ -50,20 +52,20 @@ class PdbInfoLoader():
                 report = self._get_custom_report(pdb_id)
                 self.__load_into_db(report)
             except:
-                logging.error("Could not get and upate report for: %s", pdb_id)
+                logger.error("Could not get and upate report for: %s", pdb_id)
                 failures += 1
         if not failures:
-            logging.info('Successful update of RNA-containing pdbs')
+            logger.info('Successful update of RNA-containing pdbs')
         else:
-            logging.info('Partially successful update of RNA-containing pdbs')
-            logging.info('Failed to update %s pdbs', failures)
-        logging.info('%s', '+'*40)
+            logger.info('Partially successful update of RNA-containing pdbs')
+            logger.info('Failed to update %s pdbs', failures)
+        logger.info('%s', '+'*40)
         return True
 
     def get_all_rna_pdbs(self):
         """Get a list of all rna-containing pdb files, including hybrids. Raise
            a specific error if it fails."""
-        logging.info('Getting a list of all rna-containing pdbs')
+        logger.info('Getting a list of all rna-containing pdbs')
         query_text = """
         <orgPdbQuery>
         <queryType>org.pdb.query.simple.ChainTypeQuery</queryType>
@@ -82,9 +84,9 @@ class PdbInfoLoader():
             self.pdbs = result.split('\n')
             """filter out possible garbage in query results"""
             self.pdbs = filter(lambda x: len(x) == 4, self.pdbs)
-            logging.info("Found %i PDB entries", len(self.pdbs))
+            logger.info("Found %i PDB entries", len(self.pdbs))
         else:
-            logging.critical("Failed to retrieve results")
+            logger.critical("Failed to retrieve results")
             raise GetAllRnaPdbsError
 
     def _get_custom_report(self, pdb_id):
@@ -94,7 +96,7 @@ class PdbInfoLoader():
 #         custom_report = '&customReportColumns=structureId,chainId,structureTitle,experimentalTechnique,depositionDate,releaseDate,revisionDate,ndbId,resolution,classification,structureMolecularWeight,macromoleculeType,structureAuthor,entityId,sequence,chainLength,db_id,db_name,molecularWeight,secondaryStructure,entityMacromoleculeType,hetId,Ki,Kd,EC50,IC50,deltaG,deltaH,deltaS,Ka,compound,plasmid,source,taxonomyId,biologicalProcess,cellularComponent,molecularFunction,ecNo,expressionHost,cathId,cathDescription,scopId,scopDomain,scopFold,pfamAccession,pfamId,pfamDescription,crystallizationMethod,crystallizationTempK,phValue,densityMatthews,densityPercentSol,pdbxDetails,unitCellAngleAlpha,unitCellAngleBeta,unitCellAngleGamma,spaceGroup,lengthOfUnitCellLatticeA,lengthOfUnitCellLatticeB,lengthOfUnitCellLatticeC,Z_PDB,rObserved,rAll,rWork,rFree,refinementResolution,highResolutionLimit,reflectionsForRefinement,structureDeterminationMethod,conformerId,selectionCriteria,fieldStrength,manufacturer,model,contents,solventSystem,ionicStrength,ph,pressure,pressureUnits,temperature,softwareAuthor,softwareName,version,method,details,conformerSelectionCriteria,totalConformersCalculated,totalConformersSubmitted,emdbId,emResolution,aggregationState,symmetryType,reconstructionMethod,specimenType&format=csv'
 #         custom_report = '&customReportColumns=structureId,chainId,structureTitle,experimentalTechnique,depositionDate,releaseDate,revisionDate,ndbId,resolution,classification,structureMolecularWeight,macromoleculeType,structureAuthor,entityId,sequence,chainLength,db_id,db_name,molecularWeight,secondaryStructure,entityMacromoleculeType,ligandId,ligandIdImage,ligandMolecularWeight,ligandFormula,ligandName,ligandSmiles,InChI,InChIKey,hetId,Ki,Kd,EC50,IC50,deltaG,deltaH,deltaS,Ka,compound,plasmid,source,taxonomyId,biologicalProcess,cellularComponent,molecularFunction,ecNo,expressionHost,cathId,cathDescription,scopId,scopDomain,scopFold,pfamAccession,pfamId,pfamDescription,crystallizationMethod,crystallizationTempK,phValue,densityMatthews,densityPercentSol,pdbxDetails,unitCellAngleAlpha,unitCellAngleBeta,unitCellAngleGamma,spaceGroup,lengthOfUnitCellLatticeA,lengthOfUnitCellLatticeB,lengthOfUnitCellLatticeC,Z_PDB,rObserved,rAll,rWork,rFree,refinementResolution,highResolutionLimit,reflectionsForRefinement,structureDeterminationMethod,conformerId,selectionCriteria,fieldStrength,manufacturer,model,contents,solventSystem,ionicStrength,ph,pressure,pressureUnits,temperature,softwareAuthor,softwareName,version,method,details,conformerSelectionCriteria,totalConformersCalculated,totalConformersSubmitted,emdbId,emResolution,aggregationState,symmetryType,reconstructionMethod,specimenType&format=csv'
         url = '%s?pdbids=%s%s' % (self.custom_report_url, pdb_id, custom_report)
-        logging.info('Getting custom report for %s', pdb_id)
+        logger.info('Getting custom report for %s', pdb_id)
         success = False
         retries = 0
         while success == False and retries < 3:
@@ -103,15 +105,15 @@ class PdbInfoLoader():
                 result = f.read()
                 success = True
             except:
-                logging.warning(traceback.format_exc(sys.exc_info()))
-                logging.warning("Failed to retrieve results")
+                logger.warning(traceback.format_exc(sys.exc_info()))
+                logger.warning("Failed to retrieve results")
                 retries += 1
                 result = None
                 continue
         if result:
-            logging.info("Retrieved custom report for %s", pdb_id)
+            logger.info("Retrieved custom report for %s", pdb_id)
         else:
-            logging.critical("Failed to retrieve results")
+            logger.critical("Failed to retrieve results")
             raise GetCustomReportError
         lines = result.split('<br />')
         return lines
@@ -127,7 +129,7 @@ class PdbInfoLoader():
     def __load_into_db(self, lines):
         """Compares the custom report data with what's already in the database,
            reports any discrepancies and stores the most recent version."""
-        logging.info('Loading custom report')
+        logger.info('Loading custom report')
         description = lines.pop(0) # discard field names
         keys = description.split(',')
 
@@ -149,7 +151,7 @@ class PdbInfoLoader():
                         part = None # to save as NULL in the db
                     chain_dict[keys[i]] = part
 
-            logging.info('%s %s', chain_dict['structureId'], chain_dict['chainId'])
+            logger.info('%s %s', chain_dict['structureId'], chain_dict['chainId'])
             """check if this chain from this pdb is present in the db"""
             existing_chain = session.query(PdbInfo). \
                                      filter(PdbInfo.structureId==chain_dict['structureId']). \
@@ -169,7 +171,7 @@ class PdbInfoLoader():
                 session.add(new_chain)
 
         session.commit()
-        logging.info('Custom report saved in the database')
+        logger.info('Custom report saved in the database')
 
     def check_obsolete_structures(self):
         """Download the file with all obsolete structures over ftp, store
@@ -189,15 +191,15 @@ class PdbInfoLoader():
                 ftp.retrbinary("RETR %s" % TEMPFILE, open(TEMPFILE,"wb").write)
                 ftp.quit()
                 done = True
-                logging.info('Downloaded obsolete.dat')
+                logger.info('Downloaded obsolete.dat')
                 break
             except Exception, e:
-                logging.warning(e)
-                logging.warning('Ftp download failed. Retrying...')
+                logger.warning(e)
+                logger.warning('Ftp download failed. Retrying...')
 
         if not done:
-            logging.critical('All attempts to download obsolete.dat over ftp failed')
-            logging.critical('Obsolete PDB files not updated')
+            logger.critical('All attempts to download obsolete.dat over ftp failed')
+            logger.critical('Obsolete PDB files not updated')
             return
 
         """parse the data file"""

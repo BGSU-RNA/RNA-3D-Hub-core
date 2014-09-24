@@ -15,6 +15,8 @@ import logging
 from models import session, RedundantNucleotide, PdbAnalysisStatus
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class RedundantNucleotidesLoader(MotifAtlasBaseClass):
     """
@@ -26,7 +28,7 @@ class RedundantNucleotidesLoader(MotifAtlasBaseClass):
         """
         """
         try:
-            logging.info('Importing redundant nucleotides')
+            logger.info('Importing redundant nucleotides')
             if not recalculate:
                 recalculate = self.config['recalculate']['redundant_nts']
             if recalculate:
@@ -39,7 +41,7 @@ class RedundantNucleotidesLoader(MotifAtlasBaseClass):
                 MotifAtlasBaseClass._setup_matlab(self)
 
             for pdb_file in pdb_list:
-                logging.info('Running matlab on %s', pdb_file)
+                logger.info('Running matlab on %s', pdb_file)
                 ifn, err_msg = self.mlab.loadRedundantNucleotides(pdb_file, nout=2)
                 if err_msg == '':
                     self.__import_temporary_file(ifn, pdb_file)
@@ -48,7 +50,7 @@ class RedundantNucleotidesLoader(MotifAtlasBaseClass):
 
                 self.mark_pdb_as_analyzed(pdb_file,'redundant_nts')
 
-            logging.info('%s', '='*40)
+            logger.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
             MotifAtlasBaseClass._crash(self,e)
@@ -56,7 +58,7 @@ class RedundantNucleotidesLoader(MotifAtlasBaseClass):
     def __import_temporary_file(self, ifn, pdb_file):
         """
         """
-        logging.info('Importing redundant nucleotides')
+        logger.info('Importing redundant nucleotides')
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for i, row in enumerate(reader):
             R = RedundantNucleotide(nt_id1=row[0],
@@ -68,7 +70,7 @@ class RedundantNucleotidesLoader(MotifAtlasBaseClass):
                 pass
         session.commit()
         os.remove(ifn)
-        logging.info('File successfully imported')
+        logger.info('File successfully imported')
 
     def __delete_old_data(self, pdbs):
         """When recalculate=True, delete all data from pdb_redundant_nucleotides

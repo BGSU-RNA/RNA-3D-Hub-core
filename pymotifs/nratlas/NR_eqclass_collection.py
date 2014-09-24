@@ -13,6 +13,8 @@ from sqlalchemy import desc
 
 from models import NR_pdb, NR_release, session
 
+logger = logging.getLogger(__name__)
+
 
 class NR_eqclass_collection:
     """
@@ -77,7 +79,7 @@ class NR_eqclass_collection:
 
     def get_previous_release(self):
         if session.query(NR_release).first() is None:
-            logging.info('No previous releases found')
+            logger.info('No previous releases found')
             return
         release = session.query(NR_release).order_by(desc(NR_release.date))[0:2]
         if len(release) == 2:
@@ -88,7 +90,7 @@ class NR_eqclass_collection:
 
     def get_latest_release(self):
         if session.query(NR_release).first() is None:
-            logging.info('No previous releases found')
+            logger.info('No previous releases found')
             return
         release = session.query(NR_release).order_by(desc(NR_release.date)).first()
         self.release = release.id

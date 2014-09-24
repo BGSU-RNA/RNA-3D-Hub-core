@@ -4,14 +4,14 @@ from fabric.api import run
 from fabric.api import task
 
 
-env.hosts = ['anton@rna.bgsu.edu']
-env.dir = '/Code/RNA-3D-Hub_dev'
+env.hosts = ['pipeline@rnatest']
+env.dir = '/usr/local/code/pipeline'
 env.branch = 'dev'
 
 
 @task
 def prod():
-    env.dir = '/Code/RNA-3D-Hub'
+    env.dir = ['pipeline@rna']
     env.branch = 'master'
 
 

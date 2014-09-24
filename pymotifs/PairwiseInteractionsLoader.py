@@ -11,6 +11,8 @@ import os, csv, pdb, sys, getopt, logging
 from models import session, PairwiseInteractions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class PairwiseInteractionsLoader(MotifAtlasBaseClass):
     """
@@ -25,7 +27,7 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
            independently, matlab generates a temporary csv file, it's imported
            and immediately deleted."""
         try:
-            logging.info('Inside import_interactions')
+            logger.info('Inside import_interactions')
             if not recalculate:
                 recalculate = self.config['recalculate']['interactions']
             if recalculate:
@@ -38,21 +40,21 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
                 MotifAtlasBaseClass._setup_matlab(self)
 
             for pdb_file in pdb_list:
-                logging.info('Running matlab on %s', pdb_file)
+                logger.info('Running matlab on %s', pdb_file)
                 ifn, status, err_msg = self.mlab.loadInteractions(pdb_file,nout=3)
                 status = status[0][0]
                 if status == 0:
                     self.__import_interactions_from_csv(ifn, pdb_file)
                 elif status == 2: # no nucleotides in the pdb file
-                    logging.info('Pdb file %s has no nucleotides', pdb_file)
+                    logger.info('Pdb file %s has no nucleotides', pdb_file)
                 else:
-                    logging.warning('Matlab error code %i when analyzing %s',
+                    logger.warning('Matlab error code %i when analyzing %s',
                                      status, pdb_file)
                     MotifAtlasBaseClass._crash(self,err_msg)
 
                 self.mark_pdb_as_analyzed(pdb_file,'interactions')
             self.success = True
-            logging.info('%s', '='*40)
+            logger.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
             MotifAtlasBaseClass._crash(self,e)
@@ -60,7 +62,7 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
     def __import_interactions_from_csv(self, ifn, pdb_file):
         """Reads the csv file, imports all interactions, deletes the file when
            done to avoid stale data and free up disk space"""
-        logging.info('Importing interactions')
+        logger.info('Importing interactions')
         commit_every = 1000
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for i,row in enumerate(reader):
@@ -84,11 +86,11 @@ class PairwiseInteractionsLoader(MotifAtlasBaseClass):
                 session.commit()
         session.commit()
         os.remove(ifn)
-        logging.info('Csv file successfully imported')
+        logger.info('Csv file successfully imported')
 
     def __delete_interactions(self, pdb_list):
         """recalculate=True, so delete what's already in the database"""
-        logging.info('Deleting existing records %s', ','.join(pdb_list))
+        logger.info('Deleting existing records %s', ','.join(pdb_list))
         for pdb_file in pdb_list:
             session.query(PairwiseInteractions). \
                     filter(PairwiseInteractions.pdb_id.in_(pdb_file+'%')). \

@@ -14,6 +14,8 @@ import logging
 from MotifLoader import MotifLoader
 import models
 
+logger = logging.getLogger(__name__)
+
 
 class TestMotifLoader(unittest.TestCase):
 
@@ -35,7 +37,7 @@ class TestMotifLoader(unittest.TestCase):
         self.__class__.loader.motifs_root = os.path.join(script_path,
                                                          'test_data',
                                                          'motifs')
-        logging.info('Importing data from %s' % self.__class__.loader.motifs_root)
+        logger.info('Importing data from %s' % self.__class__.loader.motifs_root)
         """clean the database"""
         self.clean_up_database()
         """try importing the test dataset"""
@@ -54,7 +56,7 @@ class TestMotifLoader(unittest.TestCase):
         session.query(models.LoopDiscrepancy).delete()
         session.query(models.Release_diff).delete()
         session.commit()
-        logging.info('Cleared old data from ml_tables')
+        logger.info('Cleared old data from ml_tables')
 
     def destroy_environment(self):
         """
@@ -78,7 +80,7 @@ class TestMotifLoader(unittest.TestCase):
             if os.path.exists(corr_file_path):
                 os.unlink(corr_file_path)
             else:
-                logging.error('File %s not found' % corr_file_path)
+                logger.error('File %s not found' % corr_file_path)
 
             # remove all files in the mat folder
             mat_folder = os.path.join(release_folder, 'mat')
@@ -88,7 +90,7 @@ class TestMotifLoader(unittest.TestCase):
                     if os.path.isfile(file_path):
                         os.unlink(file_path)
                 except Exception, e:
-                    logging.error(e)
+                    logger.error(e)
 
     def test_import(self):
         """check that the import succeeded"""

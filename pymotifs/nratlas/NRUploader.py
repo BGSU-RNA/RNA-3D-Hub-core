@@ -12,6 +12,8 @@ from models import session, NR_release, NR_class, NR_parents, NR_release_diff,\
                    NR_setdiff, NR_pdb, NR_handle
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class Uploader(MotifAtlasBaseClass):
     """
@@ -76,7 +78,7 @@ class Uploader(MotifAtlasBaseClass):
                 else:
                     self.added_groups.append(motif.id)
                 if self.upload_mode != 'release_diff':                    
-	                logging.info('Group %s assigned new id %s' % (group_id, motif.id))
+	                logger.info('Group %s assigned new id %s' % (group_id, motif.id))
 
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
@@ -89,7 +91,7 @@ class Uploader(MotifAtlasBaseClass):
                 self.updated_groups.append(motif.id)
                 self.old_updated_groups.append(old_id)
                 if self.upload_mode != 'release_diff':
-                    logging.info('Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id))
+                    logger.info('Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id))
 
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
@@ -99,10 +101,10 @@ class Uploader(MotifAtlasBaseClass):
                                  comment=self.c.explanation[group_id])
                 parents = ''
                 self.same_groups.append(motif.id)
-                # logging.info('Group %s matches exactly motif %s' % (group_id, motif.id))
+                # logger.info('Group %s matches exactly motif %s' % (group_id, motif.id))
 
             else:
-                logging.error('Major problem')
+                logger.error('Major problem')
 
             self.motifs.append(motif)
             self.final_ids[group_id] = motif.id
@@ -199,9 +201,9 @@ class Uploader(MotifAtlasBaseClass):
                     filter(NR_release_diff.nr_release_id2==release).\
                     delete(synchronize_session='fetch')
             session.commit()
-            logging.info('Release %s deleted successfully' % release)
+            logger.info('Release %s deleted successfully' % release)
         except:
-            logging.error('Removing release %s failed' % release)
+            logger.error('Removing release %s failed' % release)
             session.rollback()
             sys.exit()
 
@@ -212,10 +214,10 @@ class Uploader(MotifAtlasBaseClass):
             session.add_all(self.release_diff)
             session.query(NR_handle).delete()
             session.commit()
-            logging.info('Successful update')
+            logger.info('Successful update')
         except sqlalchemy.exc.SQLAlchemyError, e:
-            logging.error('Update failed. SQLAlchemy error. Rolling back.')
-            logging.error(str(e))
+            logger.error('Update failed. SQLAlchemy error. Rolling back.')
+            logger.error(str(e))
             session.rollback()
             sys.exit()
 
@@ -238,22 +240,22 @@ class Uploader(MotifAtlasBaseClass):
             session.add_all(self.release_diff)
 
             session.commit()
-            logging.info('Successful update')
+            logger.info('Successful update')
         except sqlalchemy.exc.SQLAlchemyError, e:
-            logging.error('Update failed. SQLAlchemy error. Rolling back.')
-            logging.error(str(e))
+            logger.error('Update failed. SQLAlchemy error. Rolling back.')
+            logger.error(str(e))
             session.rollback()
             self.remove_release(self.release.id)
             sys.exit()
         except sqlalchemy.exc.DBAPIError, e:
-            logging.error('Update failed. DBAPI error. Rolling back.')
-            logging.error(str(e))
+            logger.error('Update failed. DBAPI error. Rolling back.')
+            logger.error(str(e))
             session.rollback()
             self.remove_release(self.release.id)
             sys.exit()
         except sys.exc_info()[0]:
-            logging.error('Update failed. Rolling back.')
-            logging.error(sys.exc_info()[0])
+            logger.error('Update failed. Rolling back.')
+            logger.error(sys.exc_info()[0])
             session.rollback()
             self.remove_release(self.release.id)
             sys.exit()

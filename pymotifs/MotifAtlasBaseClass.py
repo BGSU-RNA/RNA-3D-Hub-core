@@ -104,18 +104,14 @@ class MotifAtlasBaseClass:
             section = 'email'
             keys = ['from', 'to', 'login', 'password', 'subject']
             for k in keys:
-            for k in keys: self.config[section][k] = config.get(section,k)
-            """email settings"""
-            section = 'email'
-            keys = ['from','to','login','password','subject', 'host']
-            for k in keys: self.config[section][k] = config.get(section,k)
-            self.config[section]['login'] = config.getboolean(section, 'login')
+                self.config[section][k] = config.get(section, k)
             """recalculation settings"""
             section = 'recalculate'
-            keys = ['coordinates','distances','interactions','IL','HL','J3',
-                    'redundant_nts','best_chains_and_models', 'unit_ids',
-                    'ordering']
-            for k in keys: self.config[section][k] = config.getboolean(section,k)
+            keys = ['coordinates', 'distances', 'interactions', 'IL', 'HL',
+                    'J3', 'redundant_nts', 'best_chains_and_models',
+                    'unit_ids', 'ordering']
+            for k in keys:
+                self.config[section][k] = config.getboolean(section, k)
             """logging"""
             self.config['logfile'] = 'motifatlas.log'
             """locations"""
@@ -124,11 +120,13 @@ class MotifAtlasBaseClass:
                     'releases_dir', 'nrlists_dir', 'fr3d_root',
                     '2ds_destination', 'mlab_app', 'interactions_gz', 'cache',
                     'loops_gz']
-            for k in keys: self.config[section][k] = config.get(section,k)
+            for k in keys:
+                self.config[section][k] = config.get(section, k)
             """release modes"""
             section = 'release_mode'
-            keys = ['loops','motifs','nrlist']
-            for k in keys: self.config[section][k] = config.get(section,k)
+            keys = ['loops', 'motifs', 'nrlist']
+            for k in keys:
+                self.config[section][k] = config.get(section, k)
         except:
             e = sys.exc_info()[1]
             self._crash(e)
@@ -140,7 +138,7 @@ class MotifAtlasBaseClass:
         f = open(self.log, "r")
         warnings = []
         for line in f:
-            if re.match("(warning|critical)", line, re.IGNORECASE):
+            if re.match("(warning|error|critical)", line, re.IGNORECASE):
                 warnings.append(line)
         f.close()
 
@@ -150,10 +148,12 @@ class MotifAtlasBaseClass:
             text += warnings
         else:
             text.append('No warnings found')
+
+        url = "http://rna.bgsu.edu/rna3dhub"
         if self.config['general']['environment'] == 'dev':
-            text.append('<a href="http://rna.bgsu.edu/rna3dhub_dev">RNA 3D Hub</a>')
-        else:
-            text.append('<a href="http://rna.bgsu.edu/rna3dhub">RNA 3D Hub</a>')
+            url = url + '_dev'
+
+        text.append('<a href="%s">RNA 3D Hub</a>' % url)
         text.append('Log file attached')
         text = '<br>'.join(text)
         return text
@@ -168,15 +168,15 @@ class MotifAtlasBaseClass:
 
             zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
             zip = zipfile.ZipFile(zf, 'w', compression=zipfile.ZIP_DEFLATED)
-            zip.write(self.log, arcname = filename)
+            zip.write(self.log, arcname=filename)
             zip.close()
             zf.seek(0)
 
             themsg = MIMEMultipart()
-            themsg['To']      = self.config['email']['to']
-            themsg['From']    = self.config['email']['login']
+            themsg['To'] = self.config['email']['to']
+            themsg['From'] = self.config['email']['login']
             themsg['Subject'] = ' '.join([self.config['email']['subject'],
-                                    strftime("%Y-%m-%d", localtime())])
+                                          strftime("%Y-%m-%d", localtime())])
             msg = MIMEBase('application', 'zip')
             msg.set_payload(zf.read())
             Encoders.encode_base64(msg)

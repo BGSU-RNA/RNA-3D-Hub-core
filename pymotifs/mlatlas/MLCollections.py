@@ -14,6 +14,8 @@ from sqlalchemy import desc
 
 from models import Release, Loop, session
 
+logger = logging.getLogger(__name__)
+
 
 class MotifCollection:
     """
@@ -61,7 +63,7 @@ class MotifCollection:
 
     def get_latest_release(self):
         if session.query(Release).filter(Release.type==self.type).first() is None:
-            logging.info('No previous releases found')
+            logger.info('No previous releases found')
             return
         release = session.query(Release).\
                           filter(Release.type==self.type).\

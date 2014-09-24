@@ -25,6 +25,8 @@ from PdbInfoLoader import PdbInfoLoader
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import AllLoops, Motif, Release, NR_release, NR_class, session
 
+logger = logging.getLogger(__name__)
+
 
 class CacheManager(MotifAtlasBaseClass):
 
@@ -45,7 +47,7 @@ class CacheManager(MotifAtlasBaseClass):
         P = PdbInfoLoader()
         P.get_all_rna_pdbs()
         for pdb_id in P.pdbs:
-            logging.info(pdb_id)
+            logger.info(pdb_id)
             subpages = [pdb_id, pdb_id + '/motifs']
             for subpage in subpages:
                 self._refresh_cache('pdb/' + subpage)
@@ -107,17 +109,17 @@ class CacheManager(MotifAtlasBaseClass):
         url = self.baseurl + '/' + uri_string
         md5 = hashlib.md5(ci_url).hexdigest()
         cached_file = os.path.join(self.cache_dir, md5)
-        logging.info(url)
+        logger.info(url)
         if os.path.exists( cached_file ):
-            logging.info("Deleting file %s" % cached_file)
+            logger.info("Deleting file %s" % cached_file)
             os.remove(cached_file)
         else:
-            logging.info('File %s doesnt exist' % cached_file)
+            logger.info('File %s doesnt exist' % cached_file)
         if reload:
             try:
                 response = urllib2.urlopen( url )
             except:
-                logging.error('Failed to retrieve %s' % url)
+                logger.error('Failed to retrieve %s' % url)
 
     def refresh_url(self, url):
         """
@@ -152,11 +154,11 @@ def main(argv):
         C.update_motif_cache()
         C.update_loop_cache()
     else:
-        logging.critical("Unrecognized option")
+        logger.critical("Unrecognized option")
         sys.exit(1)
 
     status = '%s cache updated' % argv[0]
-    logging.info(status)
+    logger.info(status)
     C.set_email_subject(status)
     C.send_report()
 

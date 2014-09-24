@@ -27,6 +27,8 @@ from nratlas.NR_eqclass_collection import NR_eqclass_collection
 from CollectionsMerger import CollectionsMerger as NRCollectionMerger
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 __author__ = 'Anton Petrov'
 
 
@@ -105,7 +107,7 @@ class Loader(MotifAtlasBaseClass):
             for release in all_releases:
                 c1 = NR_eqclass_collection(release='latest', resolution=resolution)
                 c2 = NR_eqclass_collection(release=release,  resolution=resolution)
-                logging.info('%s, %s, %s' % (c1.release, c2.release, resolution))
+                logger.info('%s, %s, %s' % (c1.release, c2.release, resolution))
                 A = Uploader(ensembles=NRCollectionMerger(c1,c2,verbose=False),
                              upload_mode='release_diff')
                 A.update_database()
@@ -139,11 +141,11 @@ class Loader(MotifAtlasBaseClass):
         """
         for folder in self.lists:
             if len(folder) != 8:
-                logging.info('Skipping folder %s' % folder)
+                logger.info('Skipping folder %s' % folder)
                 continue
 
             if folder in self.done:
-                logging.info('Already imported %s' % folder)
+                logger.info('Already imported %s' % folder)
                 continue
 
             self.import_lists(folder)
@@ -153,7 +155,7 @@ class Loader(MotifAtlasBaseClass):
             os.remove(self.temp_file)
 
         self.success = True
-        logging.info('Successful update')
+        logger.info('Successful update')
 
 
 def usage():
@@ -182,7 +184,7 @@ def main(argv):
             U = Uploader()
             U.start_logging()
             U.remove_release(arg)
-            logging.info('Release removed')
+            logger.info('Release removed')
             sys.exit()
         else:
             usage()
@@ -191,7 +193,7 @@ def main(argv):
     L = Loader()
     L.start_logging()
     L.import_data()
-    logging.info( '%s completed' % __file__ )
+    logger.info( '%s completed' % __file__ )
     L.set_email_subject('NR list successfully imported')
     L.send_report()
 

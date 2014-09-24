@@ -32,3 +32,11 @@ publish
 # project specific
 *.m~
 .python-version
+notes
+.agignore
+todo.txt
+.tasks
+
+GTAGS
+GPATH
+GRTAGS

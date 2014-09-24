@@ -22,6 +22,8 @@ import glob
 from models import session, LoopSearch, LoopSearchQA, LoopPositions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 class LoopSearchesLoader(MotifAtlasBaseClass):
     """
@@ -44,7 +46,7 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         # loop over directories
         for folder in os.listdir(self.precomputedData):
             if re.search(self.pdb_regex, folder):
-                logging.info('Importing loop annotations from %s', folder)
+                logger.info('Importing loop annotations from %s', folder)
             else:
                 continue
             [outputFile, err_msg] = self.mlab.loadLoopPositions(os.path.join(self.precomputedData, folder), nout=2)
@@ -67,7 +69,7 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
                             existing.border = int(border)
                             session.merge(existing)
                         else:
-                            logging.info('Keeping existing annotations')
+                            logger.info('Keeping existing annotations')
                     else:
                         session.add(LoopPositions(loop_id=loop_id,
                                                   position=position,
@@ -118,7 +120,7 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         # loop over directories
         for loop_id in os.listdir(self.loopSearchDir):
             if re.search(self.loop_regex, loop_id):
-                logging.info('Importing %s searches', loop_id)
+                logger.info('Importing %s searches', loop_id)
             else:
                 continue
 

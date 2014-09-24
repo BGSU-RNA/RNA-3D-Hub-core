@@ -37,6 +37,8 @@ from models import session, Release, Release_diff
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
+logger = logging.getLogger(__name__)
+
 
 __author__ = 'Anton Petrov'
 
@@ -57,7 +59,7 @@ class MotifLoader(MotifAtlasBaseClass):
         for file in os.listdir(self.motifs_root):
             if fnmatch.fnmatch(file, self.motif_type + '*'):
                 self.folders.append(file)
-                logging.info(file)
+                logger.info(file)
         self.folders = sorted(self.folders)
 
     def __initialize_files(self, folder):
@@ -128,7 +130,7 @@ class MotifLoader(MotifAtlasBaseClass):
                 print '%s vs %s' % (all_releases[i], all_releases[j])
 
                 c2 = MotifCollection(release=all_releases[j],type=self.motif_type)
-                logging.info('Comparing %s and %s' % (c1.release, c2.release))
+                logger.info('Comparing %s and %s' % (c1.release, c2.release))
                 A = Uploader(ensembles=MotifCollectionMerger(c1,c2),
                              upload_mode='release_diff',
                              motif_type=self.motif_type)
@@ -153,7 +155,7 @@ class MotifLoader(MotifAtlasBaseClass):
         c1 = MotifCollection(release='latest',type=self.motif_type)
         for release in all_releases:
             c2 = MotifCollection(release=release,type=self.motif_type)
-            logging.info('Comparing %s and %s' % (c1.release, c2.release))
+            logger.info('Comparing %s and %s' % (c1.release, c2.release))
             A = Uploader(ensembles=MotifCollectionMerger(c1,c2),
                          upload_mode='release_diff',
                          motif_type=self.motif_type)
@@ -166,11 +168,11 @@ class MotifLoader(MotifAtlasBaseClass):
         self.__get_data_folders()
         for folder in self.folders:
             if len(folder) < 6:
-                logging.info('Skipping folder %s' % folder)
+                logger.info('Skipping folder %s' % folder)
                 continue
 
             if folder in self.done:
-                logging.info('Already imported %s' % folder)
+                logger.info('Already imported %s' % folder)
                 continue
 
             self.__initialize_files(folder)
@@ -214,7 +216,7 @@ def main(argv):
         pdb.set_trace()
         U = Uploader(motif_type=motif_type)
         U.remove_release(release_to_remove)
-        logging.info('Release %s removed successfully' % release_to_remove)
+        logger.info('Release %s removed successfully' % release_to_remove)
         return
 
     L = MotifLoader(motif_type=motif_type)

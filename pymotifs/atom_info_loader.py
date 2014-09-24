@@ -15,6 +15,8 @@ from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 from fr3d.cif.reader import CIF
 
+logger = logging.getLogger(__name__)
+
 
 class AtomDataLoader(MotifAtlasBaseClass):
     """A class to load the atom level information from a cif file.
@@ -52,7 +54,7 @@ class AtomDataLoader(MotifAtlasBaseClass):
             try:
                 session.add(atom)
             except:
-                logging.warning("Could not add atom: %s")
+                logger.warning("Could not add atom: %s")
                 return None
 
             if index % self.commit_size == 0:
@@ -63,11 +65,11 @@ class AtomDataLoader(MotifAtlasBaseClass):
         try:
             session.commit()
         except:
-            logging.error("Could not store atoms for %s, %s", pdb,
+            logger.error("Could not store atoms for %s, %s", pdb,
                           index)
 
     def __remove_atoms__(self, pdbs):
-        logging.info("Removing old atom data")
+        logger.info("Removing old atom data")
 
         query = session.query(AtomData).\
             join(PdbUnitIdCorrespondence,
@@ -78,7 +80,7 @@ class AtomDataLoader(MotifAtlasBaseClass):
         query = session.query(PdbAnalysisStatus).\
             filter(PdbAnalysisStatus.id.in_(pdbs))
         for status in query:
-            logging.info("Resetting status for %s", status.pdb)
+            logger.info("Resetting status for %s", status.pdb)
             status.atoms = None
             session.merge(status)
         session.commit()
@@ -91,7 +93,7 @@ class AtomDataLoader(MotifAtlasBaseClass):
         pdbs = []
         for pdb in requested:
             if pdb in known:
-                logging.info("Skipping %s", pdb)
+                logger.info("Skipping %s", pdb)
             else:
                 pdbs.append(pdb)
         return pdbs
@@ -112,11 +114,11 @@ class AtomDataLoader(MotifAtlasBaseClass):
             pdbs = self.__strip_loaded__(pdbs)
 
         for pdb in pdbs:
-            logging.info("Loading PDB: %s", pdb)
+            logger.info("Loading PDB: %s", pdb)
             try:
                 self.store_pdb(pdb)
             except:
-                logging.error("Failed to load: %s", pdb)
+                logger.error("Failed to load: %s", pdb)
 
 
 def main(pdbs):

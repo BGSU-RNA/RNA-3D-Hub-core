@@ -15,6 +15,8 @@ from models import session, PdbBestChainsAndModels, PdbAnalysisStatus
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 
+logger = logging.getLogger(__name__)
+
 class BestChainsAndModelsLoader(MotifAtlasBaseClass):
     """
     """
@@ -25,7 +27,7 @@ class BestChainsAndModelsLoader(MotifAtlasBaseClass):
         """
         """
         try:
-            logging.info('Importing best chains and models')
+            logger.info('Importing best chains and models')
             if not recalculate:
                 recalculate = self.config['recalculate']['best_chains_and_models']
             if recalculate:
@@ -38,7 +40,7 @@ class BestChainsAndModelsLoader(MotifAtlasBaseClass):
                 MotifAtlasBaseClass._setup_matlab(self)
 
             for pdb_file in pdb_list:
-                logging.info('Running matlab on %s', pdb_file)
+                logger.info('Running matlab on %s', pdb_file)
                 # 'ABC', '1,2', ''
                 best_chains, best_models, err_msg = self.mlab.loadBestChainsAndModels(pdb_file, nout=3)
                 best_chains = ','.join(list(best_chains))
@@ -50,7 +52,7 @@ class BestChainsAndModelsLoader(MotifAtlasBaseClass):
 
                 self.mark_pdb_as_analyzed(pdb_file,'best_chains_and_models')
 
-            logging.info('%s', '='*40)
+            logger.info('%s', '='*40)
         except:
             e = sys.exc_info()[1]
             MotifAtlasBaseClass._crash(self,e)
@@ -62,7 +64,7 @@ class BestChainsAndModelsLoader(MotifAtlasBaseClass):
             session.add(PdbBestChainsAndModels(pdb_id=pdb_id,
                                                best_chains=best_chains,
                                                best_models=best_models))
-            logging.info('Import complete for %s' % pdb_id)
+            logger.info('Import complete for %s' % pdb_id)
         except:
             # do nothing in case of duplicate entry
             pass
