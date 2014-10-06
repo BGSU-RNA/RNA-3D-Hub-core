@@ -15,9 +15,9 @@ from sqlalchemy import *
 import sqlalchemy.exc
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import Release, session, ML_handle, LoopOrder, LoopPosition, \
-                   Motif, Loop, SetDiff, Parents, LoopDiscrepancy, Release_diff, \
-                   MotifAnnotation
+from models import MlReleases, session, MlHandles, MlLoopOrder, LoopPositions, \
+                   MlMotifs, MlLoops, MlSetDiff, MlHistory, MlMutualDiscrepancy, MlReleaseDiff, \
+                   MlMotifAnnotations
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class Uploader(MotifAtlasBaseClass):
     def __init__(self, ensembles=None, mode='', description='', files={}, upload_mode='', motif_type=''):
         self.c           = ensembles
         self.motif_type  = motif_type.upper()
-        self.release     = Release(mode=mode, description=description, type=self.motif_type)
+        self.release     = MlReleases(mode=mode, description=description, type=self.motif_type)
         self.upload_mode = upload_mode
         self.motifs    = []
         self.loops     = []
@@ -69,7 +69,7 @@ class Uploader(MotifAtlasBaseClass):
             self.__process_graphml_file()
         else:
             self.direct_parent = 0
-            self.release = Release()
+            self.release = MlReleases()
             self.release.id = self.c.c1.release
             self.__finalize()
             self.__process_release_diff()
@@ -83,7 +83,7 @@ class Uploader(MotifAtlasBaseClass):
 
         for group_id in self.c.c1.sg:
             if group_id in self.c.new_ids:
-                motif = Motif(release_id=self.release.id,
+                motif = MlMotifs(release_id=self.release.id,
                               comment=self.c.explanation[group_id],
                               type=self.motif_type)
                 if self.c.parents.has_key(group_id):
@@ -97,7 +97,7 @@ class Uploader(MotifAtlasBaseClass):
                 logger.info('Group %s assigned new id %s' % (group_id, motif.id))
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
-                motif   = Motif(id=old_id,
+                motif   = MlMotifs(id=old_id,
                                 release_id=self.release.id,
                                 increment=True,
                                 comment=self.c.explanation[group_id],
@@ -108,7 +108,7 @@ class Uploader(MotifAtlasBaseClass):
                 logger.info('Group %s corresponds to motif %s and is assigned new id %s' % (group_id, old_id, motif.id))
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
-                motif = Motif(id=id,
+                motif = MlMotifs(id=id,
                               release_id=self.release.id,
                               comment=self.c.explanation[group_id],
                               type=self.motif_type)
@@ -122,10 +122,10 @@ class Uploader(MotifAtlasBaseClass):
             if parents != '':
                 if self.upload_mode != 'release_diff':
                     self.__inherit_history(motif, parents)
-                self.history.append(Parents(motif_id=motif.id, release_id=self.release.id, parents=parents))
+                self.history.append(MlHistory(motif_id=motif.id, release_id=self.release.id, parents=parents))
             self.final_ids[group_id] = motif.id
             for loop_id in self.c.c1.d[group_id]:
-                self.loops.append(Loop(id=loop_id, motif_id=motif.id, release_id=self.release.id))
+                self.loops.append(MlLoops(id=loop_id, motif_id=motif.id, release_id=self.release.id))
 
             self.removed_groups = set(self.c.c2.groups) - set(self.old_updated_groups) - set(self.same_groups)
 
@@ -145,8 +145,8 @@ class Uploader(MotifAtlasBaseClass):
         annotation = []
         author = []
         for parent in parent_motifs:
-            parent_motif = session.query(MotifAnnotation).\
-                                   filter(MotifAnnotation.motif_id==parent).\
+            parent_motif = session.query(MlMotifAnnotations).\
+                                   filter(MlMotifAnnotations.motif_id==parent).\
                                    first()
             if parent_motif:
                 if parent_motif.common_name is not None and parent_motif.common_name != '':
@@ -156,7 +156,7 @@ class Uploader(MotifAtlasBaseClass):
                 if parent_motif.author is not None and parent_motif.author != '':
                     author.append(parent_motif.author)
 
-        session.merge(MotifAnnotation(motif_id    = motif.id,
+        session.merge(MlMotifAnnotations(motif_id    = motif.id,
                                       common_name = ' | '.join(set(common_name)),
                                       annotation  = ' | '.join(set(annotation)),
                                       author      = ' | '.join(set(author))))
@@ -168,7 +168,7 @@ class Uploader(MotifAtlasBaseClass):
         if self.release.id == '0.1':
             return
 
-        self.release_diff.append( Release_diff(
+        self.release_diff.append( MlReleaseDiff(
             release_id1        = self.release.id,
             release_id2        = self.c.c2.release,
             type               = self.motif_type,
@@ -196,7 +196,7 @@ class Uploader(MotifAtlasBaseClass):
                    self.c.intersection.has_key(loop_id) and \
                    self.c.intersection[loop_id].has_key(motif_id):
 
-                    self.intersection.append( SetDiff(
+                    self.intersection.append( MlSetDiff(
                                 motif_id1 = self.final_ids[loop_id],
                                 motif_id2 = motif_id,
                                 release_id = self.release.id,
@@ -205,7 +205,7 @@ class Uploader(MotifAtlasBaseClass):
                                 one_minus_two = ','.join(self.c.setdiff[loop_id][motif_id]),
                                 two_minus_one = ','.join(self.c.setdiff[motif_id][loop_id])
                     ))
-                    self.intersection.append( SetDiff(
+                    self.intersection.append( MlSetDiff(
                                 motif_id1 = motif_id,
                                 motif_id2 = self.final_ids[loop_id],
                                 release_id = self.release.id,
@@ -221,59 +221,59 @@ class Uploader(MotifAtlasBaseClass):
            is deleted, not both
         """
         # ml_handles
-        logger.info('Removing release %s from table %s' % (release, ML_handle.__tablename__) )
-        session.query(ML_handle).delete(synchronize_session='fetch')
+        logger.info('Removing release %s from table %s' % (release, MlHandles.__tablename__) )
+        session.query(MlHandles).delete(synchronize_session='fetch')
         # ml_loop_order
-        logger.info('Removing release %s from table %s' % (release, LoopOrder.__tablename__) )
-        session.query(LoopOrder).\
-                filter(LoopOrder.release_id==release).\
-                filter(LoopOrder.motif_id.like(self.motif_type+'%')).\
+        logger.info('Removing release %s from table %s' % (release, MlLoopOrder.__tablename__) )
+        session.query(MlLoopOrder).\
+                filter(MlLoopOrder.release_id==release).\
+                filter(MlLoopOrder.motif_id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_loop_positions
-        logger.info('Removing release %s from table %s' % (release, LoopPosition.__tablename__) )
-        session.query(LoopPosition).\
-                filter(LoopPosition.release_id==release).\
-                filter(LoopPosition.motif_id.like(self.motif_type+'%')).\
+        logger.info('Removing release %s from table %s' % (release, LoopPositions.__tablename__) )
+        session.query(LoopPositions).\
+                filter(LoopPositions.release_id==release).\
+                filter(LoopPositions.motif_id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_releases
-        logger.info('Removing release %s from table %s' % (release, Release.__tablename__) )
-        session.query(Release).\
+        logger.info('Removing release %s from table %s' % (release, MlReleases.__tablename__) )
+        session.query(MlReleases).\
                 filter_by(id=release).\
                 filter_by(type=self.motif_type).\
                 delete(synchronize_session='fetch')
         # ml_motifs
-        logger.info('Removing release %s from table %s' % (release, Motif.__tablename__) )
-        session.query(Motif).\
+        logger.info('Removing release %s from table %s' % (release, MlMotifs.__tablename__) )
+        session.query(MlMotifs).\
                 filter_by(release_id=release).\
                 filter_by(type=self.motif_type).\
                 delete(synchronize_session='fetch')
         # ml_loops
-        logger.info('Removing release %s from table %s' % (release, Loop.__tablename__) )
-        session.query(Loop).\
-                filter(Loop.release_id==release).\
-                filter(Loop.id.like(self.motif_type+'%')).\
+        logger.info('Removing release %s from table %s' % (release, MlLoops.__tablename__) )
+        session.query(MlLoops).\
+                filter(MlLoops.release_id==release).\
+                filter(MlLoops.id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_set_diff
-        logger.info('Removing release %s from table %s' % (release, SetDiff.__tablename__) )
-        session.query(SetDiff).\
-                filter(SetDiff.release_id==release).\
-                filter(SetDiff.motif_id1.like(self.motif_type+'%')).\
+        logger.info('Removing release %s from table %s' % (release, MlSetDiff.__tablename__) )
+        session.query(MlSetDiff).\
+                filter(MlSetDiff.release_id==release).\
+                filter(MlSetDiff.motif_id1.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_history
-        logger.info('Removing release %s from table %s' % (release, Parents.__tablename__) )
-        session.query(Parents).\
-                filter(Parents.release_id==release).\
-                filter(Parents.motif_id.like(self.motif_type+'%')).\
+        logger.info('Removing release %s from table %s' % (release, MlHistory.__tablename__) )
+        session.query(MlHistory).\
+                filter(MlHistory.release_id==release).\
+                filter(MlHistory.motif_id.like(self.motif_type+'%')).\
                 delete(synchronize_session='fetch')
         # ml_mutual_discrepancy
-        logger.info('Removing release %s from table %s' % (release, LoopDiscrepancy.__tablename__) )
-        session.query(LoopDiscrepancy).\
-                filter(LoopDiscrepancy.release_id==release).\
+        logger.info('Removing release %s from table %s' % (release, MlMutualDiscrepancy.__tablename__) )
+        session.query(MlMutualDiscrepancy).\
+                filter(MlMutualDiscrepancy.release_id==release).\
                 delete(synchronize_session='fetch')
         # ml_release_diff
-        logger.info('Removing release %s from table %s' % (release, Release_diff.__tablename__) )
-        session.query(Release_diff).\
-                filter(or_(Release_diff.release_id1==release, Release_diff.release_id2==release)).\
+        logger.info('Removing release %s from table %s' % (release, MlReleaseDiff.__tablename__) )
+        session.query(MlReleaseDiff).\
+                filter(or_(MlReleaseDiff.release_id1==release, MlReleaseDiff.release_id2==release)).\
                 filter_by(type=self.motif_type).\
                 delete(synchronize_session='fetch')
         session.commit()
@@ -283,7 +283,7 @@ class Uploader(MotifAtlasBaseClass):
         """
         try:
             session.add_all(self.release_diff)
-            session.query(ML_handle).delete()
+            session.query(MlHandles).delete()
             session.commit()
             logger.info('Successful update')
         except sqlalchemy.exc.SQLAlchemyError, e:
@@ -330,7 +330,7 @@ class Uploader(MotifAtlasBaseClass):
         """
         r = csv.reader(open(self.files['MotifLoopOrder']), delimiter=',', quotechar='"')
         for row in r:
-            self.loop_order.append(LoopOrder(motif_id=self.final_ids[row[0]],
+            self.loop_order.append(MlLoopOrder(motif_id=self.final_ids[row[0]],
                                         loop_id=row[1],
                                         release_id=self.release.id,
                                         original_order=row[2],
@@ -344,7 +344,7 @@ class Uploader(MotifAtlasBaseClass):
         """
         r = csv.reader(open(self.files['MotifPositions']), delimiter=',', quotechar='"')
         for row in r:
-            self.loop_positions.append(LoopPosition(motif_id=self.final_ids[row[0]],
+            self.loop_positions.append(LoopPositions(motif_id=self.final_ids[row[0]],
                                         loop_id=row[1],
                                         release_id=self.release.id,
                                         nt_id=row[2],
@@ -358,7 +358,7 @@ class Uploader(MotifAtlasBaseClass):
         """
         r = csv.reader(open(self.files['BpSignatures']), delimiter=',', quotechar='"')
         for row in r:
-            session.merge(MotifAnnotation(motif_id=self.final_ids[row[0]],
+            session.merge(MlMotifAnnotations(motif_id=self.final_ids[row[0]],
                                           bp_signature=row[1]))
         session.commit()
 
@@ -368,7 +368,7 @@ class Uploader(MotifAtlasBaseClass):
         """
         r = csv.reader(open(self.files['MutualDiscrepancy']), delimiter=',', quotechar='"')
         for row in r:
-            self.loop_discrepancy.append(LoopDiscrepancy(loop_id1=row[0],
+            self.loop_discrepancy.append(MlMutualDiscrepancy(loop_id1=row[0],
                                         discrepancy=row[1],
                                         loop_id2=row[2],
                                         release_id=self.release.id,

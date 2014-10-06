@@ -23,7 +23,7 @@ from sqlalchemy import distinct
 
 from PdbInfoLoader import PdbInfoLoader
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import AllLoops, Motif, Release, NR_release, NR_class, session
+from models import LoopsAll, MlMotifs, MlReleases, NrReleases, NrClasses, session
 
 logger = logging.getLogger(__name__)
 
@@ -62,13 +62,13 @@ class CacheManager(MotifAtlasBaseClass):
 
         # http://rna.bgsu.edu/rna3dhub/nrlist/release/0.87/1.5A
         resolutions = ['1.5A', '2.0A', '2.5A', '3.0A', '3.5A', '4.0A', '20.0A', 'all']
-        for release in session.query(NR_release).all():
+        for release in session.query(NrReleases).all():
             self._refresh_cache('nrlist/release/' + release.id)
             for resolution in resolutions:
                 self._refresh_cache('nrlist/release/' + release.id + '/' + resolution)
 
         # http://rna.bgsu.edu/rna3dhub/nrlist/view/NR_4.0_81883.10
-        for eq_class in session.query(distinct(NR_class.id)).all():
+        for eq_class in session.query(distinct(NrClasss.id)).all():
             self._refresh_cache('nrlist/view/' + eq_class[0])
 
     def update_loop_cache(self):
@@ -76,7 +76,7 @@ class CacheManager(MotifAtlasBaseClass):
             Delete old cache so that the pages can be regenerated with new data.
         """
         # http://rna.bgsu.edu/rna3dhub/loops/view/IL_157D_001
-        for loop in session.query(AllLoops).all():
+        for loop in session.query(LoopsAll).all():
             self._refresh_cache('loops/view/' + loop.id, False)
 
     def update_motif_cache(self):
@@ -89,11 +89,11 @@ class CacheManager(MotifAtlasBaseClass):
         self._refresh_cache('motifs/release/HL/current')
 
         # http://rna.bgsu.edu/rna3dhub/motifs/release/IL/0.6
-        for release in session.query(Release).all():
+        for release in session.query(MlReleases).all():
             self._refresh_cache('motifs/release/' + release.type + '/' + release.id)
 
         # http://rna.bgsu.edu/rna3dhub/motif/view/IL_44742.1
-        for motif in session.query(distinct(Motif.id)).all():
+        for motif in session.query(distinct(MlMotifs.id)).all():
             self._refresh_cache('motif/view/' + motif[0])
 
     def _refresh_cache(self, uri_string, reload=True):

@@ -51,8 +51,9 @@ from subprocess import Popen, list2cmdline
 
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
-from models import session, AllLoops, PdbBestChainsAndModels, NR_release, \
-                   NR_pdb, LoopRelease, LoopQA, Release
+from models import session, PdbBestChainsAndModels, NrReleases, \
+                   NrPdbs, LoopReleases, LoopQa, MlReleases
+from models import LoopsAll
 from MotifLoader import MotifLoader
 
 logger = logging.getLogger(__name__)
@@ -84,8 +85,8 @@ class ClusterMotifs(MotifAtlasBaseClass):
             specified amount of time has elapsed since it was produced.
             Return true or false.
         """
-        previous = session.query(Release).filter(Release.type==self.loop_type).\
-                                          order_by(Release.date.desc()).\
+        previous = session.query(MlReleases).filter(MlReleases.type==self.loop_type).\
+                                          order_by(MlReleases.date.desc()).\
                                           first()
         logger.info('Last %s release occurred on %s'
                           % (self.loop_type,
@@ -117,19 +118,19 @@ class ClusterMotifs(MotifAtlasBaseClass):
             Use the specified NR release or the latest one by default.
         """
         if nr_release_id:
-            latest_nr_release = session.query(NR_release). \
-                                        filter(NR_release.id==nr_release_id). \
+            latest_nr_release = session.query(NrReleases). \
+                                        filter(NrReleases.id==nr_release_id). \
                                         first()
         else:
-            latest_nr_release = session.query(NR_release). \
-                                        order_by(NR_release.date.desc()). \
+            latest_nr_release = session.query(NrReleases). \
+                                        order_by(NrReleases.date.desc()). \
                                         first()
         logger.info('Will use NR release %s' % latest_nr_release.id)
         """get all pdbs from that nr release"""
-        pdbs = session.query(NR_pdb). \
+        pdbs = session.query(NrPdbs). \
                        filter_by(release_id=latest_nr_release.id). \
                        filter_by(rep=1). \
-                       filter(NR_pdb.class_id.like('NR_4%')). \
+                       filter(NrPdbs.class_id.like('NR_4%')). \
                        all()
         logger.info('Found %i NR pdbs' % len(pdbs))
         self.pdb_ids = [x.id for x in pdbs]
@@ -138,18 +139,18 @@ class ClusterMotifs(MotifAtlasBaseClass):
         """ideally this should be achieved with joins, but it requires adjusting
         the models"""
         """get latest loop release"""
-        latest_loop_release = session.query(LoopRelease).\
-                                      order_by(LoopRelease.date.desc()).\
+        latest_loop_release = session.query(LoopReleases).\
+                                      order_by(LoopReleases.date.desc()).\
                                       first()
         """get all valid loops"""
-        valid_ids = [loop.id for loop in session.query(LoopQA).\
-                              filter(LoopQA.status==1).\
-                              filter(LoopQA.release_id==latest_loop_release.id).\
-                              filter(LoopQA.id.like(self.loop_type + '%')).\
+        valid_ids = [loop.id for loop in session.query(LoopQa).\
+                              filter(LoopQa.status==1).\
+                              filter(LoopQa.release_id==latest_loop_release.id).\
+                              filter(LoopQa.id.like(self.loop_type + '%')).\
                               all()]
         """get all loops from non-redundant pdbs"""
-        loops = session.query(AllLoops). \
-                        filter(AllLoops.pdb.in_(self.pdb_ids)). \
+        loops = session.query(LoopsAll). \
+                        filter(LoopsAll.pdb.in_(self.pdb_ids)). \
                         filter_by(type=self.loop_type). \
                         all()
         logger.info('Found %i loops' % len(loops))
@@ -311,9 +312,9 @@ class ClusterMotifs(MotifAtlasBaseClass):
         """
             For testing purposes.
         """
-        self.best_loops = [loop.id for loop in session.query(AllLoops).
-                                                       filter(AllLoops.pdb==pdb_id).
-                                                       filter(AllLoops.type=='il').
+        self.best_loops = [loop.id for loop in session.query(LoopsAll).
+                                                       filter(LoopsAll.pdb==pdb_id).
+                                                       filter(LoopsAll.type=='il').
                                                        all()]
         logger.info('Selected %s loops from %s' % (len(self.best_loops), pdb_id) )
 

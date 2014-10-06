@@ -18,7 +18,7 @@ import csv
 import os
 
 
-from models import session, LoopQA, LoopRelease
+from models import session, LoopQa, LoopReleases
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 from PdbInfoLoader import PdbInfoLoader
 
@@ -36,7 +36,7 @@ class LoopQualityChecker(MotifAtlasBaseClass):
         """
         try:
             logger.info('Loop Quality Assurance')
-            release = LoopRelease(mode=self.config['release_mode']['loops'])
+            release = LoopReleases(mode=self.config['release_mode']['loops'])
             for pdb_id in pdbs:
                 self.loop_qa(pdb_id, release.id)
             session.add(release)
@@ -73,7 +73,7 @@ class LoopQualityChecker(MotifAtlasBaseClass):
             compl = row[4]
             if compl == '': compl = None
 
-            QA.append(LoopQA(id     = row[0],
+            QA.append(LoopQa(id     = row[0],
                              status = row[1],
                              modifications = modres,
                              nt_signature  = row[3],

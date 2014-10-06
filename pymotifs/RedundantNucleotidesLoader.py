@@ -12,7 +12,7 @@ import csv
 import sys
 import logging
 
-from models import session, RedundantNucleotide, PdbAnalysisStatus
+from models import session, PdbRedundantNucleotides, PdbAnalysisStatus
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class RedundantNucleotidesLoader(MotifAtlasBaseClass):
         logger.info('Importing redundant nucleotides')
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for i, row in enumerate(reader):
-            R = RedundantNucleotide(nt_id1=row[0],
+            R = PdbRedundantNucleotides(nt_id1=row[0],
                                         nt_id2=row[1],
                                         pdb_id=pdb_file)
             try:
@@ -75,8 +75,8 @@ class RedundantNucleotidesLoader(MotifAtlasBaseClass):
     def __delete_old_data(self, pdbs):
         """When recalculate=True, delete all data from pdb_redundant_nucleotides
         and set pdb_analysis_status to None in the redundant_nts column"""
-        session.query(RedundantNucleotide). \
-                filter(RedundantNucleotide.pdb_id.in_(pdbs)). \
+        session.query(PdbRedundantNucleotides). \
+                filter(PdbRedundantNucleotides.pdb_id.in_(pdbs)). \
                 delete(synchronize_session='fetch')
         for statusObj in session.query(PdbAnalysisStatus). \
                                  filter(PdbAnalysisStatus.id.in_(pdbs)). \

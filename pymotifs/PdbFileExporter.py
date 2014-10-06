@@ -23,11 +23,12 @@ import shutil
 from sqlalchemy import distinct, or_, desc
 
 
-from models import session, PairwiseInteractions, PdbUnitIdCorrespondence
-from models import AllLoops
+from models import session, PdbUnitIdCorrespondence
+from models import PdbPairwiseInteractions as PairwiseInteractions
+from models import LoopsAll
 from models import PdbObsolete
-from models import Loop
-from models import Release
+from models import MlLoops
+from models import MlReleases
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,7 @@ class PdbFileExporter(MotifAtlasBaseClass):
     def _get_all_pdbs_with_loops(self):
         """Get all pdbs with loops.
         """
-        possible = [loop[0] for loop in session.query(distinct(AllLoops.pdb))]
+        possible = [loop[0] for loop in session.query(distinct(LoopsAll.pdb))]
         obsolete = set([p[0] for p in session.query(PdbObsolete.obsolete_id)])
         return [pdb for pdb in possible if pdb not in obsolete]
 
@@ -165,23 +166,23 @@ class PdbFileExporter(MotifAtlasBaseClass):
 
         loops = []
         unit_ids = self._get_id_correspondence(pdb)
-        query = session.query(AllLoops.id, AllLoops.pdb, AllLoops.type,
-                              AllLoops.nt_ids).filter_by(pdb=pdb)
+        query = session.query(LoopsAll.id, LoopsAll.pdb, LoopsAll.type,
+                              LoopsAll.nt_ids).filter_by(pdb=pdb)
 
         releases = {}
         for loop_type in ['IL', 'HL']:
-            releases[loop_type] = session.query(Release).\
-                filter(Release.type == loop_type).\
-                order_by(desc(Release.date)).first().id
+            releases[loop_type] = session.query(MlReleases).\
+                filter(MlReleases.type == loop_type).\
+                order_by(desc(MlReleases.date)).first().id
 
         for loop in query:
             data = {'id': loop.id, 'pdb': loop.pdb, 'motif_id': ''}
             nts = loop.nt_ids.split(',')
 
             if loop.type in releases:
-                query = session.query(Loop.motif_id).\
-                    filter(Loop.id == loop.id).\
-                    filter(Loop.release_id == releases[loop.type])
+                query = session.query(MlLoops.motif_id).\
+                    filter(MlLoops.id == loop.id).\
+                    filter(MlLoops.release_id == releases[loop.type])
 
                 if query.count() != 0:
                     data['motif_id'] = query.scalar()

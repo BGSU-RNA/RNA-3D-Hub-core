@@ -11,7 +11,7 @@ import csv
 from sqlalchemy import desc
 
 
-from models import NR_pdb, NR_release, session
+from models import NrPdbs, NrReleases, session
 
 logger = logging.getLogger(__name__)
 
@@ -71,17 +71,17 @@ class NR_eqclass_collection:
             self.d[self.groups[i]].append(loop)
 
     def get_release(self):
-        for loop in session.query(NR_pdb).filter(NR_pdb.release_id==self.release) \
-                                         .filter(NR_pdb.class_id.like('NR_'+self.res+'_%')) \
+        for loop in session.query(NrPdbs).filter(NrPdbs.release_id==self.release) \
+                                         .filter(NrPdbs.class_id.like('NR_'+self.res+'_%')) \
                                          .all():
             self.loops.append(loop.id)
             self.groups.append(loop.class_id)
 
     def get_previous_release(self):
-        if session.query(NR_release).first() is None:
+        if session.query(NrReleases).first() is None:
             logger.info('No previous releases found')
             return
-        release = session.query(NR_release).order_by(desc(NR_release.date))[0:2]
+        release = session.query(NrReleases).order_by(desc(NrReleases.date))[0:2]
         if len(release) == 2:
             self.release = release[1].id
             self.get_release()
@@ -89,9 +89,9 @@ class NR_eqclass_collection:
             self.get_latest_release()
 
     def get_latest_release(self):
-        if session.query(NR_release).first() is None:
+        if session.query(NrReleases).first() is None:
             logger.info('No previous releases found')
             return
-        release = session.query(NR_release).order_by(desc(NR_release.date)).first()
+        release = session.query(NrReleases).order_by(desc(NrReleases.date)).first()
         self.release = release.id
         self.get_release()

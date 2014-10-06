@@ -134,6 +134,11 @@ class Loader(MotifAtlasBaseClass, DatabaseHelper):
         return data
 
     def correlate(self, reference, target):
+        if 'ids' not in reference or 'sequence' not in reference:
+            logger.error("Reference data structure is badly formed: %s",
+                         reference)
+            return []
+
         if not target or not reference['ids'] or not reference['sequence']:
             logger.error("Not given complete reference: %s", reference)
             return []

@@ -12,7 +12,7 @@ import csv
 from sqlalchemy import desc
 
 
-from models import Release, Loop, session
+from models import MlReleases, MlLoops, session
 
 logger = logging.getLogger(__name__)
 
@@ -62,20 +62,20 @@ class MotifCollection:
             self.d[self.groups[i]].append(loop)
 
     def get_latest_release(self):
-        if session.query(Release).filter(Release.type==self.type).first() is None:
+        if session.query(MlReleases).filter(MlReleases.type==self.type).first() is None:
             logger.info('No previous releases found')
             return
-        release = session.query(Release).\
-                          filter(Release.type==self.type).\
-                          order_by(desc(Release.date)).\
+        release = session.query(MlReleases).\
+                          filter(MlReleases.type==self.type).\
+                          order_by(desc(MlReleases.date)).\
                           first()
         self.release = release.id
         self.get_release()
 
     def get_release(self):
-        for loop in session.query(Loop).\
-                            filter(Loop.release_id==self.release).\
-                            filter(Loop.id.like(self.type+'%')).\
+        for loop in session.query(MlLoops).\
+                            filter(MlLoops.release_id==self.release).\
+                            filter(MlLoops.id.like(self.type+'%')).\
                             all():
             self.loops.append(loop.id)
             self.groups.append(loop.motif_id)

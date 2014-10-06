@@ -7,7 +7,7 @@ Loads distances and coordinates into the database.
 __author__ = 'Anton Petrov'
 
 import os, csv, pdb, sys, getopt, logging
-from models import session, Distances, Coordinates
+from models import session, PdbDistances, PdbCoordinates
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
         commit_every = 100000
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for i,row in enumerate(reader):
-            D = Distances(id1=row[0], id2=row[1], distance=row[2])
+            D = PdbDistances(id1=row[0], id2=row[1], distance=row[2])
             try:
                 session.add(D)
             except:
@@ -82,8 +82,8 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
         """recalculate=True, so delete what's already in the database"""
         logger.info('Deleting existing records %s', ','.join(pdb_list))
         for pdb_file in pdb_list:
-            session.query(Distances). \
-                    filter(Distances.id1.like(pdb_file+'%')). \
+            session.query(PdbDistances). \
+                    filter(PdbDistances.id1.like(pdb_file+'%')). \
                     delete(synchronize_session=False)
 
     def import_coordinates(self, pdbs, recalculate=None):
@@ -129,7 +129,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
         logger.info('Importing coordinates')
         reader = csv.reader(open(ifn, 'rb'), delimiter=',', quotechar='"')
         for row in reader:
-            C = Coordinates(id          = row[0],
+            C = PdbCoordinates(id          = row[0],
                             pdb         = row[1],
                             pdb_type    = row[2],
                             model       = row[3],
@@ -152,7 +152,7 @@ class DistancesAndCoordinatesLoader(MotifAtlasBaseClass):
         """recalculate everything, delete what's already in the database"""
         logger.info('Deleting existing records before recalculation %s',
                      ','.join(pdbs))
-        session.query(Coordinates).filter(Coordinates.pdb.in_(pdbs)). \
+        session.query(PdbCoordinates).filter(PdbCoordinates.pdb.in_(pdbs)). \
                                    delete(synchronize_session=False)
 
 

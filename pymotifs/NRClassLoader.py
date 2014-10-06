@@ -21,7 +21,8 @@ import os
 import re
 import logging
 
-from models import *
+from models import NrReleases
+from models import session
 from nratlas.NRUploader import Uploader
 from nratlas.NR_eqclass_collection import NR_eqclass_collection
 from CollectionsMerger import CollectionsMerger as NRCollectionMerger
@@ -52,15 +53,15 @@ class Loader(MotifAtlasBaseClass):
     def list_done(self):
         """
         """
-        for release in session.query(NR_release).all():
+        for release in session.query(NrReleases).all():
             self.done.append(release.description)
 
     def list_all_releases(self):
         """
         """
         all_releases = []
-        for release in session.query(NR_release).\
-                               order_by(desc(NR_release.date)).\
+        for release in session.query(NrReleases).\
+                               order_by(desc(NrReleases.date)).\
                                all():
             all_releases.append(release.id)
         return all_releases

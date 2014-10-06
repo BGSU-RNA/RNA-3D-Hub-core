@@ -33,7 +33,7 @@ from sqlalchemy import desc
 from CollectionsMerger import CollectionsMerger as MotifCollectionMerger
 from mlatlas.MLCollections import MotifCollection
 from mlatlas.MLUploader import Uploader
-from models import session, Release, Release_diff
+from models import session, MlReleases, MlReleaseDiff
 
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
@@ -93,14 +93,14 @@ class MotifLoader(MotifAtlasBaseClass):
     def get_processed_releases(self):
         """the `description` field corresponds to the folder name that the data
         for the release came from"""
-        for release in session.query(Release).filter(Release.type==self.motif_type).all():
+        for release in session.query(MlReleases).filter(MlReleases.type==self.motif_type).all():
             self.done.append(release.description)
 
     def list_all_releases(self, type):
         all_releases = []
-        for release in session.query(Release). \
-                               filter(Release.type==type). \
-                               order_by(desc(Release.date)). \
+        for release in session.query(MlReleases). \
+                               filter(MlReleases.type==type). \
+                               order_by(desc(MlReleases.date)). \
                                all():
             all_releases.append(release.id)
         return all_releases
@@ -138,8 +138,8 @@ class MotifLoader(MotifAtlasBaseClass):
 
                 # set direct parent flag
                 if j == i+1:
-                    a = session.query(Release_diff).filter(Release_diff.release_id1==release)\
-                                                   .filter(Release_diff.release_id2==all_releases[j])\
+                    a = session.query(MlReleaseDiff).filter(MlReleaseDiff.release_id1==release)\
+                                                   .filter(MlReleaseDiff.release_id2==all_releases[j])\
                                                    .first()
                     a.direct_parent = 1;
                     session.merge(a)

@@ -33,7 +33,7 @@ class CoreRsrParserTest(unittest.TestCase):
             'icode': ' '
         }
         val = self.parser._unit_id('1J5E', data)
-        ans = '1J5E|1|A|C|10||||*'
+        ans = '1J5E|1|A|C|10'
         self.assertEqual(val, ans)
 
 
@@ -64,11 +64,9 @@ class HasRsRParserTest(unittest.TestCase):
         self.assertTrue(self.parser.has_rsr())
 
     def test_can_generate_nt_level_data(self):
-        print(list(self.parser.nts()))
         val = list(self.parser.nts())[0]
         ans = {
-            'id': '3OGY|1|A|U|5||||*',
-            'rsr': 0.206,
-            'rsrz': 0.128,
+            'unit_id': '3OGY|1|A|U|5',
+            'real_space_r': 0.206
         }
         self.assertEquals(ans, val)

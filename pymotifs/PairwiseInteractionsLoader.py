@@ -8,7 +8,8 @@ database.
 __author__ = 'Anton Petrov'
 
 import os, csv, pdb, sys, getopt, logging
-from models import session, PairwiseInteractions
+from models import session
+from models import PdbPairwiseInteractions as PairwiseInteractions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 logger = logging.getLogger(__name__)

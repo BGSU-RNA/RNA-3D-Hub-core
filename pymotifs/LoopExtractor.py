@@ -15,7 +15,7 @@ import logging
 import datetime
 
 
-from models import session, AllLoops
+from models import session, LoopsAll
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 logger = logging.getLogger(__name__)
@@ -77,22 +77,22 @@ class LoopExtractor(MotifAtlasBaseClass):
                 self.mark_pdb_as_analyzed(pdb_id, loop_type)
                 return
             for i in xrange(l):
-                loop_id = self._get_loop_id(Loops[i].AllLoops_table.full_id,
+                loop_id = self._get_loop_id(Loops[i].LoopsAll_table.full_id,
                                             pdb_id, loop_type)
                 Loops[i].Filename = loop_id
                 session.merge(
-                    AllLoops(id            = loop_id,
+                    LoopsAll(id            = loop_id,
                              type          = loop_type,
                              pdb           = pdb_id,
                              sequential_id = loop_id[-3:],
                              length        = int(Loops[i].NumNT[0][0]),
-                             seq           = Loops[i].AllLoops_table.seq,
-                             r_seq         = Loops[i].AllLoops_table.r_seq,
-                             nwc_seq       = Loops[i].AllLoops_table.nwc,
-                             r_nwc_seq     = Loops[i].AllLoops_table.r_nwc,
+                             seq           = Loops[i].LoopsAll_table.seq,
+                             r_seq         = Loops[i].LoopsAll_table.r_seq,
+                             nwc_seq       = Loops[i].LoopsAll_table.nwc,
+                             r_nwc_seq     = Loops[i].LoopsAll_table.r_nwc,
                              pdb_file      = Loops[i].PDBFilename,
-                             nt_ids        = Loops[i].AllLoops_table.full_id,
-                             loop_name     = Loops[i].AllLoops_table.loop_name))
+                             nt_ids        = Loops[i].LoopsAll_table.full_id,
+                             loop_name     = Loops[i].LoopsAll_table.loop_name))
             self.save_mat_files(Loops)
             self.mark_pdb_as_analyzed(pdb_id, loop_type)
             logger.info('%s from %s successfully imported', loop_type, pdb_id)
@@ -114,15 +114,15 @@ class LoopExtractor(MotifAtlasBaseClass):
 
     def _get_loop_id(self, full_id, pdb_id, loop_type):
         """returns a loop id"""
-        L = session.query(AllLoops).filter(AllLoops.nt_ids==full_id).first()
+        L = session.query(LoopsAll).filter(LoopsAll.nt_ids==full_id).first()
         if L:
             logger.info('Full_id %s matched %s', full_id, L.id)
             return L.id
         else:
             "count the loops already in the db"""
-            seq_id = session.query(AllLoops). \
-                             filter(AllLoops.pdb==pdb_id). \
-                             filter(AllLoops.type==loop_type).count()
+            seq_id = session.query(LoopsAll). \
+                             filter(LoopsAll.pdb==pdb_id). \
+                             filter(LoopsAll.type==loop_type).count()
             """format example: IL_1S72_001"""
             id = '_'.join([loop_type, pdb_id, str(seq_id+1).rjust(3,'0')])
             logger.info('Created new loop id %s', id)

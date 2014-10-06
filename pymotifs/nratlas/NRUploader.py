@@ -8,8 +8,8 @@ import logging
 import sqlalchemy.exc
 
 
-from models import session, NR_release, NR_class, NR_parents, NR_release_diff,\
-                   NR_setdiff, NR_pdb, NR_handle
+from models import session, NrReleases, NrClasses, NrParents, NrReleaseDiff,\
+                   NrSetDiff, NrPdbs, NrHandles
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class Uploader(MotifAtlasBaseClass):
 
     def update_database(self):
         if self.upload_mode != 'release_diff':
-            self.release = NR_release(mode=self.release_mode,
+            self.release = NrReleases(mode=self.release_mode,
                                       description=self.release_description)
             self.__finalize()
             self.__process_set_diff()
@@ -51,7 +51,7 @@ class Uploader(MotifAtlasBaseClass):
             self.__process_release_diff()
             self.__commit()
         else:
-            self.release = NR_release()
+            self.release = NrReleases()
             self.release.id = self.c.c1.release
             self.direct_parent = 0
             self.__finalize()
@@ -66,7 +66,7 @@ class Uploader(MotifAtlasBaseClass):
 
         for group_id in self.c.c1.sg:
             if group_id in self.c.new_ids:
-                motif = NR_class(release_id=self.release.id,
+                motif = NrClasses(release_id=self.release.id,
                                  resolution=self.c.c1.res,
                                  comment=self.c.explanation[group_id])
                 if self.c.parents.has_key(group_id):
@@ -82,7 +82,7 @@ class Uploader(MotifAtlasBaseClass):
 
             elif group_id in self.c.correspond:
                 old_id  = self.c.correspond[group_id]
-                motif   = NR_class(id=old_id,
+                motif   = NrClasses(id=old_id,
                                    release_id=self.release.id,
                                    increment=True,
                                    resolution=self.c.c1.res,
@@ -95,7 +95,7 @@ class Uploader(MotifAtlasBaseClass):
 
             elif group_id in self.c.exact_match:
                 id = self.c.exact_match[group_id]
-                motif = NR_class(id=id,
+                motif = NrClasses(id=id,
                                  release_id=self.release.id,
                                  resolution=self.c.c1.res,
                                  comment=self.c.explanation[group_id])
@@ -110,13 +110,13 @@ class Uploader(MotifAtlasBaseClass):
             self.final_ids[group_id] = motif.id
 
             if parents != '':
-                self.history.append(NR_parents(class_id=motif.id, release_id=self.release.id, parents=parents))
+                self.history.append(NrParents(class_id=motif.id, release_id=self.release.id, parents=parents))
 
             for loop_id in self.c.c1.d[group_id]:
                 if loop_id in self.c.c1.reps:
-                    self.loops.append(NR_pdb(id=loop_id, class_id=motif.id, release_id=self.release.id, rep = True))
+                    self.loops.append(NrPdbs(id=loop_id, class_id=motif.id, release_id=self.release.id, rep = True))
                 else:
-                    self.loops.append(NR_pdb(id=loop_id, class_id=motif.id, release_id=self.release.id, rep = False))
+                    self.loops.append(NrPdbs(id=loop_id, class_id=motif.id, release_id=self.release.id, rep = False))
 
             self.removed_groups = set(self.c.c2.groups) - set(self.old_updated_groups) - set(self.same_groups)
 
@@ -127,7 +127,7 @@ class Uploader(MotifAtlasBaseClass):
         if self.release.id == '0.1':
             return
 
-        self.release_diff.append( NR_release_diff(
+        self.release_diff.append( NrReleaseDiff(
             nr_release_id1     = self.release.id,
             nr_release_id2     = self.c.c2.release,
             resolution         = self.c.c1.res,
@@ -156,7 +156,7 @@ class Uploader(MotifAtlasBaseClass):
                    self.c.intersection.has_key(loop_id) and \
                    self.c.intersection[loop_id].has_key(motif_id):
 
-                    self.intersection.append( NR_setdiff(
+                    self.intersection.append( NrSetDiff(
                                 nr_class1 = self.final_ids[loop_id],
                                 nr_class2 = motif_id,
                                 release_id = self.release.id,
@@ -165,7 +165,7 @@ class Uploader(MotifAtlasBaseClass):
                                 one_minus_two = ','.join(self.c.setdiff[loop_id][motif_id]),
                                 two_minus_one = ','.join(self.c.setdiff[motif_id][loop_id])
                     ))
-                    self.intersection.append( NR_setdiff(
+                    self.intersection.append( NrSetDiff(
                                 nr_class1 = motif_id,
                                 nr_class2 = self.final_ids[loop_id],
                                 release_id = self.release.id,
@@ -179,26 +179,26 @@ class Uploader(MotifAtlasBaseClass):
         """
         """
         try:
-            session.query(NR_release).\
-                    filter(NR_release.id==release).\
+            session.query(NrReleases).\
+                    filter(NrReleases.id==release).\
                     delete(synchronize_session='fetch')
-            session.query(NR_class).\
-                    filter(NR_class.release_id==release).\
+            session.query(NrClasses).\
+                    filter(NrClasses.release_id==release).\
                     delete(synchronize_session='fetch')
-            session.query(NR_pdb).\
-                    filter(NR_pdb.release_id==release).\
+            session.query(NrPdbs).\
+                    filter(NrPdbs.release_id==release).\
                     delete(synchronize_session='fetch')
-            session.query(NR_setdiff).\
-                    filter(NR_setdiff.release_id==release).\
+            session.query(NrSetDiff).\
+                    filter(NrSetDiff.release_id==release).\
                     delete(synchronize_session='fetch')
-            session.query(NR_parents).\
-                    filter(NR_parents.release_id==release).\
+            session.query(NrParents).\
+                    filter(NrParents.release_id==release).\
                     delete(synchronize_session='fetch')
-            session.query(NR_release_diff).\
-                    filter(NR_release_diff.nr_release_id1==release).\
+            session.query(NrReleaseDiff).\
+                    filter(NrReleaseDiff.nr_release_id1==release).\
                     delete(synchronize_session='fetch')
-            session.query(NR_release_diff).\
-                    filter(NR_release_diff.nr_release_id2==release).\
+            session.query(NrReleaseDiff).\
+                    filter(NrReleaseDiff.nr_release_id2==release).\
                     delete(synchronize_session='fetch')
             session.commit()
             logger.info('Release %s deleted successfully' % release)
@@ -212,7 +212,7 @@ class Uploader(MotifAtlasBaseClass):
         """
         try:
             session.add_all(self.release_diff)
-            session.query(NR_handle).delete()
+            session.query(NrHandles).delete()
             session.commit()
             logger.info('Successful update')
         except sqlalchemy.exc.SQLAlchemyError, e:
@@ -229,7 +229,7 @@ class Uploader(MotifAtlasBaseClass):
             if len(handles) != len(set(handles)):
                 pdb.set_trace()
 
-            r = session.query(NR_release).filter(NR_release.id == self.release.id).first()
+            r = session.query(NrReleases).filter(NrReleases.id == self.release.id).first()
             if not r:
                 session.add(self.release)
 

@@ -19,7 +19,7 @@ import re
 import csv
 import glob
 
-from models import session, LoopSearch, LoopSearchQA, LoopPositions
+from models import session, LoopSearches, LoopSearchQa, LoopPositions
 from MotifAtlasBaseClass import MotifAtlasBaseClass
 
 logger = logging.getLogger(__name__)
@@ -85,9 +85,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
             get loop pairs for which search data has been stored in the database
         """
         done = []
-        for search in session.query(LoopSearch).\
-                              filter(LoopSearch.loop_id1==loop_id).\
-                              filter(LoopSearch.disc>=0).\
+        for search in session.query(LoopSearches).\
+                              filter(LoopSearches.loop_id1==loop_id).\
+                              filter(LoopSearches.disc>=0).\
                               all():
             done.append('_'.join([search.loop_id1, search.loop_id2]))
         return set(done)
@@ -97,9 +97,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
             get loops pairs that didn't match in all-against-all searches
         """
         done = []
-        for search in session.query(LoopSearch).\
-                              filter(LoopSearch.loop_id1==loop_id).\
-                              filter(LoopSearch.disc==-1).\
+        for search in session.query(LoopSearches).\
+                              filter(LoopSearches.loop_id1==loop_id).\
+                              filter(LoopSearches.disc==-1).\
                               all():
             done.append('_'.join([search.loop_id1, search.loop_id2]))
         return set(done)
@@ -155,9 +155,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
     def _store_in_database(self, loop_id1, loop_id2, disc=-1, nt_list1=None, nt_list2=None):
         """
         """
-        existing = session.query(LoopSearch). \
-                           filter(LoopSearch.loop_id1==loop_id1). \
-                           filter(LoopSearch.loop_id2==loop_id2). \
+        existing = session.query(LoopSearches). \
+                           filter(LoopSearches.loop_id1==loop_id1). \
+                           filter(LoopSearches.loop_id2==loop_id2). \
                            first()
         if existing:
             if self.update:
@@ -166,7 +166,7 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
                 existing.nt_list2 = nt_list2
                 session.merge(existing)
         else:
-            session.add(LoopSearch(loop_id1=loop_id1,
+            session.add(LoopSearches(loop_id1=loop_id1,
                                    loop_id2=loop_id2,
                                    disc=float(disc),
                                    nt_list1=nt_list1,
@@ -193,9 +193,9 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
         codes from the text files created by matlab during clustering"""
         reader = csv.reader(open(file, 'r'))
         for row in reader:
-            existing = session.query(LoopSearchQA). \
-                               filter(LoopSearchQA.loop_id1==row[0]). \
-                               filter(LoopSearchQA.loop_id2==row[1]). \
+            existing = session.query(LoopSearchQa). \
+                               filter(LoopSearchQa.loop_id1==row[0]). \
+                               filter(LoopSearchQa.loop_id2==row[1]). \
                                first()
             if existing:
                 if self.update:
@@ -203,7 +203,7 @@ class LoopSearchesLoader(MotifAtlasBaseClass):
                     existing.message = row[3]
                     session.merge(existing)
             else:
-                session.add(LoopSearchQA(loop_id1=row[0],
+                session.add(LoopSearchQa(loop_id1=row[0],
                                          loop_id2=row[1],
                                          status=int(row[2]),
                                          message=row[3]))
