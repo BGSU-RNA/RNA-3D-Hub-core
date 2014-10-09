@@ -6,7 +6,6 @@ from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import PolymerInfo
 import utils as ut
 
-ut.append_libs()
 from rnastructure.tertiary.cif import CIF
 from rnastructure.util import unit_ids as uids
 

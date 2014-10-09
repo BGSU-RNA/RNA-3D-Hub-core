@@ -51,10 +51,6 @@ class GetCustomReportError(Exception):
     pass
 
 
-def append_libs():
-    sys.path.append(os.path.join(os.path.dirname(__file__), "rnastructure"))
-
-
 def grouper(n, iterable):
     iterator = iter(iterable)
     while True:

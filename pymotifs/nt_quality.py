@@ -11,7 +11,6 @@ from MotifAtlasBaseClass import MotifAtlasBaseClass
 import utils as ut
 from models import NtQuality
 
-ut.append_libs()
 from rnastructure.util import unit_ids as uids
 
 

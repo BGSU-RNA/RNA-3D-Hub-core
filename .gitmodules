@@ -7,6 +7,3 @@
 [submodule "UnitIdTranslation"]
 	path = UnitIdTranslation
 	url = git@github.com:BGSU-RNA/UnitIdTranslation.git
-[submodule "pymotifs/rnastructure"]
-	path = pymotifs/rnastructure
-	url = git@github.com:BGSU-RNA/RNA-Structure-utils.git
