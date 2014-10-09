@@ -41,6 +41,8 @@ equivalence classes.
         git submodule init
         git submodule update
 
+5. Install [rnastructure-utils](https://github.com/BGSU-RNA/RNA-Structure-utils)
+
 ## Testing
 
 The software suite includes test datasets for motifs and non-redundant lists.
@@ -81,3 +83,7 @@ The main program that triggers the update is `MotifAtlas.py`
 When run as a cronjob, need to export a system variable like so:
 
     export MLABRAW_CMD_STR=/Applications/MATLAB_R2007b/bin/matlab
+
+## Configuration
+
+This requires that any firewall you are using allow passive connections.
