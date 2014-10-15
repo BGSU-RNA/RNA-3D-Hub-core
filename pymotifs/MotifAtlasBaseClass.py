@@ -174,7 +174,7 @@ class MotifAtlasBaseClass:
 
             themsg = MIMEMultipart()
             themsg['To'] = self.config['email']['to']
-            themsg['From'] = self.config['email']['login']
+            themsg['From'] = self.config['email']['from']
             themsg['Subject'] = ' '.join([self.config['email']['subject'],
                                           strftime("%Y-%m-%d", localtime())])
             msg = MIMEBase('application', 'zip')
@@ -186,12 +186,13 @@ class MotifAtlasBaseClass:
             themsg.attach(MIMEText(text, 'html'))
 
             server = smtplib.SMTP(self.config['email']['host'])
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
             if self.config['email']['login']:
+                server.starttls()
+                server.ehlo()
                 server.login(self.config['email']['login'],
                              self.config['email']['password'])
+            else:
+                server.ehlo()
 
             server.sendmail(self.config['email']['from'],
                             self.config['email']['to'].split(','),
