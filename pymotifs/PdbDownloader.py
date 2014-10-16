@@ -20,7 +20,6 @@ import gzip
 import shutil
 import glob
 import xml.dom.minidom
-import pdb
 import cStringIO as sio
 
 import utils
@@ -42,7 +41,7 @@ class PdbDownloader(MotifAtlasBaseClass):
         """
         MotifAtlasBaseClass.__init__(self)
         self.baseurl = 'http://www.rcsb.org/pdb/files/'
-        self.ba_url  = 'http://www.pdb.org/pdb/rest/getEntityInfo?structureId='
+        self.ba_url = 'http://www.pdb.org/pdb/rest/getEntityInfo?structureId='
         self.filetypes = ['.pdb', '.pdb1', '.cif']
         self.locations = []
         self.pdbs = []
@@ -95,9 +94,12 @@ class PdbDownloader(MotifAtlasBaseClass):
             sys.exit(1)
         try:
             dom = xml.dom.minidom.parseString(response.read())
-            return int(dom.getElementsByTagName('PDB')[0].attributes['bioAssemblies'].value)
+            tag = dom.getElementsByTagName('PDB')[0]
+            raw = tag.attributes['bioAssemblies'].value
+            return int(raw)
         except:
-            logger.warning('REST query for %s biological assemblies failed' % pdb_id)
+            logger.warning('REST query for %s biological assemblies failed' %
+                           pdb_id)
             return None
 
     def download(self, pdb_id, file_type):
@@ -140,7 +142,8 @@ class PdbDownloader(MotifAtlasBaseClass):
             Copy files from the first location to all the other locations
         """
         for location in self.locations[1:]:
-            source_files = glob.glob(os.path.join(self.locations[0], pdb_id + '*'))
+            name = self.locations[0], pdb_id + '*'
+            source_files = glob.glob(os.path.join(name))
             for source in source_files:
                 (head, tail) = os.path.split(source)
                 destination = os.path.join(location, tail)
