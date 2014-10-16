@@ -21,6 +21,9 @@ import shutil
 import glob
 import xml.dom.minidom
 import pdb
+import cStringIO as sio
+
+import utils
 
 
 import PdbInfoLoader
@@ -112,10 +115,16 @@ class PdbDownloader(MotifAtlasBaseClass):
         if os.path.exists(destination):
             logger.info('%s already downloaded' % filename)
             return
+
+        helper = utils.WebRequestHelper(parser=sio.StringIO)
         try:
-            response = urllib2.urlopen(self.baseurl + filename + '.gz')
-        except urllib2.HTTPError:
-            if file_type in ['.pdb', '.cif']:
+            content = helper(self.baseurl + filename + '.gz')
+            with open(destination, 'w') as out:
+                unzipped = gzip.GzipFile(fileobj=content)
+                out.write(unzipped.read())
+            content.close()
+        except:
+            if file_type == '.pdb' or file_type == '.cif':
                 logger.critical('Pdb file %s could not be downloaded' % pdb_id)
                 self.set_email_subject('Pdb sync failed')
                 self.send_report()
@@ -124,20 +133,6 @@ class PdbDownloader(MotifAtlasBaseClass):
                 logger.info('%s file not found for %s' % (file_type, pdb_id))
                 return
 
-        # save gzip
-        f = open(destination, 'w')
-        f.write(response.read())
-        f.close()
-
-        # decompress gzip
-        f = gzip.open(destination, 'r')
-        decompressed = f.read()
-        f.close()
-
-        # save text
-        f = open(destination, 'w')
-        f.write(decompressed)
-        f.close()
         logger.info('Downloaded %s' % destination)
 
     def make_copies(self, pdb_id):
