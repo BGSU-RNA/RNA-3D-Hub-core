@@ -3,6 +3,7 @@ import unittest
 
 from utils import CifFileFinder
 from utils import MissingFileException
+import utils
 
 
 class CifFileFinderTest(unittest.TestCase):
@@ -17,3 +18,17 @@ class CifFileFinderTest(unittest.TestCase):
 
     def test_fails_for_missing_file(self):
         self.assertRaises(MissingFileException, self.cif, "bob")
+
+
+class FailingRetry(utils.RetryHelper):
+    def action(*args, **kwargs):
+        raise ValueError("Expected")
+
+
+class RetryHelperTest(unittest.TestCase):
+    def test_can_allow_failure(self):
+        val = FailingRetry(allow_fail=True)()
+        self.assertTrue(val is None)
+
+    def test_will_fail_with_failure(self):
+        self.assertRaises(utils.RetryFailedException, FailingRetry())

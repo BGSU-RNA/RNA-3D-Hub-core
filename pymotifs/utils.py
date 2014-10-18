@@ -61,19 +61,22 @@ def grouper(n, iterable):
 
 
 class RetryHelper(object):
-    def __init__(self, retries=3):
+    def __init__(self, retries=3, allow_fail=False):
         self.retries = retries
+        self.allow_fail = allow_fail
 
     def __call__(self, *args, **kwargs):
         for index in xrange(self.retries):
             try:
                 return self.action(*args, **kwargs)
             except:
-                logger.warning("Failed retry attempt #%s", str(index + 1))
-                logger.warning(traceback.format_exc(sys.exc_info()))
+                if not self.allow_fail:
+                    logger.warning("Failed retry attempt #%s", str(index + 1))
+                    logger.warning(traceback.format_exc(sys.exc_info()))
 
-        logger.error("All attempts at retrying failed")
-        raise RetryFailedException()
+        if not self.allow_fail:
+            logger.error("All attempts at retrying failed")
+            raise RetryFailedException()
 
 
 class WebRequestHelper(RetryHelper):
