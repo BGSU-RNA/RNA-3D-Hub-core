@@ -118,9 +118,11 @@ class PdbDownloader(MotifAtlasBaseClass):
             logger.info('%s already downloaded' % filename)
             return
 
-        helper = utils.WebRequestHelper(parser=sio.StringIO)
+        helper = utils.WebRequestHelper(parser=sio.StringIO, allow_fail=True)
         try:
             content = helper(self.baseurl + filename + '.gz')
+            if not content:
+                raise ValueError("Failed")
             with open(destination, 'w') as out:
                 unzipped = gzip.GzipFile(fileobj=content)
                 out.write(unzipped.read())
