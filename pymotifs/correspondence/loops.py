@@ -1,11 +1,14 @@
 import sys
 import logging
 import traceback
-import itertools as it
 
-from MotifAtlasBaseClass import MotifAtlasBaseClass
-import models as mod
-import utils as ut
+import core
+from correspondence.utils import StructureUtil
+
+from models import CorrespondenceLoops as Loops
+from modles import CorrespondenceInfo as Info
+from modles import LoopOverlapInfo
+from modles import LoopLoopComparisions
 
 logger = logging.getLogger(__name__)
 
@@ -23,81 +26,30 @@ class InvalidCoverageState(Exception):
     pass
 
 
-class StructureUtil(ut.DatabaseHelper):
-    """Some useful methods
-    """
+class Loader(core.Loader):
+    name = 'correspondence_loops'
 
-    def loops(self, pdb):
-        """Get all loops in a structure.
-        """
-        loops = []
-        with self.session() as session:
-            query = session.query(mod.LoopPositions).\
-                join(mod.LoopsAll,
-                     mod.LoopPositions.loop_id == mod.LoopsAll.id).\
-                filter(mod.LoopsAll.pdb == pdb).\
-                order_by(mod.LoopsAll.id)
-
-            grouped = it.groupby(it.imap(ut.row2dict, query),
-                                 lambda a: a['loop_id'])
-            for loop_id, positions in grouped:
-                loops.append({
-                    'id': loop_id,
-                    'nts': [pos['nt_id'] for pos in positions]
-                })
-
-        return loops
-
-    def reference(self, pdb):
-        """Get all correlated reference structures.
-        """
-        with self.session() as session:
-            query = session.query(mod.CorrespondenceInfo).filter_by(pdb2=pdb)
-            return [ut.row2dict(result) for result in query]
-
-    def mapping(self, ref, pdb):
-        """Get the mapping from nucleotides in the reference to the nucleotides
-        in the pdb.
-        """
-        mapping = {}
-        with self.session() as session:
-            query = session.query(mod.CorrespondenceNts).\
-                join(mod.CorrespondenceInfo,
-                     mod.CorrespondenceInfo.id ==
-                     mod.CorrespondenceNts.correspondence_id).\
-                filter(mod.CorrespondenceInfo.pdb1 == ref).\
-                filter(mod.CorrespondenceInfo.pdb2 == pdb)
-            for result in query:
-                mapping[result.unit1_id] = result.unit2_id
-                mapping[result.unit2_id] = result.unit1_id
-
-        if not mapping:
-            logger.error("Could not generate mapping between %s to %s", ref,
-                         pdb)
-
-        return mapping
-
-
-class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
-
-    def __init__(self, maker):
-        MotifAtlasBaseClass.__init__(self)
-        ut.DatabaseHelper.__init__(self, maker)
+    def __init__(self, config, maker):
         self._overlaps = {}
         self.utils = StructureUtil(maker)
+        super(Loader, self).__init__(self, {}, maker)
 
     def has_data(self, reference, pdb):
         with self.session() as session:
             query = self.__base_info_query__(session, reference, pdb)
             return bool(query.count())
 
-    def remove_old(self, reference, pdb):
-        pass
+    def remove(self, pdb):
+        with self.session() as session:
+            session.query(Loops).\
+                join(Info, Info.id == Loops.correspondence_id).\
+                filter(Info.pdb1 == pdb).\
+                delete()
 
     def overlap(self, coverage):
         if not self._overlaps:
             with self.session() as session:
-                for overlap in session.query(mod.LoopOverlapInfo):
+                for overlap in session.query(LoopOverlapInfo):
                     self._overlaps[overlap.name] = overlap.id
 
         if coverage not in self._overlaps:
@@ -171,17 +123,17 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
 
     def loop_comparision_id(self, loop1, loop2, discrepancy):
         with self.session() as session:
-            query = session.query(mod.LoopLoopComparisions).\
+            query = session.query(LoopLoopComparisions).\
                 filter_by(loop1_id=loop1, loop2_id=loop2)
 
             if query.count() == 0:
-                session.add(mod.LoopLoopComparisions(loop1_id=loop1,
-                                                     loop2_id=loop2,
-                                                     discrepancy=discrepancy))
+                session.add(LoopLoopComparisions(loop1_id=loop1,
+                                                 loop2_id=loop2,
+                                                 discrepancy=discrepancy))
                 session.commit()
 
         with self.session() as session:
-            return session.query(mod.LoopLoopComparisions).\
+            return session.query(LoopLoopComparisions).\
                 filter_by(loop1_id=loop1, loop2_id=loop2).\
                 one().id
 
@@ -207,10 +159,10 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
                                                   disc)
 
             overlapping.append((loop['id'],
-                               mod.CorrespondenceLoops(
-                                   loop_loop_comparisions_id=compare_id,
-                                   correspondence_id=corr_id,
-                                   loop_overlap_info_id=self.overlap(cover))))
+                                Loops(
+                                    loop_loop_comparisions_id=compare_id,
+                                    correspondence_id=corr_id,
+                                    loop_overlap_info_id=self.overlap(cover))))
 
         return overlapping
 
@@ -226,7 +178,7 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
 
             else:
                 compare_id = self.loop_comparision_id(ref['id'], None, None)
-                yield mod.CorrespondenceLoops(
+                yield Loops(
                     loop_loop_comparisions_id=compare_id,
                     correspondence_id=corr_id,
                     loop_overlap_info_id=self.overlap('unique'))
@@ -234,7 +186,7 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
         for loop in unseen_loops:
             compare_id = self.loop_comparision_id(None, loop, None)
 
-            yield mod.CorrespondenceLoops(
+            yield Loops(
                 loop_loop_comparisions_id=compare_id,
                 correspondence_id=corr_id,
                 loop_overlap_info_id=self.overlap('unique'))
@@ -252,21 +204,6 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
                 continue
 
             yield self.compare(ref_loops, mapped, correspondence['id'])
-
-    def __call__(self, pdbs, **kwargs):
-        if not pdbs:
-            raise Exception("No pdbs given")
-
-        for pdb in it.imap(lambda p: p.upper(), pdbs):
-            logger.info("Getting loop loop correspondence for %s", pdb)
-
-            try:
-                data = self.data(pdb, **kwargs)
-                self.store(data)
-            except:
-                logger.error("Failed storing loop loop correspondencies in %s",
-                             pdb)
-                logger.error(traceback.format_exc(sys.exc_info()))
 
 
 if __name__ == '__main__':
