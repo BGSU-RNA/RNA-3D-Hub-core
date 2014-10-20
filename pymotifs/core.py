@@ -9,7 +9,10 @@ import itertools as it
 import collections as coll
 from contextlib import contextmanager
 
-from mlabwrap import mlab
+try:
+    from mlabwrap import mlab
+except:
+    pass
 
 from models import PdbAnalysisStatus
 
@@ -266,6 +269,8 @@ class Loader(object):
                 failed_count += 1
 
         logger.info("%s out of %s pdbs failed", failed_count, len(pdbs))
+        if failed_count == len(pdbs):
+            logger.error("All pdbs failed")
 
 
 class MultiLoader(object):
