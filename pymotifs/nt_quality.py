@@ -46,6 +46,10 @@ class Parser(object):
         self.digest = md5.hexdigest()
         self.root = ET.fromstring(content)
 
+    def has_dcc(self):
+        entry = self.root.find("Entry")
+        return 'DCC_R' in entry.attrib
+
     def has_rsr(self):
         entry = self.root.find("Entry")
         return 'absolute-percentile-percent-RSRZ-outliers' in entry.attrib
@@ -53,12 +57,17 @@ class Parser(object):
     def nts(self):
         pdb = self.root.find("Entry").attrib['pdbid'].upper()
         for residue in self.root.findall("ModelledSubgroup"):
-            if 'rsr' in residue.attrib and 'rsrz' in residue.attrib:
-                yield {
-                    'unit_id': self._unit_id(pdb, residue.attrib),
-                    'real_space_r': float(residue.attrib['rsr'])
-                    # 'rsrz': float(residue.attrib['rsrz'])
-                }
+            data = {}
+            if 'rsr' in residue.attrib:
+                data['real_space_r'] =  float(residue.attrib['rsr'])
+
+            if 'DCC' in residue.attrib:
+                pass
+
+            if data:
+                data['unit_id'] =  self._unit_id(pdb, residue.attrib)
+                yield data
+
 
     def _unit_id(self, pdb, attributes):
         return self.generator({
@@ -100,7 +109,7 @@ class Loader(core.Loader):
         logger.info("Using filename %s for pdb %s ", filename, pdb)
         response = self.fetcher(filename)
         parser = Parser(response)
-        if not parser.has_rsr():
+        if not parser.has_rsr() and not parser.has_dcc():
             logger.info("No RsR found for %s", pdb)
             return
 
