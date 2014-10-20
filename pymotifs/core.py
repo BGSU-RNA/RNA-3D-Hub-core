@@ -213,6 +213,7 @@ class Loader(object):
             logging.critical("Must give pdbs to %s", self.name)
             raise Exception("Not pdbs given")
 
+        failed_count = 0
         for pdb in pdbs:
             pdb = pdb.upper()
             logger.info("Loader %s is processing %s", self.name, pdb)
@@ -230,6 +231,7 @@ class Loader(object):
                 self.remove(pdb)
                 if self.stop_on_failure:
                     raise StageFailed(self.name)
+                failed_count += 1
                 continue
 
             if not self.allow_no_data and not data:
@@ -237,6 +239,7 @@ class Loader(object):
                 raise InvalidState("Missing data")
             elif not data:
                 logger.warning("No data produced for %s", self.name)
+                failed_count += 1
                 continue
 
             try:
@@ -249,6 +252,7 @@ class Loader(object):
                 self.remove(pdb)
                 if self.stop_on_failure:
                     raise StageFailed(self.name)
+                failed_count += 1
                 continue
 
             try:
@@ -259,6 +263,9 @@ class Loader(object):
                 self.remove(pdb)
                 if self.stop_on_failure:
                     raise StageFailed(self.name)
+                failed_count += 1
+
+        logger.info("%s out of %s pdbs failed", failed_count, len(pdbs))
 
 
 class MultiLoader(object):
