@@ -1,10 +1,8 @@
-import sys
 import logging
-import traceback
 
-from MotifAtlasBaseClass import MotifAtlasBaseClass
 from models import PolymerInfo
 import utils as ut
+import core
 
 from rnastructure.tertiary.cif import CIF
 from rnastructure.util import unit_ids as uids
@@ -25,33 +23,24 @@ class ChainBreakFinder(object):
         return breaks
 
 
-class ChainBreakLoader(MotifAtlasBaseClass, ut.DatabaseHelper):
+class Loader(core.Loader):
     finder = ChainBreakFinder()
 
-    def __init__(self, maker):
-        MotifAtlasBaseClass.__init__(self)
+    def __init__(self, config, maker):
+        super(Loader, self).__init__(self, config, maker)
         self.cif = ut.CifFileFinder(self.config)
-        ut.DatabaseHelper.__init__(self, maker)
 
-    def has_breaks(self, pdb):
+    def has_data(self, pdb):
         with self.session() as session:
             query = session.query(PolymerInfo).\
                 filter_by(pdb_id=pdb)
             return bool(query.count())
 
-    def remove_old(self, pdb):
+    def remove(self, pdb):
         with self.session() as session:
             session.query(PolymerInfo).filter_by(pdb_id=pdb).delete()
 
-    def data(self, pdb, recalculate=False, **kwargs):
-        if self.has_breaks(pdb):
-            if not recalculate:
-                logger.info("Breaks already stored for %s", pdb)
-                return []
-            else:
-                logger.info("Removing old breaks for %s", pdb)
-                self.remove_old(pdb)
-
+    def data(self, pdb, **kwargs):
         cif_file = self.cif(pdb)
         endpoints = self.finder(cif_file)
         converter = uids.generate_converter('unit', 'nucleotide')
@@ -69,23 +58,7 @@ class ChainBreakLoader(MotifAtlasBaseClass, ut.DatabaseHelper):
                                     pdb_id=pdb))
         return data
 
-    def __call__(self, pdbs, **kwargs):
-        if not pdbs:
-            raise Exception("No pdbs given")
-
-        for pdb in pdbs:
-            pdb = pdb.upper()
-            logger.info("Getting breaks for %s", pdb)
-
-            try:
-                breaks = self.data(pdb, **kwargs)
-                logger.info("Found %s breaks", len(breaks))
-                self.store(breaks)
-            except:
-                logger.error("Failed to store breaks for %s", pdb)
-                logger.error(traceback.format_exc(sys.exc_info()))
-
 
 if __name__ == '__main__':
     from utils import main
-    main(ChainBreakLoader)
+    main(Loader)

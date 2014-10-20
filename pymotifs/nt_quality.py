@@ -1,15 +1,13 @@
-import sys
 import gzip
 import hashlib
 import logging
-import traceback
 import cStringIO as sio
 import xml.etree.ElementTree as ET
 
-from MotifAtlasBaseClass import MotifAtlasBaseClass
-
 import utils as ut
+import core
 from models import NtQuality
+from models import PdbUnitIdCorrespondence as Unit
 
 from rnastructure.util import unit_ids as uids
 
@@ -73,12 +71,29 @@ class Parser(object):
         })
 
 
-class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
-    def __init__(self, session_builder):
+class Loader(core.Loader):
+    name = 'nt_quality'
+    update_gap = False
+
+    def __init__(self, config, session_builder):
         self.fetcher = ut.FTPFetchHelper('ftp.wwpdb.org')
         self.finder = FileHelper()
-        MotifAtlasBaseClass.__init__(self)
-        ut.DatabaseHelper.__init__(self, session_builder)
+        super(Loader, self).__init__(self, config, session_builder)
+
+    def remove(self, pdb):
+        with self.session() as session:
+            session.query(NtQuality).\
+                join(Unit, Unit.unit_id == NtQuality.unit_id).\
+                filter(Unit.pdb == pdb).\
+                delete()
+
+    def has_data(self, pdb):
+        with self.session() as session:
+            count = session.query(NtQuality).\
+                join(Unit, Unit.unit_id == NtQuality.unit_id).\
+                filter(Unit.pdb == pdb).\
+                count()
+            return bool(count)
 
     def data(self, pdb, **kwargs):
         filename = self.finder(pdb)
@@ -91,17 +106,6 @@ class Loader(MotifAtlasBaseClass, ut.DatabaseHelper):
 
         for entry in parser.nts():
             yield NtQuality(**entry)
-
-    def __call__(self, pdbs, **kwargs):
-        for pdb in pdbs:
-            logger.info("Fetching quality data for %s", pdb)
-            try:
-                data = self.data(pdb, **kwargs)
-                self.store(list(data))
-            except:
-                logger.error("Error raised in getting quality for %s", pdb)
-                logger.error(traceback.format_exc(sys.exc_info()))
-
 
 if __name__ == '__main__':
     ut.main(Loader)
