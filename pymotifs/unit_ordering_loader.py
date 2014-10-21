@@ -48,7 +48,7 @@ class UnitOrderingLoader(MotifAtlasBaseClass):
                     self.__import_file__(pdb, file_type)
                 except:
                     logger.error("Failed ordering import: %s%s",
-                                  pdb, file_type)
+                                 pdb, file_type)
 
     def __import_file__(self, pdb, extension):
         """Attempt to import a file. If the file does not exists, a warning is
