@@ -6,9 +6,9 @@ import core
 from correspondence.utils import StructureUtil
 
 from models import CorrespondenceLoops as Loops
-from modles import CorrespondenceInfo as Info
-from modles import LoopOverlapInfo
-from modles import LoopLoopComparisions
+from models import CorrespondenceInfo as Info
+from models import LoopOverlapInfo
+from models import LoopLoopComparisions
 
 logger = logging.getLogger(__name__)
 

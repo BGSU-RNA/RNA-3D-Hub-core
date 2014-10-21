@@ -1,6 +1,6 @@
 import core
 
-from modles import CorrespondenceInfo as Info
+from models import CorrespondenceInfo as Info
 
 from fr3d import geometry as geo
 
