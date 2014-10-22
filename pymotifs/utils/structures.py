@@ -1,4 +1,6 @@
-import logging
+"""Some queries that are useful in accessing stuff in the database.
+"""
+
 import itertools as it
 import collections as coll
 
@@ -33,32 +35,26 @@ where
     pdb_id = :val
 '''
 
-logger = logging.getLogger(__name__)
+CURRENT_MEMBERS_QUERY = '''
+select N2.pdb_id
+from nr_current_representative as N1
+join nr_current_representative as N2
+on
+    N2.rep_id = N1.rep_id
+where
+    N1.pdb_id = :val
+;
+'''
 
 
-class StructureUtil(object):
-    """Some useful methods
-    """
+class Base(object):
     def __init__(self, maker):
         self.session = core.Session(maker)
 
-    def longest_chain(self, pdb, model=1):
-        with self.session() as session:
-            query = session.query(PdbCoordinates).\
-                filter_by(pdb=pdb, model=model).\
-                filter(PdbCoordinates.unit.in_(['A', 'C', 'G', 'U'])).\
-                order_by(PdbCoordinates.chain)
 
-        grouped = it.groupby(query, lambda a: a.chain)
-        max_pair = max(grouped, key=lambda (k, v): len(list(v)))
-        return max_pair[0]
-
-    def representative(self, pdb):
-        with self.session() as session:
-            result = session.execute(CURRENT_REP_QUERY, {'val': pdb})
-            rep = set([rep[0] for rep in result.fetchall()])
-        rep.discard(pdb)
-        return rep
+class Polymers(Base):
+    """Methods for getting information about polymers.
+    """
 
     def polymer_sequences(self, pdb, chain, model=1):
         results = self.__polymer_units__(pdb=pdb, chain=chain, model=model)
@@ -78,9 +74,36 @@ class StructureUtil(object):
         Record = coll.namedtuple('Record', result.keys())
         return it.imap(lambda r: Record(*r), result.fetchall())
 
+
+class NR(Base):
+    def members(self, pdb):
+        with self.session() as session:
+            result = session.execute(CURRENT_MEMBERS_QUERY, {'val': pdb})
+            rep = set([rep[0] for rep in result.fetchall()])
+        rep.discard(pdb)
+        return rep
+
+    def representative(self, pdb):
+        with self.session() as session:
+            result = session.execute(CURRENT_REP_QUERY, {'val': pdb})
+            rep = set([rep[0] for rep in result.fetchall()])
+        rep.discard(pdb)
+        return rep
+
+
+class Structure(Base):
+    def longest_chain(self, pdb, model=1):
+        with self.session() as session:
+            query = session.query(PdbCoordinates).\
+                filter_by(pdb=pdb, model=model).\
+                filter(PdbCoordinates.unit.in_(['A', 'C', 'G', 'U'])).\
+                order_by(PdbCoordinates.chain)
+
+        grouped = it.groupby(query, lambda a: a.chain)
+        max_pair = max(grouped, key=lambda (k, v): len(list(v)))
+        return max_pair[0]
+
     def loops(self, pdb):
-        """Get all loops in a structure.
-        """
         loops = []
         with self.session() as session:
             query = session.query(LoopPositions).\
@@ -98,6 +121,8 @@ class StructureUtil(object):
 
         return loops
 
+
+class Correspondence(Base):
     def reference(self, pdb):
         """Get all correlated reference structures.
         """
@@ -120,9 +145,5 @@ class StructureUtil(object):
             for result in query:
                 mapping[result.unit1_id] = result.unit2_id
                 mapping[result.unit2_id] = result.unit1_id
-
-        if not mapping:
-            logger.error("Could not generate mapping between %s to %s", ref,
-                         pdb)
 
         return mapping

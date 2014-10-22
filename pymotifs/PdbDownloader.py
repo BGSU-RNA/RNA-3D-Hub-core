@@ -16,11 +16,9 @@ import logging
 import os
 import sys
 import urllib2
-import gzip
 import shutil
 import glob
 import xml.dom.minidom
-import cStringIO as sio
 
 import utils
 
@@ -118,15 +116,11 @@ class PdbDownloader(MotifAtlasBaseClass):
             logger.info('%s already downloaded' % filename)
             return
 
-        helper = utils.WebRequestHelper(parser=sio.StringIO, allow_fail=True)
         try:
+            helper = utils.GzipFetchHelper(allow_fail=True)
             content = helper(self.baseurl + filename + '.gz')
-            if not content:
-                raise ValueError("Failed")
             with open(destination, 'w') as out:
-                unzipped = gzip.GzipFile(fileobj=content)
-                out.write(unzipped.read())
-            content.close()
+                out.write(content)
         except:
             if file_type == '.pdb' or file_type == '.cif':
                 logger.critical('Pdb file %s could not be downloaded' % pdb_id)

@@ -2,23 +2,25 @@ import logging
 
 import core
 from models import CorrespondenceInfo as Info
-from correspondence.nts import StructureUtil as Util
+
+from utils.structures import NR as NrUtil
 
 logger = logging.getLogger(__name__)
 
 
 class Loader(core.Loader):
     name = 'correspondence_info'
+    update_gap = False
 
     def __init__(self, config, maker):
-        self.util = Util(maker)
+        self.util = NrUtil(maker)
         super(Loader, self).__init__(config, maker)
 
     def possible(self, pdb):
         """Get all possible pdbs to align against. This means all pdbs in the
         same nr class as the given pdb for the current release.
         """
-        return self.util.representative(pdb)
+        return self.util.members(pdb)
 
     def known(self, pdb):
         """Get all pdbs we have aligned against.
@@ -36,7 +38,7 @@ class Loader(core.Loader):
         """We check if we have all data for this pdb by seeing if we aligned
         this to all possible pdbs.
         """
-        return bool(self.missing(pdb))
+        return not bool(self.missing(pdb))
 
     def remove(self, pdb):
         """Removes all old correspondences for the given pdb. This will only
@@ -47,10 +49,10 @@ class Loader(core.Loader):
         with self.session() as session:
             session.query(Info).filter_by(pdb1=pdb).\
                 filter(Info.pdb2.in_(possible)).\
-                delete()
+                delete(synchronize_session=False)
 
     def data(self, pdb, **kwargs):
-        return [Info(pdb1=pdb, pdb2=other) for other in self.missing(pdb)]
+        return [Info(pdb1=pdb, pdb2=other) for other in self.possible(pdb)]
 
 
 if __name__ == '__main__':

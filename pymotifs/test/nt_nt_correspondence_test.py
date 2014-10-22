@@ -1,20 +1,21 @@
 import unittest
 
 from models import Session
-from models import PdbCorrespondences
 
-import nt_nt_correspondence as ntnt
+import correspondence.nts as ntnt
 import utils as ut
 
 VALID_CORRELATIONS = '''[
 {"unit1": "A", "unit2": "1"},
 {"unit1": "C", "unit2": "2"}
+{"unit1": "-", "unit2": "2"}
+{"unit1": "C", "unit2": "-"}
 ]'''
 
 
 class CorrelationResponseParserTest(unittest.TestCase):
     def setUp(self):
-        self.parser = ntnt.CorrelationResponseParser()
+        self.parser = ntnt.Parser()
 
     def test_can_parse_valid_response(self):
         val = self.parser(VALID_CORRELATIONS)
@@ -61,13 +62,7 @@ class StructureUtilTest(unittest.TestCase):
 
 class NtNtCorrespondencesTest(unittest.TestCase):
     def setUp(self):
-        self.corr = ntnt.Loader(Session)
+        self.corr = ntnt.Loader({}, Session)
 
     def test_can_check_if_has_correspondence(self):
         self.assertFalse(self.corr.has_correspondence('1J5E', 'bob'))
-
-    def test_can_get_correspondence_id(self):
-        val = self.corr.correlation_id('1J5E', '0ABC')
-        with self.corr.session() as session:
-            session.query(PdbCorrespondences).filter_by(id=val).delete()
-        self.assertTrue(val is not None)

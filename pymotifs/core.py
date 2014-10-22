@@ -107,7 +107,7 @@ class Loader(object):
             raise AttributeError("Must set name")
 
         if self.update_gap is None:
-            raise AttributeError("Must set update gap")
+            raise AttributeError("Must set update gap for %s" % self.name)
 
         self.session = Session(session_maker)
 
@@ -188,13 +188,28 @@ class Loader(object):
         diff = abs(datetime.datetime.now() - current)
         return diff > self.update_gap()
 
-    def should_compute(self, pdb, recompute=False, **kwargs):
+    def should_compute(self, pdb, recalculate=False, **kwargs):
         """Determine if we should recompute the data for this loader and pdb.
         This is true if we are told to recompute, if we do not have data for
         this pdb or it has been long enough since the last update.
         """
-        return recompute or self.config[self.name].get('recompute') or \
-            not self.has_data(pdb) or self.been_long_enough(pdb)
+        must_recompute = recalculate or self.config[self.name].get('recompute')
+        if must_recompute:
+            logger.debug("Given recompute for %s", pdb)
+            return True
+
+        has_data = self.has_data(pdb)
+        if not has_data:
+            logger.debug("Missing data for %s will recompute", pdb)
+            return True
+
+        too_long = self.been_long_enough(pdb)
+        if too_long:
+            logger.debug("Time gap for %s too large, recomputing", pdb)
+            return True
+
+        logger.debug("No reason to recompute %s", pdb)
+        return False
 
     def mark_analyzed(self, pdb):
         """Mark that we have finished computing the results for the given pdb.
@@ -258,15 +273,15 @@ class Loader(object):
                 failed_count += 1
                 continue
 
-            try:
-                self.mark_analyzed(pdb)
-            except:
-                logger.error("Could not mark %s as done on %s", self.name, pdb)
-                logger.error(traceback.format_exc(sys.exc_info()))
-                self.remove(pdb)
-                if self.stop_on_failure:
-                    raise StageFailed(self.name)
-                failed_count += 1
+            # try:
+            #     self.mark_analyzed(pdb)
+            # except:
+            #     logger.error("Could not mark %s as done on %s", self.name, pdb)
+            #     logger.error(traceback.format_exc(sys.exc_info()))
+            #     self.remove(pdb)
+            #     if self.stop_on_failure:
+            #         raise StageFailed(self.name)
+            #     failed_count += 1
 
         logger.info("%s out of %s pdbs failed", failed_count, len(pdbs))
         if failed_count == len(pdbs):

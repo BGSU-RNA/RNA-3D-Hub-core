@@ -3,7 +3,7 @@ import logging
 import traceback
 
 import core
-from correspondence.utils import StructureUtil
+from utils.structures import Structure as StructureUtil
 
 from models import CorrespondenceLoops as Loops
 from models import CorrespondenceInfo as Info
@@ -28,11 +28,12 @@ class InvalidCoverageState(Exception):
 
 class Loader(core.Loader):
     name = 'correspondence_loops'
+    update_gap = False
 
     def __init__(self, config, maker):
         self._overlaps = {}
         self.utils = StructureUtil(maker)
-        super(Loader, self).__init__(self, {}, maker)
+        super(Loader, self).__init__(config, maker)
 
     def has_data(self, reference, pdb):
         with self.session() as session:
