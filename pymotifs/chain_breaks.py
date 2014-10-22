@@ -25,9 +25,11 @@ class ChainBreakFinder(object):
 
 class Loader(core.Loader):
     finder = ChainBreakFinder()
+    name = 'chain_breaks'
+    update_gap = False
 
     def __init__(self, config, maker):
-        super(Loader, self).__init__(self, config, maker)
+        super(Loader, self).__init__(config, maker)
         self.cif = ut.CifFileFinder(self.config)
 
     def has_data(self, pdb):
@@ -57,8 +59,3 @@ class Loader(core.Loader):
                                     model=int(parts[1]),
                                     pdb_id=pdb))
         return data
-
-
-if __name__ == '__main__':
-    from utils import main
-    main(Loader)
