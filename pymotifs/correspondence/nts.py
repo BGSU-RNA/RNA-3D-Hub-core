@@ -132,6 +132,7 @@ class Loader(core.Loader):
 
     def data(self, pdb, **kwargs):
         data = []
+        known = {}
         for corr_id, other in self.missing_ids(pdb):
             other_chain = self.st_util.longest_chain(other)
             logger.info("Using chain %s in %s", other_chain, other)
@@ -139,8 +140,9 @@ class Loader(core.Loader):
             pdb_chain = self.st_util.longest_chain(pdb)
             logger.info("Using chain %s in %s", pdb_chain, pdb)
 
-            pdb_data = self.structure_data(pdb_chain, pdb)
+            if pdb_chain not in known:
+                known[pdb_chain] = self.structure_data(pdb_chain, pdb)
             other_data = self.structure_data(other_chain, other)
-            data.extend(self.correlate(corr_id, pdb_data, other_data))
+            data.extend(self.correlate(corr_id, known[pdb_chain], other_data))
 
         return data
