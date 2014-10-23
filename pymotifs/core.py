@@ -134,6 +134,18 @@ class Loader(object):
         """
         pass
 
+    def transform(self, pdbs):
+        """This method takes the list of pdbs that we are given to process and
+        transfrorms into values that can be given to data. By default it simply
+        returns the given list. This is intended to be used in cases where we
+        need to limit the list of pdbs to select ones. Or where we take list of
+        pdbs and get a list of pairs, like with getting nt-nt correspondence.
+
+        :pdbs: The list of pdbs.
+        :returns: A list of things to send to data.
+        """
+        return pdbs
+
     def step(self):
         """Gets the name of this step. Basically it is used to normalize
         self.name.
@@ -231,8 +243,13 @@ class Loader(object):
             logging.critical("Must give pdbs to %s", self.name)
             raise Exception("Not pdbs given")
 
+        transformed = self.transform(pdbs)
+        if not transformed:
+            logging.info("Nothing returned from transformation")
+            return None
+
         failed_count = 0
-        for pdb in pdbs:
+        for pdb in transformed:
             pdb = pdb.upper()
             logger.info("Loader %s is processing %s", self.name, pdb)
 
