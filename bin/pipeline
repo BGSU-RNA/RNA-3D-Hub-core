@@ -14,7 +14,7 @@ pymotifs = os.path.abspath(os.path.join(here, '..', 'pymotifs'))
 sys.path.append(pymotifs)
 
 from models import Session
-from utils.pdb import Pdb
+from utils import pdb
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ def run(name, config, pdbs, opts):
     logging.basicConfig(**log_args)
 
     if opts.pop('all'):
-        pdbs = Pdb().all_rna_pdbs()
+        pdbs = pdb.Pdb().all_rna_pdbs()
 
     if not pdbs:
         logger.warning("Running with no pdb files")
