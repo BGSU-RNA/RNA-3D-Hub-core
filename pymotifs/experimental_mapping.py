@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class Loader(core.Loader):
     name = 'experimental_mapping'
     update_gap = False
+    insert_max = 5000
 
     def __init__(self, config, maker):
         self.finder = utils.CifFileFinder(config)
