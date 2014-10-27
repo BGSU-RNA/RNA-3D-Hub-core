@@ -10,10 +10,6 @@ import collections as coll
 from contextlib import contextmanager
 import inspect
 import gzip
-import itertools as it
-import zlib
-import tempfile
-import codecs
 
 import requests
 
