@@ -134,17 +134,18 @@ class Loader(object):
         """
         pass
 
-    def transform(self, pdbs):
-        """This method takes the list of pdbs that we are given to process and
-        transfrorms into values that can be given to data. By default it simply
-        returns the given list. This is intended to be used in cases where we
-        need to limit the list of pdbs to select ones. Or where we take list of
-        pdbs and get a list of pairs, like with getting nt-nt correspondence.
+    def transform(self, pdb):
+        """This method takes the a pdb that we are given to process and
+        transforms into values that can be given to `self.data`. By default it
+        simply yields the given object. This is intended to be used in cases
+        where we need to limit the list of pdbs to select ones. Or where we
+        take list of pdbs and get a list of pairs, like with getting nt-nt
+        correspondence.
 
-        :pdbs: The list of pdbs.
+        :pdb: The pdb.
         :returns: A list of things to send to data.
         """
-        return pdbs
+        yield pdb
 
     def step(self):
         """Gets the name of this step. Basically it is used to normalize
@@ -200,13 +201,15 @@ class Loader(object):
         diff = abs(datetime.datetime.now() - current)
         return diff > self.update_gap()
 
+    def must_recompute(self, pdb, recalculate=False, **kwargs):
+        return recalculate or self.config[self.name].get('recompute')
+
     def should_compute(self, pdb, recalculate=False, **kwargs):
         """Determine if we should recompute the data for this loader and pdb.
         This is true if we are told to recompute, if we do not have data for
         this pdb or it has been long enough since the last update.
         """
-        must_recompute = recalculate or self.config[self.name].get('recompute')
-        if must_recompute:
+        if self.must_recompute(pdb, **kwargs):
             logger.debug("Given recompute for %s", pdb)
             return True
 
@@ -243,52 +246,60 @@ class Loader(object):
             logging.critical("Must give pdbs to %s", self.name)
             raise Exception("Not pdbs given")
 
-        transformed = self.transform(pdbs)
-        if not transformed:
-            logging.info("Nothing returned from transformation")
-            return None
-
         failed_count = 0
-        for pdb in transformed:
+        for pdb in pdbs:
             pdb = pdb.upper()
-            logger.info("Loader %s is processing %s", self.name, pdb)
+            logger.info("Stage %s is processing %s", self.name, pdb)
 
             if not self.should_compute(pdb, **kwargs):
                 logger.debug("Skipping computing %s for %s", self.name, pdb)
                 continue
 
-            try:
-                data = self.data(pdb, **kwargs)
-            except:
-                logger.error("Error raised when getting data for %s",
-                             self.name)
-                logger.error(traceback.format_exc(sys.exc_info()))
+            if self.must_recompute(pdb, **kwargs):
+                logger.debug("Removing all old data for %s", pdb)
                 self.remove(pdb)
+
+            try:
+                transformed = self.transform(pdb)
+            except:
+                logger.error("Could not transform %s", pdb)
+                logger.error(traceback.format_exc(sys.exc_info()))
                 if self.stop_on_failure:
                     raise StageFailed(self.name)
                 failed_count += 1
                 continue
 
-            if not self.allow_no_data and not data:
-                logger.error("No data produced for %s", self.name)
-                raise InvalidState("Missing data")
-            elif not data:
-                logger.warning("No data produced for %s", self.name)
-                failed_count += 1
-                continue
+            for obj in transformed:
+                try:
+                    data = self.data(obj, **kwargs)
+                except:
+                    logger.error("Error raised when getting data for %s",
+                                 self.name)
+                    logger.error(traceback.format_exc(sys.exc_info()))
+                    if self.stop_on_failure:
+                        raise StageFailed(self.name)
+                    failed_count += 1
+                    continue
 
-            try:
-                self.remove(pdb)
-                self.store(data)
-            except:
-                logger.error("Error raised when storing data for %s",
-                             self.name)
-                logger.error(traceback.format_exc(sys.exc_info()))
-                self.remove(pdb)
-                if self.stop_on_failure:
-                    raise StageFailed(self.name)
-                failed_count += 1
-                continue
+                if not self.allow_no_data and not data:
+                    logger.error("No data produced for %s", self.name)
+                    raise InvalidState("Missing data")
+                elif not data:
+                    logger.warning("No data produced for %s", self.name)
+                    failed_count += 1
+                    continue
+
+                try:
+                    self.store(data)
+                except:
+                    logger.error("Error raised when storing data for %s",
+                                 self.name)
+                    logger.error(traceback.format_exc(sys.exc_info()))
+                    self.remove(pdb)
+                    if self.stop_on_failure:
+                        raise StageFailed(self.name)
+                    failed_count += 1
+                    continue
 
             # try:
             #     self.mark_analyzed(pdb)

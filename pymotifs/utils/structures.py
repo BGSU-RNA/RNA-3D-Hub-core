@@ -12,6 +12,8 @@ from models import LoopsAll
 from models import LoopPositions
 from models import CorrespondenceInfo
 from models import CorrespondenceNts
+from models import ObsSequenceMapping as ObsMap
+from models import ObsSequence as Obs
 
 
 POLYMER_UNITS_QUERY = '''
@@ -147,3 +149,10 @@ class Correspondence(Base):
                 mapping[result.unit2_id] = result.unit1_id
 
         return mapping
+
+    def experimental_sequence_mapping(self, pdb, chain):
+        with self.session() as session:
+            query = session.query(ObsMap).\
+                join(Obs, Obs.id == ObsMap.sequence_unit_id).\
+                filter(ObsMap.pdb == pdb)
+            return [ut.row2dict(result) for result in query]

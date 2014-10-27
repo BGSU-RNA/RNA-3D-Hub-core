@@ -45,9 +45,6 @@ class Loader(core.Loader):
         super(Loader, self).__init__(config, maker)
 
     def structure_data(self, chain, pdb):
-        with open(self.finder(pdb), 'rb') as raw:
-            structure = CIF(raw)
-
         ids = []
         sequence = []
         # TODO: Write out more generic unit ids
