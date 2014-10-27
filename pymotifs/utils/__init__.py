@@ -10,6 +10,7 @@ import collections as coll
 from contextlib import contextmanager
 import inspect
 import gzip
+import itertools as it
 import zlib
 import tempfile
 import codecs
@@ -60,6 +61,24 @@ def grouper(n, iterable):
         if not chunk:
             return
         yield chunk
+
+
+def known(config, pdb=True, cif=True, pdb1=False):
+    path = os.path.join(config['locations']['fr3d_root'], 'FR3D', 'PDBFiles')
+    names = coll.defaultdict(dict)
+
+    for filename in os.listdir(path):
+        if not os.path.isfile(os.path.join(path, filename)):
+            continue
+        name, ext = os.path.splitext(filename)
+        ext = ext.replace('.', '')
+        names[name][ext] = True
+
+    for name, exts in names.items():
+        if not pdb or (pdb and exts.get('pdb')):
+            if not cif or (cif and exts.get('cif')):
+                if not pdb1 or (pdb1 and exts.get('pdb1')):
+                    yield name
 
 
 class RetryHelper(object):
