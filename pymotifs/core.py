@@ -71,7 +71,6 @@ class Session(object):
             session.commit()
         except:
             logger.error("Transaction failed. Rolling back.")
-            logger.error(traceback.format_exc(sys.exc_info()))
             session.rollback()
             raise
         finally:
