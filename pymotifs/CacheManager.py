@@ -68,7 +68,7 @@ class CacheManager(MotifAtlasBaseClass):
                 self._refresh_cache('nrlist/release/' + release.id + '/' + resolution)
 
         # http://rna.bgsu.edu/rna3dhub/nrlist/view/NR_4.0_81883.10
-        for eq_class in session.query(distinct(NrClasss.id)).all():
+        for eq_class in session.query(distinct(NrClasses.id)).all():
             self._refresh_cache('nrlist/view/' + eq_class[0])
 
     def update_loop_cache(self):
