@@ -53,15 +53,17 @@ class Loader(core.Loader):
         with open(self.finder(pdb), 'rb') as raw:
             cif = CIF(raw)
 
-        for symm in cif.symmetry_operators():
-            for model in symm.models():
-                chain = model.chain(chain)
-                seq = chain.experimental_sequence_mapping()
-                for (_, seq_id, unit_id) in seq:
-                    if unit_id not in seen:
-                        mapping.append(Mapping(unit_id=unit_id,
-                                               exp_seq_position_id=seq_id,
-                                               exp_seq_id=obs_id))
-                        seen.add(unit_id)
+        chain = cif.chain('1_555', 1, chain)
+        if not chain:
+            logging.error("Chain %s is unmappable", chain)
+            return []
+
+        seq = chain.experimental_sequence_mapping()
+        for (_, seq_id, unit_id) in seq:
+            if unit_id not in seen:
+                mapping.append(Mapping(unit_id=unit_id,
+                                       exp_seq_position_id=seq_id,
+                                       exp_seq_id=obs_id))
+                seen.add(unit_id)
 
         return mapping
