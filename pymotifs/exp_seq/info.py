@@ -29,7 +29,6 @@ class Loader(core.Loader):
         return bool(count)
 
     def data(self, pdb, **kwargs):
-        data = []
 
         try:
             with open(self.finder(pdb), 'rb') as raw:
@@ -38,8 +37,12 @@ class Loader(core.Loader):
             logger.info("Skipping %s because of complex operator", pdb)
             return []
 
+        seen = set()
+        data = []
         for chain in cif.chains():
             # TODO: Sequence should be single letter form
             # sequence = ''.join(chain.experimental_sequence())
-            data.append(Info(pdb=pdb, chain=chain['chain']))
+            if (pdb, chain['chain']) not in seen:
+                seen.add((pdb, chain['chain']))
+                data.append(Info(pdb=pdb, chain=chain['chain']))
         return data
