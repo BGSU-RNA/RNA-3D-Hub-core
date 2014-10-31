@@ -208,7 +208,7 @@ class Loader(object):
         This is true if we are told to recompute, if we do not have data for
         this pdb or it has been long enough since the last update.
         """
-        if self.must_recompute(pdb, **kwargs):
+        if self.must_recompute(pdb, recalculate=recalculate, **kwargs):
             logger.debug("Given recompute for %s", pdb)
             return True
 
