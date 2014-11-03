@@ -58,7 +58,12 @@ class Loader(core.Loader):
             logging.error("Chain %s is unmappable", chain)
             return []
 
-        seq = chain.experimental_sequence_mapping()
+        try:
+            seq = chain.experimental_sequence_mapping()
+        except:
+            logging.warning("Failed to get mapping for: %s, %s", pdb, chain)
+            return []
+
         for (_, seq_id, unit_id) in seq:
             if unit_id not in seen:
                 mapping.append(Mapping(unit_id=unit_id,

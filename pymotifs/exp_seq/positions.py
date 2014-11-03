@@ -52,7 +52,12 @@ class Loader(core.Loader):
         data = []
         seen = set()
         chain = cif.chain('1_555', 1, chain)
-        seq = chain.experimental_sequence_mapping()
+        try:
+            seq = chain.experimental_sequence_mapping()
+        except ValueError:
+            logging.warning("Cannot map %s, %s", pdb, chain)
+            return []
+
         for index, (seq, seq_id, _) in enumerate(seq):
             if seq_id not in seen:
                 seen.add(seq_id)
