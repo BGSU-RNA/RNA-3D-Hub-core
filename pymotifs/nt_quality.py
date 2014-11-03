@@ -59,15 +59,14 @@ class Parser(object):
         for residue in self.root.findall("ModelledSubgroup"):
             data = {}
             if 'rsr' in residue.attrib:
-                data['real_space_r'] =  float(residue.attrib['rsr'])
+                data['real_space_r'] = float(residue.attrib['rsr'])
 
             if 'DCC' in residue.attrib:
                 pass
 
             if data:
-                data['unit_id'] =  self._unit_id(pdb, residue.attrib)
+                data['unit_id'] = self._unit_id(pdb, residue.attrib)
                 yield data
-
 
     def _unit_id(self, pdb, attributes):
         return self.generator({
@@ -115,6 +114,3 @@ class Loader(core.Loader):
 
         for entry in parser.nts():
             yield NtQuality(**entry)
-
-if __name__ == '__main__':
-    ut.main(Loader)
