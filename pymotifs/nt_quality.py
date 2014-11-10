@@ -86,7 +86,7 @@ class Loader(core.Loader):
     def __init__(self, config, session_builder):
         self.fetcher = ut.FTPFetchHelper('ftp.wwpdb.org')
         self.finder = FileHelper()
-        super(Loader, self).__init__(self, config, session_builder)
+        super(Loader, self).__init__(config, session_builder)
 
     def remove(self, pdb):
         with self.session() as session:
