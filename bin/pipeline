@@ -42,6 +42,22 @@ def load_class(name):
         sys.exit(1)
 
 
+def setup_logging(opts):
+    log_args = {
+        'level': getattr(logging, opts.pop('log_level').upper()),
+        'filemode': opts.pop('log_mode')
+    }
+    if opts['log_file']:
+        log_args['filename'] = opts.pop('log_file')
+
+    logging.basicConfig(**log_args)
+    base = logging.getLogger()
+    pool_logger = logging.getLogger('sqlalchemy.pool')
+    pool_logger.setLevel(logging.DEBUG)
+    for handler in base.handlers:
+        pool_logger.addHandler(handler)
+
+
 def load_config(filename):
     config = collections.defaultdict(dict)
     if os.path.splitext(filename)[1] == '.json':
