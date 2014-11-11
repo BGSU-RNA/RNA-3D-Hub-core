@@ -16,8 +16,6 @@ except:
 
 from models import PdbAnalysisStatus
 
-logger = logging.getLogger(__name__)
-
 
 class StageFailed(Exception):
     """This is raised when one stage of the pipeline fails.
@@ -34,20 +32,44 @@ class InvalidState(Exception):
     pass
 
 
+class Skip(Exception):
+    """Base class for skipping things.
+    """
+    pass
+
+
+class SkipPdb(Skip):
+    """This is an exception that is raised to indicate we should skip
+    processing this pdb. This means all values from the transformed pdb will be
+    skipped as well. This can be raised during transform, has_data, and data.
+    """
+    pass
+
+
+class SkipValue(Skip):
+    """
+    This is raised to indicate that we should skip the transformed value, but
+    not the entire PDB. This can be raised during has_data, and data.
+    """
+    pass
+
+
 class Matlab(object):
     """A simple wrapper around mlab. This is useful because it sets the root as
     well as calling the setup function before running matlab.
     """
 
     def __init__(self, root):
-        logger.debug('Starting up matlab')
+        self.logger = logging.getLogger('core.Matlab')
+        self.logger.debug('Starting up matlab')
         os.chdir(root)
         self.mlab = mlab
         self.mlab._autosync_dirs = False
         self.mlab.setup()
-        logger.debug('Matlab started')
+        self.logger.debug('Matlab started')
 
     def __getattr__(self, key):
+        self.logger.deug("Running %s", key)
         return getattr(self.mlab, key)
 
 
@@ -57,10 +79,11 @@ class Session(object):
     """
 
     def __init__(self, session_maker):
+        self.logger = logging.getLogger('core.Session')
         self.maker = session_maker
 
     @contextmanager
-    def __call__(self):
+    def __call__(self, log_exceptions=True):
         """Context handler for the session. This creates a new session and
         yields it. It will catch, log, and re raise any exceptions that occur.
         It will also commit and close all sessions.
@@ -69,8 +92,12 @@ class Session(object):
         try:
             yield session
             session.commit()
+        except Skip:
+            session.rollback()
+            raise
         except:
-            logger.error("Transaction failed. Rolling back.")
+            if log_exceptions:
+                self.logger.error("Transaction failed. Rolling back.")
             session.rollback()
             raise
         finally:
@@ -106,9 +133,10 @@ class Loader(object):
             raise AttributeError("Must set name")
 
         if self.update_gap is None:
-            raise AttributeError("Must set update gap for %s" % self.name)
+            raise AttributeError("Must set update gap")
 
         self.session = Session(session_maker)
+        self.logger = logging.getLogger(self.name)
 
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
@@ -133,7 +161,7 @@ class Loader(object):
         """
         pass
 
-    def transform(self, pdb):
+    def transform(self, pdb, **kwargs):
         """This method takes the a pdb that we are given to process and
         transforms into values that can be given to `self.data`. By default it
         simply yields the given object. This is intended to be used in cases
@@ -144,7 +172,7 @@ class Loader(object):
         :pdb: The pdb.
         :returns: A list of things to send to data.
         """
-        yield pdb
+        return [pdb]
 
     def step(self):
         """Gets the name of this step. Basically it is used to normalize
@@ -158,7 +186,7 @@ class Loader(object):
         iterables.
         """
 
-        logger.debug("Storing data for %s", self.name)
+        self.logger.debug("Storing data")
         with self.session() as session:
             if not isinstance(data, coll.Iterable):
                 session.add(data)
@@ -172,12 +200,10 @@ class Loader(object):
                 for index, datum in iterator:
                     session.add(datum)
                     if index % self.insert_max == 0:
-                        logger.debug("Committing a chunk of %s",
-                                     self.insert_max)
                         session.commit()
-                logger.debug("Final commit")
 
             session.commit()
+            self.logger.debug("Done committing")
 
     def been_long_enough(self, pdb):
         """Determine if it has been long enough to recompute the data for the
@@ -201,6 +227,8 @@ class Loader(object):
         return diff > self.update_gap()
 
     def must_recompute(self, pdb, recalculate=False, **kwargs):
+        """Detect if we have been told to recompute this stage for this pdb.
+        """
         return recalculate or self.config[self.name].get('recompute')
 
     def should_compute(self, pdb, recalculate=False, **kwargs):
@@ -209,20 +237,20 @@ class Loader(object):
         this pdb or it has been long enough since the last update.
         """
         if self.must_recompute(pdb, recalculate=recalculate, **kwargs):
-            logger.debug("Given recompute for %s", pdb)
+            self.logger.debug("Performing a forced recompute")
             return True
 
         has_data = self.has_data(pdb)
         if not has_data:
-            logger.debug("Missing data for %s will recompute", pdb)
+            self.logger.debug("Missing data for %s will compute", pdb)
             return True
 
         too_long = self.been_long_enough(pdb)
         if too_long:
-            logger.debug("Time gap for %s too large, recomputing", pdb)
+            self.logger.debug("Time gap for %s too large, recomputing", pdb)
             return True
 
-        logger.debug("No reason to recompute %s", pdb)
+        self.logger.debug("No reason to recompute %s", pdb)
         return False
 
     def mark_analyzed(self, pdb):
@@ -233,86 +261,100 @@ class Loader(object):
                                        time=datetime.datetime.now())
             session.merge(status)
             session.commit()
-            logging.info('Updated %s status for pdb %s', self.name, pdb)
+            self.logger.info('Updated %s status for pdb %s', self.name, pdb)
 
     def __call__(self, pdbs, **kwargs):
         """Load all data for the list of pdbs. This will load things as needed
         into the database. It checks if we should recompute or if we are forced
         to and then stores the computed data.
+
+        :pdbs: A list of pdbs to process.
+        :kwargs: Keyword arguments. These are passed along to other methods.
         """
 
         if not pdbs:
-            logging.critical("Must give pdbs to %s", self.name)
-            raise Exception("Not pdbs given")
+            self.logger.critical("Must give pdbs")
+            raise InvalidState("No pdbs given")
 
-        failed_count = 0
-        for pdb in pdbs:
+        for index, pdb in enumerate(pdbs):
+            self.logger.info("Starting %s: %s/%s", pdb, index + 1, len(pdbs))
             pdb = pdb.upper()
-            logger.info("Stage %s is processing %s", self.name, pdb)
-
-            if not self.should_compute(pdb, **kwargs):
-                logger.debug("Skipping computing %s for %s", self.name, pdb)
-                continue
-
-            if self.must_recompute(pdb, **kwargs):
-                logger.debug("Removing all old data for %s", pdb)
-                self.remove(pdb)
 
             try:
-                transformed = self.transform(pdb)
+                iterable = self.transform(pdb, **kwargs)
+            except SkipPdb as err:
+                self.logger.warn("Skipping pdb %s. Reason: %s", pdb, str(err))
+                continue
             except:
-                logger.error("Could not transform %s", pdb)
-                logger.error(traceback.format_exc(sys.exc_info()))
-                if self.stop_on_failure:
-                    raise StageFailed(self.name)
-                failed_count += 1
+                self.logger.error("Transforming %s failed, skipping", pdb)
+                self.logger.error(traceback.format_exc(sys.exc_info()))
                 continue
 
-            for obj in transformed:
+            if not iterable:
+                self.logger.info("Nothing from transfrom for %s", pdb)
+                continue
+
+            for trans_index, transformed in enumerate(iterable):
+                self.logger.info("Processing %s (%s) %s: %s/%s",
+                                 transformed, pdb, index, trans_index + 1,
+                                 len(iterable))
+
                 try:
-                    data = self.data(obj, **kwargs)
+                    if not self.should_compute(transformed, **kwargs):
+                        self.logger.debug("No need to compute %s", transformed)
+                        continue
+                except SkipPdb as err:
+                    self.logger.warn("Skipping pdb %s Reason %s",
+                                     pdb, str(err))
+                    break
+                except SkipValue as err:
+                    self.logger.warn("Skipping %s Reason %s",
+                                     transformed, str(err))
+                    continue
+
+                if self.must_recompute(transformed, **kwargs):
+                    self.logger.debug("Removing old data for %s", transformed)
+                    self.remove(transformed)
+
+                try:
+                    data = self.data(transformed, **kwargs)
+                except SkipPdb as err:
+                    self.logger.warn("Skipping pdb: %s Reason %s",
+                                     pdb, str(err))
+                    break
+                except SkipValue as err:
+                    self.logger.warn("Skipping %s Reason %s",
+                                     transformed, str(err))
+                    continue
                 except:
-                    logger.error("Error raised when getting data for %s",
-                                 self.name)
-                    logger.error(traceback.format_exc(sys.exc_info()))
                     if self.stop_on_failure:
+                        self.logger.error("Error raised when getting data")
+                        self.logger.error(traceback.format_exc(sys.exc_info()))
                         raise StageFailed(self.name)
-                    failed_count += 1
+
+                    self.logger.warning("Error raised when getting data")
+                    self.logger.warning(traceback.format_exc(sys.exc_info()))
                     continue
 
                 if not self.allow_no_data and not data:
-                    logger.error("No data produced for %s", self.name)
+                    self.logger.error("No data produced")
                     raise InvalidState("Missing data")
                 elif not data:
-                    logger.warning("No data produced for %s", self.name)
-                    failed_count += 1
+                    self.logger.warning("No data produced")
                     continue
 
                 try:
                     self.store(data)
                 except:
-                    logger.error("Error raised when storing data for %s",
-                                 self.name)
-                    logger.error(traceback.format_exc(sys.exc_info()))
-                    self.remove(pdb)
+                    self.remove(transformed)
                     if self.stop_on_failure:
+                        self.logger.error("Error raised when storing data")
+                        self.logger.error(traceback.format_exc(sys.exc_info()))
                         raise StageFailed(self.name)
-                    failed_count += 1
+
+                    self.logger.warning("Error raised when storing data")
+                    self.logger.warning(traceback.format_exc(sys.exc_info()))
                     continue
-
-            # try:
-            #     self.mark_analyzed(pdb)
-            # except:
-            #     logger.error("Could not mark %s as done on %s", self.name, pdb)
-            #     logger.error(traceback.format_exc(sys.exc_info()))
-            #     self.remove(pdb)
-            #     if self.stop_on_failure:
-            #         raise StageFailed(self.name)
-            #     failed_count += 1
-
-        logger.info("%s out of %s pdbs failed", failed_count, len(pdbs))
-        if failed_count == len(pdbs):
-            logger.error("All pdbs failed")
 
 
 class MultiLoader(object):
