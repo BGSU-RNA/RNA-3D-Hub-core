@@ -103,28 +103,25 @@ def load_config(filename):
 
 
 def run(name, config, pdbs, opts):
-
-    log_args = {
-        'level': getattr(logging, opts.pop('log_level').upper()),
-        'filemode': opts.pop('log_mode')
-    }
-    if opts['log_file']:
-        log_args['filename'] = opts.pop('log_file')
-
-    logging.basicConfig(**log_args)
+    setup_logging(opts)
 
     if opts.pop('all'):
         pdbs = pdb.Pdb().all_rna_pdbs()
 
     if opts.pop('known'):
-        pdbs = list(known(config))
+        pdbs = list(known(config, pdb=False))
 
     if not pdbs:
         logger.warning("Running with no pdb files")
 
     klass = load_class(name)
     obj = klass(config, Session)
-    obj(pdbs, **opts)
+
+    try:
+        obj(pdbs, **opts)
+    except:
+        logger.critical(traceback.format_exc(sys.exc_info()))
+        sys.exit(1)
 
 
 if __name__ == '__main__':
