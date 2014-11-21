@@ -1,38 +1,27 @@
 """
-
 A program for downloading .pdb, .cif, and .pdb1 files for all RNA-containing
 3D structures.
-
-Downloads the files specified in self.filetypes to the specified directory.
-
-Example:
-python PdbDownloader.py ~/Desktop/f1
-
 """
 
 import os
-import logging
 import xml.dom.minidom
 
+import core
 import utils
 
-logger = logging.getLogger(__name__)
 
-
-class Downloader(object):
+class Downloader(core.Loader):
     file_url = 'http://www.rcsb.org/pdb/files/'
     entity_info_url = 'http://www.pdb.org/pdb/rest/getEntityInfo?structureId='
+    name = 'downloader'
+    update_gap = False
 
-    def __init__(self, config, session):
-        """
-            locations is where pdbs will be placed
-            pdbs is an array the files to download
-        """
-        self.config = config
-        self.filetypes = ['.pdb', '.pdb1', '.cif']
+    def __init__(self, config, maker):
         self.helper = utils.WebRequestHelper(parser=self.parse)
+        self.gzip = utils.GzipFetchHelper(allow_fail=True)
         self.location = os.path.join(config['locations']['fr3d_root'],
                                      'PDBFiles')
+        super(core.Loader, self).__init__(config, maker)
 
     def parse(self, response):
         dom = xml.dom.minidom.parseString(response.text)
@@ -46,63 +35,41 @@ class Downloader(object):
         try:
             return self.helper(self.entity_info_url + pdb)
         except:
-            logger.error('Bioassembly query failed for  %s' % pdb)
+            self.logger.error('Bioassembly query failed for  %s' % pdb)
             return None
 
-    def download(self, pdb, file_type):
-        """
-            Tries to download the gzipped version of the file. Will crash if
-            .pdb or .cif files are not found.
-        """
-        filename = pdb + file_type
+    def remove(self, entry):
+        pass
 
-        if file_type == '.pdb1':
-            count = self.assemblies_count(pdb)
-            if count == 0:
-                return
+    def transform(self, pdb):
+        values = [(pdb, '.cif'), (pdb, '.pdb')]
+        if self.assembly_count(pdb):
+            values.append((pdb, '.pdb1'))
+        return values
 
-            if count is None:
-                logger.warning("Skipping attempt to get %s", filename)
-                return
+    def has_data(self, filename):
+        full = os.path.join(self.location, filename)
+        return os.path.exists(full)
 
-        destination = os.path.join(self.location, filename)
+    def store(self, data):
+        filename, text = data
+        with open(filename, 'w') as out:
+            out.write(text)
+        self.logger.info('Downloaded %s' % filename)
 
-        if os.path.exists(destination):
-            logger.info('%s already downloaded' % filename)
-            return
+    def data(self, filename, **kwargs):
+        pdb, extension = filename
+        destination = os.path.join(self.location, pdb + extension)
 
         try:
-            helper = utils.GzipFetchHelper(allow_fail=True)
-            content = helper(self.file_url + filename + '.gz')
-            if not content:
-                logger.error("Downloaded an empty file for %s", filename)
-                return
-
-            with open(destination, 'w') as out:
-                out.write(content)
+            content = self.gzip(self.file_url + pdb + extension + '.gz')
         except:
-            if file_type == '.pdb' or file_type == '.cif':
-                logger.critical('%s could not be downloaded', filename)
+            if extension == '.pdb' or extension == '.cif':
+                self.logger.critical('%s could not be downloaded',
+                                     pdb + extension)
                 raise
-            else:
-                logger.warning('%s not found', filename)
-                return
 
-        logger.info('Downloaded %s' % destination)
+        if not content:
+            core.SkipValue("Downloaded empty file %s" % pdb + extension)
 
-    def __call__(self, pdbs, **kwargs):
-        """
-            Downloads .pdb, .pdb1, and .cif files to the first location, then
-            copies all the files over to all the other locations.
-        """
-        if not os.path.isdir(self.location):
-            logger.critical("%s does not exist", self.location)
-            raise Exception("Can't download to missing directory")
-
-        for pdb in pdbs:
-            for filetype in self.filetypes:
-                try:
-                    self.download(pdb, filetype)
-                except:
-                    logger.error("Failed to download %s", pdb)
-                    continue
+        return destination, content
