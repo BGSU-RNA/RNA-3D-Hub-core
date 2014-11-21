@@ -6,11 +6,12 @@ from ftplib import FTP
 import cStringIO as sio
 import itertools as it
 import collections as coll
-from contextlib import contextmanager
-import inspect
 import gzip
+import cPickle as pickle
 
 import requests
+
+from fr3d.cif.reader import Cif
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,13 @@ def grouper(n, iterable):
         yield chunk
 
 
+def row2dict(row):
+    d = {}
+    for column in row.__table__.columns:
+        d[column.name] = str(getattr(row, column.name))
+    return d
+
+
 def known(config, pdb=True, cif=True, pdb1=False):
     path = os.path.join(config['locations']['fr3d_root'], 'FR3D', 'PDBFiles')
     names = coll.defaultdict(dict)
@@ -77,6 +85,9 @@ def known(config, pdb=True, cif=True, pdb1=False):
 
 
 class RetryHelper(object):
+    """A base class for retrying an action.
+    """
+
     def __init__(self, retries=3, allow_fail=False):
         self.retries = retries
         self.allow_fail = allow_fail
@@ -122,99 +133,63 @@ class WebRequestHelper(RetryHelper):
         return response.text
 
 
-class DatabaseHelper(object):
+class StructureFileFinder(object):
+    extension = None
 
-    insert_max = 1000
-
-    def __init__(self, maker):
-        self.maker = maker
-
-    def store(self, data):
-        with self.session() as session:
-            if not isinstance(data, coll.Iterable):
-                session.add(data)
-            else:
-                iterator = enumerate(data)
-                if inspect.isgenerator(data) or \
-                   isinstance(data[0], coll.Iterable) or \
-                   inspect.isgenerator(data[0]):
-                    iterator = enumerate(it.chain.from_iterable(data))
-
-                for index, datum in iterator:
-                    session.add(datum)
-                    if index % self.insert_max == 0:
-                        logger.debug("Committing a chunk of %s",
-                                     self.insert_max)
-                        session.commit()
-                logger.debug("Final commit")
-
-            session.commit()
-
-    @contextmanager
-    def session(self):
-        session = self.maker()
-        try:
-            yield session
-            session.commit()
-        except:
-            logger.error(traceback.format_exc(sys.exc_info()))
-            logger.error("Transaction failed. Rolling back.")
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
-
-class CifFileFinder(object):
-
-    def __init__(self, config):
+    def __init__(self, config, extension=None, strict=True):
         self.config = config
+        self.strict = strict
+        self.location = os.path.join(self.config['locations']['fr3d_root'],
+                                     'PDBFiles')
+        if extension:
+            self.extension = extension
+
+        if not self.extension:
+            raise ValueError("Must define an extension")
 
     def __call__(self, pdb):
-        filename = os.path.join(self.config['locations']['fr3d_root'], 'FR3D',
-                                'PDBFiles', pdb + '.cif')
-        if not os.path.exists(filename):
-            logger.warning("Could not find CIF file for %s. Expected at: %s",
-                           pdb, filename)
-            raise MissingFileException()
+        filename = os.path.join(self.location, pdb + '.' + self.extension)
+
+        if not os.path.exists(filename) and self.strict:
+            msg = "Could not find CIF file for %s.  Expected at: %s"
+            raise MissingFileException(msg % (pdb, filename))
         return filename
 
 
-class RNAPdbsHelper(object):
-    url = 'http://www.rcsb.org/pdb/rest/search'
-
-    def parse_all_rna_pdbs(self, raw):
-        return filter(lambda x: len(x) == 4, raw.split("\n"))
-
-    def __call__(self):
-        """Get a list of all rna-containing pdb files, including hybrids. Raise
-           a specific error if it fails.
-        """
-
-        logger.debug('Getting a list of all rna-containing pdbs')
-        query_text = """
-        <orgPdbQuery>
-        <queryType>org.pdb.query.simple.ChainTypeQuery</queryType>
-        <containsProtein>I</containsProtein>
-        <containsDna>I</containsDna>
-        <containsRna>Y</containsRna>
-        <containsHybrid>I</containsHybrid>
-        </orgPdbQuery>
-        """
-        post = WebRequestHelper(method='post', parser=self.parse_all_rna_pdbs)
-
-        try:
-            return post(self.url, data=query_text)
-        except:
-            logger.critical("Failed to get list of RNA containing PDBs")
-            raise GetAllRnaPdbsError()
+class CifFileFinder(StructureFileFinder):
+    extension = 'cif'
+    pass
 
 
-def row2dict(row):
-    d = {}
-    for column in row.__table__.columns:
-        d[column.name] = str(getattr(row, column.name))
-    return d
+class PickleFileFinder(StructureFileFinder):
+    extension = 'pickle'
+    pass
+
+
+class CifData(object):
+    def __init__(self, config):
+        self.cache = PickleFileFinder(config, strict=False)
+        self.cif = CifFileFinder(config)
+
+    def clear(self):
+        for filename in os.listdir(self.location):
+            parts = os.path.splitext(filename)
+            if parts[1] == '.pickle':
+                os.unlink(os.path.join(self.location, filename))
+
+    def __call__(self, pdb):
+        cache_file = self.cache(pdb)
+        if os.path.exists(cache_file):
+            with open(cache_file, 'rb') as raw:
+                return pickle.load(raw)
+
+        with open(self.cif(pdb), 'rb') as raw:
+            data = Cif(raw)
+
+        with open(cache_file, 'w') as out:
+            pickle.dump(data, out)
+
+        return data
 
 
 class FTPFetchHelper(RetryHelper):

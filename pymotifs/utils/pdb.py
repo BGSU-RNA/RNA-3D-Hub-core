@@ -12,6 +12,35 @@ class GetAllRnaPdbsError(Exception):
     pass
 
 
+class RnaPdbsHelper(object):
+    url = 'http://www.rcsb.org/pdb/rest/search'
+
+    def parse(self, raw):
+        return filter(lambda x: len(x) == 4, raw.split("\n"))
+
+    def __call__(self):
+        """Get a list of all rna-containing pdb files, including hybrids. Raise
+           a specific error if it fails.
+        """
+
+        logger.debug('Getting a list of all rna-containing pdbs')
+        query_text = """
+        <orgPdbQuery>
+        <queryType>org.pdb.query.simple.ChainTypeQuery</queryType>
+        <containsProtein>I</containsProtein>
+        <containsDna>I</containsDna>
+        <containsRna>Y</containsRna>
+        <containsHybrid>I</containsHybrid>
+        </orgPdbQuery>
+        """
+        post = utils.WebRequestHelper(method='post', parser=self.parse)
+
+        try:
+            return post(self.url, data=query_text)
+        except:
+            raise GetAllRnaPdbsError("Failed to get list of RNA PDBs")
+
+
 class QueryHelper(object):
     query_url = 'http://www.rcsb.org/pdb/rest/search'
 

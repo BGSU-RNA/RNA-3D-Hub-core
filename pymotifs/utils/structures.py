@@ -4,6 +4,8 @@
 import itertools as it
 import collections as coll
 
+from sqlalchemy.orm import aliased
+
 import core
 
 import utils as ut
@@ -12,8 +14,7 @@ from models import LoopsAll
 from models import LoopPositions
 from models import CorrespondenceInfo
 from models import CorrespondenceNts
-from models import ObsSequenceMapping as ObsMap
-from models import ObsSequence as Obs
+from models import PdbPairwiseInteractions
 
 
 POLYMER_UNITS_QUERY = '''
@@ -105,6 +106,24 @@ class Structure(Base):
         max_pair = max(grouped, key=lambda (k, v): len(list(v)))
         return max_pair[0]
 
+    def interactions(self, pdb, chain):
+        c1 = aliased(PdbCoordinates)
+        c2 = aliased(PdbCoordinates)
+        interactions = []
+        with self.session() as session:
+            query = session.query(PdbPairwiseInteractions).\
+                join(c1, c1.id == PdbPairwiseInteractions.iPdbSig).\
+                join(c2, c2.id == PdbPairwiseInteractions.jPdbSig).\
+                filter(PdbPairwiseInteractions.pdb_id == pdb).\
+                filter(c1.chain == c2.chain, c1.chain == chain)
+
+            for result in query:
+                data = ut.row2dict(result)
+                data['id'] = int(data['id'])
+                interactions.append(data)
+
+        return interactions
+
     def loops(self, pdb):
         loops = []
         with self.session() as session:
@@ -150,9 +169,9 @@ class Correspondence(Base):
 
         return mapping
 
-    def experimental_sequence_mapping(self, pdb, chain):
-        with self.session() as session:
-            query = session.query(ObsMap).\
-                join(Obs, Obs.id == ObsMap.sequence_unit_id).\
-                filter(ObsMap.pdb == pdb)
-            return [ut.row2dict(result) for result in query]
+    # def experimental_sequence_mapping(self, pdb, chain):
+    #     with self.session() as session:
+    #         query = session.query(ObsMap).\
+    #             join(Obs, Obs.id == ObsMap.sequence_unit_id).\
+    #             filter(ObsMap.pdb == pdb)
+    #         return [ut.row2dict(result) for result in query]
