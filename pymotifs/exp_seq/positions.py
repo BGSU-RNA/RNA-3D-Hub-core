@@ -1,5 +1,3 @@
-import logging
-
 import core
 import utils
 
@@ -7,8 +5,6 @@ from models import ExpSeqInfo as Exp
 from models import ExpSeqPosition as Position
 
 from rnastructure.tertiary.cif import CIF
-
-logger = logging.getLogger(__name__)
 
 
 class Loader(core.Loader):
@@ -21,22 +17,18 @@ class Loader(core.Loader):
         self.finder = utils.CifFileFinder(config)
         super(Loader, self).__init__(config, maker)
 
-    def has_data(self, pdb):
+    def has_data(self, entry):
+        exp_id, pdb, chain = entry
         with self.session() as session:
-            query = self.__query__(session, pdb)
+            query = session.query(Position).filter_by(exp_seq_id=exp_id)
             return bool(query.count())
 
-    def remove(self, pdb):
+    def remove(self, entry):
         with self.session() as session:
-            query = session.query(Exp.id).filter(Exp.pdb == pdb)
-            ids = [result.id for result in query]
-
-        with self.session() as session:
-            session.query(Position).\
-                filter(Position.exp_seq_id.in_(ids)).\
+            session.query(Position).filter_by(exp_seq_id=entry[0]).\
                 delete(synchronize_session=False)
 
-    def transform(self, pdb):
+    def transform(self, pdb, **kwargs):
         mapped = []
         with self.session() as session:
             query = session.query(Exp).filter_by(pdb=pdb)
@@ -54,9 +46,9 @@ class Loader(core.Loader):
         chain = cif.chain('1_555', 1, chain)
         try:
             seq = chain.experimental_sequence_mapping()
-        except ValueError:
-            logging.warning("Cannot map %s, %s", pdb, chain)
-            return []
+        except ValueError as err:
+            self.logger.warning("Can't map %s, %s", pdb, chain)
+            raise core.SkipValue(str(err))
 
         for index, (seq, seq_id, _) in enumerate(seq):
             if seq_id not in seen:
@@ -65,8 +57,3 @@ class Loader(core.Loader):
                                      index=index + 1,
                                      exp_seq_id=exp_id))
         return data
-
-    def __query__(self, session, pdb):
-        return session.query(Position).\
-            join(Exp, Exp.id == Position.exp_seq_id).\
-            filter(Exp.pdb == pdb)
