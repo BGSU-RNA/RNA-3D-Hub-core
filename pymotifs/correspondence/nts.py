@@ -1,22 +1,16 @@
 import json
-import logging
-
-from rnastructure.tertiary.cif import CIF
 
 import core as core
 
+from models import ExpSeqPosition
+from models import ExpSeqInfo as ExpSeq
 from models import CorrespondenceNts as Corr
 from models import CorrespondenceInfo as Info
+from models import PdbModifiedCorrespondecies
 
-import utils as utils
+from utils.alignment import align
 from utils.structures import NR as NrUtil
 from utils.structures import Structure as StructureUtil
-
-logger = logging.getLogger(__name__)
-
-URL = 'http://localhost:8080/api/services/correlations'
-
-PLACEHOLDER = '-'
 
 
 class Parser(object):
@@ -26,9 +20,8 @@ class Parser(object):
     def __call__(self, response):
         data = []
         for row in json.loads(response.text):
-            if row['unit1'] == PLACEHOLDER or row['unit2'] == PLACEHOLDER:
-                continue
-            entry = {'unit1_id': row['unit1'], 'unit2_id': row['unit2']}
+            entry = {'exp_seq_position_id1': row['unit1'],
+                     'exp_seq_position_id2': row['unit2']}
             entry.update(self.additional)
             data.append(entry)
         return data
@@ -41,105 +34,89 @@ class Loader(core.Loader):
     def __init__(self, config, maker):
         self.nr_util = NrUtil(maker)
         self.st_util = StructureUtil(maker)
-        self.finder = utils.CifFileFinder(config)
         super(Loader, self).__init__(config, maker)
+        self.translation = self.__translation__()
 
-    def structure_data(self, chain, pdb):
+    def structure_data(self, exp_id):
         ids = []
         sequence = []
-        # TODO: Write out more generic unit ids
-        chain_block = structure.chain('1_555', 1, chain)
-        for (seq, _, unit_id) in chain_block.experimental_sequence_mapping():
-            if unit_id is None:
-                ids.append(PLACEHOLDER)
-            else:
-                ids.append(unit_id)
-            sequence.append(seq)
+        with self.session() as session:
+            query = session.query(ExpSeqPosition).\
+                filter(ExpSeqPosition.exp_seq_id == exp_id).\
+                order_by(ExpSeqPosition.index)
 
-        if not ids:
-            logger.error("Could not load ids for PDB: %s, %s", pdb, chain)
-            raise core.InvalidState("Could not find ids")
+            if not query.count():
+                raise core.SkipValue("Could not get positions for %s" % exp_id)
 
-        if not sequence:
-            logger.error("Could not load sequence for PDB: %s, %s", pdb, chain)
-            raise core.InvalidState("Could not find sequence")
+            for result in query:
+                seq_id = result.id
+                seq = seq_id.split('|')[3]
+                seq = self.translation.get(seq, seq)
+
+                if seq not in ['A', 'C', 'G', 'U']:
+                    raise core.SkipValue("Bad unit %s for %s" % seq, seq_id)
+
+                ids.append(seq_id)
+                sequence.append(seq)
 
         sequence = ''.join(sequence)
         return {'ids': ids, 'sequence': sequence}
 
-    def correlate(self, correlation_id, ref, target):
+    def correlate(self, corr_id, ref, target):
         if not ref or not ref.get('ids') or not ref.get('sequence'):
-            logger.error("Not given complete reference: %s", ref)
+            self.logger.error("Not given complete reference: %s", ref)
             raise core.InvalidState("Incomplete reference")
 
         if not target or not target.get('ids') or not target.get('sequence'):
-            logger.error("Not given complete target: %s", target)
+            self.logger.error("Not given complete target: %s", target)
             raise core.InvalidState("Incomplete target")
 
-        data = {
-            'reference': ref['sequence'],
-            'reference_ids': ref['ids'],
-            'target': target['sequence'],
-            'target_ids': target['ids']
-        }
+        results = align([ref, target])
+        self.logger.info("Found %s correlations", len(results))
+        data = []
+        for result in results:
+            data.append(Corr(exp_seq_position_id1=result[0],
+                             exp_seq_position_id2=result[1],
+                             correspondence_id=corr_id))
+        return data
 
-        helper = utils.WebRequestHelper(method='post', parser=Parser())
-        helper.parser.additional = {'correspondence_id': correlation_id}
-        result = helper(URL, data=data, headers={'accept': 'application/json'})
-        logger.info("Found %s correlations", len(result))
-        return [Corr(**d) for d in result]
-
-    def possible(self, pdb):
-        return self.nr_util.members(pdb)
-
-    def known(self, pdb):
-        possible = self.possible(pdb)
+    def remove(self, corr_id):
         with self.session() as session:
-            query = session.query(Info).\
-                join(Corr, Corr.correspondence_id == Info.id).\
-                filter(Info.pdb2.in_(possible))
-            return set([result.pdb2 for result in query])
-
-    def missing(self, pdb):
-        return set(self.possible(pdb)) - set(self.known(pdb))
-
-    def missing_ids(self, pdb):
-        missing = self.missing(pdb)
-        with self.session() as session:
-            query = session.query(Info).\
-                filter(Info.pdb1 == pdb).\
-                filter(Info.pdb2.in_(missing))
-            return [(result.id, result.pdb2) for result in query]
-
-    def remove(self, pdb):
-        possible = self.possible(pdb)
-        with self.session() as session:
-            query = session.query(Info.id).\
-                filter(Info.pdb1 == pdb).\
-                filter(Info.pdb2.in_(possible))
-            ids = [id[0] for id in query]
-
-        with self.session() as session:
-            session.query(Corr).\
-                filter(Corr.correspondence_id.in_(ids)).\
+            session.query(Corr).filter_by(correspondence_id=corr_id).\
                 delete(synchronize_session=False)
 
-    def has_data(self, pdb):
-        return not bool(self.missing(pdb))
+    def has_data(self, corr_id):
+        with self.session(log_exceptions=False) as session:
+            query = session.query(Corr).filter_by(correspondence_id=corr_id)
+            return bool(query.count())
 
-    def data(self, pdb, **kwargs):
-        data = []
-        known = {}
-        for corr_id, other in self.missing_ids(pdb):
-            other_chain = self.st_util.longest_chain(other)
-            logger.info("Using chain %s in %s", other_chain, other)
+    def transform(self, pdb, **kwargs):
+        with self.session() as session:
+            query = session.query(Info).\
+                join(ExpSeq, ExpSeq.id == Info.exp_seq_id1).\
+                filter(ExpSeq.pdb == pdb)
+            return [result.id for result in query]
 
-            pdb_chain = self.st_util.longest_chain(pdb)
-            logger.info("Using chain %s in %s", pdb_chain, pdb)
+    def data(self, corr_id, **kwargs):
+        with self.session() as session:
+            query = session.query(Info).filter_by(id=corr_id)
+            result = query.first()
+            if not result:
+                self.logger.error("Could not get corr with id %s", corr_id)
+                raise core.InvalidState("Missing correspondence_id")
+            exp1 = result.exp_seq_id1
+            exp2 = result.exp_seq_id2
 
-            if pdb_chain not in known:
-                known[pdb_chain] = self.structure_data(pdb_chain, pdb)
-            other_data = self.structure_data(other_chain, other)
-            data.extend(self.correlate(corr_id, known[pdb_chain], other_data))
+        self.logger.debug("Using sequences %s %s", exp1, exp2)
+        exp1 = self.structure_data(exp1)
+        exp2 = self.structure_data(exp2)
 
-        return data
+        return self.correlate(corr_id, exp1, exp2)
+
+    def __translation__(self):
+        mapping = {}
+        with self.session() as session:
+            query = session.query(PdbModifiedCorrespondecies)
+            for result in query:
+                mapping[result.modified_unit] = result.standard_unit
+        return mapping

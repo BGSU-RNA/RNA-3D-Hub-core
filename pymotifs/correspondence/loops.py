@@ -1,27 +1,21 @@
 import sys
-import logging
 import traceback
 
+from fr3d import geometry as geo
+
 import core
+import utils
 from utils.structures import Structure as StructureUtil
 
+from models import ExpSeqInfo as ExpSeq
 from models import CorrespondenceLoops as Loops
 from models import CorrespondenceInfo as Info
 from models import LoopOverlapInfo
 from models import LoopLoopComparisions
 
-logger = logging.getLogger(__name__)
-
 
 class MissingNucleotideException(Exception):
     """Raised when there is a missing nucleotide that we need to map.
-    """
-    pass
-
-
-class InvalidCoverageState(Exception):
-    """Raised when something happens to put is in an invalid state when getting
-    the coverage.
     """
     pass
 
@@ -33,19 +27,8 @@ class Loader(core.Loader):
     def __init__(self, config, maker):
         self._overlaps = {}
         self.utils = StructureUtil(maker)
+        self.cif = utils.CifData()
         super(Loader, self).__init__(config, maker)
-
-    def has_data(self, reference, pdb):
-        with self.session() as session:
-            query = self.__base_info_query__(session, reference, pdb)
-            return bool(query.count())
-
-    def remove(self, pdb):
-        with self.session() as session:
-            session.query(Loops).\
-                join(Info, Info.id == Loops.correspondence_id).\
-                filter(Info.pdb1 == pdb).\
-                delete()
 
     def overlap(self, coverage):
         if not self._overlaps:
@@ -54,23 +37,24 @@ class Loader(core.Loader):
                     self._overlaps[overlap.name] = overlap.id
 
         if coverage not in self._overlaps:
-            raise Exception("Unknown overlap name: " + coverage)
+            raise core.InvalidState("Unknown overlap name: " + coverage)
 
         return self._overlaps[coverage]
 
+    def nts(self, loop):
+        structure = self.cif(loop['pdb']).structure()
+        return structure.residues(unit_id=loop['nts'])
+
     def discrepancy(self, loop1, loop2):
-        """Get the discrepancy between two loops.
-        """
-        return None
+        return geo.discrepancy(self.loops(loop1), self.loops(loop2))
 
     def map(self, nts, mapping):
         if not mapping:
-            logger.error("Given empty mapping. Invalid state")
-            raise MissingNucleotideException("Empty mapping")
+            raise core.InvalidState("Given empty mapping")
 
         for nt in nts:
             if nt not in mapping:
-                raise MissingNucleotideException(nt)
+                raise core.InvalidState("Missing nt %s" % nt)
             yield mapping[nt]
 
     def map_loops(self, loops, ref, mapping):
@@ -79,9 +63,9 @@ class Loader(core.Loader):
             try:
                 nts = list(self.map(loop['nts'], mapping))
             except MissingNucleotideException as err:
-                logger.warn("Removing loop %s which cannot be mapped to %s",
-                            loop['id'], ref)
-                logger.warn("Missing nt %s", str(err))
+                self.logger.warn("Loop %s cannot be mapped to %s", loop['id'],
+                                 ref)
+                self.logger.warn("Missing nt %s", str(err))
                 continue
 
             mapped.append({'id': loop['id'], 'nts': nts})
@@ -89,25 +73,23 @@ class Loader(core.Loader):
         return mapped
 
     def coverage(self, loop1, loop2):
-        """Get the coverage between the two loops.
-        """
         if not loop1:
-            raise InvalidCoverageState("Empty first loop")
+            raise core.InvalidState("Empty first loop")
 
         if not loop2:
-            raise InvalidCoverageState("Empty second loop")
+            raise core.InvalidState("Empty second loop")
 
         loop_nt1 = set(loop1.get('nts', []))
         if not loop_nt1:
-            raise InvalidCoverageState("First loop had no nts")
+            raise core.InvalidState("First loop had no nts")
 
         nts = loop2.get('nts', [])
         if not nts:
-            raise InvalidCoverageState("Second loop has no nts")
+            raise core.InvalidState("Second loop has no nts")
 
         mapped = set(loop2['nts'])
         if len(mapped) != len(loop2['nts']):
-            raise InvalidCoverageState("Could not map all loop2 nts")
+            raise core.InvalidState("Could not map all loop2 nts")
 
         intersection = mapped.intersection(loop_nt1)
         if not intersection:
@@ -120,7 +102,7 @@ class Loader(core.Loader):
             return 'enclose'
         if intersection:
             return 'partial'
-        raise Exception("This should never occur")
+        raise core.InvalidState("This should never occur")
 
     def loop_comparision_id(self, loop1, loop2, discrepancy):
         with self.session() as session:
@@ -136,7 +118,8 @@ class Loader(core.Loader):
         with self.session() as session:
             return session.query(LoopLoopComparisions).\
                 filter_by(loop1_id=loop1, loop2_id=loop2).\
-                one().id
+                one().\
+                id
 
     def compare_loop(self, ref_loop, loops, corr_id):
         overlapping = []
@@ -144,9 +127,9 @@ class Loader(core.Loader):
             try:
                 cover = self.coverage(ref_loop, loop)
             except:
-                logger.error("Exception in overlap between %s, %s",
-                             ref_loop['id'], loop['id'])
-                logger.error(traceback.format_exc(sys.exc_info()))
+                self.logger.error("Exception in overlap between %s, %s",
+                                  ref_loop['id'], loop['id'])
+                self.logger.error(traceback.format_exc(sys.exc_info()))
                 continue
 
             if not cover:
@@ -192,21 +175,33 @@ class Loader(core.Loader):
                 correspondence_id=corr_id,
                 loop_overlap_info_id=self.overlap('unique'))
 
-    def data(self, pdb, recalculate=False, **kwargs):
-        for correspondence in self.utils.reference(pdb):
-            ref_pdb = correspondence['pdb1']
-            mapping = self.utils.mapping(ref_pdb, pdb)
-            ref_loops = self.utils.loops(ref_pdb)
-            pdb_loops = self.utils.loops(pdb)
-            mapped = self.map_loops(pdb_loops, ref_pdb, mapping)
+    def has_data(self, reference, pdb):
+        with self.session() as session:
+            query = self.__base_info_query__(session, reference, pdb)
+            return bool(query.count())
 
-            if not mapped:
-                logger.error("No loops could be mapped")
-                continue
+    def remove(self, pdb):
+        with self.session() as session:
+            session.query(Loops).\
+                join(Info, Info.id == Loops.correspondence_id).\
+                filter(Info.pdb1 == pdb).\
+                delete()
 
-            yield self.compare(ref_loops, mapped, correspondence['id'])
+    def transform(self, pdb):
+        cif = self.cif(pdb)
+        with self.session() as session:
+            query = session.query(Info).\
+                join(ExpSeq, ExpSeq.id == Info.exp_seq_id1).\
+                filter(ExpSeq.pdb == pdb)
+            return [(cif, result.id) for result in query]
 
+    def data(self, entry, **kwargs):
+        # corr_id, loop1, loop2 = entry
+        # ref_pdb = correspondence['pdb1']
+        # mapping = self.utils.mapping(ref_pdb, pdb)
+        # ref_loops = self.utils.loops(ref_pdb)
+        # pdb_loops = self.utils.loops(pdb)
+        # mapped = self.map_loops(pdb_loops, ref_pdb, mapping)
+        # return self.compare(ref_loops, mapped, correspondence['id'])
 
-if __name__ == '__main__':
-    from utils import main
-    main(Loader)
+        return []
