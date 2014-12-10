@@ -106,7 +106,7 @@ def run(name, config, pdbs, opts):
     setup_logging(opts)
 
     if opts.pop('all'):
-        pdbs = pdb.QueryHelper().all_rna_pdbs()
+        pdbs = pdb.RnaPdbsHelper()()
 
     if opts.pop('known'):
         pdbs = list(known(config, pdb=False))
