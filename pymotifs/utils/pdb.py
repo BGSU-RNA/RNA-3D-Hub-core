@@ -8,15 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 class GetAllRnaPdbsError(Exception):
-    """Raise when `get_all_rna_pdbs()` fails"""
+    """Raised when when we cannot get a list of all pdbs."""
     pass
 
 
 class RnaPdbsHelper(object):
     url = 'http://www.rcsb.org/pdb/rest/search'
 
-    def parse(self, raw):
-        return filter(lambda x: len(x) == 4, raw.split("\n"))
+    def __init__(self):
+        self.helper = utils.WebRequestHelper(method='post', parser=self.parse)
+
+    def parse(self, response):
+        return filter(lambda x: len(x) == 4, response.text.split("\n"))
 
     def __call__(self):
         """Get a list of all rna-containing pdb files, including hybrids. Raise
@@ -33,41 +36,15 @@ class RnaPdbsHelper(object):
         <containsHybrid>I</containsHybrid>
         </orgPdbQuery>
         """
-        post = utils.WebRequestHelper(method='post', parser=self.parse)
+        headers = {
+            'content-type': 'application/x-www-form-urlencoded'
+        }
 
         try:
-            return post(self.url, data=query_text)
+            return self.helper(self.url, headers=headers, data=query_text)
         except:
+            logger.error("Could not get all rna containing pdbs")
             raise GetAllRnaPdbsError("Failed to get list of RNA PDBs")
-
-
-class QueryHelper(object):
-    query_url = 'http://www.rcsb.org/pdb/rest/search'
-
-    def all_rna_pdbs(self):
-        """Get a list of all rna-containing pdb files, including hybrids. Raise
-           a specific error if it fails.
-        """
-        def parser(response):
-            return filter(lambda p: len(p) == 4, response.text.split('\n'))
-
-        logger.info('Getting a list of all rna-containing pdbs')
-        query = """
-        <orgPdbQuery>
-        <queryType>org.pdb.query.simple.ChainTypeQuery</queryType>
-        <containsProtein>I</containsProtein>
-        <containsDna>I</containsDna>
-        <containsRna>Y</containsRna>
-        <containsHybrid>I</containsHybrid>
-        </orgPdbQuery>
-        """
-
-        helper = utils.WebRequestHelper(method='post', parser=parser)
-        try:
-            return helper(self.query_url, data=query)
-        except:
-            logger.critical("Failed to retrieve rna containig pdbs")
-            raise GetAllRnaPdbsError("Couldn't find all RNA pdbs")
 
 
 class CustomReportHelper(object):
