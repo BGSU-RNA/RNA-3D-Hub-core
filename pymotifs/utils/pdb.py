@@ -62,9 +62,9 @@ class QueryHelper(object):
         </orgPdbQuery>
         """
 
-        helper = utils.WebRequestHelper()
+        helper = utils.WebRequestHelper(method='post', parser=parser)
         try:
-            return helper(self.query_url, payload=query, parser=parser)
+            return helper(self.query_url, data=query)
         except:
             logger.critical("Failed to retrieve rna containig pdbs")
             raise GetAllRnaPdbsError("Couldn't find all RNA pdbs")
