@@ -125,7 +125,7 @@ class WebRequestHelper(RetryHelper):
         response = method(url, **kwargs)
         response.raise_for_status()
 
-        if not self.allow_empty and not response.text:
+        if not self.allow_empty and not response.text and not self.allow_fail:
             logger.warning("Response body was empty. Retrying.")
             raise WebRequestFailed("Got empty response")
         if self.parser:
