@@ -13,7 +13,6 @@ class Downloader(core.Loader):
     file_url = 'http://www.rcsb.org/pdb/files/'
     name = 'downloader'
     update_gap = False
-    allow_fail = True
 
     def __init__(self, config, maker):
         self.gzip = utils.GzipFetchHelper(allow_fail=True)
