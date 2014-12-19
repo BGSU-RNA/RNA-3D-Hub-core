@@ -126,23 +126,3 @@ class BuildingAllUnitsTest(StageTest):
         val = len(self.data)
         ans = 350
         self.assertEqual(ans, val)
-
-
-class BuildingWithWatersTest(StageTest):
-    loader_class = Loader
-
-    @classmethod
-    def setUpClass(cls):
-        with open('files/cif/2AW7.cif', 'rb') as raw:
-            cls.structure = Cif(raw).structure()
-
-    def setUp(self):
-        super(BuildingWithWatersTest, self).setUp()
-        self.data = list(self.__class__.structure.residues())
-
-    # def test_loads_all_units(self):
-    #     val = len(self.data)
-    #     pprint(self.data)
-    #     ans = None
-    #     # ans = 3884
-    #     self.assertEqual(ans, val)
