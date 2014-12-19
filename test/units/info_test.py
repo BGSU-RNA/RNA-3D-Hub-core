@@ -120,11 +120,11 @@ class BuildingAllUnitsTest(StageTest):
 
     def setUp(self):
         super(BuildingAllUnitsTest, self).setUp()
-        self.data = list(self.__class__.structure.residues())
+        self.data = list(self.loader.data(self.__class__.structure))
 
     def test_loads_all_units(self):
         val = len(self.data)
-        ans = 316
+        ans = 350
         self.assertEqual(ans, val)
 
 
@@ -140,9 +140,9 @@ class BuildingWithWatersTest(StageTest):
         super(BuildingWithWatersTest, self).setUp()
         self.data = list(self.__class__.structure.residues())
 
-    def test_loads_all_units(self):
-        val = len(self.data)
-        pprint(self.data)
-        ans = None
-        # ans = 3884
-        self.assertEqual(ans, val)
+    # def test_loads_all_units(self):
+    #     val = len(self.data)
+    #     pprint(self.data)
+    #     ans = None
+    #     # ans = 3884
+    #     self.assertEqual(ans, val)
