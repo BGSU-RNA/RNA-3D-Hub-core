@@ -1,9 +1,7 @@
 import re
-import os
 import random
 import logging
 import datetime
-import ConfigParser
 
 from sqlalchemy import desc
 from sqlalchemy import Text
@@ -14,11 +12,13 @@ from sqlalchemy import DateTime
 from sqlalchemy import MetaData
 from sqlalchemy.dialects.mysql import LONGTEXT
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 
+
 logger = logging.getLogger(__name__)
+
+metadata = MetaData()
+Base = automap_base(metadata=metadata)
 
 
 def camelize_classname(base, tablename, table):
@@ -26,42 +26,18 @@ def camelize_classname(base, tablename, table):
                re.sub(r'_(\w)', lambda m: m.group(1).upper(), tablename[1:]))
 
 
-def get_engine(filename='motifatlas.cfg'):
-    """
-        looks up the connection parameters in a config file, which must be
-        located in the same directory as the python scripts.
-    """
-
-    script_path = os.path.dirname(os.path.abspath(__file__))
-    configfile = os.path.join(script_path, filename)
-    config = ConfigParser.RawConfigParser()
-    config.read(configfile)
-
-    uri = config.get('database', 'uri')
-    logger.info('Connecting to the `%s` database', uri)
-
-    return create_engine(uri)
-
-
 def should_reflect(tablename, *args):
+    print(tablename)
     name = camelize_classname(None, tablename, None)
     return name not in globals()
 
 
-def tables(engine):
+def reflect(engine):
+    metadata.bind = engine
+    metadata.reflect(only=should_reflect)
     Base.prepare(classname_for_table=camelize_classname)
     for klass in Base.classes:
-        yield klass.__name__, klass
-
-
-def reflect(engine):
-    for name, klass in tables(engine):
-        globals()[name] = klass
-
-
-engine = get_engine()
-metadata = MetaData()
-Base = automap_base(metadata=metadata)
+        globals()[klass.__name__] = klass
 
 
 class LoopReleases(Base):
@@ -77,7 +53,7 @@ class LoopReleases(Base):
         self.compute_new_release_id()
         self.get_date()
 
-    def compute_new_release_id(self):
+    def compute_new_release_id(self, session):
         prev = session.query(LoopReleases).\
             order_by(desc(LoopReleases.date)).\
             first()
@@ -112,7 +88,7 @@ class MlReleases(Base):
         self.compute_new_release_id()
         self.get_date()
 
-    def compute_new_release_id(self):
+    def compute_new_release_id(self, session):
         prev = session.query(MlReleases).\
             filter(MlReleases.type == self.type).\
             order_by(desc(MlReleases.date)).\
@@ -153,7 +129,7 @@ class MlMotifs(Base):
         else:
             self.populate_fields(id)
 
-    def get_new_motif_id(self):
+    def get_new_motif_id(self, session):
         while True:
             self.handle = '%05d' % random.randrange(99999)
             motif = session.query(MlMotifs).\
@@ -207,7 +183,7 @@ class NrClasses(Base):
         parts = [self.type, self.resolution, self.handle]
         self.id = '.'.join(['_'.join(parts), str(self.version)])
 
-    def get_new_motif_id(self):
+    def get_new_motif_id(self, session):
         self.type = 'NR'
         while True:
             self.handle = '%05d' % random.randrange(99999)
@@ -250,7 +226,7 @@ class NrReleases(Base):
         self.compute_new_release_id()
         self.get_date()
 
-    def compute_new_release_id(self):
+    def compute_new_release_id(self, session):
         prev = session.query(NrReleases).order_by(desc(NrReleases.date)).\
             first()
         if prev is None:
@@ -266,9 +242,3 @@ class NrReleases(Base):
 
     def get_date(self):
         self.date = datetime.datetime.now()
-
-
-metadata.reflect(engine, only=should_reflect)
-Session = sessionmaker(bind=engine)
-session = Session()
-reflect(engine)

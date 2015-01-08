@@ -14,7 +14,7 @@ from models import LoopsAll
 from models import LoopPositions
 from models import CorrespondenceInfo
 from models import CorrespondenceNts
-from models import PdbPairwiseInteractions
+from models import UnitPairsInteractions
 
 
 POLYMER_UNITS_QUERY = '''
@@ -111,10 +111,10 @@ class Structure(Base):
         c2 = aliased(PdbCoordinates)
         interactions = []
         with self.session() as session:
-            query = session.query(PdbPairwiseInteractions).\
-                join(c1, c1.id == PdbPairwiseInteractions.iPdbSig).\
-                join(c2, c2.id == PdbPairwiseInteractions.jPdbSig).\
-                filter(PdbPairwiseInteractions.pdb_id == pdb).\
+            query = session.query(UnitPairsInteractions).\
+                join(c1, c1.id == UnitPairsInteractions.iPdbSig).\
+                join(c2, c2.id == UnitPairsInteractions.jPdbSig).\
+                filter(UnitPairsInteractions.pdb_id == pdb).\
                 filter(c1.chain == c2.chain, c1.chain == chain)
 
             for result in query:

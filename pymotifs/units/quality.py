@@ -1,18 +1,14 @@
 import gzip
 import hashlib
-import logging
 import cStringIO as sio
 import xml.etree.ElementTree as ET
 
-import utils as ut
-import core
-from models import NtQuality
-from models import PdbUnitIdCorrespondence as Unit
+import pymotifs.utils as ut
+import pymotifs.core as core
+from pymotifs.models import NtQuality
+from pymotifs.models import PdbUnitIdCorrespondence as Unit
 
 from rnastructure.util import unit_ids as uids
-
-
-logger = logging.getLogger(__name__)
 
 
 class FileHelper(object):
@@ -105,11 +101,11 @@ class Loader(core.Loader):
 
     def data(self, pdb, **kwargs):
         filename = self.finder(pdb)
-        logger.info("Using filename %s for pdb %s ", filename, pdb)
+        self.logger.info("Using filename %s for pdb %s ", filename, pdb)
         response = self.fetcher(filename)
         parser = Parser(response)
         if not parser.has_rsr() and not parser.has_dcc():
-            logger.info("No RsR found for %s", pdb)
+            self.logger.info("No RsR found for %s", pdb)
             return
 
         for entry in parser.nts():

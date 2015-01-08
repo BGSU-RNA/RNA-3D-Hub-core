@@ -7,11 +7,8 @@ import cStringIO as sio
 import itertools as it
 import collections as coll
 import gzip
-import cPickle as pickle
 
 import requests
-
-from fr3d.cif.reader import Cif
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +137,7 @@ class StructureFileFinder(object):
         self.config = config
         self.strict = strict
         self.location = os.path.join(self.config['locations']['fr3d_root'],
-                                     'PDBFiles')
+                                     'FR3D', 'PDBFiles')
         if extension:
             self.extension = extension
 
@@ -148,7 +145,8 @@ class StructureFileFinder(object):
             raise ValueError("Must define an extension")
 
     def __call__(self, pdb):
-        filename = os.path.join(self.location, pdb + '.' + self.extension)
+        filename = os.path.abspath(os.path.join(self.location, pdb + '.' +
+                                                self.extension))
 
         if not os.path.exists(filename) and self.strict:
             msg = "Could not find CIF file for %s.  Expected at: %s"
@@ -164,32 +162,6 @@ class CifFileFinder(StructureFileFinder):
 class PickleFileFinder(StructureFileFinder):
     extension = 'pickle'
     pass
-
-
-class CifData(object):
-    def __init__(self, config):
-        self.cache = PickleFileFinder(config, strict=False)
-        self.cif = CifFileFinder(config)
-
-    def clear(self):
-        for filename in os.listdir(self.location):
-            parts = os.path.splitext(filename)
-            if parts[1] == '.pickle':
-                os.unlink(os.path.join(self.location, filename))
-
-    def __call__(self, pdb):
-        cache_file = self.cache(pdb)
-        if os.path.exists(cache_file):
-            with open(cache_file, 'rb') as raw:
-                return pickle.load(raw)
-
-        with open(self.cif(pdb), 'rb') as raw:
-            data = Cif(raw)
-
-        with open(cache_file, 'w') as out:
-            pickle.dump(data, out)
-
-        return data
 
 
 class FTPFetchHelper(RetryHelper):

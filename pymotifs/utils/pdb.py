@@ -13,6 +13,9 @@ class GetAllRnaPdbsError(Exception):
 
 
 class RnaPdbsHelper(object):
+    """A helper class to get a list of all RNA containing PDBS
+    """
+
     url = 'http://www.rcsb.org/pdb/rest/search'
 
     def __init__(self):
@@ -48,6 +51,9 @@ class RnaPdbsHelper(object):
 
 
 class CustomReportHelper(object):
+    """A helper class to get a custom report from PDB.
+    """
+
     url = 'http://www.rcsb.org/pdb/rest/customReport'
 
     fields = [
@@ -79,8 +85,10 @@ class CustomReportHelper(object):
         'reconstructionMethod', 'specimenType'
     ]
 
-    def __init__(self):
+    def __init__(self, fields=None):
         self.helper = utils.WebRequestHelper(method='get', parser=self.parse)
+        if fields:
+            self.fields = fields
 
     def parse(self, raw):
         lines = raw.split('<br />')

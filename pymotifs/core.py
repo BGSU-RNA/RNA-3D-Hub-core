@@ -1,10 +1,8 @@
 import os
 import abc
-import sys
 import logging
 import inspect
 import datetime
-import traceback
 import itertools as it
 import collections as coll
 from contextlib import contextmanager
@@ -14,7 +12,9 @@ try:
 except:
     pass
 
-from models import PdbAnalysisStatus
+from pymotifs.models import PdbAnalysisStatus
+from pymotifs.utils import CifData
+from pymotifs.utils import StructureData
 
 
 class StageFailed(Exception):
@@ -61,15 +61,23 @@ class Matlab(object):
 
     def __init__(self, root):
         self.logger = logging.getLogger('core.Matlab')
+        self.mlab = None
+        self.something('hello',
+            'hello')
+        self._root = root
+
+    def __startup__(self):
         self.logger.debug('Starting up matlab')
-        os.chdir(root)
+        os.chdir(self._root)
         self.mlab = mlab
         self.mlab._autosync_dirs = False
         self.mlab.setup()
         self.logger.debug('Matlab started')
 
     def __getattr__(self, key):
-        self.logger.deug("Running %s", key)
+        if self.mlab is None:
+            self.__startup__()
+        self.logger.debug("Running %s", key)
         return getattr(self.mlab, key)
 
 
@@ -95,30 +103,237 @@ class Session(object):
         except Skip:
             session.rollback()
             raise
-        except:
+        except Exception as err:
             if log_exceptions:
                 self.logger.error("Transaction failed. Rolling back.")
+                self.logger.exception(err)
             session.rollback()
             raise
         finally:
             session.close()
 
 
-class Loader(object):
-    """An abstract baseclass for all loaders. This provides a constient
-    interface for all loaders to use.
+class Stage(object):
+    """
+    This is a base class for both loaders and exporters to inherit from. It
+    contains the functionality common to all things that are part of our
+    pipeline.
     """
 
-    __metaclass__ = abc.ABCMeta
-
-    """ The name of the loader. """
+    """ The name of this stage."""
     name = None
+
+    """ If we should stop the whole stage if one part fails. """
+    stop_on_failure = True
 
     """ Maximum length of time between updates. False for forever. """
     update_gap = None
 
-    """ If we should stop the whole loader if one part fails. """
-    stop_on_failure = True
+    depends_on = tuple()
+
+    def __init__(self, config, session_maker):
+        """Build a new Stage.
+
+        :config: The config object to build with.
+        :session_maker: The Session object to handle database connections.
+        """
+
+        self.config = coll.defaultdict(dict)
+        self.config.update(config)
+        self.name = self.name or self.__class__.__module__
+
+        self.session = Session(session_maker)
+        self.logger = logging.getLogger(self.name)
+
+    @abc.abstractmethod
+    def is_missing(self, entry, **kwargs):
+        """Determine if we do not have any data. If we have no data then we
+        will recompute.
+
+        :entry: The thing to check for.
+        :kwargs: Generic keyword arguments
+        :returns: True or False
+        """
+        pass
+
+    @abc.abstractmethod
+    def process(self, entry, **kwargs):
+        """Process this entry. In the case of loaders this will parse the data
+        and put it into the database, exporters may go to the database and then
+        generate the file.
+
+        :entry: The entry to process.
+        :kwargs: Generic keyword arguments.
+        :returns: Nothing and is ignored.
+        """
+        pass
+
+    def dependecies(self):
+        """This returns the dependecies for all stages. This will return the
+        values of
+        """
+        deps = set(self.depends_on)
+        if self.parameter and self.parameter not in deps:
+            deps = list(deps)
+            deps.append(self.paramter)
+            return deps
+        return list(deps)
+
+    def transform(self, pdb, **kwargs):
+        """This method takes the a pdb that we are given to process and
+        transforms into values that can be given to `self.data`. By default it
+        simply yields the given object. This is intended to be used in cases
+        where we need to limit the list of pdbs to select ones. Or where we
+        take list of pdbs and get a list of pairs, like with getting nt-nt
+        correspondence.
+
+        :pdb: The pdb.
+        :returns: A list of things to send to data.
+        """
+        return [pdb]
+
+    def must_recompute(self, pdb, recalculate=False, **kwargs):
+        """Detect if we have been told to recompute this stage for this pdb.
+        """
+        return bool(recalculate or self.config[self.name].get('recompute'))
+
+    def been_long_enough(self, pdb):
+        """Determine if it has been long enough to recompute the data for the
+        given pdb. This uses the udpate_gap property which tells how long to
+        wait between updates. If that is False then we never update based upon
+        time.
+        """
+        if not self.update_gap:
+            return False
+
+        with self.session() as session:
+            current = session.query(PdbAnalysisStatus).\
+                filter_by(id=pdb, step=self.name).\
+                first()
+            if not current:
+                return True
+            current = current.time
+        # If this has been marked as done in the far future do it anyway. That
+        # is a silly thing to do
+        diff = abs(datetime.datetime.now() - current)
+        return diff > self.update_gap
+
+    def should_process(self, entry, **kwargs):
+        """Determine if we should process this entry. This is true if we are
+        told to recompute, if we do not have data for this pdb or it has been
+        long enough since the last update.
+
+        :entry: The entry to check.
+        :kwargs: Some keyword arguments for determining if we should process
+        :returns: True or False
+        """
+        if self.must_recompute(entry, **kwargs):
+            self.logger.debug("Performing a forced recompute")
+            return True
+
+        too_long = self.been_long_enough(entry)
+        if too_long:
+            self.logger.debug("Time gap for %s too large, recomputing", entry)
+            return True
+
+        if self.is_missing(entry, **kwargs):
+            self.logger.debug("Missing data form %s. Will recompute", entry)
+            return True
+        return False
+
+    def to_process(self, pdbs, **kwargs):
+        """Compute the things to process. For things that work with PDBs the
+        default one will work well. For things that work with groups this could
+        simply ignore the given pdbs and return the names of the groups to work
+        with.
+
+        :pdbs: Input pdbs
+        :kwargs: Generic keyword arguments.
+        :returns: The stuff to process.
+        """
+        return [pdb.upper() for pdb in pdbs]
+
+    def mark_processed(self, pdb):
+        """Mark that we have finished computing the results for the given pdb.
+
+        :pdb: The pdb to mark done.
+        """
+
+        with self.session() as session:
+            status = PdbAnalysisStatus(id=pdb, step=self.name,
+                                       time=datetime.datetime.now())
+            session.merge(status)
+            session.commit()
+            self.logger.info('Updated %s status for pdb %s', self.name, pdb)
+
+    def __call__(self, given, **kwargs):
+        """Process all given inputs.
+
+        :given: A list of pdbs to process.
+        :kwargs: Keyword arguments passed on to various methods.
+        :returns: Nothing
+        """
+
+        entries = self.to_process(given, **kwargs)
+        if not entries:
+            self.logger.critical("Nothing to process")
+            raise InvalidState("Nothing to process")
+
+        for index, entry in enumerate(entries):
+            self.logger.info("Processing %s: %s/%s", entry, index + 1,
+                             len(entries))
+
+            try:
+                iterable = self.transform(entry, **kwargs)
+            except SkipPdb as err:
+                self.logger.warn("Skipping entry %s. Reason: %s", entry,
+                                 str(err))
+                continue
+            except Exception as err:
+                self.logger.error("Transforming %s failed, skipping", entry)
+                self.logger.exception(err)
+                continue
+
+            if not iterable:
+                self.logger.info("Nothing from transfrom for %s", entry)
+                continue
+
+            for trans_index, transformed in enumerate(iterable):
+                self.logger.info("Processing %s (%s) %s: %s/%s",
+                                 transformed, entry, index + 1,
+                                 trans_index + 1, len(iterable))
+
+                try:
+                    if not self.should_process(transformed, **kwargs):
+                        self.logger.debug("No need to process %s", transformed)
+                        continue
+                    self.process(transformed, **kwargs)
+
+                except SkipPdb as err:
+                    self.logger.warn("Skipping entry %s Reason %s", entry,
+                                     str(err))
+                    break
+                except SkipValue as err:
+                    self.logger.warn("Skipping %s Reason %s", transformed,
+                                     str(err))
+                    continue
+                except Exception as err:
+                    self.logger.error("Error raised in should_process of %s" %
+                                      transformed)
+                    self.logger.exception(err)
+                    if self.stop_on_failure:
+                        raise StageFailed(self.name)
+                    continue
+
+            self.mark_processed(entry, kwargs)
+
+
+class Loader(Stage):
+    """An abstract baseclass for all things that load data into our database.
+    This provides a constituent interface for all loaders to use.
+    """
+
+    __metaclass__ = abc.ABCMeta
 
     """ Max number of things to insert at once. """
     insert_max = 1000
@@ -126,17 +341,15 @@ class Loader(object):
     """ A flag to indicate it is ok to produce no data. """
     allow_no_data = False
 
-    def __init__(self, config, session_maker):
-        self.config = coll.defaultdict(dict)
-        self.config.update(config)
-        if not self.name:
-            raise AttributeError("Must set name")
+    def __init__(self, *args):
+        """Build a new Loader object.
 
-        if self.update_gap is None:
-            raise AttributeError("Must set update gap")
-
-        self.session = Session(session_maker)
-        self.logger = logging.getLogger(self.name)
+        :config: The config object.
+        :session_maker: The Session object.
+        """
+        super(Loader, self).__init__(*args)
+        self._cif = CifData(self.config)
+        self._structure = StructureData(self.config)
 
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
@@ -161,24 +374,21 @@ class Loader(object):
         """
         pass
 
-    def transform(self, pdb, **kwargs):
-        """This method takes the a pdb that we are given to process and
-        transforms into values that can be given to `self.data`. By default it
-        simply yields the given object. This is intended to be used in cases
-        where we need to limit the list of pdbs to select ones. Or where we
-        take list of pdbs and get a list of pairs, like with getting nt-nt
-        correspondence.
+    def cif(self, pdb):
+        """A method to load the cif file for a given pdb id.
 
-        :pdb: The pdb.
-        :returns: A list of things to send to data.
+        :pdb: PDB id to parse.
+        :returns: A parsed cif file.
         """
-        return [pdb]
+        return self._cif(pdb)
 
-    def step(self):
-        """Gets the name of this step. Basically it is used to normalize
-        self.name.
+    def structure(self, pdb):
+        """A method to load the cif file and get the structure for the given
+
+        :pdb: The pdb id to get the structure for.
+        :returns: The FR3D structure for the given PDB.
         """
-        return self.name.lower()
+        return self._structure(pdb)
 
     def store(self, data):
         """Store the given data. The data is written in chunks of
@@ -205,156 +415,56 @@ class Loader(object):
             session.commit()
             self.logger.debug("Done committing")
 
-    def been_long_enough(self, pdb):
-        """Determine if it has been long enough to recompute the data for the
-        given pdb. This uses the udpate_gap property which tells how long to
-        wait between updates. If that is False then we never update based upon
-        time.
-        """
-        if not self.update_gap:
-            return False
+    def process(self, entry, **kwargs):
+        """Get the data for a particular entry. This will get the data and then
+        store it. IT will remove data as needed and makes sure that data is
+        produced if required.
 
+        :entry: The entry to process.
+        :kwargs: Generic keyword arguments to be passed along to other methods.
+        """
+
+        if self.must_recompute(entry, **kwargs):
+            self.logger.debug("Removing old data for %s", entry)
+            self.remove(entry)
+
+        data = self.data(entry)
+
+        if not self.allow_no_data and not data:
+            self.logger.error("No data produced")
+            raise InvalidState("Missing data")
+        elif not data:
+            self.logger.warning("No data produced")
+            return
+
+        self.store(data)
+
+
+class SimpleLoader(Loader):
+    """
+    A simple loader is a subclass of loader that has a default implementation
+    of has_data and remove. These depend on the abstract method query which
+    generates the query to use for these things.
+    """
+
+    def has_data(self, *args):
         with self.session() as session:
-            current = session.query(PdbAnalysisStatus).\
-                filter_by(id=pdb, step=self.step()).\
-                first()
-            if not current:
-                return True
-            current = current.time
-        # If this has been marked as done in the far future do it anyway. That
-        # is a silly thing to do
-        diff = abs(datetime.datetime.now() - current)
-        return diff > self.update_gap()
+            return bool(self.query(session, *args).first())
 
-    def must_recompute(self, pdb, recalculate=False, **kwargs):
-        """Detect if we have been told to recompute this stage for this pdb.
-        """
-        return recalculate or self.config[self.name].get('recompute')
-
-    def should_compute(self, pdb, recalculate=False, **kwargs):
-        """Determine if we should recompute the data for this loader and pdb.
-        This is true if we are told to recompute, if we do not have data for
-        this pdb or it has been long enough since the last update.
-        """
-        if self.must_recompute(pdb, recalculate=recalculate, **kwargs):
-            self.logger.debug("Performing a forced recompute")
-            return True
-
-        has_data = self.has_data(pdb)
-        if not has_data:
-            self.logger.debug("Missing data for %s will compute", pdb)
-            return True
-
-        too_long = self.been_long_enough(pdb)
-        if too_long:
-            self.logger.debug("Time gap for %s too large, recomputing", pdb)
-            return True
-
-        self.logger.debug("No reason to recompute %s", pdb)
-        return False
-
-    def mark_analyzed(self, pdb):
-        """Mark that we have finished computing the results for the given pdb.
-        """
+    def remove(self, *args):
         with self.session() as session:
-            status = PdbAnalysisStatus(id=pdb, step=self.step(),
-                                       time=datetime.datetime.now())
-            session.merge(status)
-            session.commit()
-            self.logger.info('Updated %s status for pdb %s', self.name, pdb)
+            self.query(session, *args).delete(synchronize_session=False)
 
-    def __call__(self, pdbs, **kwargs):
-        """Load all data for the list of pdbs. This will load things as needed
-        into the database. It checks if we should recompute or if we are forced
-        to and then stores the computed data.
-
-        :pdbs: A list of pdbs to process.
-        :kwargs: Keyword arguments. These are passed along to other methods.
+    @abc.abstractmethod
+    def query(self, session, *args):
         """
+        A method to generate the query that can be used to access data for this
+        loader. The resutling query is used in remove and has_data.
 
-        if not pdbs:
-            self.logger.critical("Must give pdbs")
-            raise InvalidState("No pdbs given")
-
-        for index, pdb in enumerate(pdbs):
-            self.logger.info("Starting %s: %s/%s", pdb, index + 1, len(pdbs))
-            pdb = pdb.upper()
-
-            try:
-                iterable = self.transform(pdb, **kwargs)
-            except SkipPdb as err:
-                self.logger.warn("Skipping pdb %s. Reason: %s", pdb, str(err))
-                continue
-            except:
-                self.logger.error("Transforming %s failed, skipping", pdb)
-                self.logger.error(traceback.format_exc(sys.exc_info()))
-                continue
-
-            if not iterable:
-                self.logger.info("Nothing from transfrom for %s", pdb)
-                continue
-
-            for trans_index, transformed in enumerate(iterable):
-                self.logger.info("Processing %s (%s) %s: %s/%s",
-                                 transformed, pdb, index, trans_index + 1,
-                                 len(iterable))
-
-                try:
-                    if not self.should_compute(transformed, **kwargs):
-                        self.logger.debug("No need to compute %s", transformed)
-                        continue
-                except SkipPdb as err:
-                    self.logger.warn("Skipping pdb %s Reason %s",
-                                     pdb, str(err))
-                    break
-                except SkipValue as err:
-                    self.logger.warn("Skipping %s Reason %s",
-                                     transformed, str(err))
-                    continue
-
-                if self.must_recompute(transformed, **kwargs):
-                    self.logger.debug("Removing old data for %s", transformed)
-                    self.remove(transformed)
-
-                try:
-                    data = self.data(transformed, **kwargs)
-                except SkipPdb as err:
-                    self.logger.warn("Skipping pdb: %s Reason %s",
-                                     pdb, str(err))
-                    break
-                except SkipValue as err:
-                    self.logger.warn("Skipping %s Reason %s",
-                                     transformed, str(err))
-                    continue
-                except:
-                    if self.stop_on_failure:
-                        self.logger.error("Error raised when getting data")
-                        self.logger.error(traceback.format_exc(sys.exc_info()))
-                        raise StageFailed(self.name)
-
-                    self.logger.warning("Error raised when getting data")
-                    self.logger.warning(traceback.format_exc(sys.exc_info()))
-                    continue
-
-                if not self.allow_no_data and not data:
-                    self.logger.error("No data produced")
-                    raise InvalidState("Missing data")
-                elif not data:
-                    self.logger.warning("No data produced")
-                    continue
-
-                try:
-                    self.store(data)
-                except:
-                    self.remove(transformed)
-                    if self.stop_on_failure:
-                        self.logger.error("Error raised when storing data")
-                        self.logger.error(traceback.format_exc(sys.exc_info()))
-                        raise StageFailed(self.name)
-
-                    self.logger.warning("Error raised when storing data")
-                    self.logger.warning(traceback.format_exc(sys.exc_info()))
-                    continue
+        :session: The session object to use.
+        :*args: Arguments from process.
+        """
+        pass
 
 
 class MultiLoader(object):
@@ -368,3 +478,67 @@ class MultiLoader(object):
     def __call__(self, pdbs, **kwargs):
         for step in self.steps:
             step(pdbs, **kwargs)
+
+
+class Exporter(Stage):
+    """A base class for all stages that export data from our database.
+    """
+
+    """ The mode of the file to write """
+    mode = None
+
+    def __init__(self, *args, **kwargs):
+        if not self.mode:
+            raise InvalidState("Must define the mode")
+        super(Exporter, self).__init__(*args, **kwargs)
+
+    @abc.abstractmethod
+    def filename(self, entry):
+        """Compute the filename for the given entry.
+
+        :entry: The entry to write out.
+        """
+        pass
+
+    @abc.abstractmethod
+    def text(self, entry, **kwargs):
+        pass
+
+    def process(self, entry, **kwargs):
+        """
+        """
+        with open(self.filename(entry), self.mode) as raw:
+            raw.write(self.text(entry, **kwargs))
+
+
+class MassExporter(Exporter):
+    """An exporter that exports several files at once.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    mode = 'a'
+
+    def is_missing(self, pdb):
+        """Always returns true, I assume we will always want to redo a mass
+        export.
+        """
+        return True
+
+    def __call__(self, pdbs, **kwargs):
+        """Deletes the previous mass export then redoes the full export.
+        """
+        filename = self.filename(None)
+        if os.path.exists(filename):
+            os.remove(filename)
+        super(MassExporter, self).__call__(pdbs, **kwargs)
+
+
+class PdbExporter(Exporter):
+    """An exporter that write a single pdb to a single file.
+    """
+    mode = 'w'
+
+    def is_missing(self, entry, **kwargs):
+        """Will check if the file produce by filename() exists.
+        """
+        return not os.path.exists(self.filename(entry))
