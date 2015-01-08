@@ -1,5 +1,7 @@
 # About
-RNA-3D-Hub-core is the backend for the [RNA 3D Hub](http://rna.bgsu.edu/rna3dhub).
+
+RNA-3D-Hub-core is the backend for the [RNA 3D
+Hub](http://rna.bgsu.edu/rna3dhub).
 
 RNA-3D-Hub-core contains:
 
@@ -8,11 +10,11 @@ RNA-3D-Hub-core contains:
 2. Matlab code for extracting and clustering RNA 3D motifs.
 
 3. Python code responsible for importing non-redundant lists and motif atlas
-releases into the database, and id assignment to motifs and non-redundant
-equivalence classes.
+   releases into the database, and id assignment to motifs and non-redundant
+   equivalence classes.
 
 ## Requirements
-* python 2.5 or newer (not tested with Python 3)
+* python 2.6 or newer (not tested with Python 3)
 * matlab R2007b or newer
 * MySQL server
 * [mlabwap](http://mlabwrap.sourceforge.net) for linking Matlab with Python
@@ -47,19 +49,20 @@ equivalence classes.
 
 The software suite includes test datasets for motifs and non-redundant lists.
 
-Unit tests create a special testing environment and shouldn't interfere with
-the development or the production versions of the resource. When the unittest
-module is imported, the programs will connect to the test database specified
-in the config file.
+Unit tests create a special testing environment and shouldn't interfere with the
+development or the production versions of the resource. When the unittest module
+is imported, the programs will connect to the test database specified in the
+config file.
 
 To run unit tests with nosetests:
 
     nosetests --nologcapture -s pymotifs
 
 * The `--nologcapture` option ensures that all output is logged to a file and is
-not intercepted by nosetests. The log file is emailed at the end of the test.
+  not intercepted by nosetests. The log file is emailed at the end of the test.
+
 * The `-s` option routes all STDOUT output to the screen for easier monitoring
-of test progress.
+  of test progress.
 
 ## Logging and email notifications
 
