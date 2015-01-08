@@ -40,3 +40,4 @@ todo.txt
 GTAGS
 GPATH
 GRTAGS
+conf/*.json
