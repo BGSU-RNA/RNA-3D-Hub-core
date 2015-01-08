@@ -1,0 +1,10 @@
+# NR Pipeline
+
+Here is a description of the nr pipeline.
+
+# Tasks
+
+- [ ]  Write the nr pipeline
+    - [ ] Write the first part
+- [ ] Write some tests
+- [x] A finished task
