@@ -1,8 +1,9 @@
 import re
 import csv
-import utils
 import logging
 import datetime
+
+from pymotifs import utils
 
 logger = logging.getLogger(__name__)
 
