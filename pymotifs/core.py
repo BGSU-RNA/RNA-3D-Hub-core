@@ -13,8 +13,8 @@ except:
     pass
 
 from pymotifs.models import PdbAnalysisStatus
-from pymotifs.utils import CifData
-from pymotifs.utils import StructureData
+from pymotifs.utils.cache import CifData
+from pymotifs.utils.cache import StructureData
 
 
 class StageFailed(Exception):
@@ -62,8 +62,6 @@ class Matlab(object):
     def __init__(self, root):
         self.logger = logging.getLogger('core.Matlab')
         self.mlab = None
-        self.something('hello',
-            'hello')
         self._root = root
 
     def __startup__(self):
