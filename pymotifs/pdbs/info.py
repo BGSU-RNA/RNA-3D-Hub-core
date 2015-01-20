@@ -4,27 +4,15 @@ pdb files, old files are removed. Uses PDB RESTful services for getting
 custom reports.
 """
 
-import core
-from utils.pdb import CustomReportHelper
+from pymotifs import core
+from pymotifs.utils.pdb import CustomReportHelper
 
-from models import PdbInfo
+from pymotifs.models import PdbInfo
 
 
-class PdbInfoLoader(core.Loader):
+class Loader(core.SimpleLoader):
     """This loads information about entire files into our database.
     """
-
-    fields = [
-        'structureId',
-        'structureTitle',
-        'experimentalTechnique',
-        'depositionDate',
-        'releaseDate',
-        'revisionDate',
-        'ndbId',
-        'resolution',
-        'classification',
-    ]
 
     names = {
         'structureId': 'id',
@@ -39,19 +27,11 @@ class PdbInfoLoader(core.Loader):
     }
 
     def __init__(self, *args):
-        super(PdbInfoLoader, self).__init__(*args)
-        self.helper = CustomReportHelper(fields=self.fields)
+        super(Loader, self).__init__(*args)
+        self.helper = CustomReportHelper(fields=self.names.keys())
 
-    def has_data(self, pdb, **kwargs):
-        with self.session() as session:
-            query = session.query(PdbInfo).filter_by(id=pdb)
-            return bool(query.count())
-
-    def remove(self, pdb):
-        with self.session() as session:
-            session.query(PdbInfo).\
-                filter_by(id=pdb).\
-                delete(synchronize_session='fetch')
+    def query(self, session, pdb):
+        return session.query(PdbInfo).filter_by(id=pdb)
 
     def rename(self, report):
         renamed = {}
