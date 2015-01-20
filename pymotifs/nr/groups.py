@@ -111,6 +111,20 @@ class Grouper(core.Stage):
                     graph.add_edge(chain1, chain2)
         return connected.connected_components(graph)
 
+    def representative(self, group):
+        """Compute the representative for a group of chains.
+
+        :group: A list of chains.
+        :returns: The representative entry from the list.
+        """
+        pass
+
     def __call__(self, pdbs):
         chains = self.nr_chains(pdbs)
-        return self.group(chains)
+        groups = []
+        for group in self.group(chains):
+            groups.append({
+                'members': group,
+                'representative': self.representative(group)
+            })
+        return groups
