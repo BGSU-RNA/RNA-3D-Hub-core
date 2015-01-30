@@ -7,14 +7,20 @@
 def findconnectedsets(connections):
 
   considered = {}
-  linked = {}
   for i in connections.keys():
   	considered[i] = False
+  	for j in connections[i]:
+  		considered[j] = False
 
   for i in connections.keys():
   	connections[i] = connections[i] | set([i])    # make sure all connections are reflexive; i is connected to i
   	for j in connections[i]:
-  		connections[j] = connections[j] | set([i])  # make sure all connections are entered in reversed order too; symmetrize
+  		if j in connections:
+	  		connections[j] = connections[j] | set([i])  # make sure all connections are entered in reversed order too; symmetrize
+	  	else:
+	  		connections[j] = set([i])
+
+  linked = {}
 
   for i in connections.keys():              # loop through all keys for connections
   	if not considered[i]:                   # if this key was not already encountered,
@@ -35,7 +41,6 @@ if __name__ == "__main__":
 	connections['A'] = ['B','C']
 	connections['B'] = ['D']
 	connections['C'] = ['E']
-	connections['D'] = ['F']
 	connections['E'] = ['A']
 	connections['F'] = ['B']
 	connections['zA'] = ['zB','zC']
