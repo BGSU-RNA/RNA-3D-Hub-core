@@ -26,6 +26,11 @@ class RepresentativeBpTest(QueryUtilTest):
         ans = 1321
         self.assertEquals(ans, val)
 
+    def test_it_can_limit_by_family(self):
+        val = self.db_obj.representative('1J5E', 'A', count=True, family='tHH')
+        ans = 4
+        self.assertEquals(ans, val)
+
     def test_it_can_get_the_long_range_count(self):
         val = self.db_obj.representative('1EIY', 'C', count=True,
                                          range_cutoff=st.LONG_RANGE_CUTOFF)
@@ -69,6 +74,12 @@ class CrossChainTest(QueryUtilTest):
         ans = 3
         self.assertEquals(ans, val)
 
+    def test_it_can_limit_by_family(self):
+        val = self.db_obj.cross_chain('1ET4', 'A', other_chain=['B', 'E'],
+                                      count=True, family='tWS')
+        ans = 1
+        self.assertEquals(ans, val)
+
 
 class BetweenChainTest(QueryUtilTest):
     query_class = st.BasePairQueries
@@ -81,4 +92,10 @@ class BetweenChainTest(QueryUtilTest):
     def test_counts_from_several_chosen_loops(self):
         val = self.db_obj.cross_chain('1ET4', ['A', 'B'], count=True)
         ans = 4
+        self.assertEquals(ans, val)
+
+    def test_can_limit_by_family(self):
+        val = self.db_obj.cross_chain('1ET4', ['A', 'B'], count=True,
+                                      family='tWS')
+        ans = 2
         self.assertEquals(ans, val)
