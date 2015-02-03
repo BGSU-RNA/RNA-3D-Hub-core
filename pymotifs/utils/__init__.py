@@ -48,6 +48,13 @@ class GetCustomReportError(Exception):
 
 
 def grouper(n, iterable):
+    """Group an iterable in chunks of a max size.
+
+    :n: The max size.
+    :iterable: The iterable to group.
+    :returns: A iterable with at most n entries per chunk.
+    """
+
     iterator = iter(iterable)
     while True:
         chunk = tuple(it.islice(iterator, n))
