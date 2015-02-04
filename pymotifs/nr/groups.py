@@ -34,12 +34,21 @@ class Grouper(object):
         """
 
         def ordering(chain):
-            return (float(chain['bp']) / float(chain['length']),
-                    float(chain['length']), chain['name'])
+            if chain['bp'] == 0:
+                bp_nt = 0
+            else:
+                bp_nt = float(chain['bp']) / float(chain['length'])
 
-        best = max(chains, ordering)
+            name = chain['name']
+            if isinstance(name, list):
+                name = min(name)
+
+            return (bp_nt, chain['length'], 1.0 / ord(name))
+
+        best = max(chains, key=ordering)
         best['equivalent'] = list(chains)
         best['equivalent'].remove(best)
+
         return best
 
     def rna_chains(self, pdb):
@@ -71,7 +80,8 @@ class Grouper(object):
             'internal': 0,
             'external': None,
             'bp': 0,
-            'length': 0
+            'length': 0,
+            'entity': []
         }
         chains.sort(key=lambda c: c['name'])
 
@@ -79,6 +89,7 @@ class Grouper(object):
             merged['id'].append(chain['id'])
             merged['db_id'].append(chain['db_id'])
             merged['name'].append(chain['name'])
+            merged['entity'].append(chain['entity'])
             merged['internal'] += chain['internal']
             merged['bp'] += merged['bp']
             merged['length'] += merged['length']
@@ -145,8 +156,12 @@ class Grouper(object):
         """Get all chains which are non-redundant from a cif file.
         """
         chains = self.chains(pdb)
-        grouped = it.groupby(chains, lambda c: c['entity'])
-        return [self.best(list(chains)) for chain in grouped]
+        key = lambda c: c['entity']
+        grouped = it.groupby(sorted(chains, key=key), key)
+        best = []
+        for _, group in grouped:
+            best.append(self.best(list(group)))
+        return best
 
     def alignment_info(self, chains):
         """Load the data about alignments between all pairs of chains.
@@ -202,9 +217,14 @@ class Grouper(object):
 
             result = query.one()
             data['db_id'] = result.id
-            data['length'] = result.chainLength
+            data['exp_length'] = result.chainLength
             data['source'] = result.source
             data['entity'] = result.entityId
+
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.id).\
+                filter_by(pdb_id=pdb, unit_type_id='rna')
+            data['length'] = query.count()
 
         data.update(self.bps(pdb, chain))
         return data
