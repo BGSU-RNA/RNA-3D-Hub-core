@@ -65,7 +65,11 @@ class Grouper(object):
 
     def merge_chains(self, chains):
         """This merges a list of chain dictonaries into one dictonary. It will
-        contain
+        contain the same information as the original chains but merged for all
+        chains. This means that the id is a comma seperated string of the
+        composite ids. The pdb is still a string. db_id, name, and entity are
+        lists of all the chain information. internal, bp and length are the sum
+        of the given list. external is recomputed for this set of chains.
 
         :chains: A list of chains to merge.
         :returns: The merged dictonary.
