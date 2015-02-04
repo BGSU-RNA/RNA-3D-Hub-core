@@ -85,6 +85,7 @@ class Grouper(object):
             'external': None,
             'bp': 0,
             'length': 0,
+            'exp_length': 0,
             'entity': []
         }
         chains.sort(key=lambda c: c['name'])
@@ -95,8 +96,9 @@ class Grouper(object):
             merged['name'].append(chain['name'])
             merged['entity'].append(chain['entity'])
             merged['internal'] += chain['internal']
-            merged['bp'] += merged['bp']
-            merged['length'] += merged['length']
+            merged['bp'] += chain['bp']
+            merged['length'] += chain['length']
+            merged['exp_length'] += chain['exp_length']
 
         merged['id'] = ','.join(merged['id'])
         merged['entity'].sort()
@@ -228,7 +230,7 @@ class Grouper(object):
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.id).\
-                filter_by(pdb_id=pdb, unit_type_id='rna')
+                filter_by(pdb_id=pdb, chain=chain, unit_type_id='rna')
             data['length'] = query.count()
 
         data.update(self.bps(pdb, chain))
