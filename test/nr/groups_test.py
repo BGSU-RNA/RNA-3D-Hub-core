@@ -1,8 +1,6 @@
 from test import StageTest
 from nose import SkipTest
 
-from pprint import pprint
-
 from pymotifs.nr.groups import Grouper
 
 
@@ -31,6 +29,12 @@ class InfoLoadingTest(StageTest):
     def test_loads_external_cww(self):
         self.assertEquals(0, self.info['external'])
 
+    def test_loads_resolved_length_if_many_chains(self):
+        self.assertEquals(35, self.loader.info('1ET4', 'A')['length'])
+
+    def test_loads_experimental_length_if_many_chains(self):
+        self.assertEquals(35, self.loader.info('1ET4', 'A')['exp_length'])
+
     def test_loads_resolved_length(self):
         self.assertEquals(1530, self.info['length'])
 
@@ -38,8 +42,17 @@ class InfoLoadingTest(StageTest):
         self.assertEquals(1542, self.info['exp_length'])
 
     def test_loads_source_info(self):
-        raise SkipTest()
-        self.assertEquals(None, self.info['source'])
+        self.assertEquals([562], self.info['source'])
+
+    def test_can_load_source_when_mapping_to_species(self):
+        self.assertEquals([562], self.loader.info('3J01', 'A')['source'])
+
+    def test_can_load_source_when_there_are_several(self):
+        info = self.loader.info('3T4B', 'A')
+        self.assertEquals([32630, 11103], info['source'])
+
+    def test_can_load_source_when_source_is_none(self):
+        self.assertEquals(None, self.loader.info('1ET4', 'A')['source'])
 
 
 class MergeChainsTest(StageTest):
@@ -75,16 +88,19 @@ class MergeChainsTest(StageTest):
         self.assertEquals([1, 3], chains['entity'])
 
     def test_can_sum_all_internal_bps(self):
-        raise SkipTest()
+        self.assertEquals(18, self.chains['internal'])
 
     def test_can_sum_all_bps(self):
-        raise SkipTest()
+        self.assertEquals(28, self.chains['bp'])
 
     def test_can_compute_external(self):
-        raise SkipTest()
+        self.assertEquals(0, self.chains['external'])
 
-    def test_it_sums_the_length(self):
-        raise SkipTest()
+    def test_it_sums_the_resolved_length(self):
+        self.assertEquals(70, self.chains['length'])
+
+    def test_it_sums_the_experimental_length(self):
+        self.assertEquals(70, self.chains['exp_length'])
 
 
 class BestChainsTest(StageTest):

@@ -218,14 +218,17 @@ class Grouper(object):
         with self.session() as session:
             query = session.query(mod.ChainInfo.id,
                                   mod.ChainInfo.chainLength,
-                                  mod.ChainInfo.source,
+                                  mod.ChainInfo.taxonomyId,
                                   mod.ChainInfo.entityId).\
                 filter_by(pdb_id=pdb, chainId=chain)
 
             result = query.one()
             data['db_id'] = result.id
             data['exp_length'] = result.chainLength
-            data['source'] = result.source
+            data['source'] = None
+            if result.taxonomyId is not None:
+                parts = result.taxonomyId.split(',')
+                data['source'] = [int(tax) for tax in parts]
             data['entity'] = result.entityId
 
         with self.session() as session:
