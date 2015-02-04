@@ -67,6 +67,13 @@ class MergeChainsTest(StageTest):
     def test_merges_the_entity_id(self):
         self.assertEquals([1, 1], self.chains['entity'])
 
+    def test_will_sort_entity_ids(self):
+        chains = self.loader.merge_chains([
+            self.loader.info('1FEU', 'A'),
+            self.loader.info('1FEU', 'B')
+        ])
+        self.assertEquals([1, 3], chains['entity'])
+
     def test_can_sum_all_internal_bps(self):
         raise SkipTest()
 

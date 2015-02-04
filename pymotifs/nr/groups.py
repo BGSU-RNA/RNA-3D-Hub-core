@@ -95,6 +95,7 @@ class Grouper(object):
             merged['length'] += merged['length']
 
         merged['id'] = ','.join(merged['id'])
+        merged['entity'].sort()
         merged['external'] = helper.cross_chain(merged['pdb'], merged['name'],
                                                 count=True, family='cWW')
 
