@@ -73,6 +73,7 @@ class Grouper(object):
             'bp': 0,
             'length': 0
         }
+        chains.sort(key=lambda c: c['name'])
 
         for chain in chains:
             merged['id'].append(chain['id'])

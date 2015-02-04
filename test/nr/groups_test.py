@@ -45,22 +45,35 @@ class InfoLoadingTest(StageTest):
 class MergeChainsTest(StageTest):
     loader_class = Grouper
 
+    def setUp(self):
+        super(MergeChainsTest, self).setUp()
+        self.chains = self.loader.merge_chains([
+            self.loader.info('1ET4', 'B'),
+            self.loader.info('1ET4', 'A')
+        ])
+
     def test_can_merge_all_ids(self):
-        raise SkipTest()
+        self.assertEquals('1ET4|A,1ET4|B', self.chains['id'])
 
     def test_can_keep_the_pdb(self):
-        raise SkipTest()
+        self.assertEquals('1ET4', self.chains['pdb'])
 
-    def test_can_merge_all_chains(self):
-        raise SkipTest()
+    def test_can_merge_all_chain_names(self):
+        self.assertEquals(['A', 'B'], self.chains['name'])
 
-    def test_can_sum_all_internal(self):
+    def test_merges_db_id(self):
+        self.assertEquals([301, 302], self.chains['db_id'])
+
+    def test_can_sum_all_internal_bps(self):
         raise SkipTest()
 
     def test_can_sum_all_bps(self):
         raise SkipTest()
 
     def test_can_compute_external(self):
+        raise SkipTest()
+
+    def test_it_sums_the_length(self):
         raise SkipTest()
 
 
@@ -77,6 +90,10 @@ class ChainsTest(StageTest):
 
     def test_it_can_create_proper_mappings(self):
         grouping = self.loader.chains('1ET4')
-        val = sorted([sorted(group['name']) for group in grouping])
+        val = sorted([group['name'] for group in grouping])
         ans = [['A', 'B'], ['C', 'D'], ['E']]
         self.assertEquals(ans, val)
+
+    # def test_it_can_process_1F5H(self):
+    #     val = self.loader.chains('1F5H')
+    #     self.assertEquals(2, len(val))
