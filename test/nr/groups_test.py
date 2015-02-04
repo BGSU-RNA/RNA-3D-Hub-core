@@ -94,6 +94,26 @@ class ChainsTest(StageTest):
         ans = [['A', 'B'], ['C', 'D'], ['E']]
         self.assertEquals(ans, val)
 
-    # def test_it_can_process_1F5H(self):
-    #     val = self.loader.chains('1F5H')
-    #     self.assertEquals(2, len(val))
+    def test_it_can_process_1F5H(self):
+        val = self.loader.chains('1F5H')
+        self.assertEquals(1, len(val))
+
+    def test_it_can_process_pseudoknotted_chains(self):
+        val = self.loader.chains('1F5U')
+        self.assertEquals(1, len(val))
+
+    def test_it_can_process_paired_strands(self):
+        val = self.loader.chains('1EKD')
+        self.assertEquals(1, len(val))
+
+    def test_it_can_process_identical_chains(self):
+        val = self.loader.chains('1EIY')
+        self.assertEquals(1, len(val))
+
+    def test_it_can_process_paired_identical_chains(self):
+        val = self.loader.chains('1FEU')
+        self.assertEquals(2, len(val))
+
+    def test_can_process_a_messy_nmr(self):
+        val = self.loader.chains('1FCW')
+        self.assertEquals(4, len(val))
