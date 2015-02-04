@@ -34,18 +34,17 @@ def findconnectedsets(connections):
                         linked[i] = linked[i] | connections[j] # add these to the connections
                         considered[j] = True            # don't consider these connections again
                         newconnections = True           # a new connection was found
-            print linked[i]
 
     return linked
 
 if __name__ == "__main__":
     connections = {}
-    connections['A'] = ['B','C']
+    connections['A'] = ['B', 'C']
     connections['B'] = ['D']
     connections['C'] = ['E']
     connections['E'] = ['A']
     connections['F'] = ['B']
-    connections['zA'] = ['zB','zC']
+    connections['zA'] = ['zB', 'zC']
     connections['zB'] = ['zD']
     connections['zC'] = ['zE']
     connections['zD'] = ['zF']
@@ -53,6 +52,5 @@ if __name__ == "__main__":
     connections['zF'] = ['zB']
     for key in connections.keys():
         connections[key] = set(connections[key])
-
 
     findconnectedsets(connections)
