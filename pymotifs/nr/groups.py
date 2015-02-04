@@ -1,10 +1,12 @@
 import itertools as it
+import collections as coll
 
 import networkx as nx
 import networkx.algorithms.components.connected as connected
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.nr import connectedsets as cs
 from pymotifs.utils.structures import BasePairQueries as BpHelper
 from pymotifs.utils.structures import LONG_RANGE_CUTOFF
 
@@ -48,8 +50,43 @@ class Grouper(object):
         """
         with self.session() as session:
             query = session.query(mod.ChainInfo.chainId).\
-                filter_by(entityMacromoleculeType='Polyribonucleotide (RNA)')
+                filter_by(entityMacromoleculeType='Polyribonucleotide (RNA)').\
+                filter_by(pdb_id=pdb)
             return [result.chainId for result in query]
+
+    def merge_chains(self, chains):
+        """This merges a list of chain dictonaries into one dictonary. It will
+        contain
+
+        :chains: A list of chains to merge.
+        :returns: The merged dictonary.
+        """
+
+        helper = self.bp_helper
+        merged = {
+            'id': [],
+            'pdb': chains[0]['pdb'],
+            'db_id': [],
+            'name': [],
+            'internal': 0,
+            'external': None,
+            'bp': 0,
+            'length': 0
+        }
+
+        for chain in chains:
+            merged['id'].append(chain['id'])
+            merged['db_id'].append(chain['db_id'])
+            merged['name'].append(chain['name'])
+            merged['internal'] += chain['internal']
+            merged['bp'] += merged['bp']
+            merged['length'] += merged['length']
+
+        merged['id'] = ','.join(merged['id'])
+        merged['external'] = helper.cross_chain(merged['pdb'], merged['name'],
+                                                count=True, family='cWW')
+
+        return merged
 
     def autonomous(self, chains):
         """This method goes through all chains and detects those that are
@@ -60,7 +97,36 @@ class Grouper(object):
         :chains: A list of chain dictionaries.
         :returns: A list of merged chain objects.
         """
-        pass
+
+        if len(chains) == 1:
+            return [self.merge_chains(chains)]
+
+        mapping = {}
+        connections = coll.defaultdict(set)
+        helper = self.bp_helper
+
+        for chain in chains:
+            pdb = chain['pdb']
+            chain_id = chain['name']
+            mapping[chain['id']] = chain
+
+            for chain2 in chains:
+                if chain2 == chain:
+                    next
+                if helper.cross_chain(pdb, chain_id, chain2['name']):
+                    connections[chain['id']].add(chain2['id'])
+
+            if chain['id'] not in connections:
+                connections[chain['id']] = set()
+
+        groups = cs.findconnectedsets(dict(connections))
+
+        grouped = []
+        for group in groups.values():
+            merged = self.merge_chains([mapping[name] for name in group])
+            grouped.append(merged)
+
+        return grouped
 
     def chains(self, pdb):
         """Load all chains from a given pdb. This will get the RNA chains as
@@ -70,24 +136,15 @@ class Grouper(object):
         :returns: A list of dictionaries with data about all chains. The data
         is that which is provided by the info method.
         """
-        chains = self.rna_chains(pdb)
-        automous_chains = self.autonomous(chains)
-        return [self.info(pdb, chain) for chain in automous_chains]
 
-    def entity_mapping(self, pdb):
-        data = {}
-        with self.session() as session:
-            query = session.query(mod.ChainInfo).filter_by(pdb=pdb)
-            for result in query:
-                data[result.chain] = result.entity_id
-        return data
+        chains = [self.info(pdb, chain) for chain in self.rna_chains(pdb)]
+        return self.autonomous(chains)
 
     def nr_chains(self, pdb):
         """Get all chains which are non-redundant from a cif file.
         """
         chains = self.chains(pdb)
-        entity_mapping = self.entity_mapping(pdb)
-        grouped = it.groupby(chains, lambda c: entity_mapping[c['id']])
+        grouped = it.groupby(chains, lambda c: c['entity'])
         return [self.best(list(chains)) for chain in grouped]
 
     def alignment_info(self, chains):
@@ -136,13 +193,17 @@ class Grouper(object):
         }
 
         with self.session() as session:
-            query = session.query(mod.ChainInfo).\
+            query = session.query(mod.ChainInfo.id,
+                                  mod.ChainInfo.chainLength,
+                                  mod.ChainInfo.source,
+                                  mod.ChainInfo.entityId).\
                 filter_by(pdb_id=pdb, chainId=chain)
 
             result = query.one()
             data['db_id'] = result.id
             data['length'] = result.chainLength
             data['source'] = result.source
+            data['entity'] = result.entityId
 
         data.update(self.bps(pdb, chain))
         return data
