@@ -1,18 +1,15 @@
 from test import StageTest
 
+from nose import SkipTest
+
 from pymotifs.units.info import Loader
 
 from fr3d.cif.reader import Cif
 from fr3d.data import Component
 
-from pprint import pprint
-
 
 class DetectingComponentTypeTest(StageTest):
     loader_class = Loader
-
-    def setUp(self):
-        super(DetectingComponentTypeTest, self).setUp()
 
     def test_knows_if_unit_is_rna(self):
         val = self.loader.type(Component([], sequence='A'))
@@ -51,8 +48,8 @@ class CreatingUnitsTest(StageTest):
     def setUp(self):
         super(CreatingUnitsTest, self).setUp()
         residues = self.__class__.structure.residues(number=103, chain='A')
-        residues = list(residues)
-        self.data = self.loader.as_unit(residues[0])
+        self.residues = list(residues)
+        self.data = self.loader.as_unit(self.residues[0])
 
     def test_sets_the_id(self):
         val = self.data.id
@@ -94,15 +91,17 @@ class CreatingUnitsTest(StageTest):
         ans = '1_555'
         self.assertEqual(ans, val)
 
-    # def test_sets_the_chain_index(self):
-    #     val = self.data.chain_index
-    #     ans = 0
-    #     self.assertEqual(ans, val)
+    def test_sets_the_chain_index(self):
+        raise SkipTest()
+        val = self.data.chain_index
+        ans = 0
+        self.assertEqual(ans, val)
 
-    # def test_sets_the_global_index(self):
-    #     val = self.data.global_index
-    #     ans = 0
-    #     self.assertEqual(ans, val)
+    def test_sets_the_global_index(self):
+        raise SkipTest()
+        val = self.data.global_index
+        ans = 0
+        self.assertEqual(ans, val)
 
     def test_sets_the_type(self):
         val = self.data.unit_type_id

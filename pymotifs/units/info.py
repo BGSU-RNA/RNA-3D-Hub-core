@@ -13,6 +13,9 @@ class Loader(core.SimpleLoader):
     def query(self, session, pdb):
         return session(UnitInfo).filter_by(pdb_id=pdb)
 
+    def transform(self, pdb):
+        return self.cif(pdb).structure()
+
     def type(self, unit):
         seq = unit.sequence.upper()
         if seq in ['A', 'C', 'G', 'U']:
@@ -38,8 +41,4 @@ class Loader(core.SimpleLoader):
                         unit_type_id=self.type(nt))
 
     def data(self, structure):
-        if isinstance(structure, str):
-            cif = self.cif(structure)
-            structure = cif.structure()
-        for nt in structure.residues(polymeric=None):
-            yield self.as_unit(nt)
+        return [self.as_unit(nt) for nt in structure.residues(polymeric=None)]

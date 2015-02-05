@@ -1,5 +1,4 @@
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.nr.groups import Grouper
 

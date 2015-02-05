@@ -20,3 +20,11 @@ class StageTest(ut.TestCase):
     def setUp(self):
         if self.loader_class:
             self.loader = self.loader_class(config, Session)
+
+
+class QueryUtilTest(ut.TestCase):
+    query_class = None
+
+    def setUp(self):
+        if self.query_class:
+            self.db_obj = self.query_class(Session)

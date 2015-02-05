@@ -12,9 +12,10 @@ try:
 except:
     pass
 
+from fr3d.cif.reader import Cif
+
 from pymotifs.models import PdbAnalysisStatus
-from pymotifs.utils.cache import CifData
-from pymotifs.utils.cache import StructureData
+from pymotifs import utils as ut
 
 
 class StageFailed(Exception):
@@ -346,8 +347,7 @@ class Loader(Stage):
         :session_maker: The Session object.
         """
         super(Loader, self).__init__(*args)
-        self._cif = CifData(self.config)
-        self._structure = StructureData(self.config)
+        self._cif = ut.CifFileFinder(self.config)
 
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
@@ -378,7 +378,8 @@ class Loader(Stage):
         :pdb: PDB id to parse.
         :returns: A parsed cif file.
         """
-        return self._cif(pdb)
+        with open(self._cif(pdb), 'rb') as raw:
+            return Cif(raw)
 
     def structure(self, pdb):
         """A method to load the cif file and get the structure for the given
@@ -386,7 +387,7 @@ class Loader(Stage):
         :pdb: The pdb id to get the structure for.
         :returns: The FR3D structure for the given PDB.
         """
-        return self._structure(pdb)
+        return self.cif(pdb).structure()
 
     def store(self, data):
         """Store the given data. The data is written in chunks of
