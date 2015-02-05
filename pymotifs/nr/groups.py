@@ -10,7 +10,7 @@ from pymotifs.nr import connectedsets as cs
 from pymotifs.utils import structures as st
 
 
-class Grouper(object):
+class Grouper(core.Stage):
     """This is a class to determine the grouping of chains in a pdb. This will
     load all non-redundant chains and then group them by similarity. It
     produces a list of chains which are non-redundant. This does not process
@@ -18,11 +18,10 @@ class Grouper(object):
     does make a note about those other chains.
     """
 
-    def __init__(self, config, session_maker):
-        self.config = config
-        self.session = core.Session(session_maker)
-        self.bp_helper = st.BpHelper(session_maker)
-        self.struct_helper = st.Structure(session_maker)
+    def __init__(self, *args, **kwargs):
+        super(Grouper, self).__init__(*args, **kwargs)
+        self.bp_helper = st.BasePairQueries(self.session.maker)
+        self.struct_helper = st.Structure(self.session.maker)
 
     def best(self, chains):
         """Compute the best chain for a list of chains
@@ -226,7 +225,12 @@ class Grouper(object):
             data['exp_length'] = result.chainLength
             data['entity'] = result.entityId
 
-        data['source'] = self.struct_helper.source(pdb, chain)
+        try:
+            data['source'] = self.struct_helper.source(pdb, chain)
+        except:
+            self.logger.warn("Failed to find all taxon ids for %s, %s", pdb,
+                             chain)
+            data['source'] = None
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.id).\
