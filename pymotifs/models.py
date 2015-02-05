@@ -27,7 +27,6 @@ def camelize_classname(base, tablename, table):
 
 
 def should_reflect(tablename, *args):
-    print(tablename)
     name = camelize_classname(None, tablename, None)
     return name not in globals()
 
