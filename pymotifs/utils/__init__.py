@@ -152,18 +152,25 @@ class StructureFileFinder(object):
             raise ValueError("Must define an extension")
 
     def __call__(self, pdb):
-        filename = os.path.abspath(os.path.join(self.location, pdb + '.' +
-                                                self.extension))
+        filename = os.path.abspath(os.path.join(self.location,
+                                                pdb + '.' + self.extension))
 
-        if not os.path.exists(filename) and self.strict:
+        if not os.path.exists(filename):
             msg = "Could not find CIF file for %s.  Expected at: %s"
             raise MissingFileException(msg % (pdb, filename))
+        if not self.strict:
+            filename = None
+
         return filename
 
 
 class CifFileFinder(StructureFileFinder):
+    """This is a class that can find cif files. It looks into the configure
+    PDBFiles directory for cif files. It will return the full path to the file,
+    or raise an exception if it could not be found in strict mode. If not
+    strict it returns None.
+    """
     extension = 'cif'
-    pass
 
 
 class PickleFileFinder(StructureFileFinder):
