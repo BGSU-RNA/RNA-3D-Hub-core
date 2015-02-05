@@ -1,8 +1,8 @@
-import core
+from pymotifs import core
 
-from exp_seq.info import Loader as InfoLoader
-from exp_seq.mapping import Loader as MappingLoader
-from exp_seq.positions import Loader as PositionsLoader
+from pymotifs.exp_seq.info import Loader as InfoLoader
+from pymotifs.exp_seq.mapping import Loader as MappingLoader
+from pymotifs.exp_seq.positions import Loader as PositionsLoader
 
 
 class Loader(core.MultiLoader):

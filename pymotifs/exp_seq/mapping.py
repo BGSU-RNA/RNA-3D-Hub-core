@@ -1,14 +1,8 @@
-import logging
+from pymotifs import core
+from pymotifs import utils
 
-import core
-import utils
-
-from models import ExpSeqInfo as Exp
-from models import ExpSeqUnitMapping as Mapping
-
-from rnastructure.tertiary.cif import CIF
-
-logger = logging.getLogger(__name__)
+from pymotifs.models import ExpSeqInfo as Exp
+from pymotifs.models import ExpSeqUnitMapping as Mapping
 
 
 class Loader(core.Loader):
@@ -40,18 +34,18 @@ class Loader(core.Loader):
 
     def data(self, entry, **kwargs):
         obs_id, pdb, chain = entry
-        with open(self.finder(pdb), 'rb') as raw:
-            cif = CIF(raw)
+        cif = self.cif(pdb)
 
         chain = cif.chain('1_555', 1, chain)
         if not chain:
-            logging.error("Chain %s is unmappable", chain)
+            self.logger.error("Chain %s is unmappable", chain)
             raise core.SkipValue("Could not get chain")
 
         try:
             seq = chain.experimental_sequence_mapping()
         except:
-            logging.warning("Failed to get mapping for: %s, %s", pdb, chain)
+            self.logger.warning("Failed to get mapping for: %s, %s", pdb,
+                                chain)
             raise core.SkipValue("Could not get mapping")
 
         seen = set()

@@ -1,8 +1,8 @@
-import core
-import utils
+from pymotifs import core
+from pymotifs import utils
 
-from models import ExpSeqInfo as Exp
-from models import ExpSeqPosition as Position
+from pymotifs.models import ExpSeqInfo as Exp
+from pymotifs.models import ExpSeqPosition as Position
 
 from rnastructure.tertiary.cif import CIF
 
