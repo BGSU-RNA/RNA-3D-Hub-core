@@ -17,13 +17,12 @@ class Loader(core.SimpleLoader):
     names = {
         'structureId': 'id',
         'structureTitle': 'title',
-        'experimentalTechnique': 'experimental_technique',
+        'experimentalTechnique': 'experimental_techinque',
         'depositionDate': 'deposition_date',
         'releaseDate': 'release_date',
         'revisionDate': 'revision_date',
         'ndbId': 'ndb_id',
-        'resolution': 'resolution',
-        'classification': 'classification',
+        'resolution': 'resolution'
     }
 
     def __init__(self, *args):
@@ -37,7 +36,11 @@ class Loader(core.SimpleLoader):
         renamed = {}
         for key, name in self.names.items():
             renamed[name] = report[key]
+        renamed['resolution'] = float(renamed['resolution'])
         return renamed
 
     def data(self, pdb):
-        return [PdbInfo(**self.rename(report)) for report in self.helper(pdb)]
+        data = self.helper(pdb)
+        if not data:
+            raise core.SkipPdb("Could not load data about: %s" % pdb)
+        return [PdbInfo(**self.rename(report)) for report in data]

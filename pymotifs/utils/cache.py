@@ -15,7 +15,7 @@ class CacheData(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, config):
-        pass
+        self.config = config
 
     @abc.abstractmethod
     def cachename(self, pdb):
@@ -58,6 +58,9 @@ class CifData(CacheData):
     def __init__(self, config):
         self.cache = PickleFileFinder(config, strict=False)
         self.cif = CifFileFinder(config)
+
+    def filename(self, pdb):
+        return self.cif(pdb)
 
     def cache(self, filename, cif):
         with open(filename, 'rb') as out:

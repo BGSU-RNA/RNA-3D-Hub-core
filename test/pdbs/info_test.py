@@ -1,12 +1,10 @@
-import unittest as ut
+from test import StageTest
 
-from pymotifs.pdbs import info
-from pymotifs.models import Session
+from pymotifs.pdbs.info import Loader
 
 
-class InfoTest(ut.TestCase):
-    def setUp(self):
-        self.loader = info.PdbInfoLoader({}, Session)
+class InfoTest(StageTest):
+    loader_class = Loader
 
     def test_knows_if_data_is_present(self):
         self.assertTrue(self.loader.has_data('2AW7'))
@@ -14,9 +12,7 @@ class InfoTest(ut.TestCase):
     def test_knows_if_data_is_missing(self):
         self.assertFalse(self.loader.has_data('bob'))
 
-    # def test_it_can_remove_data(self):
-    #     self.loader.remove('2AW7')
-    #     self.assertFalse(self.loader.has_data('2AW7'))
-
     def test_it_can_create_data(self):
-        pass
+        val = self.loader.data('2AW7')[0].resolution
+        ans = 3.46
+        self.assertEqual(ans, val)

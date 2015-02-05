@@ -91,10 +91,11 @@ class CustomReportHelper(object):
         if fields:
             self.fields = fields
 
-    def parse(self, raw):
-        lines = raw.split('<br />')
+    def parse(self, response):
+        lines = response.text.split('<br />')
         description = lines.pop(0)
         keys = description.split(',')
+        print(response.text)
 
         report = []
         for line in lines:
@@ -124,8 +125,8 @@ class CustomReportHelper(object):
 
         params = {
             'customReportColumns': ','.join(self.fields),
-            'format': 'xml',
-            'pdbsids': pdb_id
+            'format': 'csv',
+            'pdbids': pdb_id
         }
         logger.info('Getting custom report for %s', pdb_id)
         return self.helper(self.url, params=params)
