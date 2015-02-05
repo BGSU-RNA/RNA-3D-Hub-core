@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 import pymotifs.utils as ut
 import pymotifs.core as core
-from pymotifs.models import NtQuality
+from pymotifs.models import UnitQuality as Quality
 from pymotifs.models import PdbUnitIdCorrespondence as Unit
 
 from rnastructure.util import unit_ids as uids
@@ -86,15 +86,15 @@ class Loader(core.Loader):
 
     def remove(self, pdb):
         with self.session() as session:
-            session.query(NtQuality).\
-                join(Unit, Unit.unit_id == NtQuality.unit_id).\
+            session.query(Quality).\
+                join(Unit, Unit.unit_id == Quality.unit_id).\
                 filter(Unit.pdb == pdb).\
                 delete()
 
     def has_data(self, pdb):
         with self.session() as session:
-            count = session.query(NtQuality).\
-                join(Unit, Unit.unit_id == NtQuality.unit_id).\
+            count = session.query(Quality).\
+                join(Unit, Unit.unit_id == Quality.unit_id).\
                 filter(Unit.pdb == pdb).\
                 count()
             return bool(count)
@@ -109,4 +109,4 @@ class Loader(core.Loader):
             return
 
         for entry in parser.nts():
-            yield NtQuality(**entry)
+            yield Quality(**entry)

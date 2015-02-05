@@ -2,7 +2,7 @@ import unittest
 
 from test import StageTest
 
-import pymotifs.nts.quality as ntq
+import pymotifs.units.quality as ntq
 
 
 class FileHelperTest(StageTest):
