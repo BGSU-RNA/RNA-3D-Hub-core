@@ -7,8 +7,7 @@ import networkx.algorithms.components.connected as connected
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.nr import connectedsets as cs
-from pymotifs.utils.structures import BasePairQueries as BpHelper
-from pymotifs.utils.structures import LONG_RANGE_CUTOFF
+from pymotifs.utils import structures as st
 
 
 class Grouper(object):
@@ -22,7 +21,8 @@ class Grouper(object):
     def __init__(self, config, session_maker):
         self.config = config
         self.session = core.Session(session_maker)
-        self.bp_helper = BpHelper(session_maker)
+        self.bp_helper = st.BpHelper(session_maker)
+        self.struct_helper = st.Structure(session_maker)
 
     def best(self, chains):
         """Compute the best chain for a list of chains
@@ -191,7 +191,7 @@ class Grouper(object):
         return {
             'bp': helper.representative(pdb, chain, count=True),
             'lr': helper.representative(pdb, chain, count=True,
-                                        range_cutoff=LONG_RANGE_CUTOFF),
+                                        range_cutoff=st.LONG_RANGE_CUTOFF),
             'internal': helper.representative(pdb, chain, count=True,
                                               family='cWW'),
             'external': helper.cross_chain(pdb, chain, count=True,
@@ -218,18 +218,15 @@ class Grouper(object):
         with self.session() as session:
             query = session.query(mod.ChainInfo.id,
                                   mod.ChainInfo.chainLength,
-                                  mod.ChainInfo.taxonomyId,
                                   mod.ChainInfo.entityId).\
                 filter_by(pdb_id=pdb, chainId=chain)
 
             result = query.one()
             data['db_id'] = result.id
             data['exp_length'] = result.chainLength
-            data['source'] = None
-            if result.taxonomyId is not None:
-                parts = result.taxonomyId.split(',')
-                data['source'] = [int(tax) for tax in parts]
             data['entity'] = result.entityId
+
+        data['source'] = self.struct_helper.source(pdb, chain)
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.id).\
