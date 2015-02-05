@@ -37,6 +37,12 @@ class RepresentativeBpTest(QueryUtilTest):
         ans = 3
         self.assertEquals(ans, val)
 
+    def test_it_counts_only_in_one_model(self):
+        raise SkipTest()
+
+    def test_it_counts_only_in_one_symmetry_operator(self):
+        raise SkipTest()
+
 
 class CrossChainTest(QueryUtilTest):
     query_class = st.BasePairQueries
@@ -80,6 +86,12 @@ class CrossChainTest(QueryUtilTest):
         ans = 1
         self.assertEquals(ans, val)
 
+    def test_it_can_find_only_in_one_model(self):
+        raise SkipTest()
+
+    def test_it_can_find_in_only_one_symmetry_operator(self):
+        raise SkipTest()
+
 
 class BetweenChainTest(QueryUtilTest):
     query_class = st.BasePairQueries
@@ -99,6 +111,12 @@ class BetweenChainTest(QueryUtilTest):
                                       family='tWS')
         ans = 2
         self.assertEquals(ans, val)
+
+    def test_it_searches_only_in_one_model(self):
+        raise SkipTest()
+
+    def test_it_searches_only_in_one_symmetry_operator(self):
+        raise SkipTest()
 
 
 class SourceTest(QueryUtilTest):

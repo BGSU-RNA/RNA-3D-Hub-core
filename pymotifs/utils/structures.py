@@ -299,6 +299,7 @@ class BasePairQueries(Base):
             join(u2, u2.id == inter.unit2_id).\
             join(bp, bp.id == inter.f_lwbp).\
             filter(bp.is_forward == True).\
+            filter(u1.model == u2.model).\
             filter(inter.pdb_id == pdb)
 
         if symmetry:
