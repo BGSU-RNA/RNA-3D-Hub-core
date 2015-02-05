@@ -46,7 +46,16 @@ where
 '''
 
 
+class UnknownTaxonomyException(Exception):
+    """This is raised when we are looking for taxonomy ids but cannot find them
+    all.
+    """
+    pass
+
+
 class Base(object):
+    """A base class for the query classes.
+    """
     def __init__(self, maker):
         self.session = core.Session(maker)
 
@@ -146,6 +155,37 @@ class Structure(Base):
                 })
 
         return loops
+
+    def source(self, pdb, chain):
+        """This is a method to extract all species level taxonomy ids for a
+        given chain. A chain can be composed of more than one, thus a list.
+        However, in some cases there is no known taxnomy id, in this case an
+        empty list is returned.
+
+        :pdb: The pdb to query.
+        :chain: The chain to query.
+        :returns: A list of taxonomy ids the chain has.
+        """
+
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.taxonomyId).\
+                filter_by(pdb_id=pdb, chainId=chain)
+
+            tax_ids = query.one().taxonomyId
+            if tax_ids is None:
+                return []
+
+            tax_ids = [int(tax_id) for tax_id in tax_ids.split(',')]
+
+        with self.session() as session:
+            query = session.query(mod.SpeciesMapping.species_id).\
+                filter(mod.SpeciesMapping.id.in_(tax_ids))
+            species_ids = [result.species_id for result in query]
+
+            if len(species_ids) != len(tax_ids):
+                raise UnknownTaxonomyException("Could not find all tax ids")
+
+            return sorted(species_ids)
 
 
 class BasePairQueries(Base):
