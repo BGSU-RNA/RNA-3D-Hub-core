@@ -389,7 +389,7 @@ class Loader(Stage):
         """
         return self.cif(pdb).structure()
 
-    def store(self, data):
+    def store(self, data, dry_run=False, **kwargs):
         """Store the given data. The data is written in chunks of
         self.insert_max at a time. The data can be a list or a nested set of
         iterables.
@@ -397,8 +397,14 @@ class Loader(Stage):
 
         self.logger.debug("Storing data")
         with self.session() as session:
+            def add(data):
+                if dry_run:
+                    self.logger.debug("Storing: %s", data)
+                else:
+                    session.add(data)
+
             if not isinstance(data, coll.Iterable):
-                session.add(data)
+                add(data)
             else:
                 iterator = enumerate(data)
                 if inspect.isgenerator(data) or \
@@ -407,7 +413,7 @@ class Loader(Stage):
                     iterator = enumerate(it.chain.from_iterable(data))
 
                 for index, datum in iterator:
-                    session.add(datum)
+                    add(datum)
                     if index % self.insert_max == 0:
                         session.commit()
 
@@ -436,7 +442,7 @@ class Loader(Stage):
             self.logger.warning("No data produced")
             return
 
-        self.store(data)
+        self.store(data, **kwargs)
 
 
 class SimpleLoader(Loader):
