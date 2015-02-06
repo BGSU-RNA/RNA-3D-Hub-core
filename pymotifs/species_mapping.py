@@ -44,13 +44,7 @@ class Loader(core.Loader):
             for result in query:
                 if result[0]:
                     ids.extend(result[0].split(','))
-
-        Entrez.email = self.config['email']
-        grouped = utils.grouper(self.context_limit, ids)
-        return {
-            'ids': ids,
-            'contexts': [self.context(chunk) for chunk in grouped]
-        }
+            return ids
 
     def has_data(self, *args, **kwargs):
         """Because we are using an unusual transform we don't actually need to
@@ -67,6 +61,14 @@ class Loader(core.Loader):
         """
         pass
 
+    def contexts(self, ids):
+        Entrez.email = self.config['email']
+        grouped = utils.grouper(self.context_limit, ids)
+        return {
+            'ids': ids,
+            'contexts': [self.context(chunk) for chunk in grouped]
+        }
+
     def context(self, ids):
         """Given a list of ids we post them to entrez and return a dictonary
         with the important information such as web context (stored as 'id'),
@@ -77,7 +79,9 @@ class Loader(core.Loader):
         :returns: A dictonary with 'id', 'key' and 'size' keys.
         """
 
-        handle = Entrez.epost("taxonomy", id=','.join(ids))
+        Entrez.email = self.config['email']
+        str_ids = [str(id) for id in ids]
+        handle = Entrez.epost("taxonomy", id=','.join(str_ids))
         data = Entrez.read(handle)
         return {
             'id': data['WebEnv'],
@@ -97,12 +101,14 @@ class Loader(core.Loader):
 
         data = []
         for start in range(0, context['size'], self.download_limit):
-            handle = Entrez.efectch(db="taxonomy",
-                                    retstart=start,
-                                    webenv=context['id'],
-                                    query_key=context['key'],
-                                    retmax=self.download_limit)
-            data.append(self.get_species(Entrez.read(handle)))
+            handle = Entrez.efetch(db="taxonomy",
+                                   retstart=start,
+                                   webenv=context['id'],
+                                   query_key=context['key'],
+                                   retmax=self.download_limit)
+            records = Entrez.read(handle)
+            for record in records:
+                data.append(self.get_species(record))
 
         if len(data) != context['size']:
             known = [datum.get('id') for datum in data]
@@ -134,13 +140,16 @@ class Loader(core.Loader):
             self.logger.warn("Could not determine species for %s", tax_id)
             return {}
 
+        if isinstance(species, list):
+            species = species[0]
+
         return {
             'id': tax_id,
             'species_id': int(species['TaxId']),
             'species_name': species['ScientificName']
         }
 
-    def data(self, contexts):
+    def data(self, ids):
         """Get the SpeciesInfo for all contexts. If we can't get at least the
         expected number of objects warnings will be raised.
 
@@ -148,6 +157,7 @@ class Loader(core.Loader):
         :returns: A list of SpeciesInfo objects representing the species info.
         """
 
+        contexts = self.contexts(ids)
         data = []
         for context in contexts['contexts']:
             for entry in self.taxon_entries(context):
