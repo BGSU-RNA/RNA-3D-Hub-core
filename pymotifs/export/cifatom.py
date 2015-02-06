@@ -1,6 +1,6 @@
 import os
 
-import core
+from pymotifs import core
 from .cif import CifStructure
 
 from fr3d.cif.writer.cifatom import CifAtom

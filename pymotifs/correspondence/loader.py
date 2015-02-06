@@ -1,5 +1,5 @@
-import core
-import correspondence as corr
+from pymotifs import core
+from pymotifs import correspondence as corr
 
 class Loader(core.MultiLoader):
     stages = corr.

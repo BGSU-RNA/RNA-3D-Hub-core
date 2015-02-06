@@ -1,4 +1,4 @@
-import core
+from pymotifs import core
 
 from fr3d.geometry import discrepancy
 

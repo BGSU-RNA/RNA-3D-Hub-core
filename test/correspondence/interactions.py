@@ -1,6 +1,6 @@
 import unittest as ut
 
-from models import Session
+from pymotifs.models import Session
 from correspondence.interactions import Loader
 
 

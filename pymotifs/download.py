@@ -5,8 +5,8 @@ A program for downloading .cif, files for all RNA-containing
 
 import os
 
-import core
-import utils
+from pymotifs import core
+from pymotifs import utils
 
 
 class Downloader(core.Loader):

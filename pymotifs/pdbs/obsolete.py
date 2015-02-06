@@ -1,5 +1,7 @@
-import core
-import utils
+import os
+
+from pymotifs import core
+from pymotifs import utils
 
 
 class Loader(core.Stage):
@@ -25,15 +27,15 @@ class Loader(core.Stage):
                 ftp.retrbinary("RETR %s" % TEMPFILE, open(TEMPFILE,"wb").write)
                 ftp.quit()
                 done = True
-                logger.info('Downloaded obsolete.dat')
+                self.logger.info('Downloaded obsolete.dat')
                 break
             except Exception, e:
-                logger.warning(e)
-                logger.warning('Ftp download failed. Retrying...')
+                self.logger.warning(e)
+                self.logger.warning('Ftp download failed. Retrying...')
 
         if not done:
-            logger.critical('All attempts to download obsolete.dat over ftp failed')
-            logger.critical('Obsolete PDB files not updated')
+            self.logger.critical('All attempts to download obsolete.dat over ftp failed')
+            self.logger.critical('Obsolete PDB files not updated')
             return
 
         """parse the data file"""

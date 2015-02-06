@@ -1,16 +1,16 @@
 import json
 
-import core as core
+from pymotifs import core as core
 
-from models import ExpSeqPosition
-from models import ExpSeqInfo as ExpSeq
-from models import CorrespondenceNts as Corr
-from models import CorrespondenceInfo as Info
-from models import PdbModifiedCorrespondecies
+from pymotifs.models import ExpSeqPosition
+from pymotifs.models import ExpSeqInfo as ExpSeq
+from pymotifs.models import CorrespondenceNts as Corr
+from pymotifs.models import CorrespondenceInfo as Info
+from pymotifs.models import PdbModifiedCorrespondecies
 
-from utils.alignment import align
-from utils.structures import NR as NrUtil
-from utils.structures import Structure as StructureUtil
+from pymotifs.utils.alignment import align
+from pymotifs.utils.structures import NR as NrUtil
+from pymotifs.utils.structures import Structure as StructureUtil
 
 
 class Parser(object):

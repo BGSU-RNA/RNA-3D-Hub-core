@@ -3,15 +3,15 @@ import traceback
 
 from fr3d import geometry as geo
 
-import core
-import utils
-from utils.structures import Structure as StructureUtil
+from pymotifs import core
+from pymotifs import utils
+from pymotifs.utils.structures import Structure as StructureUtil
 
-from models import ExpSeqInfo as ExpSeq
-from models import CorrespondenceLoops as Loops
-from models import CorrespondenceInfo as Info
-from models import LoopOverlapInfo
-from models import LoopLoopComparisions
+from pymotifs.models import ExpSeqInfo as ExpSeq
+from pymotifs.models import CorrespondenceLoops as Loops
+from pymotifs.models import CorrespondenceInfo as Info
+from pymotifs.models import LoopOverlapInfo
+from pymotifs.models import LoopLoopComparisions
 
 
 class MissingNucleotideException(Exception):

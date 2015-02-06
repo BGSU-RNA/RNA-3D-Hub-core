@@ -1,6 +1,6 @@
-import core
+from pymotifs import core
 
-from models import CorrespondenceInfo as Info
+from pymotifs.models import CorrespondenceInfo as Info
 
 from fr3d import geometry as geo
 

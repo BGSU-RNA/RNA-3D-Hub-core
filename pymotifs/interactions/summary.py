@@ -1,7 +1,7 @@
-import core
+from pymotifs import core
 
-from models import PdbBestChainsAndModels
-from models import PdbHelixLoopInteractionSummary as Summary
+from pymotifs.models import PdbBestChainsAndModels
+from pymotifs.models import PdbHelixLoopInteractionSummary as Summary
 
 QUERY_TEMPLATE = '''
 SELECT
