@@ -197,7 +197,7 @@ class Grouper(core.Stage):
                                            family='cWW')
         }
 
-    def info(self, pdb, chain):
+    def info(self, pdb, chain, molecule_type='rna'):
         """This loads all information about a chain into a dictionary. This
         will load generic information about a chain, such as resolved, length,
         database id, the source and information about basepairing. The
@@ -234,7 +234,7 @@ class Grouper(core.Stage):
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.id).\
-                filter_by(pdb_id=pdb, chain=chain, unit_type_id='rna')
+                filter_by(pdb_id=pdb, chain=chain, unit_type_id=molecule_type)
             data['length'] = query.count()
 
         data.update(self.bps(pdb, chain))
