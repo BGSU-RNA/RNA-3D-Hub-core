@@ -128,8 +128,6 @@ class Stage(object):
     """ Maximum length of time between updates. False for forever. """
     update_gap = None
 
-    depends_on = tuple()
-
     def __init__(self, config, session_maker):
         """Build a new Stage.
 
@@ -166,17 +164,6 @@ class Stage(object):
         :returns: Nothing and is ignored.
         """
         pass
-
-    def dependecies(self):
-        """This returns the dependecies for all stages. This will return the
-        values of
-        """
-        deps = set(self.depends_on)
-        if self.parameter and self.parameter not in deps:
-            deps = list(deps)
-            deps.append(self.paramter)
-            return deps
-        return list(deps)
 
     def transform(self, pdb, **kwargs):
         """This method takes the a pdb that we are given to process and
