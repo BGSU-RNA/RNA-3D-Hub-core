@@ -17,7 +17,6 @@ class Dispatcher(object):
         import_name = 'pymotifs.' + name
         from_list = import_name.split('.')
         module = __import__(import_name, fromlist=from_list)
-        print(import_name, module, dir(module))
         pairs = inspect.getmembers(module, self.is_loader(import_name))
         if not pairs:
             raise ImportError("Could not find a class to use from: %s" % name)
@@ -25,8 +24,6 @@ class Dispatcher(object):
 
     def is_loader(self, name):
         def checker(obj):
-            if inspect.isclass(obj):
-                print(obj, obj.__module__, name)
             return inspect.isclass(obj) and obj.__module__ == name
         return checker
 
