@@ -253,7 +253,11 @@ class Stage(object):
             self.logger.info('Updated %s status for pdb %s', self.name, pdb)
 
     def __call__(self, given, **kwargs):
-        """Process all given inputs.
+        """Process all given inputs. This will first transform all inputs with
+        the `to_process` method. If there are no entries then a critical
+        exception is raised. Next we go through one entry at a time and apply
+        `transform` to it. TWe then use `should_process` to it. If this returns
+        true then we call `process`. Once done we call `mark_processed`.
 
         :given: A list of pdbs to process.
         :kwargs: Keyword arguments passed on to various methods.
@@ -316,7 +320,8 @@ class Stage(object):
 
 class Loader(Stage):
     """An abstract baseclass for all things that load data into our database.
-    This provides a constituent interface for all loaders to use.
+    This provides a constituent interface for all loaders to use. This extends
+    Stage by making the process method
     """
 
     __metaclass__ = abc.ABCMeta
@@ -379,7 +384,13 @@ class Loader(Stage):
     def store(self, data, dry_run=False, **kwargs):
         """Store the given data. The data is written in chunks of
         self.insert_max at a time. The data can be a list or a nested set of
-        iterables.
+        iterables. If dry_run is true then this will not actually store
+        anything, but instead will log the attempt.
+
+        :data: The data to store. May be a list, an iterable nested one level
+        deep or a single object to store.
+        :dry_run: A flag to indicate if this should perform a dry run.
+        :kwargs: Keyword arguments.
         """
 
         self.logger.debug("Storing data")
