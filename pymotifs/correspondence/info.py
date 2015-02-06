@@ -1,9 +1,9 @@
-import core
-from models import ExpSeqInfo as ExpSeq
-from models import CorrespondenceInfo as Info
+from pymotifs import core
+from pymotifs.models import ExpSeqInfo as ExpSeq
+from pymotifs.models import CorrespondenceInfo as Info
 
-from utils.structures import NR as NrUtil
-from utils.structures import Structure as StructureUtil
+from pymotifs.utils.structures import NR as NrUtil
+from pymotifs.utils.structures import Structure as StructureUtil
 
 
 class MissingExpSeq(core.InvalidState):
