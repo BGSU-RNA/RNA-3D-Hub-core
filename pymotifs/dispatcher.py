@@ -33,6 +33,6 @@ class Dispatcher(object):
             obj = stage(*self._args)
             obj(entries)
         except Exception as err:
-            self.logger.error("Uncaught exception with stage: %s", self.stage)
+            self.logger.error("Uncaught exception with stage: %s", stage)
             self.logger.exception(err)
             raise err
