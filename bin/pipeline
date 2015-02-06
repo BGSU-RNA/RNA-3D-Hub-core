@@ -92,6 +92,8 @@ if __name__ == '__main__':
                         help="Force all data to be recalculated")
     parser.add_argument('--known', action='store_true',
                         help="Use only downloaded pdbs")
+    parser.add_argument('--dry-run', action='store_true',
+                        help="Do a dry run where we store nothing")
 
     parser.add_argument('--log-file', dest='log_file', default='',
                         help="Log file to use")
