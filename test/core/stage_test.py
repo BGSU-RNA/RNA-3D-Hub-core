@@ -28,6 +28,16 @@ class StageNameTest(Base):
         self.assertEqual(ans, val)
 
 
+def LoggerTest(Base):
+    def test_it_creates_a_logger(self):
+        val = SomeStage({}, None)
+        self.assertTrue(val.logger)
+
+    def test_it_assigns_the_loggers_name(self):
+        val = SomeStage({}, None)
+        self.assertTrue('bob', val.logger.name)
+
+
 class MustRecomputeTest(Base):
     def test_must_recompute_detects_if_given_recompute(self):
         stage = SomeStage({'bob': {'recompute': False}}, None)
