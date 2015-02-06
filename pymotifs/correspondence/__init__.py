@@ -1,9 +1,9 @@
-import core
+from pymotifs import core
 
-from correspondence.nts import Loader as NtLoader
+from pymotifs.correspondence.nts import Loader as NtLoader
 # from correspondence.loops import Loader as LoopLoader
-from correspondence.info import Loader as InfoLoader
-from correspondence.interactions import Loader as InterLoader
+from pymotifs.correspondence.info import Loader as InfoLoader
+from pymotifs.correspondence.interactions import Loader as InterLoader
 # from correspondence.summary import Loader as SummaryLoader
 
 
