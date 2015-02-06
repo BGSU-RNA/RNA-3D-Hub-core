@@ -4,18 +4,22 @@ import os
 import sys
 import json
 import logging
+import inspect
 import argparse
 import traceback
 import collections
-import ConfigParser
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 here = os.path.dirname(__file__)
-pymotifs = os.path.abspath(os.path.join(here, '..', 'pymotifs'))
+pymotifs = os.path.abspath(os.path.join(here, '..'))
 sys.path.append(pymotifs)
 
-from models import Session
-from utils import pdb
-from utils import known
+from pymotifs import models
+from pymotifs.dispatcher import Dispatcher
+from pymotifs.utils import pdb
+from pymotifs.utils import known
 
 logger = logging.getLogger(__name__)
 
@@ -23,23 +27,6 @@ DESCRIPTION = """
 The main script to run BGSU's update pipeline. This takes the name of a stage
 to run, a optional list of pdb and then options.
 """
-
-
-def load_class(name):
-    fromlist = []
-    if '.' in name:
-        fromlist = name.split('.')[1:]
-
-    try:
-        module = __import__(name, fromlist=fromlist)
-        if hasattr(module, 'Loader'):
-            return module.Loader
-        if hasattr(module, 'Downloader'):
-            return module.Downloader
-    except ImportError:
-        logger.critical("Unknown module %s", name)
-        logger.critical(traceback.format_exc(sys.exc_info()))
-        sys.exit(1)
 
 
 def setup_logging(opts):
@@ -114,13 +101,15 @@ def run(name, config, pdbs, opts):
     if not pdbs:
         logger.warning("Running with no pdb files")
 
-    klass = load_class(name)
-    obj = klass(config, Session)
+    engine = create_engine(config['db']['uri'])
+    models.reflect(engine)
+    Session = sessionmaker(bind=engine)
+
+    dispatcher = Dispatcher(name, config, Session)
 
     try:
-        obj(pdbs, **opts)
+        dispatcher(pdbs, **opts)
     except:
-        logger.critical(traceback.format_exc(sys.exc_info()))
         sys.exit(1)
 
 
