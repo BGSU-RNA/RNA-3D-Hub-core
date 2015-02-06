@@ -173,25 +173,61 @@ class ChainsTest(StageTest):
         val = self.loader.chains('1F5H')
         self.assertEquals(1, len(val))
 
+    def test_it_can_select_the_correct_chains_of_1F5H(self):
+        grouping = self.loader.chains('1F5H')
+        val = sorted([group['name'] for group in grouping])
+        ans = [['A', 'B']]
+        self.assertEquals(ans, val)
+
     def test_it_can_process_pseudoknotted_chains(self):
         val = self.loader.chains('1F5U')
         self.assertEquals(1, len(val))
+
+    def test_it_can_select_the_correct_chains_of_1F5U(self):
+        grouping = self.loader.chains('1F5U')
+        val = sorted([group['name'] for group in grouping])
+        ans = [['A', 'B']]
+        self.assertEquals(ans, val)
 
     def test_it_can_process_paired_strands(self):
         val = self.loader.chains('1EKD')
         self.assertEquals(1, len(val))
 
+    def test_it_can_select_the_correct_chains_of_1EKD(self):
+        grouping = self.loader.chains('1EKD')
+        val = sorted([group['name'] for group in grouping])
+        ans = [['A', 'B']]
+        self.assertEquals(ans, val)
+
     def test_it_can_process_identical_chains(self):
         val = self.loader.chains('1EIY')
         self.assertEquals(1, len(val))
+
+    def test_it_can_select_the_correct_chains_of_1EIY(self):
+        grouping = self.loader.chains('1EIY')
+        val = sorted([group['name'] for group in grouping])
+        ans = [['C']]
+        self.assertEquals(ans, val)
 
     def test_it_can_process_paired_identical_chains(self):
         val = self.loader.chains('1FEU')
         self.assertEquals(2, len(val))
 
+    def test_it_can_select_the_correct_chains_of_1FEU(self):
+        grouping = self.loader.chains('1FEU')
+        val = sorted([group['name'] for group in grouping])
+        ans = [['B', 'C'], ['E', 'F']]
+        self.assertEquals(ans, val)
+
     def test_can_process_a_messy_nmr(self):
         val = self.loader.chains('1FCW')
         self.assertEquals(4, len(val))
+
+    def test_can_select_the_correct_chains_of_1FCW(self):
+        grouping = self.loader.chains('1FCW')
+        val = sorted([group['name'] for group in grouping])
+        ans = [['A', 'B'], ['C'],  ['D'], ['E']]
+        self.assertEquals(ans, val)
 
 
 class NrChainsTest(StageTest):
@@ -208,6 +244,12 @@ class NrChainsTest(StageTest):
     def test_it_can_process_paired_identical_chains(self):
         val = self.loader.nr_chains('1FEU')
         self.assertEquals(1, len(val))
+
+    def test_it_can_select_the_correct_chains_of_1FEU(self):
+        grouping = self.loader.nr_chains('1FEU')
+        val = sorted([group['name'] for group in grouping])
+        ans = [['B', 'C']]
+        self.assertEquals(ans, val)
 
     def test_can_process_a_messy_nmr(self):
         val = self.loader.nr_chains('1FCW')
