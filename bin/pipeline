@@ -47,46 +47,9 @@ def setup_logging(opts):
 
 def load_config(filename):
     config = collections.defaultdict(dict)
-    if os.path.splitext(filename)[1] == '.json':
-        with open(filename, 'rb') as raw:
-            return config.update(json.load(raw))
-
-    parser = ConfigParser.RawConfigParser()
-    parser.read(filename)
-
-    section = 'general'
-    keys = ['environment']
-    for k in keys:
-        config[section][k] = parser.get(section, k)
-
-    section = 'email'
-    keys = ['from', 'to', 'login', 'password', 'subject']
-    for k in keys:
-        config[section][k] = parser.get(section, k)
-
-    section = 'recalculate'
-    keys = ['coordinates', 'distances', 'interactions', 'IL', 'HL',
-            'J3', 'redundant_nts', 'best_chains_and_models',
-            'unit_ids', 'ordering']
-    for k in keys:
-        config[section][k] = parser.getboolean(section, k)
-
-    config['logfile'] = 'motifatlas.log'
-
-    section = 'locations'
-    keys = ['loops_mat_files', 'loops_search_dir', 'log_dir',
-            'releases_dir', 'nrlists_dir', 'fr3d_root',
-            '2ds_destination', 'mlab_app', 'interactions_gz', 'cache',
-            'loops_gz']
-    for k in keys:
-        config[section][k] = parser.get(section, k)
-
-    section = 'release_mode'
-    keys = ['loops', 'motifs', 'nrlist']
-    for k in keys:
-        config[section][k] = parser.get(section, k)
-
-    return config
+    with open(filename, 'rb') as raw:
+        config.update(json.load(raw))
+        return config
 
 
 def run(name, config, pdbs, opts):
