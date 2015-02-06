@@ -428,8 +428,11 @@ class Loader(Stage):
         """
 
         if self.must_recompute(entry, **kwargs):
-            self.logger.debug("Removing old data for %s", entry)
-            self.remove(entry)
+            if kwargs['dry_run']:
+                self.logger.debug("Skipping removal in dry run")
+            else:
+                self.logger.debug("Removing old data for %s", entry)
+                self.remove(entry)
 
         data = self.data(entry)
 
@@ -445,9 +448,10 @@ class Loader(Stage):
 
 class SimpleLoader(Loader):
     """
-    A simple loader is a subclass of loader that has a default implementation
+    A SimpleLoader is a subclass of Loader that has a default implementation
     of has_data and remove. These depend on the abstract method query which
-    generates the query to use for these things.
+    generates the query to use for these things. Basically this is what to use
+    if we are simply adding things to a table in the database.
     """
 
     def has_data(self, *args):
