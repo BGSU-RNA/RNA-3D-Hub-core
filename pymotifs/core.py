@@ -14,7 +14,7 @@ except:
 
 from fr3d.cif.reader import Cif
 
-from pymotifs.models import PdbAnalysisStatus
+from pymotifs import models as mod
 from pymotifs import utils as ut
 
 
@@ -206,7 +206,7 @@ class Stage(object):
             return False
 
         with self.session() as session:
-            current = session.query(PdbAnalysisStatus).\
+            current = session.query(mod.PdbAnalysisStatus).\
                 filter_by(id=pdb, step=self.name).\
                 first()
             if not current:
@@ -259,8 +259,8 @@ class Stage(object):
         """
 
         with self.session() as session:
-            status = PdbAnalysisStatus(id=pdb, step=self.name,
-                                       time=datetime.datetime.now())
+            status = mod.PdbAnalysisStatus(id=pdb, step=self.name,
+                                           time=datetime.datetime.now())
             session.merge(status)
             session.commit()
             self.logger.info('Updated %s status for pdb %s', self.name, pdb)
