@@ -19,54 +19,55 @@ RNA-3D-Hub-core contains:
 * MySQL server
 * [mlabwap](http://mlabwrap.sourceforge.net) for linking Matlab with Python
 * SQLAlchemy for connecting to the database
-* [VARNA](http://varna.lri.fr) v3.7 is included to allow for 2D structure generation
+* [rnastructure-utils](https://github.com/BGSU-RNA/RNA-Structure-utils)
+* [fr3d.py](https://github.com/BGSU-RNA/fr3d-python)
 * _optional_: nosetests for running Python unit tests
 
 ## Installation
 
 1. Download the source code:
 
-    git clone https://github.com/AntonPetrov/RNA-3D-Hub-core.git
+    $ git clone https://github.com/AntonPetrov/RNA-3D-Hub-core.git
 
-2. Create a config file
+2. Install Matlab
 
-        pymotifs/motifatlas.cfg
+3. Create a config file, using the template found in:
+   `conf/motifatlas.json.txt`. By default the pipeline will read the config file
+in `conf/motifatlas.json`, but this can be changed.
 
-    according to the template found in:
+4. Create the MySQL database(s) specified in the config file.
 
-        pymotifs/motifatlas.cfg.txt
-
-3. Create the MySQL database(s) specified in the config file.
-
-4. Submodule initialization
+5. Submodule initialization
 
         git submodule init
         git submodule update
 
-5. Install [rnastructure-utils](https://github.com/BGSU-RNA/RNA-Structure-utils)
+6. Install all dependencies. This can be done by doing
+`pip install -f requirements.txt`. This will include nosetests for testing as
+well.
 
 ## Testing
 
 The software suite includes test datasets for motifs and non-redundant lists.
 
 Unit tests create a special testing environment and shouldn't interfere with the
-development or the production versions of the resource. When the unittest module
-is imported, the programs will connect to the test database specified in the
-config file.
+development or the production versions of the resource. Testing requires that a
+`conf/test.json` config file exists. This will be read for all configuration
+information. It is strongly recommended that this be a separate database from
+the production database.
 
 To run unit tests with nosetests:
 
-    nosetests --nologcapture -s pymotifs
+    nosetests test
 
-* The `--nologcapture` option ensures that all output is logged to a file and is
-  not intercepted by nosetests. The log file is emailed at the end of the test.
-
-* The `-s` option routes all STDOUT output to the screen for easier monitoring
-  of test progress.
+Just running `nosetests` will run some stuff that isn't a test, which will fail.
 
 ## Logging and email notifications
 
-Both Python and Matlab programs add their log messages to a file
+Python logging is configurable. See the section on Configuration for details on
+how to define the file to log to. By default logging goes to stdout.
+
+Matlab programs add their log messages to a file:
 
     MotifAtlas/logs/rna3dhub_log.txt
 
@@ -77,16 +78,30 @@ section of the config file.
 
 ## Directory structure
 
-Write later
+All python code is stored in `pymotifs/`. The FR3D submodule is stored in `FR3D/`.
+The folder `FR3D/PDBFiles` is used to store all downloaded cif files. In
+addition, any cached files will be stored there as well. `FR3DMotifs` contains
+matlab code needed to process motifs. `MotifAtlas` is used to store motif atlas
+specific files.
 
 ## Usage
 
-The main program that triggers the update is `MotifAtlas.py`
+The main program that triggers the update is `bin/pipeline`. To run a full
+update, do `bin/pipeline update --all`. This will run all stages of the pipeline
+on all RNA containing structures. If you want to only run one stage of the
+pipeline, such as downloading all pdbs, simply do `bin/pipeline download --all`.
+For details on what stages are available do `bin/pipeline help`.
+If you only want to run the pipeline on one file or more files, simply do:
+`bin/pipeline download 2AW7 1J5E`.
 
-When run as a cronjob, need to export a system variable like so:
+When run as a cronjob, you must export a system variable that defines the matlab
+command string for mlabwrap like so:
 
     export MLABRAW_CMD_STR=/Applications/MATLAB_R2007b/bin/matlab
 
+An example crontab file that runs the update every friday can be found in
+`files/examples/update.cron`.
+
 ## Configuration
 
-This requires that any firewall you are using allow passive connections.
+This requires that any firewall you are using allow passive FTP connections.
