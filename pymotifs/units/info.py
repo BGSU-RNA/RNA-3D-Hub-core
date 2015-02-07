@@ -10,11 +10,13 @@ AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 class Loader(core.SimpleLoader):
     update_gap = False
 
-    def query(self, session, pdb):
-        return session(UnitInfo).filter_by(pdb_id=pdb)
+    def query(self, session, structure):
+        query = session.query(UnitInfo).filter_by(pdb_id=structure.pdb)
+        print(query)
+        return query
 
     def transform(self, pdb):
-        return self.cif(pdb).structure()
+        return [self.cif(pdb).structure()]
 
     def type(self, unit):
         seq = unit.sequence.upper()

@@ -119,9 +119,32 @@ class BuildingAllUnitsTest(StageTest):
 
     def setUp(self):
         super(BuildingAllUnitsTest, self).setUp()
-        self.data = list(self.loader.data(self.__class__.structure))
+        self.structure = self.__class__.structure
+        self.data = list(self.loader.data(self.structure))
 
     def test_loads_all_units(self):
         val = len(self.data)
         ans = 350
         self.assertEqual(ans, val)
+
+
+class QueryingTest(StageTest):
+    loader_class = Loader
+
+    @classmethod
+    def setUpClass(cls):
+        with open('files/cif/1GID.cif', 'rb') as raw:
+            cls.structure = Cif(raw).structure()
+
+    def setUp(self):
+        super(QueryingTest, self).setUp()
+        self.structure = self.__class__.structure
+        self.data = list(self.loader.data(self.structure))
+
+    def test_creates_query_that_counts(self):
+        with self.loader.session() as session:
+            query = self.loader.query(session, self.structure)
+            self.assertEquals(350, query.count())
+
+    def test_knows_data_exists(self):
+        self.assertTrue(self.loader.has_data(self.structure))
