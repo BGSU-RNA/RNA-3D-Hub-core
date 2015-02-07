@@ -92,18 +92,23 @@ class RetryHelper(object):
     """A base class for retrying an action.
     """
 
-    def __init__(self, retries=3, allow_fail=False):
+    def __init__(self, retries=3, allow_fail=False, log_last_only=True):
         self.retries = retries
         self.allow_fail = allow_fail
+        self.log_last_only = log_last_only
 
     def __call__(self, *args, **kwargs):
         for index in xrange(self.retries):
             try:
                 return self.action(*args, **kwargs)
-            except:
-                if not self.allow_fail:
-                    logger.warning("Failed retry attempt #%s", str(index + 1))
-                    logger.warning(traceback.format_exc(sys.exc_info()))
+            except Exception as err:
+                if not self.log_last_only or \
+                        (self.log_last_only and index == (self.retries - 1)):
+
+                    if not self.allow_fail:
+                        logger.warning("Failed retry attempt #%s",
+                                       str(index + 1))
+                        logger.exception(err)
 
         if not self.allow_fail:
             logger.error("All attempts at retrying failed")
