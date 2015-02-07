@@ -144,7 +144,7 @@ class StructureFileFinder(object):
         self.config = config
         self.strict = strict
         self.location = os.path.join(self.config['locations']['fr3d_root'],
-                                     'FR3D', 'PDBFiles')
+                                     'PDBFiles')
         if extension:
             self.extension = extension
 

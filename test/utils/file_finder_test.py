@@ -7,7 +7,7 @@ from pymotifs.utils import MissingFileException
 
 class CifFileFinderTest(unittest.TestCase):
     def setUp(self):
-        path = os.path.normpath(".")
+        path = os.path.join(os.path.normpath("."), 'FR3D')
         self.cif = CifFileFinder({'locations': {'fr3d_root': path}})
 
     def test_can_find_a_cif_file(self):
@@ -17,4 +17,3 @@ class CifFileFinderTest(unittest.TestCase):
 
     def test_fails_for_missing_file(self):
         self.assertRaises(MissingFileException, self.cif, "bob")
-
