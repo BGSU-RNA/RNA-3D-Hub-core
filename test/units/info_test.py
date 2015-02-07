@@ -6,6 +6,7 @@ from pymotifs.units.info import Loader
 
 from fr3d.cif.reader import Cif
 from fr3d.data import Component
+from fr3d.data import Structure
 
 
 class DetectingComponentTypeTest(StageTest):
@@ -148,3 +149,24 @@ class QueryingTest(StageTest):
 
     def test_knows_data_exists(self):
         self.assertTrue(self.loader.has_data(self.structure))
+
+
+class TransformTest(StageTest):
+    loader_class = Loader
+
+    def setUp(self):
+        super(TransformTest, self).setUp()
+        self.transformed = self.loader.transform('1GID')
+
+    def test_transform_loads_a_cif(self):
+        self.assertTrue(isinstance(self.transformed, list))
+
+    def test_has_correct_length(self):
+        self.assertEquals(1, len(self.transformed))
+
+    def test_creates_a_structure(self):
+        self.assertTrue(isinstance(self.transformed[0], Structure))
+
+    def test_accepts_keyword_arguments(self):
+        val = self.loader.transform('1GID', bob=True)
+        self.assertTrue(isinstance(val, list))
