@@ -31,7 +31,7 @@ class Dispatcher(object):
         try:
             stage = self.get_stage(self.name)
             obj = stage(*self._args)
-            obj(entries)
+            obj(entries, **kwargs)
         except Exception as err:
             self.logger.error("Uncaught exception with stage: %s", stage)
             self.logger.exception(err)
