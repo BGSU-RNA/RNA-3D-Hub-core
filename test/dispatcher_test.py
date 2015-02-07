@@ -2,6 +2,7 @@ import unittest as ut
 
 from pymotifs.dispatcher import Dispatcher
 from pymotifs.units.info import Loader
+from pymotifs.units.quality import Loader as Quality
 from pymotifs.units import Loader as UnitLoader
 
 
@@ -16,6 +17,10 @@ class DispatcherTest(ut.TestCase):
     def test_it_can_load_an_aggregate_by_name(self):
         val = self.dispatcher.get_stage('units')
         self.assertEquals(val, UnitLoader)
+
+    def test_it_can_load_a_unit_stage(self):
+        val = self.dispatcher.get_stage('units.quality')
+        self.assertEquals(val, Quality)
 
     def test_it_fails_if_given_unknown_module(self):
         self.assertRaises(ImportError, self.dispatcher.get_stage, 'bob')

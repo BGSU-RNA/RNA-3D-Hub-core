@@ -476,7 +476,7 @@ class SimpleLoader(Loader):
         pass
 
 
-class MultiLoader(object):
+class MultiLoader(Stage):
     stages = []
 
     def __init__(self, *args):

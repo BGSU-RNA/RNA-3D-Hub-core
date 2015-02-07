@@ -1,6 +1,8 @@
 import logging
 import inspect
 
+from pymotifs.core import Stage
+
 
 class Dispatcher(object):
     """A class which loads and runs stages for the pipeline. This manages
@@ -24,7 +26,8 @@ class Dispatcher(object):
 
     def is_loader(self, name):
         def checker(obj):
-            return inspect.isclass(obj) and obj.__module__ == name
+            return inspect.isclass(obj) and obj.__module__ == name and \
+                issubclass(obj, Stage)
         return checker
 
     def __call__(self, entries, **kwargs):
