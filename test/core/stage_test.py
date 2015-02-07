@@ -67,7 +67,7 @@ class ShouldProcessTest(Base):
     def test_will_reprocess_if_too_long(self):
         raise SkipTest()
 
-    def test_it_will_reprocess_if_given_recompute(self):
+    def test_it_will_reprocess_if_given_recalculate(self):
         stage = SomeStage({}, None)
         val = stage.should_process(None, recalculate=True)
         self.assertTrue(val)
