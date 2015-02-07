@@ -239,18 +239,20 @@ class Stage(object):
         """
         return [pdb.upper() for pdb in pdbs]
 
-    def mark_processed(self, pdb):
+    def mark_processed(self, pdb, dry_run=False, **kwargs):
         """Mark that we have finished computing the results for the given pdb.
 
         :pdb: The pdb to mark done.
         """
 
-        with self.session() as session:
-            status = mod.PdbAnalysisStatus(id=pdb, step=self.name,
-                                           time=datetime.datetime.now())
-            session.merge(status)
-            session.commit()
-            self.logger.info('Updated %s status for pdb %s', self.name, pdb)
+        if dry_run:
+            self.logger.debug("Marking %s as done", pdb)
+        else:
+            with self.session() as session:
+                status = mod.PdbAnalysisStatus(id=pdb, step=self.name,
+                                               time=datetime.datetime.now())
+                session.merge(status)
+        self.logger.info('Updated %s status for pdb %s', self.name, pdb)
 
     def __call__(self, given, **kwargs):
         """Process all given inputs. This will first transform all inputs with
@@ -315,7 +317,7 @@ class Stage(object):
                         raise StageFailed(self.name)
                     continue
 
-            self.mark_processed(entry, kwargs)
+            self.mark_processed(entry, **kwargs)
 
 
 class Loader(Stage):
