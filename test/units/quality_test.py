@@ -1,4 +1,5 @@
 import unittest
+from nose import SkipTest
 
 from test import StageTest
 
@@ -68,7 +69,17 @@ class HasRsRParserTest(unittest.TestCase):
     def test_can_generate_nt_level_data(self):
         val = list(self.parser.nts())[0]
         ans = {
-            'unit_id': '4V7W|1|AA|U|5',
+            'id': '4V7W|1|AA|U|5',
             'real_space_r': 0.218
         }
         self.assertEquals(ans, val)
+
+
+class QueryingTest(StageTest):
+    loader_class = ntq.Loader
+
+    def test_knows_if_data_is_missing(self):
+        self.assertFalse(self.loader.has_data('0bob'))
+
+    def test_knows_if_data_exists(self):
+        raise SkipTest("No good data")

@@ -5,8 +5,8 @@ import xml.etree.ElementTree as ET
 
 import pymotifs.utils as ut
 import pymotifs.core as core
+from pymotifs.models import UnitInfo as Unit
 from pymotifs.models import UnitQuality as Quality
-from pymotifs.models import PdbUnitIdCorrespondence as Unit
 
 from rnastructure.util import unit_ids as uids
 
@@ -61,7 +61,7 @@ class Parser(object):
                 pass
 
             if data:
-                data['unit_id'] = self._unit_id(pdb, residue.attrib)
+                data['id'] = self._unit_id(pdb, residue.attrib)
                 yield data
 
     def _unit_id(self, pdb, attributes):
@@ -75,38 +75,24 @@ class Parser(object):
         })
 
 
-class Loader(core.Loader):
-    name = 'nt_quality'
-    update_gap = False
+class Loader(core.SimpleLoader):
 
-    def __init__(self, config, session_builder):
+    def __init__(self, *args):
+        super(Loader, self).__init__(*args)
         self.fetcher = ut.FTPFetchHelper('ftp.wwpdb.org')
         self.finder = FileHelper()
-        super(Loader, self).__init__(config, session_builder)
 
-    def remove(self, pdb):
-        with self.session() as session:
-            session.query(Quality).\
-                join(Unit, Unit.unit_id == Quality.unit_id).\
-                filter(Unit.pdb == pdb).\
-                delete()
-
-    def has_data(self, pdb):
-        with self.session() as session:
-            count = session.query(Quality).\
-                join(Unit, Unit.unit_id == Quality.unit_id).\
-                filter(Unit.pdb == pdb).\
-                count()
-            return bool(count)
+    def query(self, session, pdb):
+        return session.query(Quality).\
+            join(Unit, Unit.id == Quality.id).\
+            filter(Unit.pdb_id == pdb)
 
     def data(self, pdb, **kwargs):
         filename = self.finder(pdb)
-        self.logger.info("Using filename %s for pdb %s ", filename, pdb)
         response = self.fetcher(filename)
         parser = Parser(response)
         if not parser.has_rsr() and not parser.has_dcc():
             self.logger.info("No RsR found for %s", pdb)
             return
 
-        for entry in parser.nts():
-            yield Quality(**entry)
+        return [Quality(**entry) for entry in parser.nts()]
