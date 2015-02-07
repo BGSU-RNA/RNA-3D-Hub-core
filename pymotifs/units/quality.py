@@ -89,7 +89,11 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb, **kwargs):
         filename = self.finder(pdb)
-        response = self.fetcher(filename)
+        try:
+            response = self.fetcher(filename)
+        except ut.RetryFailedException:
+            raise core.SkipPdb("Could not download data for %s" % pdb)
+
         parser = Parser(response)
         if not parser.has_rsr() and not parser.has_dcc():
             self.logger.info("No RsR found for %s", pdb)
