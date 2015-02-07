@@ -11,11 +11,9 @@ class Loader(core.SimpleLoader):
     update_gap = False
 
     def query(self, session, structure):
-        query = session.query(UnitInfo).filter_by(pdb_id=structure.pdb)
-        print(query)
-        return query
+        return session.query(UnitInfo).filter_by(pdb_id=structure.pdb)
 
-    def transform(self, pdb):
+    def transform(self, pdb, **kwargs):
         return [self.cif(pdb).structure()]
 
     def type(self, unit):
