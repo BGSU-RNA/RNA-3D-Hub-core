@@ -35,8 +35,16 @@ class Loader(core.SimpleLoader):
     def rename(self, report):
         renamed = {}
         for key, name in self.names.items():
-            renamed[name] = report[key]
-        renamed['resolution'] = float(renamed['resolution'])
+            renamed[name] = report.get(key)
+
+        if renamed['resolution']:
+            try:
+                renamed['resolution'] = float(renamed['resolution'])
+            except:
+                renamed['resolution'] = None
+                self.logger.error("Resoultion entry %s for %s is not a number",
+                                  renamed['resolution'], renamed['id'])
+
         return renamed
 
     def data(self, pdb):
