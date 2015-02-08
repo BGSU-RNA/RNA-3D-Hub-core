@@ -5,7 +5,8 @@ update for all parts of the pipeline.
 
 from pymotifs import core
 from pymotifs import units
+from pymotifs import pdb
 
 
 class Loader(core.MultiLoader):
-    stages = [units.Loader]
+    stages = [pdb.Loader, units.Loader]
