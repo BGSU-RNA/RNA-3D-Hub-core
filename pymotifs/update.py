@@ -8,5 +8,5 @@ from pymotifs import units
 from pymotifs import pdb
 
 
-class Loader(core.MultiLoader):
+class Loader(core.MultiStageLoader):
     stages = [pdb.Loader, units.Loader]

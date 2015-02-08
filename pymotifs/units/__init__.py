@@ -6,5 +6,5 @@ from pymotifs.units.info import Loader as InfoLoader
 from pymotifs.units.quality import Loader as QualityLoader
 
 
-class Loader(core.MultiLoader):
+class Loader(core.MultiStageLoader):
     stages = [InfoLoader, QualityLoader]
