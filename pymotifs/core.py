@@ -1,9 +1,7 @@
 import os
 import abc
 import logging
-import inspect
 import datetime
-import itertools as it
 import collections as coll
 from contextlib import contextmanager
 
@@ -334,6 +332,9 @@ class Loader(Stage):
     """ A flag to indicate it is ok to produce no data. """
     allow_no_data = False
 
+    """ A flag to indicate if we should use sessions .merge instead of .add """
+    merge_data = False
+
     def __init__(self, *args):
         """Build a new Loader object.
 
@@ -387,7 +388,8 @@ class Loader(Stage):
         """Store the given data. The data is written in chunks of
         self.insert_max at a time. The data can be a list or a nested set of
         iterables. If dry_run is true then this will not actually store
-        anything, but instead will log the attempt.
+        anything, but instead will log the attempt. If this loader has
+        'merge_data' set to True then this will merge instead of adding data.
 
         :data: The data to store. May be a list, an iterable nested one level
         deep or a single object to store.
@@ -395,24 +397,26 @@ class Loader(Stage):
         :kwargs: Keyword arguments.
         """
 
+        if not data:
+            self.logger.warning("Nothing to store")
+            return
+
         self.logger.debug("Storing data")
         with self.session() as session:
+
             def add(data):
                 if dry_run:
                     self.logger.debug("Storing: %s", data)
                 else:
-                    session.add(data)
+                    if self.merge_data:
+                        session.merge(data)
+                    else:
+                        session.add(data)
 
             if not isinstance(data, coll.Iterable):
                 add(data)
             else:
-                iterator = enumerate(data)
-                if inspect.isgenerator(data) or \
-                   isinstance(data[0], coll.Iterable) or \
-                   inspect.isgenerator(data[0]):
-                    iterator = enumerate(it.chain.from_iterable(data))
-
-                for index, datum in iterator:
+                for index, datum in enumerate(data):
                     add(datum)
                     if index % self.insert_max == 0:
                         session.commit()
@@ -456,6 +460,8 @@ class SimpleLoader(Loader):
     if we are simply adding things to a table in the database.
     """
 
+    __metaclass__ = abc.ABCMeta
+
     def has_data(self, *args):
         with self.session() as session:
             return bool(self.query(session, *args).first())
@@ -476,7 +482,35 @@ class SimpleLoader(Loader):
         pass
 
 
-class MultiLoader(Stage):
+class MassLoader(Loader):
+    """A MassLoader is a Loader that works on collections of PDB files. For
+    example, when getting all PDB info we do that for all PDB files at once in
+    a single request. Here we do many of the normal things that a stage does
+    but we simply do it on all pdbs at once.
+    """
+
+    __metaclass__ = abc.ABCMeta
+
+    def to_process(self, pdbs):
+        return tuple(super(MassLoader, self).to_process(pdbs))
+
+    def mark_processed(self, pdbs, **kwargs):
+        for pdb in pdbs:
+            super(MassLoader, self).mark_processed(pdb, **kwargs)
+
+    def has_data(self, pdbs, **kwargs):
+        return False
+
+    def remove(self, pdbs, **kwargs):
+        self.logger.debug("Remove does nothing in MassLoaders")
+        pass
+
+    @abc.abstractmethod
+    def data(self, pdbs):
+        pass
+
+
+class MultiStageLoader(Stage):
     stages = []
 
     def __init__(self, *args):

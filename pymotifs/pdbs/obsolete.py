@@ -1,64 +1,51 @@
-import os
+from datetime import datetime
 
 from pymotifs import core
 from pymotifs import utils
+from pymotifs.models import PdbObsolete
 
 
-class Loader(core.Stage):
-    def __init__(self, *args):
-        super(Loader, self).__init__(*args)
-        self.ftp = utils.FTPFetchHelper('ftp.wwpdb.org')
-
-    def __call__(self, *args, **kwargs):
-        """Download the file with all obsolete structures over ftp, store
-           the data in the database, remove obsolete entries
-           from the pdb_info table"""
-
-        TEMPFILE = 'obsolete.dat'
-        REPEAT = 10
-        done = False
-
-        """download the data file from PDB"""
-        for i in xrange(REPEAT):
-            try:
-                ftp = FTP('ftp.wwpdb.org')
-                ftp.login()
-                ftp.cwd('/pub/pdb/data/status')
-                ftp.retrbinary("RETR %s" % TEMPFILE, open(TEMPFILE,"wb").write)
-                ftp.quit()
-                done = True
-                self.logger.info('Downloaded obsolete.dat')
-                break
-            except Exception, e:
-                self.logger.warning(e)
-                self.logger.warning('Ftp download failed. Retrying...')
-
-        if not done:
-            self.logger.critical('All attempts to download obsolete.dat over ftp failed')
-            self.logger.critical('Obsolete PDB files not updated')
-            return
-
-        """parse the data file"""
-        obsolete_ids = []
-        f = open(TEMPFILE, 'r')
-        for line in f:
+class Parser(object):
+    def __call__(self, text):
+        data = []
+        for line in text:
             # OBSLTE    26-SEP-06 2H33     2JM5 2OWI
             if 'OBSLTE' in line:
                 parts = line.split()
                 obsolete_date = datetime.strptime(parts[1], '%d-%b-%y')
-                obsolete_ids.append(parts[2])
-                replaced_by = ','.join(parts[3:])
-                dbObj = PdbObsolete(obsolete_id=obsolete_ids[-1],
-                                    date=obsolete_date,
-                                    replaced_by=replaced_by)
-                session.merge(dbObj)
-        session.commit()
+                data.append({
+                    'id': parts[2],
+                    'date': obsolete_date,
+                    'replaced_by': parts[3:]
+                })
+        return data
 
-        """remove obsoleted files from pdb_info"""
-        session.query(PdbInfo).\
-                filter(PdbInfo.structureId.in_(obsolete_ids)).\
-                delete(synchronize_session='fetch')
 
-        """delete tempfile"""
-        os.remove(TEMPFILE)
+class Loader(core.MassLoader):
+    merge_data = True
 
+    def data(self, *args, **kwargs):
+        """
+        Download the file with all obsolete structures over ftp, store
+        the data in the database, remove obsolete entries
+        from the pdb_info table
+        """
+
+        try:
+            ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
+            parsed = ftp('/pub/pdb/data/status/obsolete.dat')
+        except:
+            self.logger.critical("Could not get obsolete ids")
+            raise core.StageFailed("Could not get obsolete ids")
+
+        data = []
+        for entry in parsed:
+            replaced = ','.join(entry['replaced_by'])
+            data.append(PdbObsolete(obsolete_id=entry['id'],
+                                    date=entry['date'],
+                                    replaced_by=replaced))
+
+        if not data:
+            self.logger.error("Found no obsolete ids.")
+
+        return data
