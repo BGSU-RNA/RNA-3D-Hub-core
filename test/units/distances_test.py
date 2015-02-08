@@ -1,14 +1,30 @@
 from nose import SkipTest
 
-from test import StageTest
-
-from fr3d.cif.reader import Cif
+from test import CifStageTest
 
 from pymotifs.units.distances import Loader
 
 
-class ComputingDistancesTest(StageTest):
+class ComputingCentersTest(CifStageTest):
     loader_class = Loader
+    filename = 'files/cif/124D.cif'
+
+    def test_given_rna_gets_base_center(self):
+        raise SkipTest()
+
+    def test_given_aa_gets_backbone_center(self):
+        raise SkipTest()
+
+    def test_given_dna_gets_base_center(self):
+        raise SkipTest()
+
+    def test_given_anything_else_gets_overall_center(self):
+        raise SkipTest()
+
+
+class ComputingDistancesTest(CifStageTest):
+    loader_class = Loader
+    filename = 'files/cif/124D.cif'
 
     def test_can_compute_rna_rna_distance(self):
         raise SkipTest()
@@ -29,18 +45,9 @@ class ComputingDistancesTest(StageTest):
         raise SkipTest()
 
 
-class DistancesLoaderTest(StageTest):
+class DistancesLoaderTest(CifStageTest):
     loader_class = Loader
-
-    @classmethod
-    def setUpClass(cls):
-        with open('files/cif/1GID.cif', 'rb') as raw:
-            cls.structure = Cif(raw).structure()
-
-    # def setUp(self):
-    #     super(DistancesLoaderTest, self).setUp()
-    #     self.structure = self.__class__.structure
-    #     self.distances = list(self.loader.data(self.structure))
+    filename = 'files/cif/1GID.cif'
 
     def test_can_load_distances(self):
         raise SkipTest()
