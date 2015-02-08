@@ -41,6 +41,9 @@ class CifStageTest(StageTest):
             with open(cls.filename, 'rb') as raw:
                 cls.cif = Cif(raw)
                 cls.structure = cls.cif.structure()
+        else:
+            cls.cif = None
+            cls.structure = None
 
     def setUp(self):
         super(CifStageTest, self).setUp
