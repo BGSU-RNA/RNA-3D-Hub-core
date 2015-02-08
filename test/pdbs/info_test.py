@@ -40,3 +40,7 @@ class RenameTest(StageTest):
     def test_sets_resolution_to_none_if_invalid(self):
         data = self.loader.rename({'resolution': 'A'})
         self.assertEquals(None, data['resolution'])
+
+    def test_sets_resolution_to_none_if_empty(self):
+        data = self.loader.rename({'resolution': ''})
+        self.assertEquals(None, data['resolution'])

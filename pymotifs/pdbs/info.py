@@ -37,6 +37,9 @@ class Loader(core.SimpleLoader):
         for key, name in self.names.items():
             renamed[name] = report.get(key)
 
+        if renamed['resolution'] == '':
+            renamed['resolution'] = None
+
         if renamed['resolution']:
             try:
                 renamed['resolution'] = float(renamed['resolution'])
