@@ -10,9 +10,10 @@ from pymotifs.utils.pdb import CustomReportHelper
 from pymotifs.models import PdbInfo
 
 
-class Loader(core.SimpleLoader):
+class Loader(core.MassLoader):
     """This loads information about entire files into our database.
     """
+    merge_data = True
 
     names = {
         'structureId': 'id',
@@ -50,8 +51,9 @@ class Loader(core.SimpleLoader):
 
         return renamed
 
-    def data(self, pdb):
-        data = self.helper(pdb)
+    def data(self, pdbs):
+        data = self.helper(pdbs)
         if not data:
-            raise core.SkipPdb("Could not load data about: %s" % pdb)
+            raise core.StageFailed("Could not load data for all pdbs %s" %
+                                   pdbs)
         return [PdbInfo(**self.rename(report)) for report in data]
