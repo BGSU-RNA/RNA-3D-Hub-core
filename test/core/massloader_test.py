@@ -1,4 +1,5 @@
 from test import StageTest
+from nose import SkipTest
 
 from pymotifs.core import MassLoader
 
@@ -28,7 +29,36 @@ class BasicTests(StageTest):
 class GeneratingDataTest(StageTest):
     loader_class = Mass
 
-    def test_processes_all_at_once(self):
+    def test_process_gets_all_at_once(self):
         val = ['A', 'B', 'C', 'D']
-        self.loader.data = lambda args: self.assertEquals(tuple(val), args)
+        self.loader.process = lambda a: self.assertEquals(tuple(val), a)
         self.loader.data(val)
+
+    def test_to_process_creates_a_tuple(self):
+        val = ['A', 'C', 'C', 'D']
+        self.assertEquals(tuple(val), self.loader.to_process(val))
+
+    def test_transform_produces_a_list_of_one(self):
+        val = [1, 2, 3]
+        self.assertEquals([tuple(val)], self.loader.transform(val))
+
+    def test_data_gets_all_at_once(self):
+        raise SkipTest()
+        val = ['A', 'B', 'C', 'D']
+
+        def data(args):
+            self.assertEquals(tuple(val), args)
+        self.loader.data = data
+        self.loader.data(val)
+
+    def test_mark_processed_gets_all_at_once(self):
+        val = [1, 3]
+        self.loader.mark_processed = lambda a: self.assertEquals(val, a)
+        self.loader.mark_processed(val)
+
+
+class MarkingProcessedTest(StageTest):
+    loader_class = Mass
+
+    def test_marks_each_done_individually(self):
+        raise SkipTest()

@@ -494,12 +494,18 @@ class MassLoader(Loader):
     def to_process(self, pdbs):
         return tuple(super(MassLoader, self).to_process(pdbs))
 
+    def transform(self, pdbs, **kwargs):
+        return [tuple(pdbs)]
+
+    def has_data(self, *args, **kwargs):
+        pass
+
+    def should_process(self, pdbs, **kwargs):
+        return True
+
     def mark_processed(self, pdbs, **kwargs):
         for pdb in pdbs:
             super(MassLoader, self).mark_processed(pdb, **kwargs)
-
-    def has_data(self, pdbs, **kwargs):
-        return False
 
     def remove(self, pdbs, **kwargs):
         self.logger.debug("Remove does nothing in MassLoaders")
