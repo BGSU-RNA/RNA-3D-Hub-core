@@ -2,6 +2,7 @@ from test import StageTest
 
 from pymotifs.core import Loader
 from pymotifs.models import PdbInfo
+from pymotifs.models import ChainInfo
 
 
 class ExampleLoader(Loader):
@@ -105,3 +106,23 @@ class StoringTest(StageTest):
                 result = session.query(PdbInfo.resolution).\
                     filter_by(id='000X').first()
                 self.assertEquals(10, result.resolution)
+
+
+class StoringWithAutoIncrement(StageTest):
+    loader_class = ExampleLoader
+
+    def tearDown(self):
+        with self.loader.session() as session:
+            session.query(ChainInfo).\
+                filter(ChainInfo.pdb_id.like('0%')).\
+                delete(synchronize_session=False)
+
+    def test_merge_works_with_new_data(self):
+        self.loader.merge_data = True
+        self.loader.store(ChainInfo(chainId='X', pdb_id='000X',
+                          classification='bob'))
+
+        with self.loader.session() as session:
+                result = session.query(ChainInfo.classification).\
+                    filter_by(pdb_id='000X').first()
+                self.assertEquals('bob', result.classification)
