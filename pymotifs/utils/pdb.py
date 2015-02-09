@@ -95,7 +95,6 @@ class CustomReportHelper(object):
         lines = response.text.split('<br />')
         description = lines.pop(0)
         keys = description.split(',')
-        print(response.text)
 
         report = []
         for line in lines:
@@ -118,18 +117,33 @@ class CustomReportHelper(object):
             report.append(chain_dict)
         return report
 
+    def __unique__(self, reports):
+        seen = set()
+        unique = []
+        for report in reports:
+            entry = tuple(report.items())
+            if entry not in seen:
+                unique.append(report)
+                seen.add(entry)
+        return unique
+
     def __call__(self, pdb_id):
         """Gets a custom report in csv format for a single pdb file. Each chain
            is described in a separate line
         """
+        if isinstance(pdb_id, list):
+            ids = ','.join(pdb_id)
+        else:
+            ids = pdb_id
 
         params = {
             'customReportColumns': ','.join(self.fields),
             'format': 'csv',
-            'pdbids': pdb_id
+            'pdbids': ids
         }
         logger.info('Getting custom report for %s', pdb_id)
-        return self.helper(self.url, params=params)
+        result = self.helper(self.url, params=params)
+        return self.__unique__(result)
 
 
 class ObsoleteStructureHelper(object):
