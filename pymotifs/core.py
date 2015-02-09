@@ -491,17 +491,8 @@ class MassLoader(Loader):
 
     __metaclass__ = abc.ABCMeta
 
-    def to_process(self, pdbs):
+    def to_process(self, pdbs, **kwargs):
         return tuple(super(MassLoader, self).to_process(pdbs))
-
-    def transform(self, pdbs, **kwargs):
-        return [tuple(pdbs)]
-
-    def has_data(self, *args, **kwargs):
-        pass
-
-    def should_process(self, pdbs, **kwargs):
-        return True
 
     def mark_processed(self, pdbs, **kwargs):
         for pdb in pdbs:
@@ -511,9 +502,50 @@ class MassLoader(Loader):
         self.logger.debug("Remove does nothing in MassLoaders")
         pass
 
-    @abc.abstractmethod
-    def data(self, pdbs):
+    def has_data(self, pdbs, **kwargs):
         pass
+
+    def process(self, pdbs, **kwargs):
+        data = self.data(pdbs)
+
+        if not self.allow_no_data and not data:
+            self.logger.error("No data produced")
+            raise InvalidState("Missing data")
+        elif not data:
+            self.logger.warning("No data produced")
+            return
+
+        self.store(data, **kwargs)
+
+    @abc.abstractmethod
+    def data(self, pdbs, **kwargs):
+        pass
+
+    def __call__(self, given, **kwargs):
+        entries = tuple(self.to_process(given, **kwargs))
+        if not entries:
+            self.logger.critical("Nothing to process")
+            raise InvalidState("Nothing to process")
+
+        self.logger.info("Processing all %s entries", len(entries))
+
+        try:
+            if not self.should_process(entries, **kwargs):
+                self.logger.debug("No need to process %s", entries)
+                return
+            self.process(entries, **kwargs)
+        except Skip as err:
+            self.logger.warn("Skipping processing all entries. %s Reason %s",
+                             str(err))
+            return
+        except Exception as err:
+            self.logger.error("Error raised in should_process all entries")
+            self.logger.exception(err)
+            if self.stop_on_failure:
+                raise StageFailed(self.name)
+            return
+
+        self.mark_processed(entries, **kwargs)
 
 
 class MultiStageLoader(Stage):

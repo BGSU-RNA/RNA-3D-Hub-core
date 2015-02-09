@@ -35,12 +35,9 @@ class GeneratingDataTest(StageTest):
         self.loader.data(val)
 
     def test_to_process_creates_a_tuple(self):
-        val = ['A', 'C', 'C', 'D']
-        self.assertEquals(tuple(val), self.loader.to_process(val))
-
-    def test_transform_produces_a_list_of_one(self):
-        val = [1, 2, 3]
-        self.assertEquals([tuple(val)], self.loader.transform(val))
+        val = ['A', 'C', 'c', 'D']
+        self.assertEquals(tuple(['A', 'C', 'C', 'D']),
+                          self.loader.to_process(val))
 
     def test_data_gets_all_at_once(self):
         raise SkipTest()
