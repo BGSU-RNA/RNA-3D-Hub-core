@@ -97,3 +97,11 @@ class StoringTest(StageTest):
                 result = session.query(PdbInfo.resolution).\
                     filter_by(id='0000').first()
                 self.assertEquals(1, result.resolution)
+
+    def test_merge_works_with_new_data(self):
+        self.loader.merge_data = True
+        self.loader.store(PdbInfo(id='000X', resolution=10))
+        with self.loader.session() as session:
+                result = session.query(PdbInfo.resolution).\
+                    filter_by(id='000X').first()
+                self.assertEquals(10, result.resolution)
