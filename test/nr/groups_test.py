@@ -1,5 +1,3 @@
-from nose import SkipTest
-
 from test import StageTest
 
 from pymotifs.nr.groups import Grouper
@@ -43,21 +41,18 @@ class InfoLoadingTest(StageTest):
         self.assertEquals(1542, self.info['exp_length'])
 
     def test_loads_source_info(self):
-        raise SkipTest()
         self.assertEquals([562], self.info['source'])
 
     def test_can_load_source_when_mapping_to_species(self):
-        raise SkipTest()
         self.assertEquals([562], self.loader.info('3J01', 'A')['source'])
 
     def test_can_load_source_when_there_are_several(self):
-        raise SkipTest()
         info = self.loader.info('3T4B', 'A')
-        self.assertEquals([32630, 11103], info['source'])
+        val = sorted(info['source'])
+        self.assertEquals([11103, 32630], val)
 
     def test_can_load_source_when_source_is_none(self):
-        raise SkipTest()
-        self.assertEquals(None, self.loader.info('1ET4', 'A')['source'])
+        self.assertEquals([], self.loader.info('1ET4', 'A')['source'])
 
 
 class MergeChainsTest(StageTest):
