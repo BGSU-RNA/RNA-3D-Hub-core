@@ -69,6 +69,10 @@ class Matlab(object):
         self.mlab = None
         self._root = root
 
+    def __del__(self):
+        if self.mlab:
+            del self.mlab
+
     def __startup__(self):
         self.logger.debug('Starting up matlab')
         os.chdir(self._root)
@@ -186,7 +190,6 @@ class Stage(object):
         :returns: The FR3D structure for the given PDB.
         """
         return self.cif(pdb).structure()
-
 
     def transform(self, pdb, **kwargs):
         """This method takes the a pdb that we are given to process and
