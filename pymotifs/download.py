@@ -14,11 +14,11 @@ class Downloader(core.Loader):
     name = 'downloader'
     update_gap = False
 
-    def __init__(self, config, maker):
+    def __init__(self, *args, **kwargs):
+        super(Downloader, self).__init__(*args, **kwargs)
         self.gzip = utils.GzipFetchHelper(allow_fail=True)
-        self.location = os.path.join(config['locations']['fr3d_root'],
+        self.location = os.path.join(self.config['locations']['fr3d_root'],
                                      'PDBFiles')
-        super(Downloader, self).__init__(config, maker)
 
     def filename(self, name):
         return os.path.join(self.location, name + '.cif')
