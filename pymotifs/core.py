@@ -145,6 +145,7 @@ class Stage(object):
 
         self.session = Session(session_maker)
         self.logger = logging.getLogger(self.name)
+        self._cif = ut.CifFileFinder(self.config)
 
     @abc.abstractmethod
     def is_missing(self, entry, **kwargs):
@@ -168,6 +169,24 @@ class Stage(object):
         :returns: Nothing and is ignored.
         """
         pass
+
+    def cif(self, pdb):
+        """A method to load the cif file for a given pdb id.
+
+        :pdb: PDB id to parse.
+        :returns: A parsed cif file.
+        """
+        with open(self._cif(pdb), 'rb') as raw:
+            return Cif(raw)
+
+    def structure(self, pdb):
+        """A method to load the cif file and get the structure for the given
+
+        :pdb: The pdb id to get the structure for.
+        :returns: The FR3D structure for the given PDB.
+        """
+        return self.cif(pdb).structure()
+
 
     def transform(self, pdb, **kwargs):
         """This method takes the a pdb that we are given to process and
@@ -341,15 +360,6 @@ class Loader(Stage):
     """ A flag to indicate if we should use sessions .merge instead of .add """
     merge_data = False
 
-    def __init__(self, *args):
-        """Build a new Loader object.
-
-        :config: The config object.
-        :session_maker: The Session object.
-        """
-        super(Loader, self).__init__(*args)
-        self._cif = ut.CifFileFinder(self.config)
-
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
         """Compute the data for the given pdb file.
@@ -381,23 +391,6 @@ class Loader(Stage):
         :returns: A boolean if the requested data is missing or not.
         """
         return not self.has_data(entry, **kwargs)
-
-    def cif(self, pdb):
-        """A method to load the cif file for a given pdb id.
-
-        :pdb: PDB id to parse.
-        :returns: A parsed cif file.
-        """
-        with open(self._cif(pdb), 'rb') as raw:
-            return Cif(raw)
-
-    def structure(self, pdb):
-        """A method to load the cif file and get the structure for the given
-
-        :pdb: The pdb id to get the structure for.
-        :returns: The FR3D structure for the given PDB.
-        """
-        return self.cif(pdb).structure()
 
     def store(self, data, dry_run=False, **kwargs):
         """Store the given data. The data is written in chunks of
