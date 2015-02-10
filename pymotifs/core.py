@@ -53,6 +53,12 @@ class SkipValue(Skip):
     pass
 
 
+class MatlabFailed(Exception):
+    """An exception meant to be used if matlab commands fail for some reason.
+    """
+    pass
+
+
 class Matlab(object):
     """A simple wrapper around mlab. This is useful because it sets the root as
     well as calling the setup function before running matlab.
@@ -351,7 +357,7 @@ class Loader(Stage):
         pass
 
     @abc.abstractmethod
-    def has_data(self, pdb):
+    def has_data(self, pdb, **kwargs):
         """Check if we have already stored data for this pdb file in the
         database. This is used to determine if we should attempt to compute new
         data.
@@ -366,6 +372,15 @@ class Loader(Stage):
         wrong.
         """
         pass
+
+    def is_missing(self, entry, **kwargs):
+        """Determine if the data is missing by using the has_data method.
+
+        :entry: The transformed entry to check for.
+        :kwargs: Keyword arguments
+        :returns: A boolean if the requested data is missing or not.
+        """
+        return not self.has_data(entry, **kwargs)
 
     def cif(self, pdb):
         """A method to load the cif file for a given pdb id.
