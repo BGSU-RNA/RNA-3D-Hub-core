@@ -1,3 +1,4 @@
+from cStringIO import StringIO
 from datetime import datetime
 
 from pymotifs import core
@@ -8,9 +9,9 @@ from pymotifs.models import PdbObsolete
 class Parser(object):
     def __call__(self, text):
         data = []
-        for line in text:
+        for line in StringIO(text).readlines():
             # OBSLTE    26-SEP-06 2H33     2JM5 2OWI
-            if 'OBSLTE' in line:
+            if 'OBSLTE' in line.split():
                 parts = line.split()
                 obsolete_date = datetime.strptime(parts[1], '%d-%b-%y')
                 data.append({
