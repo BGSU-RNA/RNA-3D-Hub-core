@@ -1,4 +1,5 @@
 from test import StageTest
+from nose import SkipTest
 
 from pymotifs.nr.groups import Grouper
 
@@ -268,7 +269,14 @@ class NrChainsTest(StageTest):
         val = self.loader.nr_chains('1F5U')
         self.assertEquals(1, len(val))
 
+    def test_can_process_simple_structure(self):
+        chains = self.loader.nr_chains('1G59')
+        val = sorted([group['name'] for group in chains])
+        ans = [['D']]
+        self.assertEquals(ans, val)
+
     def test_it_can_process_a_triplet(self):
+        raise SkipTest()
         chains = self.loader.nr_chains('1GIX')
         val = sorted([group['name'] for group in chains])
         ans = [['1', 'B', 'C'], ['D']]
