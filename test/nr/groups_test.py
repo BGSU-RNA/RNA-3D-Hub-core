@@ -267,3 +267,9 @@ class NrChainsTest(StageTest):
     def test_it_can_process_pseudoknotted_chains(self):
         val = self.loader.nr_chains('1F5U')
         self.assertEquals(1, len(val))
+
+    def test_it_can_process_a_triplet(self):
+        chains = self.loader.nr_chains('1GIX')
+        val = sorted([group['name'] for group in chains])
+        ans = [['1', 'B', 'C'], ['D']]
+        self.assertEquals(ans, val)

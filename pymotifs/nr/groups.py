@@ -57,10 +57,10 @@ class Grouper(core.Stage):
         :returns: A list of chain ids for that pdb.
         """
         with self.session() as session:
-            query = session.query(mod.ChainInfo.chainId).\
-                filter_by(entityMacromoleculeType='Polyribonucleotide (RNA)').\
+            query = session.query(mod.ChainInfo.chain_id).\
+                filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)').\
                 filter_by(pdb_id=pdb)
-            return [result.chainId for result in query]
+            return [result.chain_id for result in query]
 
     def merge_chains(self, chains):
         """This merges a list of chain dictonaries into one dictonary. It will
@@ -216,14 +216,14 @@ class Grouper(core.Stage):
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.id,
-                                  mod.ChainInfo.chainLength,
-                                  mod.ChainInfo.entityId).\
-                filter_by(pdb_id=pdb, chainId=chain)
+                                  mod.ChainInfo.chain_length,
+                                  mod.ChainInfo.entity_id).\
+                filter_by(pdb_id=pdb, chain_id=chain)
 
             result = query.one()
             data['db_id'] = result.id
-            data['exp_length'] = result.chainLength
-            data['entity'] = result.entityId
+            data['exp_length'] = result.chain_length
+            data['entity'] = result.entity_id
 
         try:
             data['source'] = self.struct_helper.source(pdb, chain)

@@ -37,9 +37,9 @@ class Loader(core.MassLoader):
         """
 
         with self.session() as session:
-            query = session.query(mod.ChainInfo.taxonomyId).\
+            query = session.query(mod.ChainInfo.taxonomy_id).\
                 outerjoin(mod.SpeciesMapping,
-                          mod.SpeciesMapping.id == mod.ChainInfo.taxonomyId).\
+                          mod.SpeciesMapping.id == mod.ChainInfo.taxonomy_id).\
                 filter(mod.SpeciesMapping.id == None)
 
             ids = []
