@@ -1,4 +1,5 @@
 from test import StageTest
+from test import skip_without_matlab
 
 from pymotifs.loops.extractor import Loader
 
@@ -42,3 +43,12 @@ class GettingLoopIdsTest(StageTest):
         nts = '2AW7_AU_1_A_1076_U_,2AW7_AU_1_A_1077_G_,2AW7_AU_1_A_1078_U_,2AW7_AU_1_A_1079_G_,2AW7_AU_1_A_1080_A_,2AW7_AU_1_A_1081_A_'
         val = self.loader._get_loop_id(nts, '2AW7', 'HL')
         self.assertEquals('HL_2AW7_024', val)
+
+
+class ExtractLoopsTest(StageTest):
+    loader_class = Loader
+
+    @skip_without_matlab
+    def test_can_extract_correct_number_of_loops(self):
+        val = self.loader.data('2AW7', 'IL')
+        self.assertEquals(69, len(val))
