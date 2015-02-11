@@ -13,10 +13,9 @@ class BestChainsAndModelsLoader(core.SimpleLoader):
             filter(PdbBestChainsAndModels.pdb_id == pdb)
 
     def data(self, pdb, **kwargs):
-        # 'ABC', '1,2', ''
+        # 'A,B,C', '1,2', ''
         best_chains, best_models, err_msg = \
             self.matlab.loadBestChainsAndModels(pdb, nout=3)
-        best_chains = ','.join(list(best_chains))
 
         if err_msg != '':
             raise core.MatlabFailed(err_msg)
