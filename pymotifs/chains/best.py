@@ -12,7 +12,7 @@ class BestChainsAndModelsLoader(core.SimpleLoader):
         return session.query(PdbBestChainsAndModels). \
             filter(PdbBestChainsAndModels.pdb_id == pdb)
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         # 'ABC', '1,2', ''
         best_chains, best_models, err_msg = \
             self.matlab.loadBestChainsAndModels(pdb, nout=3)
