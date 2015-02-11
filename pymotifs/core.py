@@ -473,11 +473,11 @@ class SimpleLoader(Loader):
 
     __metaclass__ = abc.ABCMeta
 
-    def has_data(self, *args):
+    def has_data(self, *args, **kwargs):
         with self.session() as session:
             return bool(self.query(session, *args).first())
 
-    def remove(self, *args):
+    def remove(self, *args, **kwargs):
         with self.session() as session:
             self.query(session, *args).delete(synchronize_session=False)
 
