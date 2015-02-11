@@ -168,10 +168,10 @@ class Structure(Base):
         """
 
         with self.session() as session:
-            query = session.query(mod.ChainInfo.taxonomyId).\
-                filter_by(pdb_id=pdb, chainId=chain)
+            query = session.query(mod.ChainInfo.taxonomy_id).\
+                filter_by(pdb_id=pdb, chain_id=chain)
 
-            tax_ids = query.one().taxonomyId
+            tax_ids = query.one().taxonomy_id
             if tax_ids is None:
                 return []
 

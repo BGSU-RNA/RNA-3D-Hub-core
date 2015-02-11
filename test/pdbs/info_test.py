@@ -18,7 +18,7 @@ class InfoTest(StageTest):
     def test_it_gets_the_data_correctly(self):
         data = self.loader.data(['2AW7', '1GID', '1S72'])
         val = sorted([d.resolution for d in data])
-        self.assertEquals([3.46, 2.5, 2.4], val)
+        self.assertEquals([2.4, 2.5, 3.46], val)
 
 
 class RenameTest(StageTest):

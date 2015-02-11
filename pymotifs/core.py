@@ -53,6 +53,12 @@ class SkipValue(Skip):
     pass
 
 
+class MatlabFailed(Exception):
+    """An exception meant to be used if matlab commands fail for some reason.
+    """
+    pass
+
+
 class Matlab(object):
     """A simple wrapper around mlab. This is useful because it sets the root as
     well as calling the setup function before running matlab.
@@ -62,6 +68,10 @@ class Matlab(object):
         self.logger = logging.getLogger('core.Matlab')
         self.mlab = None
         self._root = root
+
+    def __del__(self):
+        if self.mlab:
+            del self.mlab
 
     def __startup__(self):
         self.logger.debug('Starting up matlab')
@@ -139,6 +149,7 @@ class Stage(object):
 
         self.session = Session(session_maker)
         self.logger = logging.getLogger(self.name)
+        self._cif = ut.CifFileFinder(self.config)
 
     @abc.abstractmethod
     def is_missing(self, entry, **kwargs):
@@ -162,6 +173,23 @@ class Stage(object):
         :returns: Nothing and is ignored.
         """
         pass
+
+    def cif(self, pdb):
+        """A method to load the cif file for a given pdb id.
+
+        :pdb: PDB id to parse.
+        :returns: A parsed cif file.
+        """
+        with open(self._cif(pdb), 'rb') as raw:
+            return Cif(raw)
+
+    def structure(self, pdb):
+        """A method to load the cif file and get the structure for the given
+
+        :pdb: The pdb id to get the structure for.
+        :returns: The FR3D structure for the given PDB.
+        """
+        return self.cif(pdb).structure()
 
     def transform(self, pdb, **kwargs):
         """This method takes the a pdb that we are given to process and
@@ -192,7 +220,7 @@ class Stage(object):
 
         with self.session() as session:
             current = session.query(mod.PdbAnalysisStatus).\
-                filter_by(id=pdb, step=self.name).\
+                filter_by(pdb=pdb, stage=self.name).\
                 first()
             if not current:
                 return True
@@ -247,7 +275,7 @@ class Stage(object):
             self.logger.debug("Marking %s as done", pdb)
         else:
             with self.session() as session:
-                status = mod.PdbAnalysisStatus(id=pdb, step=self.name,
+                status = mod.PdbAnalysisStatus(pdb=pdb, stage=self.name,
                                                time=datetime.datetime.now())
                 session.merge(status)
         self.logger.info('Updated %s status for pdb %s', self.name, pdb)
@@ -335,15 +363,6 @@ class Loader(Stage):
     """ A flag to indicate if we should use sessions .merge instead of .add """
     merge_data = False
 
-    def __init__(self, *args):
-        """Build a new Loader object.
-
-        :config: The config object.
-        :session_maker: The Session object.
-        """
-        super(Loader, self).__init__(*args)
-        self._cif = ut.CifFileFinder(self.config)
-
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
         """Compute the data for the given pdb file.
@@ -351,7 +370,7 @@ class Loader(Stage):
         pass
 
     @abc.abstractmethod
-    def has_data(self, pdb):
+    def has_data(self, pdb, **kwargs):
         """Check if we have already stored data for this pdb file in the
         database. This is used to determine if we should attempt to compute new
         data.
@@ -367,22 +386,14 @@ class Loader(Stage):
         """
         pass
 
-    def cif(self, pdb):
-        """A method to load the cif file for a given pdb id.
+    def is_missing(self, entry, **kwargs):
+        """Determine if the data is missing by using the has_data method.
 
-        :pdb: PDB id to parse.
-        :returns: A parsed cif file.
+        :entry: The transformed entry to check for.
+        :kwargs: Keyword arguments
+        :returns: A boolean if the requested data is missing or not.
         """
-        with open(self._cif(pdb), 'rb') as raw:
-            return Cif(raw)
-
-    def structure(self, pdb):
-        """A method to load the cif file and get the structure for the given
-
-        :pdb: The pdb id to get the structure for.
-        :returns: The FR3D structure for the given PDB.
-        """
-        return self.cif(pdb).structure()
+        return not self.has_data(entry, **kwargs)
 
     def store(self, data, dry_run=False, **kwargs):
         """Store the given data. The data is written in chunks of
@@ -462,11 +473,11 @@ class SimpleLoader(Loader):
 
     __metaclass__ = abc.ABCMeta
 
-    def has_data(self, *args):
+    def has_data(self, *args, **kwargs):
         with self.session() as session:
             return bool(self.query(session, *args).first())
 
-    def remove(self, *args):
+    def remove(self, *args, **kwargs):
         with self.session() as session:
             self.query(session, *args).delete(synchronize_session=False)
 
@@ -491,17 +502,8 @@ class MassLoader(Loader):
 
     __metaclass__ = abc.ABCMeta
 
-    def to_process(self, pdbs):
+    def to_process(self, pdbs, **kwargs):
         return tuple(super(MassLoader, self).to_process(pdbs))
-
-    def transform(self, pdbs, **kwargs):
-        return [tuple(pdbs)]
-
-    def has_data(self, *args, **kwargs):
-        pass
-
-    def should_process(self, pdbs, **kwargs):
-        return True
 
     def mark_processed(self, pdbs, **kwargs):
         for pdb in pdbs:
@@ -511,9 +513,50 @@ class MassLoader(Loader):
         self.logger.debug("Remove does nothing in MassLoaders")
         pass
 
-    @abc.abstractmethod
-    def data(self, pdbs):
+    def has_data(self, pdbs, **kwargs):
         pass
+
+    def process(self, pdbs, **kwargs):
+        data = self.data(pdbs)
+
+        if not self.allow_no_data and not data:
+            self.logger.error("No data produced")
+            raise InvalidState("Missing data")
+        elif not data:
+            self.logger.warning("No data produced")
+            return
+
+        self.store(data, **kwargs)
+
+    @abc.abstractmethod
+    def data(self, pdbs, **kwargs):
+        pass
+
+    def __call__(self, given, **kwargs):
+        entries = tuple(self.to_process(given, **kwargs))
+        if not entries:
+            self.logger.critical("Nothing to process")
+            raise InvalidState("Nothing to process")
+
+        self.logger.info("Processing all %s entries", len(entries))
+
+        try:
+            if not self.should_process(entries, **kwargs):
+                self.logger.debug("No need to process %s", entries)
+                return
+            self.process(entries, **kwargs)
+        except Skip as err:
+            self.logger.warn("Skipping processing all entries. %s Reason %s",
+                             str(err))
+            return
+        except Exception as err:
+            self.logger.error("Error raised in should_process all entries")
+            self.logger.exception(err)
+            if self.stop_on_failure:
+                raise StageFailed(self.name)
+            return
+
+        self.mark_processed(entries, **kwargs)
 
 
 class MultiStageLoader(Stage):

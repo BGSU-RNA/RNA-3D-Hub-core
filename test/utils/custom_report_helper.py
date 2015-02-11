@@ -1,6 +1,7 @@
 import unittest as ut
 
 from pymotifs.utils.pdb import CustomReportHelper
+from pymotifs.chains.info import Loader
 
 
 class CustomReportHelperTest(ut.TestCase):
@@ -17,3 +18,8 @@ class CustomReportHelperTest(ut.TestCase):
         val = [r['ndbId'] for r in report]
         self.assertEquals(2, len(report))
         self.assertEquals(['ARL048', 'RR0125'], val)
+
+    def test_can_get_a_correct_report_for_1S72(self):
+        self.helper = CustomReportHelper(fields=Loader.names.keys())
+        report = self.helper(['1S72'])
+        self.assertEquals(31, len(report))

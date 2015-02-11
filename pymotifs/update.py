@@ -4,9 +4,20 @@ update for all parts of the pipeline.
 """
 
 from pymotifs import core
+from pymotifs import download
+from pymotifs import export
 from pymotifs import units
 from pymotifs import pdb
+from pymotifs import loops
+from pymotifs import chains
+from pymotifs import interactions
 
 
 class Loader(core.MultiStageLoader):
-    stages = [pdb.Loader, units.Loader]
+    stages = [download.Downloader,
+              export.CifAtoms,
+              pdb.Loader,
+              chains.Loader,
+              units.Loader,
+              interactions.Loader,
+              loops.Loader]

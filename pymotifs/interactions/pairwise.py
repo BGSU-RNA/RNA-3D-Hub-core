@@ -34,9 +34,10 @@ class Loader(core.SimpleLoader):
         :kwargs: Keyword arguments.
         :returns: The interaction annotations.
         """
+        matlab = core.Matlab(self.config['locations']['fr3d_root'])
 
         self.logger.info('Running matlab on %s', pdb)
-        ifn, status, err_msg = self.mlab.loadInteractions(pdb, nout=3)
+        ifn, status, err_msg = matlab.loadInteractions(pdb, nout=3)
         status = status[0][0]
         if status == 0:
             data = self.interactions_from_csv(ifn, pdb)

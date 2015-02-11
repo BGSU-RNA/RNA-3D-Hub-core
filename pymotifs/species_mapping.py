@@ -5,7 +5,7 @@ from pymotifs import utils
 from pymotifs import models as mod
 
 
-class Loader(core.Loader):
+class Loader(core.MassLoader):
     """This is a loader to get the species information for all structures. What
     this is extract all taxon ids for all chains that we do not yet have a
     species level information for then use NCIB's Entrez EPost to store all
@@ -22,9 +22,11 @@ class Loader(core.Loader):
     context_limit = 3000
 
     """The number of ids to download in one request at once."""
-    download_limit = 500
+    download_limit = 200
 
-    def transform(self, *args, **kwargs):
+    merge_data = True
+
+    def structure_taxon_ids(self, *args, **kwargs):
         """This transform is a bit special. We actually ignore the input to the
         function and simply find all chain entries that we don't know the
         species for. We then make a request to NCBI using history to store all
@@ -35,31 +37,16 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(mod.ChainInfo.taxonomyId).\
-                outerjoin(mod.SpeciesInfo,
-                          mod.SpeciesInfo.id == mod.ChainInfo.taxonomyId).\
-                filter(mod.SpeciesInfo.id == None)
+            query = session.query(mod.ChainInfo.taxonomy_id).\
+                outerjoin(mod.SpeciesMapping,
+                          mod.SpeciesMapping.id == mod.ChainInfo.taxonomy_id).\
+                filter(mod.SpeciesMapping.id == None)
 
             ids = []
             for result in query:
                 if result[0]:
                     ids.extend(result[0].split(','))
-            return ids
-
-    def has_data(self, *args, **kwargs):
-        """Because we are using an unusual transform we don't actually need to
-        determine if we have the data or not as it is implicit in transform
-        that we do not have the data. Thus, this always returns False.
-        """
-        return False
-
-    def remove(self, *args, **kwargs):
-        """This does nothing. We do not ever attempt to remove things because
-        we don't know what we are missing. In addition we never need to
-        recompute programmatically. If recomputing is needed then you have to
-        delete data manually and rerun this stage.
-        """
-        pass
+            return set(ids)
 
     def contexts(self, ids):
         Entrez.email = self.config['email']
@@ -149,19 +136,22 @@ class Loader(core.Loader):
             'species_name': species['ScientificName']
         }
 
-    def data(self, ids):
-        """Get the SpeciesInfo for all contexts. If we can't get at least the
+    def data(self, *args, **kwargs):
+        """Get the SpeciesMapping for all contexts. If we can't get at least the
         expected number of objects warnings will be raised.
 
         :contexts: A dictionary produced by `transform`.
-        :returns: A list of SpeciesInfo objects representing the species info.
+        :returns: A list of SpeciesMapping objects representing the species
+        info.
         """
 
+        ids = self.structure_taxon_ids()
         contexts = self.contexts(ids)
         data = []
         for context in contexts['contexts']:
             for entry in self.taxon_entries(context):
-                data.append(mod.SpeciesInfo(**entry))
+                if entry:
+                    data.append(mod.SpeciesMapping(**entry))
 
         data = set(data)
         if len(data) < len(contexts['ids']):
