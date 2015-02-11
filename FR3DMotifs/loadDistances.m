@@ -34,7 +34,7 @@ function [FILENAME, status, err_msg] = loadDistances(pdb_id)
         %
         het_ids ={};
         for i = 1:length(F.Het)
-            het_ids{end+1}=aGetHetId(F,i);
+            het_ids{end+1}=F.NT(i).ID;
         end
         if length(unique(het_ids)) ~= length(het_ids)
             F = zAddNTData([pdb_id '.pdb']);
@@ -98,11 +98,11 @@ end
 function [id] = aEntityId(i, N, A, F)
 
     if i <= N
-        id = aGetNTId(F,i);
+        id = F.NT(i).ID;
     elseif i <= N+A
-        id = aGetAAId(F,i-N);
+        id = F.NT(i-N).ID;
     else
-        id = aGetHetId(F,i-(N+A));
+        id = F.NT(N+A).ID;
     end
 
 end
