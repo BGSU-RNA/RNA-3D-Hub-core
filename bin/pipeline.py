@@ -84,7 +84,7 @@ if __name__ == '__main__':
                         action='store_true',
                         help="Use all RNA containing PDBS")
     parser.add_argument('--config', dest='config',
-                        default='pymotifs/motifatlas.cfg',
+                        default='pymotifs/motifatlas.json',
                         help="Config file to use")
     parser.add_argument('--recalculate', action='store_true',
                         help="Force all data to be recalculated")
