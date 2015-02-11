@@ -29,7 +29,7 @@ function [filename, err_msg] = loadLoopPositions(input_folder)
             
             for i = 1:N
 
-                nt_id = aGetNTId(File, i);
+                nt_id = File.NT(i).ID;
                 
                 if ~isempty(find(full(File.Flank(i,:)),1)),
                     flank = 1;

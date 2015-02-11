@@ -46,14 +46,14 @@ function [FILENAME, status, err_msg] = loadCoordinates(pdb_id)
                    'coordinates','');
 
         for i = 1:N
-            id   = aGetNTId(F,i);
+            id   = F.NT(i).ID;
             C(i) = aParseId(id,i);
             C(i).coordinates = aGetNucleotideAsPdbText(F.NT(i));
             print_line(fid, C(i));
         end
 
         for i = 1:A
-            id         = aGetAAId(F,i);
+            id         = F.NT(i).ID;
             current    = N+i;
             C(current) = aParseId(id,i);
             C(current).coordinates = aGetAsPdbText(F.AA(i),'aa');
@@ -62,7 +62,7 @@ function [FILENAME, status, err_msg] = loadCoordinates(pdb_id)
 
         S = N + A;
         for i = 1:H
-            id         = aGetHetId(F,i);
+            id         = F.NT(i).ID;
             current    = S+i;
             C(current) = aParseId(id,i);
             C(current).coordinates = aGetAsPdbText(F.Het(i),'het');

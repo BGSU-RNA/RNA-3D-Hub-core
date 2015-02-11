@@ -43,13 +43,13 @@ function [filename, err_msg] = loadLoopSearchFile(input_files, output_folder)
 
             nt_list1 = '';
             for i = 1:length(Search.Query.NT)
-                nt_list1 = strcat(nt_list1, ',', aGetNTId(Search.Query, i));
+                nt_list1 = strcat(nt_list1, ',', Search.Query.NT(i).ID);
             end
             nt_list1 = nt_list1(2:end); % remove the last comma
 
             nt_list2 = '';
             for i = Search.Candidates(1,1:end-1)
-                nt_list2 = strcat(nt_list2, ',', aGetNTId(Search.File, i));
+                nt_list2 = strcat(nt_list2, ',', Search.File(i).ID);
             end
             nt_list2 = nt_list2(2:end); % remove the last comma
 

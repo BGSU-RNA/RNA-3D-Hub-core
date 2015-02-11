@@ -14,8 +14,9 @@ function [best_chains, best_models, err_msg] = loadBestChainsAndModels(pdb_id)
     try
         F = zAddNTData(pdb_id);                   
                 
-        % cell array containing a string without separators
-        best_chains = cell2mat(zBestChains(F));
+        % cell array
+        best_chains = zBestChains(F);
+        best_chains = strjoin(reshape(best_chains{1}, 1, []),',')
         
         % cell array with integer arrays
         best_models = num2str(cell2mat(zBestModels(F)), '%i,');
