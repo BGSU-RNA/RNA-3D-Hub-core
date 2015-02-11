@@ -60,7 +60,7 @@ class Loader(core.SimpleLoader):
         with self.session() as session:
             query = self.query(session, (pdb_id, loop_type))
             for result in query:
-                mapping[result.nt_ids] = utils.row2dict(result)
+                mapping[result.nt_ids] = result.id
         return mapping
 
     def _next_loop_number_string(self, current):
@@ -109,6 +109,7 @@ class Loader(core.SimpleLoader):
             loop_id = self._get_loop_id(loop.full_id, pdb_id, mapping,
                                         len(data))
 
+            print(loop_id)
             loops[i].Filename = loop_id
             data.append(LoopsAll(
                 id=loop_id,
@@ -141,6 +142,7 @@ class Loader(core.SimpleLoader):
     def data(self, entry, **kwargs):
         pdb_id, loop_type = entry
         (loops, l) = self._extract_loops(pdb_id, loop_type)
-        self._save_mat_files(loops)
         mapping = self._get_loop_mapping(self, pdb_id, loop_type)
-        return self._loop_objects(loops, l, pdb_id, loop_type, mapping)
+        objects = self._loop_objects(loops, l, pdb_id, loop_type, mapping)
+        self._save_mat_files(loops)
+        return objects
