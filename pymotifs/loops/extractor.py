@@ -3,10 +3,10 @@ This is a module to extract loops from structures. It uses matlab to find all
 loops and then will save them in the correct location as specificed by
 'locations'. It also stores the the loop information into the database.
 """
+import os
 
 from pymotifs.models import LoopsAll
 from pymotifs import core
-from pymotifs import utils
 
 
 class Loader(core.SimpleLoader):
@@ -16,7 +16,6 @@ class Loader(core.SimpleLoader):
 
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)
-        self.matlab = core.Matlab(self.config['locations']['fr3d_root'])
 
     def transform(self, pdb, **kwargs):
         return [(pdb, type) for type in self.loop_types]
@@ -105,11 +104,10 @@ class Loader(core.SimpleLoader):
     def _loop_objects(self, loops, l, pdb_id, loop_type, mapping):
         data = []
         for i in xrange(l):
-            loop = loops[i].LoopsAll_table
-            loop_id = self._get_loop_id(loop.full_id, pdb_id, mapping,
-                                        len(data))
+            loop = loops[i].AllLoops_table
+            loop_id = self._get_loop_id(loop.full_id, pdb_id, loop_type,
+                                        mapping, len(data))
 
-            print(loop_id)
             loops[i].Filename = loop_id
             data.append(LoopsAll(
                 id=loop_id,
@@ -126,13 +124,23 @@ class Loader(core.SimpleLoader):
 
         return data
 
-    def _save_mat_files(self, loops):
+    def _save_mat_files(self, pdb_id, loops):
         """Pass the Loops structure array back to matlab so that it can
         save the .mat files in the specified location.
         """
 
-        location = self.config['locations']['loops_mat_files']
-        [status, err_msg] = self.matlab.aSaveLoops(loops, location, nout=2)
+        location = os.path.join(self.config['locations']['loops_mat_files'],
+                                pdb_id)
+        if not os.path.exists(location):
+            os.path.makedirs(location)
+
+        try:
+            matlab = core.Matlab(location)
+            [status, err_msg] = matlab.aSaveLoops(loops, location, nout=2)
+        except Exception as err:
+            self.logger.error("Failed to save loops")
+            self.logger.exception(err)
+            raise core.MatlabFailed("Failed to save loops: %s" % str(err))
 
         if status != 0:
             raise core.StageFailed("Could not save all loop mat files")
@@ -144,5 +152,5 @@ class Loader(core.SimpleLoader):
         (loops, l) = self._extract_loops(pdb_id, loop_type)
         mapping = self._get_loop_mapping(self, pdb_id, loop_type)
         objects = self._loop_objects(loops, l, pdb_id, loop_type, mapping)
-        self._save_mat_files(loops)
+        self._save_mat_files(pdb_id, loops)
         return objects
