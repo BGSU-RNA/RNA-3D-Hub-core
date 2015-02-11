@@ -65,7 +65,7 @@ function [Loops] = aSearchToLoops(Search)
         N = length(File.NT);
         ids = cell(1,N);
         for j = 1:N
-            ids{j} = [aGetNTId(File,j) ','];
+            ids{j} = [File.NT(j).ID ','];
         end
         ids = sort(ids);
         File.AllLoops_table.full_id = [ids{:}];
