@@ -26,14 +26,14 @@ class Downloader(core.Loader):
     def url(self, name):
         return self.file_url + name + '.cif.gz'
 
-    def remove(self, entry):
+    def remove(self, entry, **kwargs):
         if self.has_data(entry):
             os.remove(self.filename(entry))
 
-    def has_data(self, entry):
+    def has_data(self, entry, **kwargs):
         return os.path.exists(self.filename(entry))
 
-    def store(self, data):
+    def store(self, data, **kwargs):
         filename, text = data
         with open(filename, 'w') as out:
             out.write(text)
