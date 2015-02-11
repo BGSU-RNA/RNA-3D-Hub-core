@@ -15,7 +15,7 @@ class Exporter(core.PdbExporter):
         return os.path.join(self.config['locations']['fr3d_root'], "PDBFiles",
                             pdb + ".cifatoms")
 
-    def process(self, pdb):
+    def process(self, pdb, **kwargs):
         with open(self.filename(pdb), 'wb') as out:
             writer = CifAtom(out)
             writer(self.structure(pdb))
