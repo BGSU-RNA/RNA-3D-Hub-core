@@ -35,8 +35,9 @@ class Loader(core.MassLoader):
         try:
             ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
             parsed = ftp('/pub/pdb/data/status/obsolete.dat')
-        except:
+        except Exception as err:
             self.logger.critical("Could not get obsolete ids")
+            self.logger.exception(err)
             raise core.StageFailed("Could not get obsolete ids")
 
         data = []

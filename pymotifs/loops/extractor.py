@@ -1,12 +1,12 @@
 """
 This is a module to extract loops from structures. It uses matlab to find all
 loops and then will save them in the correct location as specificed by
-'locations'
-
+'locations'. It also stores the the loop information into the database.
 """
 
 from pymotifs.models import LoopsAll
 from pymotifs import core
+from pymotifs import utils
 
 
 class Loader(core.SimpleLoader):
@@ -30,13 +30,7 @@ class Loader(core.SimpleLoader):
         return session.query(LoopsAll).\
             filter_by(pdb=entry[0], type=entry[1])
 
-    def data(self, entry, **kwargs):
-        pdb_id, loop_type = entry
-        (loops, l) = self.extract_loops(pdb_id, loop_type)
-        self.save_mat_files(loops)
-        return self.loop_objects(loops, l, pdb_id, loop_type)
-
-    def extract_loops(self, pdb_id, loop_type):
+    def _extract_loops(self, pdb_id, loop_type):
         """Loops - array of FR3D File structures. l - its length"""
 
         [Loops, l, err_msg] = self.matlab.extractLoops(pdb_id, loop_type,
@@ -46,33 +40,92 @@ class Loader(core.SimpleLoader):
             raise core.MatlabFailed(err_msg)
 
         if Loops == 0:
-            self.logger.info('No %s in %s', loop_type, pdb_id)
-            return (0, 0)
-        else:
-            self.logger.info('Found %i loops', l)
-            return (Loops, l)
+            raise core.SkipValue('No %s in %s' % loop_type, pdb_id)
 
-    def loop_objects(self, loops, l, pdb_id, loop_type):
+        self.logger.info('Found %i loops', l)
+        return (Loops, l)
+
+    def _get_loop_mapping(self, pdb_id, loop_type):
+        """Compute a mapping from the nts to the loop id.  This is used
+        for setting ids by either looking up the old known id or creating a new
+        one if no one is found.
+
+        :pdb_id: The pdb id to search.
+        :loop_type: The loop type.
+        :returns: A dictonary mapping from the nts to the loop id. If there are
+        no loops it returns an empty dictonary.
+        """
+
+        mapping = {}
+        with self.session() as session:
+            query = self.query(session, (pdb_id, loop_type))
+            for result in query:
+                mapping[result.nt_ids] = utils.row2dict(result)
+        return mapping
+
+    def _next_loop_number_string(self, current):
+        """Compute the next loop number string. This will pad to either 3 or 6
+        characters with zeros. If the next number is over 999 we use 6,
+        otherwise 3 as the length to pad to.
+
+        :current: The current loop count.
+        :returns: A string of the next loop id.
+        """
+
+        next_number = current + 1
+        if next_number > 999:
+            return str(next_number).rjust(6, '0')
+        return str(next_number).rjust(3, '0')
+
+    def _get_loop_id(self, nts, pdb_id, loop_type, mapping, count):
+        """Compute the loop id to use for the given unit string. This will
+        build a string like IL_1S72_001 or IL_4V4Q_001000. In structures with
+        over 999 loops, we will pad with zeros to 6 characters, but keep the
+        stanadrd padding to 3 characters otherwise.
+
+        :nts: The concanated unit string.
+        :pdb_id: The pdb id to use.
+        :loop_type: The type of loop.
+        :mapping: A mapping from unit string to known loop_id.
+        :count: The current number of known loops.
+        :returns: A string of the new loop id.
+        """
+
+        if nts in mapping:
+            self.logger.debug('Nucleotides %s matched %s', nts, mapping[nts])
+            return mapping[nts]
+
+        # format examples: IL_1S72_001, IL_4V4Q_001000
+        str_number = self._next_loop_number_string(count)
+        loop_id = '_'.join([loop_type, pdb_id, str_number])
+        self.logger.info('Created new loop id %s, for nucleotides %s',
+                         loop_id, nts)
+        return loop_id
+
+    def _loop_objects(self, loops, l, pdb_id, loop_type, mapping):
         data = []
         for i in xrange(l):
-            loop_id = self._get_loop_id(loops[i].LoopsAll_table.full_id,
-                                        pdb_id, loop_type)
+            loop = loops[i].LoopsAll_table
+            loop_id = self._get_loop_id(loop.full_id, pdb_id, mapping,
+                                        len(data))
+
             loops[i].Filename = loop_id
             data.append(LoopsAll(
                 id=loop_id,
                 type=loop_type,
                 pdb=pdb_id,
-                sequential_id=loop_id[-3:],
+                sequential_id=loop_id.split("_")[-1],
                 length=int(loops[i].NumNT[0][0]),
-                seq=loops[i].LoopsAll_table.seq,
-                r_seq=loops[i].LoopsAll_table.r_seq,
-                nwc_seq=loops[i].LoopsAll_table.nwc,
-                r_nwc_seq=loops[i].LoopsAll_table.r_nwc,
-                nt_ids=loops[i].LoopsAll_table.full_id,
-                loop_name=loops[i].LoopsAll_table.loop_name))
+                seq=loop.seq,
+                r_seq=loop.r_seq,
+                nwc_seq=loop.nwc,
+                r_nwc_seq=loop.r_nwc,
+                nt_ids=loop.full_id,
+                loop_name=loop.loop_name))
+
         return data
 
-    def save_mat_files(self, loops):
+    def _save_mat_files(self, loops):
         """Pass the Loops structure array back to matlab so that it can
         save the .mat files in the specified location.
         """
@@ -80,62 +133,14 @@ class Loader(core.SimpleLoader):
         location = self.config['locations']['loops_mat_files']
         [status, err_msg] = self.matlab.aSaveLoops(loops, location, nout=2)
 
-        if status == 0:
-            self.logger.info('mat files saved')
-        else:
+        if status != 0:
             raise core.StageFailed("Could not save all loop mat files")
 
-    def next_loop_number_string(self, current):
-        next_number = current + 1
-        if next_number > 999:
-            return str(next_number).rjust(6, '0')
-        return str(next_number).rjust(3, '0')
+        self.logger.info('mat files saved')
 
-    def _get_loop_id(self, full_id, pdb_id, loop_type):
-        """Get a loop id for the loop. If its already known we us the current
-        ID, otherwise we create a new one.
-
-        :full_id: A string of the list of nucleotides in 5'->3' order joined by
-        commas.
-        :pdb_id: The pdb id we are getting a loop id for.
-        :loop_type: The loop type, such as IL, HL, or J3.
-        :returns: A string representing the loop id, may be new.
-        """
-
-        with self.session() as session:
-            loop = session.query(LoopsAll).\
-                filter(LoopsAll.nt_ids == full_id).\
-                first()
-
-            if loop:
-                self.logger.debug('Full_id %s matched %s', full_id, loop.id)
-                return loop.id
-
-        # count the loops already in the db
-        with self.session() as session:
-            seq_id = session.query(LoopsAll).\
-                filter(LoopsAll.pdb == pdb_id).\
-                filter(LoopsAll.type == loop_type).\
-                count()
-
-            # format example: IL_1S72_001
-            str_number = self.next_loop_number_string(seq_id)
-            id = '_'.join([loop_type, pdb_id, str_number])
-            self.logger.info('Created new loop id %s', id)
-            return id
-
-
-# SELECT * FROM loops_all AS t1
-# LEFT JOIN motifversions.`loops_all` AS t2
-# ON t1.id=t2.id
-# WHERE t1.type!=t2.type
-# OR t2.pdb!=t1.pdb
-# OR t1.`sequential_id`!=t2.`sequential_id`
-# OR t1.length!=t2.length
-# OR t1.seq!=t2.seq
-# OR t1.`r_nwc_seq`!=t2.`r_nwc_seq`
-# OR t1.`r_seq`!=t2.`r_seq`
-# OR t1.`nt_ids`!=t2.`nt_ids`
-# OR t1.`loop_name` !=t2.`loop_name`
-# OR t1.`pdb_file`!=t2.`pdb_file`
-# OR t1.`nwc_seq`!=t2.`nwc_seq` #junctions are different;
+    def data(self, entry, **kwargs):
+        pdb_id, loop_type = entry
+        (loops, l) = self._extract_loops(pdb_id, loop_type)
+        self._save_mat_files(loops)
+        mapping = self._get_loop_mapping(self, pdb_id, loop_type)
+        return self._loop_objects(loops, l, pdb_id, loop_type, mapping)
