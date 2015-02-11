@@ -220,7 +220,7 @@ class Stage(object):
 
         with self.session() as session:
             current = session.query(mod.PdbAnalysisStatus).\
-                filter_by(id=pdb, step=self.name).\
+                filter_by(pdb=pdb, stage=self.name).\
                 first()
             if not current:
                 return True
@@ -275,7 +275,7 @@ class Stage(object):
             self.logger.debug("Marking %s as done", pdb)
         else:
             with self.session() as session:
-                status = mod.PdbAnalysisStatus(id=pdb, step=self.name,
+                status = mod.PdbAnalysisStatus(pdb=pdb, stage=self.name,
                                                time=datetime.datetime.now())
                 session.merge(status)
         self.logger.info('Updated %s status for pdb %s', self.name, pdb)
