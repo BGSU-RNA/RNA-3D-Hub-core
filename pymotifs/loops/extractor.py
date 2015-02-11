@@ -33,7 +33,7 @@ class Loader(core.SimpleLoader):
     def data(self, entry, **kwargs):
         pdb_id, loop_type = entry
         (loops, l) = self.extract_loops(pdb_id, loop_type)
-        self.save_mat_files(loops)
+        # self.save_mat_files(loops)
         return self.loop_objects(loops, l, pdb_id, loop_type)
 
     def extract_loops(self, pdb_id, loop_type):
@@ -55,7 +55,7 @@ class Loader(core.SimpleLoader):
     def loop_objects(self, loops, l, pdb_id, loop_type):
         data = []
         for i in xrange(l):
-            loop_id = self._get_loop_id(loops[i].LoopsAll_table.full_id,
+            loop_id = self._get_loop_id(loops[i].AllLoops_table.full_id,
                                         pdb_id, loop_type)
             loops[i].Filename = loop_id
             data.append(LoopsAll(
@@ -64,12 +64,12 @@ class Loader(core.SimpleLoader):
                 pdb=pdb_id,
                 sequential_id=loop_id[-3:],
                 length=int(loops[i].NumNT[0][0]),
-                seq=loops[i].LoopsAll_table.seq,
-                r_seq=loops[i].LoopsAll_table.r_seq,
-                nwc_seq=loops[i].LoopsAll_table.nwc,
-                r_nwc_seq=loops[i].LoopsAll_table.r_nwc,
-                nt_ids=loops[i].LoopsAll_table.full_id,
-                loop_name=loops[i].LoopsAll_table.loop_name))
+                seq=loops[i].AllLoops_table.seq,
+                r_seq=loops[i].AllLoops_table.r_seq,
+                nwc_seq=loops[i].AllLoops_table.nwc,
+                r_nwc_seq=loops[i].AllLoops_table.r_nwc,
+                nt_ids=loops[i].AllLoops_table.full_id,
+                loop_name=loops[i].AllLoops_table.loop_name))
         return data
 
     def save_mat_files(self, loops):
