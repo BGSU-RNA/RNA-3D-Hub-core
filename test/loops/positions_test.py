@@ -1,5 +1,6 @@
 import os
 
+from nose import SkipTest
 from test import StageTest
 from test import skip_without_matlab
 
@@ -25,6 +26,29 @@ class ParsingTest(StageTest):
             'border': 1
         }
         self.assertEquals(ans, val)
+
+
+class HasDataTest(StageTest):
+    loader_class = Loader
+
+    def test_knows_if_has_data(self):
+        self.assertTrue(self.loader.has_data('1S72'))
+
+    def test_knows_if_missing_data(self):
+        self.assertFalse(self.loader.has_data('0S72'))
+
+
+class RemovingTest(StageTest):
+    loader_class = Loader
+
+    def setUp(self):
+        super(RemovingTest, self).setUp()
+
+    def test_ignores_unknown_pdb(self):
+        self.assertTrue(self.loader.remove('02S7'))
+
+    def test_deletes_all_positions(self):
+        raise SkipTest()
 
 
 @skip_without_matlab

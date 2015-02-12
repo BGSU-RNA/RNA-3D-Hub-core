@@ -7,17 +7,34 @@ from pymotifs.models import LoopPositions
 from pymotifs.models import LoopsAll
 
 
-class Loader(core.SimpleLoader):
+class Loader(core.Loader):
     merge_data = True
 
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)
         self.precomputed = self.config['locations']['loops_mat_files']
 
-    def query(self, session, pdb):
-        return session.query(LoopPositions).\
-            join(LoopsAll, LoopsAll.id == LoopPositions.loop_id).\
-            filter(LoopsAll.pdb == pdb)
+    def remove(self, pdb):
+        with self.session() as session:
+            query = session.query(LoopsAll).filter_by(pdb=pdb)
+            ids = [result.id for result in query]
+
+        if not ids:
+            return True
+
+        with self.session() as session:
+            return session.query(LoopPositions).\
+                filter(LoopPositions.loop_id.in_(ids)).\
+                delete(synchronize_session=False)
+
+        return True
+
+    def has_data(self, pdb):
+        with self.session() as session:
+            query = session.query(LoopPositions).\
+                join(LoopsAll, LoopsAll.id == LoopPositions.loop_id).\
+                filter(LoopsAll.pdb == pdb)
+            return bool(query.count())
 
     def parse(self, filename):
         keys = ['loop_id', 'position', 'unit_id', 'bulge', 'flanking',
