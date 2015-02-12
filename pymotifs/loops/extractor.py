@@ -97,6 +97,7 @@ class Loader(core.SimpleLoader):
             loop = loops[index].AllLoops_table
             loop_id = self._get_loop_id(loop.full_id, pdb_id, loop_type,
                                         mapping)
+            mapping[loop.full_id] = loop_id
             loops[index].Filename = loop_id
 
             data.append(LoopsAll(
