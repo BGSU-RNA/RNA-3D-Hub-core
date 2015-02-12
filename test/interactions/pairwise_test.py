@@ -1,4 +1,5 @@
 from test import StageTest
+from test import SkipTest
 
 from pymotifs.interactions.pairwise import Loader
 
@@ -65,6 +66,12 @@ class ParsingACsvTest(StageTest):
             'f_stacks': "s53 ",
             'f_crossing': 0
         }
+        self.assertTrue(ans, val)
+
+    def test_it_merges_entries(self):
+        raise SkipTest()
+        val = self.data[10]  # Not sure what index to use
+        ans = {}
         self.assertTrue(ans, val)
 
     def test_it_converts_crossing_to_int(self):
