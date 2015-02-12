@@ -12,6 +12,8 @@ import pymotifs.core as core
 
 from pymotifs.models import UnitPairsInteractions as Interaction
 
+IGNORE = ['perp', 'nbif', 'bif']
+
 
 class Loader(core.SimpleLoader):
     """A loader to generate and import the interaction annotations for
@@ -34,15 +36,15 @@ class Loader(core.SimpleLoader):
         :kwargs: Keyword arguments.
         :returns: The interaction annotations.
         """
-        matlab = core.Matlab(self.config['locations']['fr3d_root'])
+        matlab = core.Matlab(str(self.config['locations']['fr3d_root']))
 
         self.logger.info('Running matlab on %s', pdb)
         ifn, status, err_msg = matlab.loadInteractions(pdb, nout=3)
         status = status[0][0]
         if status == 0:
-            data = self.interactions_from_csv(ifn, pdb)
+            data = self.parse(ifn, pdb)
             os.remove(ifn)
-            return data
+            return [Interaction(**d) for d in data]
         elif status == 2:
             raise core.SkipPdb('Pdb file %s has no nucleotides' % pdb)
         raise core.InvalidState('Matlab error code %i when analyzing %s' %
@@ -65,11 +67,13 @@ class Loader(core.SimpleLoader):
             return 'f_bphs'
         elif re.match(r'^n?[ct][WHS]{2}$', family) or family == 'wat':
             return 'f_lwbp'
+        elif family in IGNORE:
+            return None
         else:
             self.logger.warning("Unknown interaction: %s", family)
             return None
 
-    def interactions_from_csv(self, filename, pdb):
+    def parse(self, filename, pdb):
         """Reads the csv file, imports all interactions, deletes the file when
         done to avoid stale data and free up disk space
 
@@ -78,18 +82,18 @@ class Loader(core.SimpleLoader):
         :returns: A list of Interaction objects.
         """
 
-        data = coll.defaultdict(Interaction)
+        data = coll.defaultdict(dict)
         with open(filename, 'rb') as raw:
             for row in csv.reader(raw, delimiter=',', quotechar='"'):
                 interaction = data[(row[0], row[1])]
-                interaction.unit1_id = row[0]
-                interaction.unit1_id = row[1]
-                interaction.f_crossing = int(row[3])
-                interaction.pdb_id = pdb
+                interaction['unit1_id'] = row[0]
+                interaction['unit2_id'] = row[1]
+                interaction['f_crossing'] = int(row[3])
+                interaction['pdb_id'] = pdb
 
                 family = row[2].strip()
                 inter_type = self.interaction_type(family)
                 if inter_type:
-                    setattr(interaction, inter_type, family)
+                    interaction[inter_type] = family
 
         return data.values()

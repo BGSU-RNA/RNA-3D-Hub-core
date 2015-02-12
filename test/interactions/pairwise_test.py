@@ -50,18 +50,26 @@ class ParsingACsvTest(StageTest):
     def setUp(self):
         super(ParsingACsvTest, self).setUp()
         self.data = self.loader.\
-            interactions_from_csv('files/interactions/1GID.csv', '1GID')
+            parse('files/interactions/1GID.csv', '1GID')
 
     def test_can_parse_all_enteris(self):
         val = len(self.data)
         ans = 1513
         self.assertEqual(ans, val)
 
+    def test_can_create_correct_data_structure(self):
+        val = self.data[0]
+        ans = {
+            'unit1_id': "1GID|1|A|A|104",
+            'unit2_id': "1GID|1|A|G|103",
+            'f_stacks': "s53 ",
+            'f_crossing': 0
+        }
+        self.assertTrue(ans, val)
+
     def test_it_converts_crossing_to_int(self):
-        val = self.data[0].f_crossing
-        ans = 0
-        self.assertEqual(ans, val)
+        self.assertEqual(0, self.data[0]['f_crossing'])
 
     def test_skips_invalid_entries(self):
-        ints = [d.f_lwbp for d in self.data]
+        ints = [d.get('f_lwbp') for d in self.data]
         self.assertFalse('perp' in ints)
