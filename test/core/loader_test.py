@@ -26,7 +26,7 @@ class RecomputingTest(StageTest):
         self.assertFalse(self.loader.should_process('known'))
 
     def test_will_recalc_if_missing_data(self):
-        self.assertFalse(self.loader.should_process('missing'))
+        self.assertTrue(self.loader.should_process('missing'))
 
     def test_recalculates_if_given_on_known_data(self):
         self.assertTrue(self.loader.should_process('known', recalculate=True))
