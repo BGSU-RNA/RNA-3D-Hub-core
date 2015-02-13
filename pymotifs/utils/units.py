@@ -28,7 +28,6 @@ class Translator(object):
                 mapping[result.old_id] = result.unit_id
 
         units = []
-        print(nt_ids)
         for nt_id in nt_ids:
             if nt_id not in mapping:
                 raise TranslationFailed("Could not find %s" % nt_id)
