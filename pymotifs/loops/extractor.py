@@ -43,7 +43,7 @@ class Loader(core.SimpleLoader):
             return str(next_number).rjust(6, '0')
         return str(next_number).rjust(3, '0')
 
-    def _get_loop_id(self, nts, pdb_id, loop_type, mapping):
+    def _get_loop_id(self, name, pdb_id, loop_type, mapping):
         """Compute the loop id to use for the given unit string. This will
         build a string like IL_1S72_001 or IL_4V4Q_001000. In structures with
         over 999 loops, we will pad with zeros to 6 characters, but keep the
@@ -57,15 +57,15 @@ class Loader(core.SimpleLoader):
         :returns: A string of the new loop id.
         """
 
-        if nts in mapping:
-            self.logger.debug('Nucleotides %s matched %s', nts, mapping[nts])
-            return mapping[nts]
+        if name in mapping:
+            self.logger.debug('Nucleotides %s matched %s', name, mapping[name])
+            return mapping[name]
 
         # format examples: IL_1S72_001, IL_4V4Q_001000
         str_number = self._next_loop_number_string(len(mapping))
         loop_id = '_'.join([loop_type, pdb_id, str_number])
         self.logger.info('Created new loop id %s, for nucleotides %s',
-                         loop_id, nts)
+                         loop_id, name)
         return loop_id
 
     def _extract_loops(self, pdb_id, loop_type, mapping):
@@ -95,7 +95,7 @@ class Loader(core.SimpleLoader):
         data = []
         for index in xrange(count):
             loop = loops[index].AllLoops_table
-            loop_id = self._get_loop_id(loop.full_id, pdb_id, loop_type,
+            loop_id = self._get_loop_id(loop.loop_name, pdb_id, loop_type,
                                         mapping)
             mapping[loop.full_id] = loop_id
             loops[index].Filename = loop_id
@@ -125,7 +125,7 @@ class Loader(core.SimpleLoader):
 
         return data
 
-    def _get_loop_mapping(self, pdb_id, loop_type):
+    def _mapping(self, pdb_id, loop_type):
         """Compute a mapping from the nts to the loop id.  This is used
         for setting ids by either looking up the old known id or creating a new
         one if no one is found.
@@ -140,7 +140,7 @@ class Loader(core.SimpleLoader):
         with self.session() as session:
             query = self.query(session, (pdb_id, loop_type))
             for result in query:
-                mapping[result.nt_ids] = result.id
+                mapping[result.loop_name] = result.id
         return mapping
 
     def data(self, entry, **kwargs):
