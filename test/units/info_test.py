@@ -62,6 +62,9 @@ class CreatingUnitsTest(StageTest):
         ans = '1GID'
         self.assertEqual(ans, val)
 
+    def test_sets_the_model(self):
+        self.assertEquals(1, self.data.model)
+
     def test_sets_the_chain(self):
         val = self.data.chain
         ans = 'A'

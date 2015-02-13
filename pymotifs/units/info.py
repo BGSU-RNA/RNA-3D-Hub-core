@@ -31,6 +31,7 @@ class Loader(core.SimpleLoader):
     def as_unit(self, nt):
         return UnitInfo(id=nt.unit_id(),
                         pdb_id=nt.pdb,
+                        model=nt.model,
                         chain=nt.chain,
                         unit=nt.sequence,
                         number=nt.number,

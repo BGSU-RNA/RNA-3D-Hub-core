@@ -29,6 +29,15 @@ class GettingLoopIdsTest(StageTest):
             '2AW7_AU_1_A_1076_U_,2AW7_AU_1_A_1077_G_,2AW7_AU_1_A_1078_U_,2AW7_AU_1_A_1079_G_,2AW7_AU_1_A_1080_A_,2AW7_AU_1_A_1081_A_': 'HL_2AW7_024'
         }
 
+    def test_can_get_a_correct_mapping(self):
+        mapping = self.loader._get_loop_mapping('2AW7', 'HL')
+        val = mapping[self.mapping.keys()[0]]
+        self.assertEquals('HL_2AW7_024', val)
+
+    def test_gets_empty_mapping_for_missing_structure(self):
+        val = self.loader._get_loop_mapping('0000', 'IL')
+        self.assertEquals({}, val)
+
     def test_pads_to_three_for_small_numbers(self):
         val = self.loader._next_loop_number_string(10)
         self.assertEquals('011', val)
@@ -42,12 +51,12 @@ class GettingLoopIdsTest(StageTest):
         self.assertEquals('001000', val)
 
     def test_generates_a_new_id_for_an_unknown_loop(self):
-        val = self.loader._get_loop_id('bob', '2AW7', 'IL', self.mapping, 68)
-        self.assertEquals('IL_2AW7_069', val)
+        val = self.loader._get_loop_id('bob', '2AW7', 'IL', self.mapping)
+        self.assertEquals('IL_2AW7_002', val)
 
     def test_uses_old_id_for_known_loop(self):
         nts = '2AW7_AU_1_A_1076_U_,2AW7_AU_1_A_1077_G_,2AW7_AU_1_A_1078_U_,2AW7_AU_1_A_1079_G_,2AW7_AU_1_A_1080_A_,2AW7_AU_1_A_1081_A_'
-        val = self.loader._get_loop_id(nts, '2AW7', 'HL', self.mapping, 10)
+        val = self.loader._get_loop_id(nts, '2AW7', 'HL', self.mapping)
         self.assertEquals('HL_2AW7_024', val)
 
 

@@ -77,7 +77,7 @@ class Matlab(object):
         self.logger.debug('Starting up matlab')
         os.chdir(self._root)
         self.mlab = mlab
-        self.mlab._autosync_dirs = False
+        # self.mlab._autosync_dirs = False
         self.mlab.setup()
         self.logger.debug('Matlab started')
 
