@@ -4,8 +4,6 @@ from pymotifs import utils
 from pymotifs.models import ExpSeqInfo as Exp
 from pymotifs.models import ExpSeqPosition as Position
 
-from rnastructure.tertiary.cif import CIF
-
 
 class Loader(core.Loader):
     name = 'exp_seq_positions'
@@ -38,8 +36,7 @@ class Loader(core.Loader):
 
     def data(self, entry, **kwargs):
         exp_id, pdb, chain = entry
-        with open(self.finder(pdb), 'rb') as raw:
-            cif = CIF(raw)
+        cif = self.cif(pdb)
 
         data = []
         seen = set()
