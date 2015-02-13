@@ -35,7 +35,7 @@ class CoreRsrParserTest(unittest.TestCase):
         }
         val = self.parser._unit_id('1J5E', data)
         ans = '1J5E|1|A|C|10'
-        self.assertEqual(val, ans)
+        self.assertEqual(ans, val)
 
 
 class MissingRsRParserTest(unittest.TestCase):

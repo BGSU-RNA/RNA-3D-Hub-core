@@ -8,7 +8,7 @@ import pymotifs.core as core
 from pymotifs.models import UnitInfo as Unit
 from pymotifs.models import UnitQuality as Quality
 
-from rnastructure.util import unit_ids as uids
+from fr3d.unit_ids import encode
 
 
 class FileHelper(object):
@@ -38,7 +38,7 @@ class Parser(object):
         content = gzip.GzipFile(fileobj=filehandle).read()
         md5 = hashlib.md5()
         md5.update(content)
-        self.generator = uids.UnitIdGenerator()
+        self.generator = encode
         self.digest = md5.hexdigest()
         self.root = ET.fromstring(content)
 
@@ -65,13 +65,17 @@ class Parser(object):
                 yield data
 
     def _unit_id(self, pdb, attributes):
+        insertion_code = attributes['icode'].strip()
+        if insertion_code == '':
+            insertion_code = None
+
         return self.generator({
             'pdb': pdb,
             'model': int(attributes['model']),
             'chain': attributes['chain'],
-            'number': int(attributes['resnum']),
-            'residue': attributes['resname'],
-            'insertion_code': attributes['icode'],
+            'component_number': int(attributes['resnum']),
+            'component_id': attributes['resname'],
+            'insertion_code': insertion_code,
         })
 
 
