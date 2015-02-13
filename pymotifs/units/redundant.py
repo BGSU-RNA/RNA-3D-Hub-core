@@ -32,6 +32,6 @@ class RedundantNucleotidesLoader(core.SimpleLoader):
             raise core.MatlabFailed(err_msg)
 
         with open(ifn, 'rb') as raw:
-            data = UnitRedundancies(**self._parse(raw, pdb))
+            data = [UnitRedundancies(**unit) for unit in self._parse(raw, pdb)]
         os.remove(ifn)
         return data
