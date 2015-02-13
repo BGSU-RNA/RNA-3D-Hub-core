@@ -73,7 +73,7 @@ class Loader(core.Loader):
         return output_file
 
     def annotations(self, pdb, remove=True):
-        output_file = self.get_annotations(pdb)
+        output_file = self.annotation_file(pdb)
         data = self.parse(output_file)
         if remove:
             os.remove(output_file)
