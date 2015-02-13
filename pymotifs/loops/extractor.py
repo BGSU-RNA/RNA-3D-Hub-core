@@ -7,6 +7,7 @@ import os
 
 from pymotifs.models import LoopsAll
 from pymotifs import core
+from pymotifs.utils.units import Translator
 
 
 class Loader(core.SimpleLoader):
@@ -43,13 +44,13 @@ class Loader(core.SimpleLoader):
             return str(next_number).rjust(6, '0')
         return str(next_number).rjust(3, '0')
 
-    def _get_loop_id(self, name, pdb_id, loop_type, mapping):
+    def _get_loop_id(self, units, pdb_id, loop_type, mapping):
         """Compute the loop id to use for the given unit string. This will
         build a string like IL_1S72_001 or IL_4V4Q_001000. In structures with
         over 999 loops, we will pad with zeros to 6 characters, but keep the
         stanadrd padding to 3 characters otherwise.
 
-        :nts: The concanated unit string.
+        :units: The concanated unit or nt id string.
         :pdb_id: The pdb id to use.
         :loop_type: The type of loop.
         :mapping: A mapping from unit string to known loop_id.
@@ -57,15 +58,16 @@ class Loader(core.SimpleLoader):
         :returns: A string of the new loop id.
         """
 
-        if name in mapping:
-            self.logger.debug('Nucleotides %s matched %s', name, mapping[name])
-            return mapping[name]
+        if units in mapping:
+            self.logger.debug('Nucleotides %s matched %s', units,
+                              mapping[units])
+            return mapping[units]
 
         # format examples: IL_1S72_001, IL_4V4Q_001000
         str_number = self._next_loop_number_string(len(mapping))
         loop_id = '_'.join([loop_type, pdb_id, str_number])
         self.logger.info('Created new loop id %s, for nucleotides %s',
-                         loop_id, name)
+                         loop_id, units)
         return loop_id
 
     def _extract_loops(self, pdb_id, loop_type, mapping):
@@ -137,10 +139,28 @@ class Loader(core.SimpleLoader):
         """
 
         mapping = {}
+        translator = Translator(self.session.maker)
+
         with self.session() as session:
             query = self.query(session, (pdb_id, loop_type))
             for result in query:
-                mapping[result.loop_name] = result.id
+                unit_list = result.nt_ids.split(',')
+                seperator = unit_list[0][4]
+
+                units = None
+                if seperator == '_':
+                    self.logger.debug("Translating %s to unit ids",
+                                      result.nt_ids)
+                    unit_list = translator.translate(unit_list)
+                    units = ','.join(unit_list)
+                    self.logger.debug("Translated to: %s", units)
+                elif seperator == '|':
+                    self.logger.debug("No need to translate unit ids")
+                    units = result.nt_ids
+                else:
+                    raise ValueError("Unknown seperator type: %s", seperator)
+
+                mapping[units] = result.id
         return mapping
 
     def data(self, entry, **kwargs):
