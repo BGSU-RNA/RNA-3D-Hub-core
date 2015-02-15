@@ -1,11 +1,28 @@
+from Bio.Alphabet import ThreeLetterProtein
+
 from pymotifs import core
 from pymotifs.models import PdbUnitIdCorrespondence
+
+AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 
 
 class TranslationFailed(Exception):
     """This is raised when we could not translate an old style id to a new
     style id.
     """
+
+
+def component_type(unit):
+    seq = unit.sequence.upper()
+    if seq in ['A', 'C', 'G', 'U']:
+        return 'rna'
+    if seq == 'HOH':
+        return 'water'
+    if seq in AA:
+        return 'aa'
+    if seq in ['DA', 'DC', 'DG', 'DT']:
+        return 'dna'
+    return None
 
 
 class Translator(object):
