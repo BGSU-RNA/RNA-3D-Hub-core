@@ -3,6 +3,7 @@ from test import StageTest
 from pymotifs.utils.releases import Release
 from pymotifs.utils.releases import UnknownReleaseType
 from pymotifs.utils.releases import UnknownReleaseMode
+from pymotifs.utils.releases import BadlyFormattedRelease
 
 
 class GettingReleaseIdTest(StageTest):
@@ -39,3 +40,9 @@ class ComputingNextReleaseIdTest(StageTest):
     def test_complains_for_unknown_mode(self):
         self.assertRaises(UnknownReleaseMode, self.loader.next, '1.72',
                           mode='bob')
+
+    def test_complains_for_badly_formatted_release_id(self):
+        self.assertRaises(BadlyFormattedRelease, self.loader.next, '1')
+        self.assertRaises(BadlyFormattedRelease, self.loader.next, '1.')
+        self.assertRaises(BadlyFormattedRelease, self.loader.next, 'a.')
+        self.assertRaises(BadlyFormattedRelease, self.loader.next, '1.a')

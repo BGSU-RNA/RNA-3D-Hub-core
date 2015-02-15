@@ -21,6 +21,14 @@ class UnknownReleaseMode(Exception):
     pass
 
 
+class BadlyFormattedRelease(Exception):
+    """This is raised if we are given a release id that is not formatted
+    correctly. A correctly formatted id must have two parts, major and minor
+    where each is a integer.
+    """
+    pass
+
+
 class Release(object):
 
     names = ['major', 'minor']
@@ -46,7 +54,15 @@ class Release(object):
         if mode not in self.names:
             raise UnknownReleaseMode(mode)
 
-        parts = map(int, current.split('.'))
+        try:
+            parts = map(int, current.split('.'))
+        except:
+            raise BadlyFormattedRelease("Can't process release id: %s" %
+                                        current)
+
+        if len(parts) != 2:
+            raise BadlyFormattedRelease("Release id must have major an minor")
+
         current = dict(zip(self.names, parts))
         func = getattr(self, '__%s__' % mode)
 
