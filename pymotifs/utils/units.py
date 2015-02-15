@@ -10,6 +10,7 @@ class TranslationFailed(Exception):
     """This is raised when we could not translate an old style id to a new
     style id.
     """
+    pass
 
 
 def component_type(unit):

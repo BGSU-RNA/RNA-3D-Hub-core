@@ -3,6 +3,7 @@ import pymotifs.core as core
 from Bio.Alphabet import ThreeLetterProtein
 
 from pymotifs.models import UnitInfo
+from pymotifs.utils import units
 
 AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 
@@ -17,16 +18,7 @@ class Loader(core.SimpleLoader):
         return [self.cif(pdb).structure()]
 
     def type(self, unit):
-        seq = unit.sequence.upper()
-        if seq in ['A', 'C', 'G', 'U']:
-            return 'rna'
-        if seq == 'HOH':
-            return 'water'
-        if seq in AA:
-            return 'aa'
-        if seq in ['DA', 'DC', 'DG', 'DT']:
-            return 'dna'
-        return None
+        return units.component_type(unit)
 
     def as_unit(self, nt):
         return UnitInfo(id=nt.unit_id(),
