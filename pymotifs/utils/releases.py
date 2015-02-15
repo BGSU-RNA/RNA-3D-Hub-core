@@ -45,6 +45,8 @@ class Release(object):
         with self.session() as session:
             result = session.execute(CURRENT_QUERY % tablename)
             result = result.fetchall()
+            if len(result) == 0:
+                return '0.0'
             return result[0].id
 
     def next(self, current, mode='minor'):

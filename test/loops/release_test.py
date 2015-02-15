@@ -22,6 +22,24 @@ class GettingReleaseIdTest(StageTest):
         self.assertRaises(UnknownReleaseType, self.loader.current, 'bob')
 
 
+class GettingWithNoCurrentReleaseTest(StageTest):
+    loader_class = Release
+
+    def setUp(self):
+        super(GettingWithNoCurrentReleaseTest, self).setUp()
+        with self.loader.session() as session:
+            session.execute('CREATE TABLE ml_releases_tmp AS (SELECT * FROM ml_releases);')
+            session.execute('delete from ml_releases')
+
+    def tearDown(self):
+        with self.loader.session() as session:
+            session.execute('insert into ml_releases select * from ml_releases_tmp ;')
+            session.execute('drop table ml_releases_tmp')
+
+    def test_sets_missing_release_to_zero(self):
+        self.assertEquals('0.0', self.loader.current('motif'))
+
+
 class ComputingNextReleaseIdTest(StageTest):
     loader_class = Release
 
