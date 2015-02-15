@@ -11,11 +11,8 @@ AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 class Loader(core.SimpleLoader):
     update_gap = False
 
-    def query(self, session, structure):
-        return session.query(UnitInfo).filter_by(pdb_id=structure.pdb)
-
-    def transform(self, pdb, **kwargs):
-        return [self.cif(pdb).structure()]
+    def query(self, session, pdb):
+        return session.query(UnitInfo).filter_by(pdb_id=pdb)
 
     def type(self, unit):
         return units.component_type(unit)
@@ -33,5 +30,6 @@ class Loader(core.SimpleLoader):
                         chain_index=getattr(nt, 'chain_index', None),
                         unit_type_id=self.type(nt))
 
-    def data(self, structure):
+    def data(self, pdb):
+        structure = self.structure(pdb)
         return [self.as_unit(nt) for nt in structure.residues(polymeric=None)]

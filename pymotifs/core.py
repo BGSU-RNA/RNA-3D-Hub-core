@@ -11,6 +11,7 @@ except:
     pass
 
 from fr3d.cif.reader import Cif
+from fr3d.data import Structure
 
 from pymotifs import models as mod
 from pymotifs import utils as ut
@@ -180,6 +181,9 @@ class Stage(object):
         :pdb: PDB id to parse.
         :returns: A parsed cif file.
         """
+        if isinstance(pdb, Cif):
+            return pdb
+
         with open(self._cif(pdb), 'rb') as raw:
             return Cif(raw)
 
@@ -189,6 +193,9 @@ class Stage(object):
         :pdb: The pdb id to get the structure for.
         :returns: The FR3D structure for the given PDB.
         """
+        if isinstance(pdb, Structure):
+            return pdb
+
         return self.cif(pdb).structure()
 
     def transform(self, pdb, **kwargs):
