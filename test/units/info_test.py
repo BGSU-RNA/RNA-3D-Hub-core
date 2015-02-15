@@ -43,7 +43,7 @@ class CreatingUnitsTest(StageTest):
 
     @classmethod
     def setUpClass(cls):
-        with open('files/cif/1GID.cif', 'rb') as raw:
+        with open('test/files/cif/1GID.cif', 'rb') as raw:
             cls.structure = Cif(raw).structure()
 
     def setUp(self):
@@ -118,7 +118,7 @@ class BuildingAllUnitsTest(StageTest):
 
     @classmethod
     def setUpClass(cls):
-        with open('files/cif/1GID.cif', 'rb') as raw:
+        with open('test/files/cif/1GID.cif', 'rb') as raw:
             cls.structure = Cif(raw).structure()
 
     def setUp(self):
@@ -137,7 +137,7 @@ class QueryingTest(StageTest):
 
     @classmethod
     def setUpClass(cls):
-        with open('files/cif/1GID.cif', 'rb') as raw:
+        with open('test/files/cif/1GID.cif', 'rb') as raw:
             cls.structure = Cif(raw).structure()
 
     def setUp(self):

@@ -12,12 +12,12 @@ class ParserTest(ut.TestCase):
         self.parser = Parser()
 
     def test_can_parse_a_whole(self):
-        with open('files/obsolete.dat', 'rb') as raw:
+        with open('test/files/obsolete.dat', 'rb') as raw:
             parsed = self.parser(raw.read())
         self.assertEquals(3226, len(parsed))
 
     def test_can_extract_correct_data(self):
-        with open('files/obsolete.dat', 'rb') as raw:
+        with open('test/files/obsolete.dat', 'rb') as raw:
             parsed = self.parser(raw.read())
         ans = {
             'id': '116L',

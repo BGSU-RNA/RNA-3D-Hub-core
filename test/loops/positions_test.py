@@ -11,11 +11,11 @@ class ParsingTest(StageTest):
     loader_class = Loader
 
     def test_can_parse_a_file(self):
-        positions = self.loader.parse('files/loop-positions.csv')
+        positions = self.loader.parse('test/files/loop-positions.csv')
         self.assertEquals(157, len(positions))
 
     def test_creates_a_correct_data_structure(self):
-        positions = self.loader.parse('files/loop-positions.csv')
+        positions = self.loader.parse('test/files/loop-positions.csv')
         val = positions[0]
         ans = {
             'loop_id': "HL_1GID_001",

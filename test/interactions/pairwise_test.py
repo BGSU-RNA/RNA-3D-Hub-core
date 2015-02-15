@@ -51,7 +51,7 @@ class ParsingACsvTest(StageTest):
     def setUp(self):
         super(ParsingACsvTest, self).setUp()
         self.data = self.loader.\
-            parse('files/interactions/1GID.csv', '1GID')
+            parse('test/files/interactions/1GID.csv', '1GID')
 
     def test_can_parse_all_enteris(self):
         val = len(self.data)

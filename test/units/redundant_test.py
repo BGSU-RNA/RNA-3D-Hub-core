@@ -7,12 +7,12 @@ class ParsingTest(StageTest):
     loader_class = Loader
 
     def test_can_parse_a_file(self):
-        with open('./files/redundant-nts.csv', 'rb') as raw:
+        with open('test/files/redundant-nts.csv', 'rb') as raw:
             data = self.loader._parse(raw, '1GID')
         self.assertEquals(314, len(data))
 
     def test_can_generate_correct_data(self):
-        with open('./files/redundant-nts.csv', 'rb') as raw:
+        with open('test/files/redundant-nts.csv', 'rb') as raw:
             data = self.loader._parse(raw, '1GID')
         ans = {
             'unit_id1': "1GID|1|B|G|103",
