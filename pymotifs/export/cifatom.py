@@ -9,7 +9,7 @@ from pymotifs import core
 from fr3d.cif.writer import CifAtom
 
 
-class Exporter(core.PdbExporter):
+class Exporter(core.Stage):
 
     def filename(self, pdb):
         return os.path.join(self.config['locations']['fr3d_root'], "PDBFiles",
