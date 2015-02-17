@@ -587,9 +587,9 @@ class Exporter(Stage):
     mode = None
 
     def __init__(self, *args, **kwargs):
+        super(Exporter, self).__init__(*args, **kwargs)
         if not self.mode:
             raise InvalidState("Must define the mode")
-        super(Exporter, self).__init__(*args, **kwargs)
 
     @abc.abstractmethod
     def filename(self, entry):
@@ -604,32 +604,8 @@ class Exporter(Stage):
         pass
 
     def process(self, entry, **kwargs):
-        """
-        """
         with open(self.filename(entry), self.mode) as raw:
             raw.write(self.text(entry, **kwargs))
-
-
-class MassExporter(Exporter):
-    """An exporter that exports several files at once.
-    """
-    __metaclass__ = abc.ABCMeta
-
-    mode = 'a'
-
-    def is_missing(self, pdb):
-        """Always returns true, I assume we will always want to redo a mass
-        export.
-        """
-        return True
-
-    def __call__(self, pdbs, **kwargs):
-        """Deletes the previous mass export then redoes the full export.
-        """
-        filename = self.filename(None)
-        if os.path.exists(filename):
-            os.remove(filename)
-        super(MassExporter, self).__call__(pdbs, **kwargs)
 
 
 class PdbExporter(Exporter):
