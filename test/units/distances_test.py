@@ -1,8 +1,22 @@
 from nose import SkipTest
 
+from test import StageTest
 from test import CifStageTest
 
 from pymotifs.units.distances import Loader
+
+
+class QueryingTest(StageTest):
+    loader_class = Loader
+
+    def test_knows_it_has_data(self):
+        self.assertTrue(self.loader.has_data('124D'))
+
+    def test_knows_has_no_data(self):
+        self.assertFalse(self.loader.has_data('024D'))
+
+    def test_can_delete_data(self):
+        raise SkipTest()
 
 
 class ComputingCentersTest(CifStageTest):
