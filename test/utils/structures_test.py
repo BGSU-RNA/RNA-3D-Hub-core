@@ -123,16 +123,23 @@ class SourceTest(QueryUtilTest):
     query_class = st.Structure
 
     def test_can_find_a_simple_taxon_id(self):
-        raise SkipTest()
         self.assertEquals([562], self.db_obj.source('2AW7', 'A'))
 
     def test_knows_when_there_is_no_known_taxon_id(self):
-        raise SkipTest()
         self.assertEquals([], self.db_obj.source('1ET4', 'A'))
 
     def test_can_find_several_species_ids(self):
-        raise SkipTest()
-        self.assertEquals([32630, 11103], self.db_obj.source('3T4B', 'A'))
+        self.assertEquals([11103, 32630], self.db_obj.source('3T4B', 'A'))
 
     def test_fails_if_it_cannot_find_all_taxon_ids(self):
         raise SkipTest()
+
+    def test_can_find_by_chain_id(self):
+        self.assertEquals([562], self.db_obj.source('2AW7', 4977))
+
+    def test_can_simplify_to_just_syntheic(self):
+        self.assertEquals(32630, self.db_obj.source('3T4B', 'A',
+                                                    simplify=True))
+
+    def test_simplifies_to_just_first_id(self):
+        self.assertEquals(562, self.db_obj.source('2AW7', 'A', simplify=True))

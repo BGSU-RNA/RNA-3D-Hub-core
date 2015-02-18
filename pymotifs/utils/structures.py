@@ -156,7 +156,7 @@ class Structure(Base):
 
         return loops
 
-    def source(self, pdb, chain):
+    def source(self, pdb, chain, simplify=False):
         """This is a method to extract all species level taxonomy ids for a
         given chain. A chain can be composed of more than one, thus a list.
         However, in some cases there is no known taxnomy id, in this case an
@@ -166,10 +166,17 @@ class Structure(Base):
         :chain: The chain to query.
         :returns: A list of taxonomy ids the chain has.
         """
+        syntheic = (32630, 'synthetic construct')
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.taxonomy_id).\
-                filter_by(pdb_id=pdb, chain_name=chain)
+                filter_by(pdb_id=pdb)
+
+            if isinstance(chain, str):
+                query = query.filter_by(chain_name=chain)
+
+            if isinstance(chain, int):
+                query = query.filter_by(id=chain)
 
             tax_ids = query.one().taxonomy_id
             if tax_ids is None:
@@ -184,6 +191,11 @@ class Structure(Base):
 
             if len(species_ids) != len(tax_ids):
                 raise UnknownTaxonomyException("Could not find all tax ids")
+
+            if simplify:
+                if len(species_ids) > 1:
+                    return syntheic[0]
+                return species_ids[0]
 
             return sorted(species_ids)
 
