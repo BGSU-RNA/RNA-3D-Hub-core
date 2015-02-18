@@ -119,7 +119,7 @@ class StoringWithAutoIncrement(StageTest):
 
     def test_merge_works_with_new_data(self):
         self.loader.merge_data = True
-        self.loader.store(ChainInfo(chain_id='X', pdb_id='000X',
+        self.loader.store(ChainInfo(chain_name='X', pdb_id='000X',
                           classification='bob'))
 
         with self.loader.session() as session:
