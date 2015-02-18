@@ -100,6 +100,24 @@ class NR(Base):
 
 
 class Structure(Base):
+    def rna_chains(self, pdb, return_id=False):
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.chain_name).\
+                filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)')
+
+            if isinstance(query, str):
+                query = query.filter_by(pdb_id=pdb)
+            if isinstance(query, list):
+                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
+
+            data = []
+            for result in query:
+                entry = result.chain_name
+                if return_id:
+                    entry = (result.chain_name, result.id)
+                data.append(entry)
+            return data
+
     def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
@@ -180,6 +198,8 @@ class Structure(Base):
 
             tax_ids = query.one().taxonomy_id
             if tax_ids is None:
+                if simplify:
+                    return None
                 return []
 
             tax_ids = [int(tax_id) for tax_id in tax_ids.split(',')]
@@ -195,6 +215,8 @@ class Structure(Base):
             if simplify:
                 if len(species_ids) > 1:
                     return syntheic[0]
+                if not species_ids:
+                    return None
                 return species_ids[0]
 
             return sorted(species_ids)

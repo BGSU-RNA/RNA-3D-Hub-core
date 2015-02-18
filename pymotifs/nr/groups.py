@@ -226,7 +226,8 @@ class Grouper(core.Stage):
             data['entity'] = result.entity_name
 
         try:
-            data['source'] = self.struct_helper.source(pdb, chain)
+            data['source'] = self.struct_helper.source(pdb, chain,
+                                                       simplify=True)
         except:
             self.logger.warn("Failed to find all taxon ids for %s, %s", pdb,
                              chain)
