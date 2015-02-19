@@ -1,22 +1,24 @@
 from pymotifs import core
 from pymotifs.models import ExpSeqInfo as Info
+from pymotifs.models import ChainInfo
 
 
-class Loader(core.SimpleLoader):
-    name = 'exp_seq_info'
-    update_gap = False
+class Loader(core.MassLoader):
 
-    def __init__(self, config, maker):
-        super(Loader, self).__init__(config, maker)
+    def known(self):
+        with self.session() as session:
+            query = session.query(Info.sequence)
+            return set(result.sequence for result in query)
 
-    def query(self, session, pdb):
-        return session.query(Info).filter(Info.pdb == pdb)
+    def possible(self):
+        with self.session() as session:
+            query = session.query(ChainInfo.sequence).\
+                filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)')
 
-    def data(self, pdb, **kwargs):
-        seen = set()
-        data = []
-        for chain in self.structure(pdb).chains():
-            if (pdb, chain['chain']) not in seen:
-                seen.add((pdb, chain['chain']))
-                data.append(Info(pdb=pdb, chain=chain['chain']))
-        return data
+            return set(result.sequence for result in query)
+
+    def data(self, *args, **kwargs):
+        possible = self.possible()
+        known = self.known()
+        new = possible - known
+        return [Info(sequence=seq, length=len(seq)) for seq in new]
