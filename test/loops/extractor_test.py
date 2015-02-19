@@ -69,7 +69,6 @@ class GettingLoopIdsTest(StageTest):
             '2AW7|1|A|A|55,'
             '2AW7|1|A|U|56'
         )
-        print(nts)
         val = self.loader._get_loop_id(nts, '2AW7', 'HL', self.mapping)
         self.assertEquals('IL_2AW7_004', val)
 
