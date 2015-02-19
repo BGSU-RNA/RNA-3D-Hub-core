@@ -143,3 +143,17 @@ class SourceTest(QueryUtilTest):
 
     def test_simplifies_to_just_first_id(self):
         self.assertEquals(562, self.db_obj.source('2AW7', 'A', simplify=True))
+
+
+class RnaChainsTest(QueryUtilTest):
+    query_class = st.Structure
+
+    def test_can_get_all_rna_chains_in_a_structure(self):
+        self.assertEquals(['A'], self.db_obj.rna_chains('3T4B'))
+
+    def test_will_filter_out_non_rna_chains(self):
+        self.assertEquals(['A'], self.db_obj.rna_chains('2AW7'))
+
+    def test_can_return_ids_and_names(self):
+        val = self.db_obj.rna_chains('2AW7', return_id=True)
+        self.assertEquals([('A', 4977)], val)

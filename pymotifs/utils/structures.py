@@ -102,13 +102,14 @@ class NR(Base):
 class Structure(Base):
     def rna_chains(self, pdb, return_id=False):
         with self.session() as session:
-            query = session.query(mod.ChainInfo.chain_name).\
+            query = session.query(mod.ChainInfo.chain_name,
+                                  mod.ChainInfo.id).\
                 filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)')
 
-            if isinstance(query, str):
-                query = query.filter_by(pdb_id=pdb)
             if isinstance(query, list):
                 query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
+            else:
+                query = query.filter_by(pdb_id=pdb)
 
             data = []
             for result in query:
