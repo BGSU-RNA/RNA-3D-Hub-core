@@ -11,6 +11,8 @@ from pymotifs import core
 from pymotifs import utils as ut
 from pymotifs import models as mod
 
+SYNTHEIC = (32630, 'synthetic construct')
+
 LONG_RANGE_CUTOFF = 4
 
 POLYMER_UNITS_QUERY = '''
@@ -185,17 +187,11 @@ class Structure(Base):
         :chain: The chain to query.
         :returns: A list of taxonomy ids the chain has.
         """
-        syntheic = (32630, 'synthetic construct')
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.taxonomy_id).\
-                filter_by(pdb_id=pdb)
-
-            if isinstance(chain, str):
-                query = query.filter_by(chain_name=chain)
-
-            if isinstance(chain, int):
-                query = query.filter_by(id=chain)
+                filter_by(pdb_id=pdb).\
+                filter_by(chain_name=chain)
 
             tax_ids = query.one().taxonomy_id
             if tax_ids is None:
@@ -215,7 +211,7 @@ class Structure(Base):
 
             if simplify:
                 if len(species_ids) > 1:
-                    return syntheic[0]
+                    return SYNTHEIC[0]
                 if not species_ids:
                     return None
                 return species_ids[0]

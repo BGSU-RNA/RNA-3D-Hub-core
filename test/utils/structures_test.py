@@ -134,9 +134,6 @@ class SourceTest(QueryUtilTest):
     def test_fails_if_it_cannot_find_all_taxon_ids(self):
         raise SkipTest()
 
-    def test_can_find_by_chain_id(self):
-        self.assertEquals([562], self.db_obj.source('2AW7', 4977))
-
     def test_can_simplify_to_just_syntheic(self):
         self.assertEquals(32630, self.db_obj.source('3T4B', 'A',
                                                     simplify=True))
