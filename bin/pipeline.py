@@ -38,7 +38,7 @@ def setup_logging(opts):
     logging.basicConfig(**log_args)
     base = logging.getLogger()
     pool_logger = logging.getLogger('sqlalchemy.pool')
-    pool_logger.setLevel(logging.DEBUG)
+    pool_logger.setLevel(logging.ERROR)
     for handler in base.handlers:
         pool_logger.addHandler(handler)
 
