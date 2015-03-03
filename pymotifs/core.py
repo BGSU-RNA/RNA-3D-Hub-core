@@ -557,7 +557,7 @@ class MassLoader(Loader):
                              str(err))
             return
         except Exception as err:
-            self.logger.error("Error raised in should_process all entries")
+            self.logger.error("Error raised in process all entries")
             self.logger.exception(err)
             if self.stop_on_failure:
                 raise StageFailed(self.name)
