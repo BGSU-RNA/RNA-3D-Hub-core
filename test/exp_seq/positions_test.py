@@ -1,6 +1,5 @@
 from test import StageTest
 
-from pymotifs.models import ExpSeqInfo as Exp
 from pymotifs.exp_seq.positions import Loader
 
 
@@ -28,20 +27,9 @@ class GettingSequencesTest(StageTest):
 
     def setUp(self):
         super(GettingSequencesTest, self).setUp()
-        self.loader.store([Exp(id=-1, sequence='ACGU', length=3),
-                           Exp(id=-2, sequence='AAAAAAA', length=6)])
-        self.data = sorted(self.loader.sequences())
-
-    def tearDown(self):
-        with self.loader.session() as session:
-            session.query(Exp).\
-                filter(Exp.id.in_([-1, -2])).\
-                delete(synchronize_session=False)
+        self.data = sorted(self.loader.sequences('1S72'))
 
     def test_finds_all_sequences(self):
         self.assertEquals(2, len(self.data))
-
-    def test_gets_correct_data(self):
-        self.assertEquals((-1, 'ACGU'), self.data[-1])
 
 # class BuildingDataTest(Stag
