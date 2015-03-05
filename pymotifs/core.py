@@ -11,6 +11,7 @@ except:
     pass
 
 from fr3d.cif.reader import Cif
+from fr3d.cif.reader import ComplexOperatorException
 from fr3d.data import Structure
 
 from pymotifs import models as mod
@@ -184,8 +185,13 @@ class Stage(object):
         if isinstance(pdb, Cif):
             return pdb
 
-        with open(self._cif(pdb), 'rb') as raw:
-            return Cif(raw)
+        try:
+            with open(self._cif(pdb), 'rb') as raw:
+                return Cif(raw)
+        except ComplexOperatorException:
+            self.logger.warning("Got a complex operator for %s, so skipping",
+                                pdb)
+            raise SkipPdb("Complex operator must be skipped")
 
     def structure(self, pdb):
         """A method to load the cif file and get the structure for the given
