@@ -154,3 +154,7 @@ class RnaChainsTest(QueryUtilTest):
     def test_can_return_ids_and_names(self):
         val = self.db_obj.rna_chains('2AW7', return_id=True)
         self.assertEquals([('A', 4977)], val)
+
+    def test_does_not_load_mislabeled_chain(self):
+        val = self.db_obj.rna_chains('3CPW', strict=True)
+        self.assertTrue('A' not in val)

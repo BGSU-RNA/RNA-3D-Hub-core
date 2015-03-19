@@ -102,7 +102,22 @@ class NR(Base):
 
 
 class Structure(Base):
-    def rna_chains(self, pdb, return_id=False):
+    def rna_chains(self, pdb, return_id=False, strict=False):
+        """This will get all chains labeled as RNA for a given structure or
+        structures. This has a strict mode which can fitler out chains which
+        are not standard RNA, however, this may also filter out chains where
+        are RNA incorrectly. For example, things with modified bases listed in
+        their sequence. The strict mode is needed when dealing with things like
+        3CPW|A which is labeled as RNA but is actually a protein chain.
+
+        :pdb: The pdb id or a list of pdb ids to query.
+        :return_id: A boolean to indicate if we should return a tuple that is
+        chain_id, chain_name or just chain_name.
+        :strict: A flag that will exclude any chains that are not composed of
+        only ACGUN.
+        :returns: A list of the names or a tuple of the ids and names.
+        """
+
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name,
                                   mod.ChainInfo.id).\
@@ -112,6 +127,10 @@ class Structure(Base):
                 query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
             else:
                 query = query.filter_by(pdb_id=pdb)
+
+            if strict:
+                func = mod.ChainInfo.sequence.op('regexp')
+                query = query.filter(func('^[ACGUN]$'))
 
             data = []
             for result in query:
