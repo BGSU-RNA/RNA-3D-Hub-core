@@ -215,7 +215,7 @@ class Stage(object):
         :pdb: The pdb.
         :returns: A list of things to send to data.
         """
-        return [pdb]
+        return pdb
 
     def must_recompute(self, pdb, recalculate=False, **kwargs):
         """Detect if we have been told to recompute this stage for this pdb.
@@ -314,47 +314,25 @@ class Stage(object):
             self.logger.info("Processing %s: %s/%s", entry, index + 1,
                              len(entries))
 
+            transformed = self.transform(entry)
             try:
-                iterable = self.transform(entry, **kwargs)
+                if not self.should_process(transformed, **kwargs):
+                    self.logger.debug("No need to process %s", transformed)
+                    continue
+                self.process(transformed, **kwargs)
+
             except SkipPdb as err:
-                self.logger.warn("Skipping entry %s. Reason: %s", entry,
+                self.logger.warn("Skipping entry %s Reason %s", transformed,
                                  str(err))
                 continue
+
             except Exception as err:
-                self.logger.error("Transforming %s failed, skipping", entry)
+                self.logger.error("Error raised in should_process of %s" %
+                                  transformed)
                 self.logger.exception(err)
+                if self.stop_on_failure:
+                    raise StageFailed(self.name)
                 continue
-
-            if not iterable:
-                self.logger.info("Nothing from transfrom for %s", entry)
-                continue
-
-            for trans_index, transformed in enumerate(iterable):
-                self.logger.info("Processing %s (%s) %s: %s/%s",
-                                 transformed, entry, index + 1,
-                                 trans_index + 1, len(iterable))
-
-                try:
-                    if not self.should_process(transformed, **kwargs):
-                        self.logger.debug("No need to process %s", transformed)
-                        continue
-                    self.process(transformed, **kwargs)
-
-                except SkipPdb as err:
-                    self.logger.warn("Skipping entry %s Reason %s", entry,
-                                     str(err))
-                    break
-                except SkipValue as err:
-                    self.logger.warn("Skipping %s Reason %s", transformed,
-                                     str(err))
-                    continue
-                except Exception as err:
-                    self.logger.error("Error raised in should_process of %s" %
-                                      transformed)
-                    self.logger.exception(err)
-                    if self.stop_on_failure:
-                        raise StageFailed(self.name)
-                    continue
 
             self.mark_processed(entry, **kwargs)
 
