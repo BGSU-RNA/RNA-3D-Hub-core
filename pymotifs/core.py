@@ -77,10 +77,10 @@ class Matlab(object):
 
     def __startup__(self):
         self.logger.debug('Starting up matlab')
-        os.chdir(self._root)
         self.mlab = mlab
         # self.mlab._autosync_dirs = False
         self.mlab.setup()
+        os.chdir(self._root)
         self.logger.debug('Matlab started')
 
     def __getattr__(self, key):
