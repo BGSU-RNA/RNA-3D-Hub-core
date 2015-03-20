@@ -13,7 +13,7 @@ class GettingReleaseIdTest(StageTest):
         self.assertEquals('1.72', self.loader.current('loop'))
 
     def test_can_get_current_motif_release(self):
-        self.assertEquals('1.16', self.loader.current('motif'))
+        self.assertEquals('1.15', self.loader.current('motif'))
 
     def test_can_get_current_nr_release(self):
         self.assertEquals('1.70', self.loader.current('nr'))
