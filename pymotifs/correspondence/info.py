@@ -1,9 +1,10 @@
 from pymotifs import core
 from pymotifs.models import ExpSeqInfo as ExpSeq
 from pymotifs.models import CorrespondenceInfo as Info
+from pymotifs.models import ExpSeqChainMapping as Mapping
+from pymotifs.models import ChainInfo
 
-from pymotifs.utils.structures import NR as NrUtil
-from pymotifs.utils.structures import Structure as StructureUtil
+import math
 
 
 class MissingExpSeq(core.InvalidState):
@@ -11,85 +12,50 @@ class MissingExpSeq(core.InvalidState):
 
 
 class Loader(core.Loader):
-    name = 'correspondence_info'
-    update_gap = False
-    allow_no_data = True
-    stop_on_failure = False
+    short_cutoff = 36
 
-    def __init__(self, config, maker):
-        self.util = NrUtil(maker)
-        self.structure = StructureUtil(maker)
-        super(Loader, self).__init__(config, maker)
-
-    def transform(self, pdb, **kwargs):
-        """We transform the pdb into the exp_seq_id that corresponds to the
-        longest chain in that structure. This means we will attempt to align
-        only the longest chain to other similar structures.
-        """
-        exp_id = self.exp_seq_id(pdb)
-        self.logger.info("Using exp_seq_id %s for %s", exp_id, pdb)
-        return [exp_id]
-
-    def exp_seq_id(self, pdb):
-        chain = self.structure.longest_chain(pdb)
-
+    def exp_seq(self, pdb):
         with self.session() as session:
-            query = session.query(ExpSeq).filter_by(pdb=pdb, chain=chain)
-            result = query.first()
-            if not result:
-                self.logger.debug("No exp_seq for %s|%s", pdb, chain)
-                return None
-            result = result.id
-        return result
+            query = session.query(ExpSeq).\
+                join(Mapping, Mapping.exp_seq_id == ExpSeq.id).\
+                join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
+                filter(ChainInfo.pdb_id == pdb)
 
-    def pdb(self, exp_seq_id):
+            sequences = []
+            for result in query:
+                sequences.append({
+                    'id': result.id,
+                    'length': result.length
+                })
+
+        return sequences
+
+    def possible_short(self, exp_seq):
         with self.session() as session:
-            query = session.query(ExpSeq).filter_by(id=exp_seq_id)
-            result = query.first()
-            if not result:
-                self.logger.error("Could not find ExpSeq for given id")
-                raise core.InvalidState("Missing exp_seq_id")
-            return result.pdb, result.chain
+            query = session.query(Info).\
+                filter(Info.length == exp_seq['length']).\
+                filter(Info.id != exp_seq['id'])
 
-    def possible(self, exp_seq_id):
-        pdb, chain = self.pdb(exp_seq_id)
-        members = set(self.util.members(pdb))
+            return [result.id for result in query]
 
-        possible = []
-        for member in members:
-            other_id = self.exp_seq_id(member)
-            if other_id is None:
-                self.logger.info("Skipping %s as it has no exp_seq_id", member)
-            possible.append(other_id)
-        return possible
-
-    def known(self, exp_seq_id):
+    def possible_long(self, exp_seq):
         with self.session() as session:
-            query = session.query(Info).filter(Info.exp_seq_id1 == exp_seq_id)
-            return [result.exp_seq_id2 for result in query]
+            query = session.query(Info).\
+                filter(Info.length <= 2 * exp_seq['length']).\
+                filter(Info.length >= math.sqrt(exp_seq['length'])).\
+                filter(Info.id != exp_seq['id'])
 
-    def missing(self, exp_seq_id):
-        return set(self.possible(exp_seq_id)) - set(self.known(exp_seq_id))
+            return [result.id for result in query]
 
-    def has_data(self, exp_seq_id):
-        """We check if we have all data for this exp_seq_id by seeing if we
-        aligned this to all possible sequences.
-        """
-        return not bool(self.missing(exp_seq_id))
+    def possible(self, exp_seq):
+        if exp_seq['length'] < self.short_cutoff:
+            return self.possible_short(exp_seq)
+        return self.possible_long(exp_seq)
 
-    def remove(self, pdb):
-        """Removes all old correspondences for the given pdb. This will only
-        remove the ones marked by possible.
-        """
-        possible = self.possible(pdb)
-        with self.session() as session:
-            session.query(Info).filter_by(pdb1=pdb).\
-                filter(Info.pdb2.in_(possible)).\
-                delete(synchronize_session=False)
-
-    def data(self, exp_seq_id, **kwargs):
+    def data(self, pdb):
         data = []
-        for other in self.missing(exp_seq_id):
-            self.logger.debug("Using second exp_seq %s", other)
-            data.append(Info(exp_seq_id1=exp_seq_id, exp_seq_id2=other))
+        for exp_seq in self.exp_seq(pdb):
+            for other_seq in self.possible(exp_seq):
+                data.append(Info(exp_seq_id1=exp_seq['id'],
+                                 exp_seq_id2=other_seq))
         return data
