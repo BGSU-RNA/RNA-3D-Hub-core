@@ -9,7 +9,7 @@ from pymotifs.models import ChainInfo
 class Loader(core.Loader):
 
     def query(self, session, pdb):
-        return session.query(Position).\
+        return session.query(Position.id).\
             join(Mapping, Position.exp_seq_id == Mapping.exp_seq_id).\
             join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
             filter(ChainInfo.pdb_id == pdb)

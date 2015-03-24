@@ -33,7 +33,9 @@ class Loader(core.Loader):
         for index, (_, _, unit_id) in enumerate(seq):
             if not unit_id:
                 unit_id = None
-            seq_id = exp_mapping[index]
+            if long(index) not in exp_mapping:
+                raise core.InvalidState("Could not find seq id for %s" % index)
+            seq_id = exp_mapping[long(index)]
             units.append(UnitMapping(unit_id=unit_id,
                                      exp_seq_position_id=seq_id))
         return units
@@ -66,6 +68,11 @@ class Loader(core.Loader):
         data = []
         for chain_name in chains:
             exp_mapping = self.exp_mapping(cif.pdb, chain_name)
+            if not exp_mapping:
+                self.logger.warn("No mapping generated for %s, %s indicting "
+                                 "no positions, skipping", cif.pdb, chain_name)
+                continue
+
             mapping = self.chain_mapping(cif, chain_name, exp_mapping)
             data.extend(mapping)
         return data
