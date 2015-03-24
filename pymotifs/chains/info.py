@@ -16,6 +16,7 @@ class Loader(core.MassLoader):
         'chainLength': 'chain_length',
         'source': 'source',
         'taxonomyId': 'taxonomy_id',
+        'entityMacromoleculeType': 'entity_macromolecule_type'
     }
 
     def __init__(self, *args, **kwargs):
