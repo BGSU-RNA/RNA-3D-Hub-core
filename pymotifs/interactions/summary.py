@@ -1,7 +1,8 @@
 from pymotifs import core
 
-from pymotifs.models import PdbBestChainsAndModels
+from pymotifs.models import ChainInfo
 from pymotifs.models import PdbHelixLoopInteractionSummary as Summary
+
 
 QUERY_TEMPLATE = '''
 SELECT
@@ -31,31 +32,18 @@ WHERE
 '''
 
 
-class Loader(core.Loader):
-    name = 'interaction_summary'
-    update_gap = False
+class Loader(core.SimpleLoader):
 
-    def has_data(self, entry):
-        pdb, chain = entry
+    def query(self, session, pdb):
+            return session.query(Summary).filter_by(pdb=pdb)
+
+    def chains(self, pdb):
         with self.session() as session:
-            query = session.query(Summary).filter_by(pdb=pdb, chain=chain)
-            return bool(query.count())
+            query = session.query(ChainInfo).filter_by(pdb_id=pdb)
+            if not query.count():
+                raise core.SkipPdb("No chains found for %s" % pdb)
 
-    def transform(self, pdb, **kwargs):
-        with self.session() as session:
-            query = session.query(PdbBestChainsAndModels).filter_by(pdb_id=pdb)
-
-            best = query.first()
-            if not best:
-                raise core.SkipPdb("Could not get best chain for %s" % pdb)
-
-            return [(pdb, chain) for chain in best.best_chains.split(',')]
-
-    def remove(self, entry):
-        pdb, chain = entry
-        with self.session() as session:
-            session.query(Summary).filter_by(pdb=pdb, chain=chain).\
-                delete(synchronize_session='fetch')
+            return [result.chain_name for result in query]
 
     def table(self, element):
         if element == 'helix':
@@ -80,7 +68,7 @@ class Loader(core.Loader):
                                      table1=self.table(element1),
                                      table2=self.table(element2))
 
-    def query(self, pdb, chain, element1, element2, range_type):
+    def result(self, pdb, chain, element1, element2, range_type):
         query = self.build(element1, element2, range_type)
         with self.session() as session:
             results = session.execute(query, {'pdb': pdb, 'chain': chain})
@@ -92,18 +80,19 @@ class Loader(core.Loader):
 
             return results['bps'], results['stacks'], results['bphs']
 
-    def data(self, entry, **kwargs):
-        pdb, chain = entry
+    def data(self, pdb, **kwargs):
         parts = ['helix', 'loop']
-        value_names = ['bps', 'stacks', 'bphs']
-        summary = Summary(pdb=pdb, chain=chain)
+        for chain in self.chains(pdb):
+            summary = Summary(pdb=pdb, chain=chain)
 
-        for range_name in ['lr', 'sr']:
-            for part1 in parts:
-                for part2 in parts:
-                    values = self.query(pdb, chain, part1, part2, range_name)
-                    for name, value in zip(value_names, values):
-                        full = '%s_%s_%s_%s' % (range_name, part1, part2, name)
-                        setattr(summary, full, value)
+            for range_name in ['lr', 'sr']:
+                for part1 in parts:
+                    for part2 in parts:
+                        values = self.result(pdb, chain, part1, part2,
+                                             range_name)
+
+                        for name, value in values.items():
+                            full = '_'.join([range_name, part1, part2, name])
+                            setattr(summary, full, value)
 
         return summary
