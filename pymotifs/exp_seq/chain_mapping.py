@@ -47,7 +47,7 @@ class Loader(core.Loader):
                     join(ChainInfo, ChainInfo.sequence == Exp.sequence).\
                     filter(ChainInfo.id == chain_id)
 
-            for result in query:
-                data.append(Mapping(exp_seq_id=result.id, chain_id=chain_id))
+                for result in query:
+                    data.append(Mapping(exp_seq_id=result.id, chain_id=chain_id))
 
         return data

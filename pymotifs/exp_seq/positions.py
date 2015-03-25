@@ -40,9 +40,11 @@ class Loader(core.Loader):
     def positions(self, exp_id, sequence):
         positions = []
         for index, char in enumerate(sequence):
-            positions.append({'exp_seq_id': exp_id,
-                              'unit': char,
-                              'index': index})
+            positions.append({
+                'exp_seq_id': exp_id,
+                'unit': char,
+                'index': index
+            })
         return positions
 
     def data(self, pdb, **kwargs):
