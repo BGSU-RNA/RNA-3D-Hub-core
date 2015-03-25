@@ -7,7 +7,7 @@ from pymotifs.utils.structures import SYNTHEIC
 
 class Loader(core.Loader):
 
-    def has_data(self, pdb):
+    def has_data(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(ChainSpecies).\
                 join(ChainInfo, ChainInfo.id == ChainSpecies.chain_id).\
@@ -15,7 +15,7 @@ class Loader(core.Loader):
 
             return bool(query.count())
 
-    def remove(self, pdb):
+    def remove(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(ChainInfo.id).filter(ChainInfo.pdb_id == pdb)
             ids = [result.chain_id for result in query]
@@ -25,7 +25,7 @@ class Loader(core.Loader):
                 filter(ChainSpecies.chain_id.in_(ids)).\
                 delete(synchronize_session=False)
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         helper = Structure(self.session.maker)
         data = []
         for chain_name, chain_id in helper.rna_chains(pdb, return_id=True):
