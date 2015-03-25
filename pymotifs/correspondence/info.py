@@ -4,14 +4,14 @@ from pymotifs.models import CorrespondenceInfo as Info
 from sqlalchemy.sql.expression import text
 
 
+# This uses a cross join which is very expensive but should be ok here as there
+# are relatively few unique rna sequences.
 QUERY = """
 select distinct
     if(E1.id < E2.id, E1.id, E2.id),
     if(E1.id < E2.id, E2.id, E1.id)
 from exp_seq_info as E1
 join exp_seq_info as E2
-on
-    E1.id != E2.id
 join exp_seq_chain_mapping as M1
 on
     M1.exp_seq_id = E1.id
@@ -25,7 +25,7 @@ join chain_info as I2
 on
     I2.id = M2.chain_id
 where
-I1.pdb_id in ({items})
+    I1.pdb_id in ({items})
     and I2.pdb_id in ({items})
     and (
     (
