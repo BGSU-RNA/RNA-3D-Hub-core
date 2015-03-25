@@ -1,9 +1,11 @@
 from pymotifs import core
 
-from pymotifs.correspondence.nts import Loader as NtLoader
+from pymotifs.correspondence.positions import Loader as PositionLoader
 from pymotifs.correspondence.info import Loader as InfoLoader
-from pymotifs.correspondence.interactions import Loader as InterLoader
+from pymotifs.correspondence.cleanup import Loader as Cleanup
+from pymotifs.correspondence.summary import Loader as SummaryLoader
+# from pymotifs.correspondence.interactions import Loader as InterLoader
 
 
-class Loader(core.MultiLoader):
-    stages = [InfoLoader, NtLoader, InterLoader]
+class Loader(core.MultiStageLoader):
+    stages = [InfoLoader, PositionLoader, SummaryLoader, Cleanup]

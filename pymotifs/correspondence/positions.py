@@ -1,30 +1,69 @@
+"""This is a stage to align two experimental sequences and store the alignment
+between each nucleotide.
+"""
+
 from pymotifs import core as core
 
-from pymotifs.models import ExpSeqInfo
 from pymotifs.models import ExpSeqPosition
-from pymotifs.models import ChainMapping
-from pymotifs.models import ChainInfo
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
-from pymotifs.models import PdbModifiedCorrespondecies
+from pymotifs.models import RnaUnitModifiedCorrespondencies
 
 from pymotifs.utils.alignment import align
 
 
 class Loader(core.Loader):
+    """A loader for computing the position to position alignment and storing
+    it.
+    """
+    mark = False
 
     def __init__(self, config, maker):
         super(Loader, self).__init__(config, maker)
         self.translation = self.__translation__()
-        self.valid_sequence = set(['A', 'C', 'G', 'U'])
+        self.valid_sequence = set(['A', 'C', 'G', 'U', 'N'])
 
-    def remove(self, pdb):
-        pass
+    def to_process(self, pdbs, **kwargs):
+        """We transform all the pdbs into the correspodencies to do. While this
+        does not respect the pdbs given but it does make all other code a lot
+        cleaner and easier to understand.
 
-    def has_data(self, pdb):
-        pass
+        :param list pdb: The list of pdb ids. Currently ignored.
+        :param dict kwargs: The keyword arguments which are ignored.
+        :returns: A list of correspodence ids to process.
+        """
+
+        with self.session() as session:
+            query = session.query(Info)
+            return [result.id for result in query]
+
+    def has_data(self, corr_id, **kwargs):
+        """This is an unusual check for data. We do not just look up to see if
+        positions with the given corr_id exist, instead we check to see if in
+        the info table we have summerized the alignment. In that case we do not
+        need to recompute the alignment and store the positions. We later
+        cleanup the alignments to remove any bad ones, so we cannot just check
+        that we need to align by using the positions.
+        """
+
+        with self.session() as session:
+            query = session.query(Info).\
+                filter(Info.length != None).\
+                filter(Info.id == corr_id)
+            return bool(query.count())
+
+    def remove(self, corr_id, **kwargs):
+        with self.session() as session:
+            session.query(Position).\
+                filter(Position.correspondence_id == corr_id).\
+                delete(synchronize_session=False)
 
     def sequence(self, exp_id):
+        """Load all information about the experimental sequence with the given
+        id. This will load both the ids and the sequence. The ids will be a
+        list of numbers, while the sequence is a string.
+        """
+
         ids = []
         sequence = []
         with self.session() as session:
@@ -33,15 +72,21 @@ class Loader(core.Loader):
                 order_by(ExpSeqPosition.index)
 
             if not query.count():
-                raise core.InvalidState("Could not get positions for %s" %
-                                        exp_id)
+                return None
 
-            for result in query:
+            size = int(query.count()) - 1
+            for index, result in enumerate(query):
                 seq_id = result.id
                 seq = self.translation.get(result.unit, result.unit)
 
                 if seq not in self.valid_sequence:
-                    raise core.SkipValue("Bad unit %s for %s" % seq, seq_id)
+                    if index != size:
+                        raise core.SkipPdb("Bad unit %s for %s" %
+                                           (seq, seq_id))
+
+                    self.logger.warning(("Skipping bad unit %s for %s as"
+                                         "it may be a tRNA/AA"), seq, seq_id)
+                    break
 
                 ids.append(seq_id)
                 sequence.append(seq)
@@ -61,43 +106,46 @@ class Loader(core.Loader):
 
     def correlate(self, corr_id, ref, target):
         results = align([ref, target])
-        self.logger.debug("Found %s correlations", len(results))
+        self.logger.debug("Alignment is %i long", len(results))
         data = []
-        for result in results:
+        for index, result in enumerate(results):
             data.append({
                 'exp_seq_position_id1': result[0],
                 'exp_seq_position_id2': result[1],
-                'correspondence_id': corr_id
+                'correspondence_id': corr_id,
+                'index': index
             })
         return data
+
+    def info(self, corr_id):
+        with self.session() as session:
+            query = session.query(Info).filter_by(id=corr_id)
+            result = query.one()
+            return (result.exp_seq_id1, result.exp_seq_id2)
+
+    def data(self, corr_id, **kwargs):
+        exp_id1, exp_id2 = self.info(corr_id)
+        sequence1 = self.sequence(exp_id1)
+        sequence2 = self.sequence(exp_id2)
+
+        if not sequence1:
+            self.logger.error(("Could not get positions for experimental "
+                               "sequence %s") % exp_id1)
+
+        if not sequence2:
+            self.logger.error(("Could not get positions for experimental "
+                               "sequence %s") % exp_id2)
+
+        if not sequence1 or not sequence2:
+            raise core.Skip("Skipping this correspodence %s" % corr_id)
+
+        for position in self.correlate(corr_id, sequence1, sequence2):
+            yield Position(**position)
 
     def __translation__(self):
         mapping = {}
         with self.session() as session:
-            query = session.query(PdbModifiedCorrespondecies)
+            query = session.query(RnaUnitModifiedCorrespondencies)
             for result in query:
-                mapping[result.modified_unit] = result.standard_unit
+                mapping[result.id] = result.standard_unit
         return mapping
-
-    def pairs(self, pdb):
-        pairs = []
-        with self.session() as session:
-            query = session.query(Info).\
-                join(ExpSeqInfo,
-                     ExpSeqInfo.id == Info.exp_seq_id1 |
-                     ExpSeqInfo.id == Info.exp_seq_id2).\
-                join(ChainMapping, ChainMapping.exp_seq_id == ExpSeqInfo.id).\
-                join(ChainInfo, ChainInfo.id == ChainMapping.chain_id).\
-                filter(ChainInfo.pdb_id == pdb)
-
-            for result in query:
-                pairs.append((result.id, result.exp_id1, result.exp_id2))
-
-        return pairs
-
-    def data(self, pdb, **kwargs):
-        for corr_id, exp_id1, exp_id2 in self.pairs(pdb):
-            sequence1 = self.sequence(exp_id1)
-            sequence2 = self.sequence(exp_id2)
-            for position in self.correlate(corr_id, sequence1, sequence2):
-                yield Position(**position)

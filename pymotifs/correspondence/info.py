@@ -1,61 +1,79 @@
 from pymotifs import core
-from pymotifs.models import ExpSeqInfo as ExpSeq
 from pymotifs.models import CorrespondenceInfo as Info
-from pymotifs.models import ExpSeqChainMapping as Mapping
-from pymotifs.models import ChainInfo
 
-import math
+from sqlalchemy.sql.expression import text
 
 
-class MissingExpSeq(core.InvalidState):
-    pass
+QUERY = """
+select distinct
+    if(E1.id < E2.id, E1.id, E2.id),
+    if(E1.id < E2.id, E2.id, E1.id)
+from exp_seq_info as E1
+join exp_seq_info as E2
+on
+    E1.id != E2.id
+join exp_seq_chain_mapping as M1
+on
+    M1.exp_seq_id = E1.id
+join exp_seq_chain_mapping as M2
+on
+    M2.exp_seq_id = E2.id
+join chain_info as I1
+on
+    I1.id = M1.chain_id
+join chain_info as I2
+on
+    I2.id = M2.chain_id
+where
+I1.pdb_id in ({items})
+    and I2.pdb_id in ({items})
+    and (
+    (
+        E1.length < 36
+        and E2.length = E1.length
+    )
+    or (
+        E2.length <= 2 * E1.length
+        and E2.length >= (E1.length / E2.length)
+    )
+    )
+;
+"""
 
 
-class Loader(core.Loader):
+class Loader(core.SimpleLoader):
+    """A class to load up all pairs of experimental sequences that should have
+    an alignment attempted. This does not work per structure as many other
+    things do, but instead will compute all possible pairs and then work per
+    pair, inserting or storing each pair as needed.
+    """
+
     short_cutoff = 36
+    allow_no_data = True
+    mark = False
 
-    def exp_seq(self, pdb):
+    def to_process(self, pdbs, **kwargs):
+        """Here we transform the list of pdbs to a list of pairs of
+        experimental sequences to try and align. This simplifies a lot of the
+        logic later on, but does cause problems with marking stuff as
+        processed.
+
+        :pdbs: The list of pdbs to process.
+        """
+
+        items = ','.join(['"%s"' % pdb for pdb in pdbs])
+
+        pairs = []
         with self.session() as session:
-            query = session.query(ExpSeq).\
-                join(Mapping, Mapping.exp_seq_id == ExpSeq.id).\
-                join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
-                filter(ChainInfo.pdb_id == pdb)
+            query = session.execute(text(QUERY.format(items=items)))
+            for result in query.fetchall():
+                pairs.append((result[0], result[1]))
 
-            sequences = []
-            for result in query:
-                sequences.append({
-                    'id': result.id,
-                    'length': result.length
-                })
+        return pairs
 
-        return sequences
+    def query(self, session, pair, **kwargs):
+        return session.query(Info).\
+            filter_by(exp_seq_id1=pair[0], exp_seq_id2=pair[1])
 
-    def possible_short(self, exp_seq):
-        with self.session() as session:
-            query = session.query(Info).\
-                filter(Info.length == exp_seq['length']).\
-                filter(Info.id != exp_seq['id'])
-
-            return [result.id for result in query]
-
-    def possible_long(self, exp_seq):
-        with self.session() as session:
-            query = session.query(Info).\
-                filter(Info.length <= 2 * exp_seq['length']).\
-                filter(Info.length >= math.sqrt(exp_seq['length'])).\
-                filter(Info.id != exp_seq['id'])
-
-            return [result.id for result in query]
-
-    def possible(self, exp_seq):
-        if exp_seq['length'] < self.short_cutoff:
-            return self.possible_short(exp_seq)
-        return self.possible_long(exp_seq)
-
-    def data(self, pdb):
-        data = []
-        for exp_seq in self.exp_seq(pdb):
-            for other_seq in self.possible(exp_seq):
-                data.append(Info(exp_seq_id1=exp_seq['id'],
-                                 exp_seq_id2=other_seq))
-        return data
+    def data(self, pair, **kwargs):
+        return Info(exp_seq_id1=pair[0], exp_seq_id2=pair[1])
