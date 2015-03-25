@@ -324,9 +324,9 @@ class Stage(object):
                     continue
                 self.process(transformed, **kwargs)
 
-            except SkipPdb as err:
-                self.logger.warn("Skipping entry %s Reason %s", transformed,
-                                 str(err))
+            except Skip as err:
+                self.logger.warn("Skipping entry %s. Reason %s",
+                                 transformed, str(err))
                 continue
 
             except Exception as err:
