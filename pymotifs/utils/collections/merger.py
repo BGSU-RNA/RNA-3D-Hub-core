@@ -15,23 +15,21 @@ logger = logging.getLogger(__name__)
 
 
 class CollectionsMerger:
-    """
-    """
 
     def __init__(self, c1, c2, verbose=True):
         self.c1 = c1
         self.c2 = c2
         self.verbose = verbose
 
-        self.intersection   = collections.defaultdict(dict)
+        self.intersection = collections.defaultdict(dict)
         self.noIntersection = dict()
-        self.overlap        = collections.defaultdict(dict)
-        self.setdiff        = collections.defaultdict(dict)
+        self.overlap = collections.defaultdict(dict)
+        self.setdiff = collections.defaultdict(dict)
 
-        self.correspond  = dict()
+        self.correspond = dict()
         self.exact_match = dict()
-        self.new_ids     = []
-        self.parents     = collections.defaultdict(list)
+        self.new_ids = []
+        self.parents = collections.defaultdict(list)
         self.explanation = dict()
 
         self.minOverlap = float(2)/3
@@ -41,8 +39,6 @@ class CollectionsMerger:
         self.establish_correspondences()
 
     def compare_releases(self):
-        """
-        """
         for groupId, group in self.c1.sd.iteritems():
             for motifId, motif in self.c2.sd.iteritems():
                 t = group.intersection(motif)
@@ -93,7 +89,7 @@ class CollectionsMerger:
                 # with two motifs
                 elif len(match) == 2:
                     success = False
-                    for motifId,v in match.iteritems():
+                    for motifId, v in match.iteritems():
                         self.parents[groupId].append(motifId)
                         # if the overlap is big enough - assign the same id
                         if self.overlap[groupId][motifId] >= self.minOverlap and \
@@ -103,7 +99,7 @@ class CollectionsMerger:
                             self.explanation[groupId] = 'Updated, 2 parents'
                             break
                     # if the overlap is not big enough - assign new id
-                    if success == False:
+                    if success is False:
                         self.new_ids.append(groupId)
                         self.explanation[groupId] = 'New id, 2 parents'
                     else:
@@ -113,10 +109,13 @@ class CollectionsMerger:
                 # with more than 2 motifs - assign new id
                 elif len(match) > 2:
                     if self.verbose:
-                        logger.info('Group %s has more than 2 parents' % groupId)
+                        logger.info('Group %s has more than 2 parents',
+                                    groupId)
+
                     self.explanation[groupId] = '> 2 parents'
                     self.new_ids.append(groupId)
-                    for motifId,v in match.iteritems():
+
+                    for motifId, v in match.iteritems():
                         self.parents[groupId].append(motifId)
 
             # if didn't intersect with anything
@@ -125,20 +124,20 @@ class CollectionsMerger:
                 self.new_ids.append(groupId)
 
     def show_report(self):
-        """
-        """
-        logger.info('%i new loops'  % len(self.c1.loops))
-        logger.info('%i old loops'  % len(self.c2.loops))
-        logger.info('%i new groups' % len(self.c1.d.keys()))
-        logger.info('%i old groups' % len(self.c2.d.keys()))
+        logger.info('%i new loops', len(self.c1.loops))
+        logger.info('%i old loops', len(self.c2.loops))
+        logger.info('%i new groups', len(self.c1.d.keys()))
+        logger.info('%i old groups', len(self.c2.d.keys()))
 
-        logger.info('%i new loops not in the database' % len(self.c1.sl - self.c2.sl))
-        logger.info('%i old loops not in the new list' % len(self.c2.sl - self.c1.sl))
+        logger.info('%i new loops not in the database',
+                    len(self.c1.sl - self.c2.sl))
+        logger.info('%i old loops not in the new list',
+                    len(self.c2.sl - self.c1.sl))
 
         all_new = set(self.c1.groups) - set(self.intersection.keys())
         if len(all_new) > 0:
-            logger.info('%i entirely new groups' % len(all_new))
+            logger.info('%i entirely new groups', len(all_new))
 
         only_old = set(self.c2.groups) - set(self.intersection.keys())
         if len(only_old) > 0:
-            logger.info('%i motifs only in the database' % len(only_old))
+            logger.info('%i motifs only in the database', len(only_old))
