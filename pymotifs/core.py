@@ -138,6 +138,9 @@ class Stage(object):
     """ Maximum length of time between updates. False for forever. """
     update_gap = None
 
+    """Flag if we should mark stuff as processed."""
+    mark = True
+
     def __init__(self, config, session_maker):
         """Build a new Stage.
 
@@ -334,7 +337,8 @@ class Stage(object):
                     raise StageFailed(self.name)
                 continue
 
-            self.mark_processed(entry, **kwargs)
+            if self.mark:
+                self.mark_processed(entry, **kwargs)
 
 
 class Loader(Stage):
