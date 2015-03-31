@@ -330,7 +330,7 @@ class Stage(object):
                 continue
 
             except Exception as err:
-                self.logger.error("Error raised in should_process of %s" %
+                self.logger.error("Error raised in processing of %s" %
                                   transformed)
                 self.logger.exception(err)
                 if self.stop_on_failure:
