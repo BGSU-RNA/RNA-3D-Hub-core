@@ -1,8 +1,8 @@
 import pymotifs.core as core
 
 from pymotifs.interactions.pairwise import Loader as PairwiseLoader
-# from pymotifs.interactions.summary import Loader as SummaryLoader
+from pymotifs.interactions.summary import Loader as SummaryLoader
 
 
-class InteractionLoader(core.MultiStageLoader):
-    stages = [PairwiseLoader]
+class Loader(core.MultiStageLoader):
+    stages = [PairwiseLoader, SummaryLoader]
