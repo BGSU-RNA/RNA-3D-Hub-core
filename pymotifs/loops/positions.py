@@ -65,7 +65,10 @@ class Loader(core.Loader):
 
     def annotation_file(self, pdb):
         matlab = core.Matlab(self.config['locations']['fr3d_root'])
-        path = os.path.join(self.precomputedData, pdb)
+        path = str(os.path.join(self.precomputed, pdb))
+        if not os.path.exists(path):
+            os.mkdir(path)
+
         [output_file, err_msg] = matlab.loadLoopPositions(path, nout=2)
         if err_msg != '':
             raise core.MatlabFailed(err_msg)
