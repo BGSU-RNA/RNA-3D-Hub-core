@@ -69,7 +69,7 @@ def row2dict(row):
 
 
 def known(config, pdb=True, cif=True, pdb1=False):
-    path = os.path.join(config['locations']['fr3d_root'], 'FR3D', 'PDBFiles')
+    path = os.path.join(config['locations']['fr3d_root'], 'PDBFiles')
     names = coll.defaultdict(dict)
 
     for filename in os.listdir(path):
