@@ -87,7 +87,19 @@ class Matlab(object):
         if self.mlab is None:
             self.__startup__()
         self.logger.debug("Running %s", key)
-        return getattr(self.mlab, key)
+
+        attr = getattr(self.mlab, key)
+
+        def func(*args, **kwargs):
+            corrected = []
+            for arg in args:
+                if isinstance(arg, basestring):
+                    corrected.append(str(arg))
+                else:
+                    corrected.append(arg)
+            return attr(*corrected, **kwargs)
+
+        return func
 
 
 class Session(object):
