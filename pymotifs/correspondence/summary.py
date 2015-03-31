@@ -54,7 +54,6 @@ class Loader(core.Loader):
 
         with self.session() as session:
             info = session.query(Info).get(corr_id)
-            print(info)
             return utils.row2dict(info)
 
     def data(self, corr_id, **kwargs):
