@@ -15,7 +15,7 @@ class BestChainsAndModelsLoader(core.SimpleLoader):
     def data(self, pdb, **kwargs):
         # 'A,B,C', '1,2', ''
         best_chains, best_models, err_msg = \
-            self.matlab.loadBestChainsAndModels(pdb, nout=3)
+            self.matlab.loadBestChainsAndModels(str(pdb), nout=3)
 
         if err_msg != '':
             raise core.MatlabFailed(err_msg)
