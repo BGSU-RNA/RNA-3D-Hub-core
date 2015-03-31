@@ -1,7 +1,5 @@
 import os
-import sys
 import logging
-import traceback
 from ftplib import FTP
 import cStringIO as sio
 import itertools as it
