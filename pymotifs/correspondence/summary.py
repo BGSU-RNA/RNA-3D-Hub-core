@@ -8,6 +8,7 @@ from sqlalchemy.orm import aliased
 from pymotifs import core
 from pymotifs import utils
 
+from pymotifs.models import ExpSeqInfo as ExpInfo
 from pymotifs.models import ExpSeqPosition as ExpPosition
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
@@ -56,6 +57,39 @@ class Loader(core.Loader):
             info = session.query(Info).get(corr_id)
             return utils.row2dict(info)
 
+    def min_size(self, info):
+        """Compute the minimum size of the experimental sequences used in this
+        correspondence.
+
+        :param dict info: The information about the correspondence
+        :returns: The minimum size
+        """
+
+        with self.session() as session:
+            e1 = aliased(ExpInfo)
+            e2 = aliased(ExpInfo)
+
+            query = session.query(Info.id, e1.length.label('first'),
+                                  e2.length.label('second')).\
+                join(e1, Info.exp_seq_id1 == e1.id).\
+                join(e2, Info.exp_seq_id2 == e2.id).\
+                filter(Info.id == info['id'])
+            result = query.one()
+
+            return min(result.first, result.second)
+
+    def good_alignment(self, info, **kwargs):
+        """Detect if the given correspondence id is below our cutoffs for a
+        good match.
+        """
+        size = self.min_size(info)
+
+        if size <= 36:
+            return not bool(info['mismatch_count'])
+        if size <= 80:
+            return info['mismatch_count'] > 4
+        return 0.9 <= (float(info['mismatch_count']) / float(size))
+
     def data(self, corr_id, **kwargs):
         """Compute the summary for the given correspondence id. This will
         update the entry with the counts of match, mismatch and such.
@@ -97,5 +131,7 @@ class Loader(core.Loader):
                     data['first_gap_count'] += 1
                 if not unit2:
                     data['second_gap_count'] += 1
+
+        data['good_alignment'] = self.good_alignment(data)
 
         return Info(**data)

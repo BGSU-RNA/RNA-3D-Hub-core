@@ -7,50 +7,14 @@ we do find all good matches. If we kept the all bad alignments we would waste
 lots of space.
 """
 
-from sqlalchemy.orm import aliased
-
 from pymotifs import core
-from pymotifs import utils
 
-from pymotifs.models import ExpSeqInfo as ExpInfo
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
 
 
 class Loader(core.Stage):
     mark = False
-
-    def info(self, corr_id):
-        with self.session() as session:
-            info = session.query(Info).get(corr_id)
-            info = utils.row2dict(info)
-
-        with self.session() as session:
-            e1 = aliased(ExpInfo)
-            e2 = aliased(ExpInfo)
-
-            query = session.query(Info.id, e1.length.label('first'),
-                                  e2.length.label('second')).\
-                join(e1, Info.exp_seq_id1 == e1.id).\
-                join(e2, Info.exp_seq_id2 == e2.id).\
-                filter(Info.id == corr_id)
-            result = query.one()
-
-            info['min'] = min(result.first, result.second)
-
-        return info
-
-    def should_process(self, corr_id, **kwargs):
-        """Detect if the given correspondence id is below our cutoffs for a
-        good match.
-        """
-
-        info = self.info(corr_id)
-        if info['min'] <= 36:
-            return not bool(info['mismatch_count'])
-        if info['min'] <= 80:
-            return info['mismatch_count'] > 4
-        return 0.9 <= (float(info['mismatch_count']) / float(info['min']))
 
     def to_process(self, pdbs, **kwargs):
         """We transform the list of pdbs into the list of correspondences.
@@ -64,9 +28,19 @@ class Loader(core.Stage):
             query = session.query(Info)
             return [result.id for result in query]
 
+    def should_process(self, corr_id, **kwargs):
+        """Test if we should process some correspondence. This is done by
+        testing if it is not a good alignment. If not then we process,
+        otherwise we do not.
+        """
+
+        with self.session() as session:
+            corr = session.query(Info).get(corr_id)
+            return not bool(corr.good_alignment)
+
     def process(self, corr_id, **kwargs):
         """Process the correspodence. This will delete the correspondence positions
-        as this is not a good alignment.
+        as this means the correspondence is not a good alignment.
         """
 
         if kwargs.get('dry_run'):
