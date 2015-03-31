@@ -20,6 +20,8 @@ class Loader(core.SimpleLoader):
     structures.
     """
 
+    allow_no_data = True
+
     def query(self, session, pdb):
         """Create a query to access interaction data for the given pdb.
 
