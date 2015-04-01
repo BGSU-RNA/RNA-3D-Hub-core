@@ -8,8 +8,8 @@ from sqlalchemy.sql.expression import text
 # are relatively few unique rna sequences.
 QUERY = """
 select distinct
-    if(E1.id < E2.id, E1.id, E2.id),
-    if(E1.id < E2.id, E2.id, E1.id)
+    if(E1.length >= E2.length, E1.id, E2.id),
+    if(E1.length >= E2.length, E2.id, E1.id)
 from exp_seq_info as E1
 join exp_seq_info as E2
 join exp_seq_chain_mapping as M1
