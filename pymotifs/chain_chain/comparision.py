@@ -83,18 +83,16 @@ class Loader(core.Loader):
                 residues2.append(r2)
 
         if not residues1:
-            self.logger.error("No residues with base centers for %s %s",
+            self.logger.error("No residues with base centers for %s||%s",
                               chain1['pdb'], chain1['name'])
             return None
 
         if not residues2:
-            self.logger.error("No residues with base centers for %s %s",
+            self.logger.error("No residues with base centers for %s||%s",
                               chain2['pdb'], chain2['name'])
             return None
 
-        self.logger.debug("Comparing %i residues in %s to %i residues in %s",
-                          len(residues1), chain1['name'], len(residues2),
-                          chain2['name'])
+        self.logger.debug("Comparing %i pairs of residues", len(residues1))
 
         disc = discrepancy(residues1, residues2)
         self.logger.debug("Got discrepancy %f", disc)
@@ -119,16 +117,19 @@ class Loader(core.Loader):
         cif1 = self.structure(pdb)
         cif1.infer_hydrogens()
 
-        for pdb2 in util.pdbs(cif1.pdb):
-            self.logger.debug("Comparing to %s", pdb2)
+        others = util.pdbs(cif1.pdb)
+        for index, pdb2 in enumerate(others):
+            self.logger.debug("Comparing to %s #%i/%i",
+                              pdb2, index, len(others))
 
             cif2 = self.structure(pdb2)
             cif2.infer_hydrogens()
 
             corresponding = util.chains(cif1.pdb, cif2.pdb)
             for corr_id, chain1, chain2 in corresponding:
-                self.logger.debug("Comparing chains %s %s",
-                                  chain1['name'], chain2['name'])
+                self.logger.debug("Comparing %s||%s %s||%s",
+                                  chain1['pdb'], chain1['name'],
+                                  chain2['pdb'], chain2['name'])
 
                 ordering = util.ordering(corr_id, chain1, chain2)
                 if not ordering:
