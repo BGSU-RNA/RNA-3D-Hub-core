@@ -1,7 +1,9 @@
 """This is a loader to load the chain to chain comparisons into the database.
 This will look at good correspondences for a given structure and extract all
-the aligned chains and then compute the geometric discrepancy between them.
+the aligned chains and then compute the geometric discrepancy between them and
+then place them in the database.
 """
+
 import itertools as it
 
 from pymotifs import core
@@ -95,7 +97,7 @@ class Loader(core.Loader):
                           chain2['name'])
 
         disc = discrepancy(residues1, residues2)
-        self.logger.debug("Got discrepancy %d", disc)
+        self.logger.debug("Got discrepancy %f", disc)
 
         return {
             'chain_id1': chain1['id'],
@@ -118,7 +120,7 @@ class Loader(core.Loader):
         cif1.infer_hydrogens()
 
         for pdb2 in util.pdbs(cif1.pdb):
-            self.logger.debug("Getting correspondence to %s", pdb2)
+            self.logger.debug("Comparing to %s", pdb2)
 
             cif2 = self.structure(pdb2)
             cif2.infer_hydrogens()
