@@ -40,6 +40,10 @@ class Loader(core.Loader):
 
             ids = [result.id for result in query]
 
+        if not ids:
+            self.logger.info("Nothing to remove for %s", pdb)
+            return None
+
         with self.session() as session:
             session.query(Similarity).\
                 filter(Similarity.id.in_(ids)).\
