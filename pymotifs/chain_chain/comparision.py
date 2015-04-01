@@ -2,18 +2,15 @@
 This will look at good correspondences for a given structure and extract all
 the aligned chains and then compute the geometric discrepancy between them.
 """
-
-from sqlalchemy import aliased
+import itertools as it
 
 from pymotifs import core
+from pymotifs.utils import correspondence as corr
 
 from pymotifs.models import ChainInfo
-from pymotifs.models import CorrespondenceInfo as CorrInfo
-from pymotifs.models import CorrespondencePdbs as CorrPdbs
-from pymotifs.models import CorrespondenceUnits as CorrUnits
 from pymotifs.models import ChainChainSimilarity as Similarity
 
-from fr3d.geometry import discrepancy
+from fr3d.geometry.discrepancy import discrepancy
 
 
 class Loader(core.Loader):
@@ -27,7 +24,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(Similarity).\
-                join(ChainInfo, ChainInfo.id == Similarity.chain_id).\
+                join(ChainInfo, ChainInfo.id == Similarity.chain_id1).\
                 filter(ChainInfo.pdb_id == pdb)
 
             return bool(query.count())
@@ -38,7 +35,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(Similarity).\
-                join(ChainInfo, ChainInfo.id == Similarity.chain_id).\
+                join(ChainInfo, ChainInfo.id == Similarity.chain_id1).\
                 filter(ChainInfo.pdb_id == pdb)
 
             ids = [result.id for result in query]
@@ -48,78 +45,7 @@ class Loader(core.Loader):
                 filter(Similarity.id.in_(ids)).\
                 delete(synchronize_session=False)
 
-    def corresponding_pdbs(self, pdb):
-        """Get all pdbs which have been aligned to the given pdb and whose
-        alignment is good.
-        """
-
-        with self.session() as session:
-            query = session.query(CorrPdbs.pdb_id2).\
-                join(CorrInfo, CorrInfo.id == CorrPdbs.correspondence_id).\
-                filter_by(pdb_id1=pdb).\
-                filter_by(good_alignment=True).\
-                distinct()
-
-            return [result.pdb_id2 for result in query]
-
-    def corresponding_chains(self, pdb1, pdb2):
-        """Get all chains which correspond between the two structures. This
-        will return a list of 3 element tuples. The first will be the
-        correspondence id, the second is a dict for chain1 and a second is a
-        dict for chain2. Each chain dict will contain the name, the id, and the
-        pdb.
-
-        :params string pdb1: The first pdb.
-        :params string pdb2: The second pdb.
-        :returns: A list of tuples for the corresponding chains.
-        """
-
-        with self.session() as session:
-            chain1 = aliased(ChainInfo)
-            chain2 = aliased(ChainInfo)
-            query = session.query(CorrPdbs,
-                                  chain1.id.label('chain_id1'),
-                                  chain2.id.label('chain_id2')).\
-                filter_by(pdb_id1=pdb1, pdb_id2=pdb2)
-
-            data = []
-            for result in query:
-                corr_id = result.correspondence_id
-                chain1 = {'id': result.chain_id1, 'name': result.chain_name1}
-                chain1['pdb'] = pdb1
-                chain2 = {'id': result.chain_id2, 'name': result.chain_name2}
-                chain2['pdb'] = pdb2
-                data.append((corr_id, chain1, chain2))
-
-        return data
-
-    def ordering(self, corr_id, chain1, chain2):
-        """Load the ordering of units in the given chain to chain
-        correspondence. This will find the ordering of units in the
-        correspondence from chain1 to chain2. The resulting dictionary will
-        have entries for units in both chain1 and chain2. These entries may not
-        start at 0 but are ordered to be increasing. Also they will not contain
-        entries where either unit is not aligned.
-
-        :param int corr_id: The correspondence id.
-        :param dict chain1: The first chain.
-        :param dict chain2: The second chain.
-        :returns: An ordering dictionary.
-        """
-
-        with self.session() as session:
-            query = session.query(CorrUnits).\
-                filter_by(pdb_id1=chain1['pdb'], chain1=chain1['name']).\
-                filter_by(pdb_id2=chain2['pdb'], chain2=chain2['name']).\
-                filter_by(correspondence_id=corr_id)
-
-            ordering = {}
-            for result in query:
-                ordering[result.unit_id1] = result.correspondence_index
-                ordering[result.unit_id2] = result.correspondence_index
-            return ordering
-
-    def chain(self, cif, chain, ordering):
+    def residues(self, cif, name, ordering):
         """Get the specified chain and extract only the residues in the
         ordering dictionary and return them in the specified order.
 
@@ -128,11 +54,51 @@ class Loader(core.Loader):
         :returns: A sorted list of the residues in the chain.
         """
 
-        residues = []
-        for residue in cif.chain(chain).residues():
-            if residue.unit_id in ordering:
-                residues.append(residue)
-        return sorted(residues, key=lambda r: ordering[r.unit_id])
+        chain = cif.chain(1, name['name'])
+        if not chain:
+            raise core.InvalidState("Could not get chain %s for %s" %
+                                    name, cif.pdb)
+
+        residues = chain.residues()
+        residues = it.ifilter(lambda r: r.unit_id() in ordering, residues)
+
+        return sorted(residues, key=lambda r: ordering[r.unit_id()])
+
+    def compare(self, corr_id, chain1, chain2):
+        """Compare the chains. This will filter out all residues in the chain
+        that do not have a base center computed.
+        """
+
+        residues1 = []
+        residues2 = []
+        for r1, r2 in zip(chain1['residues'], chain2['residues']):
+            if 'base' in r1.centers and 'base' in r2.centers:
+                residues1.append(r1)
+                residues2.append(r2)
+
+        if not residues1:
+            self.logger.error("No residues with base centers for %s %s",
+                              chain1['pdb'], chain1['name'])
+            return None
+
+        if not residues2:
+            self.logger.error("No residues with base centers for %s %s",
+                              chain2['pdb'], chain2['name'])
+            return None
+
+        self.logger.debug("Comparing %i residues in %s to %i residues in %s",
+                          len(residues1), chain1['name'], len(residues2),
+                          chain2['name'])
+
+        disc = discrepancy(residues1, residues2)
+        self.logger.debug("Got discrepancy %d", disc)
+
+        return {
+            'chain_id1': chain1['id'],
+            'chain_id2': chain2['id'],
+            'discrepancy': disc,
+            'correspondence_id': corr_id
+        }
 
     def data(self, pdb, **kwargs):
         """Compute all chain to chain similarity data. This will get all
@@ -143,21 +109,31 @@ class Loader(core.Loader):
 
         data = []
 
-        cif1 = self.cif(pdb)
-        for pdb2 in self.corresponding_pdbs(cif1.pdb):
-            cif2 = self.cif(pdb2)
+        util = corr.Helper(self.session.maker)
+        cif1 = self.structure(pdb)
+        cif1.infer_hydrogens()
 
-            corresponding = self.corresponding_chains(cif1.pdb, cif2.pdb)
+        for pdb2 in util.pdbs(cif1.pdb):
+            self.logger.debug("Getting correspondence to %s", pdb2)
+
+            cif2 = self.structure(pdb2)
+            cif2.infer_hydrogens()
+
+            corresponding = util.chains(cif1.pdb, cif2.pdb)
             for corr_id, chain1, chain2 in corresponding:
-                ordering = self.ordering(corr_id, chain1, chain2)
-                chain1 = self.chain(cif1, chain1, ordering)
-                chain2 = self.chain(cif2, chain2, ordering)
+                self.logger.debug("Comparing chains %s %s",
+                                  chain1['name'], chain2['name'])
 
-                data.append(Similarity(
-                    chain_id1=chain1['id'],
-                    chain_id2=chain2['id'],
-                    discrepancy=discrepancy(chain1, chain2),
-                    correspondence_id=corr_id
-                ))
+                ordering = util.ordering(corr_id, chain1, chain2)
+                if not ordering:
+                    raise core.InvalidState("No ordering for %s, %s" %
+                                            (chain1, chain2))
+
+                chain1['residues'] = self.residues(cif1, chain1, ordering)
+                chain2['residues'] = self.residues(cif2, chain2, ordering)
+
+                compare = self.compare(corr_id, chain1, chain2)
+                if compare:
+                    data.append(Similarity(**compare))
 
         return data
