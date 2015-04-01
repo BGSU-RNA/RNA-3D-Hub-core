@@ -78,7 +78,7 @@ class Loader(core.Loader):
 
             return min(result.first, result.second)
 
-    def good_alignment(self, info, **kwargs):
+    def bad_alignment(self, info, **kwargs):
         """Detect if the given correspondence id is below our cutoffs for a
         good match.
         """
@@ -132,6 +132,6 @@ class Loader(core.Loader):
                 if not unit2:
                     data['second_gap_count'] += 1
 
-        data['good_alignment'] = self.good_alignment(data)
+        data['good_alignment'] = not self.bad_alignment(data)
 
         return Info(**data)
