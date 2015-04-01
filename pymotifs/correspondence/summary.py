@@ -132,6 +132,9 @@ class Loader(core.Loader):
                 if not unit2:
                     data['second_gap_count'] += 1
 
-        data['good_alignment'] = not self.bad_alignment(data)
+        if not data['aligned_count']:
+            data['good_alignment'] = False
+        else:
+            data['good_alignment'] = not self.bad_alignment(data)
 
         return Info(**data)
