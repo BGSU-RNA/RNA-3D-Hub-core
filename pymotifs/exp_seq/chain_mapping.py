@@ -13,6 +13,10 @@ class Loader(core.Loader):
                 filter(ChainInfo.pdb_id == pdb)
             ids = [result.id for result in query]
 
+        if not ids:
+            self.logger.info("Nothing to remove for %s", pdb)
+            return None
+
         with self.session() as session:
             session.query(Mapping).\
                 filter(Mapping.chain_id.in_(ids)).\
