@@ -82,8 +82,11 @@ class Loader(core.Loader):
         """Detect if the given correspondence id is below our cutoffs for a
         good match.
         """
-        size = self.min_size(info)
 
+        if not info['aligned_count']:
+            return True
+
+        size = self.min_size(info)
         if size <= 36:
             return not bool(info['mismatch_count'])
         if size <= 80:
@@ -114,12 +117,13 @@ class Loader(core.Loader):
                 filter(Position.correspondence_id == corr_id).\
                 outerjoin(p1, p1.id == Position.exp_seq_position_id1).\
                 outerjoin(p2, p2.id == Position.exp_seq_position_id2).\
-                order_by(Position.index)
+                order_by(Position.index).\
+                group_by(Position.index)
 
-            data['length'] = query.count()
             for result in query:
                 unit1 = result.unit1
                 unit2 = result.unit2
+                data['length'] += 1
 
                 if unit1 and unit2:
                     data['aligned_count'] += 1
@@ -132,9 +136,6 @@ class Loader(core.Loader):
                 if not unit2:
                     data['second_gap_count'] += 1
 
-        if not data['aligned_count']:
-            data['good_alignment'] = False
-        else:
-            data['good_alignment'] = not self.bad_alignment(data)
+        data['good_alignment'] = not self.bad_alignment(data)
 
         return Info(**data)
