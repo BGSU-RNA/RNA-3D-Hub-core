@@ -142,6 +142,15 @@ class Loader(core.Loader):
         for position in self.correlate(corr_id, sequence1, sequence2):
             yield Position(**position)
 
+            pos1 = position['exp_seq_position_id1']
+            pos2 = position['exp_seq_position_id2']
+            if pos1 != pos2:
+                rev = dict(position)
+                rev['exp_seq_position_id1'] = pos2
+                rev['exp_seq_position_id2'] = pos1
+
+                yield Position(**rev)
+
     def __translation__(self):
         mapping = {}
         with self.session() as session:
