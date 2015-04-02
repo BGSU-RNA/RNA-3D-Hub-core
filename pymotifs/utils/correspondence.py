@@ -49,8 +49,8 @@ from correspondence_units
 where
     pdb_id1 = :pdb1
     and pdb_id2 = :pdb2
-    and chain1 = :chain1
-    and chain2 = :chain2
+    and chain_name1 = :chain1
+    and chain_name2 = :chain2
     and correspondence_id = :corr_id
 ;
 """
