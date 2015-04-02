@@ -9,7 +9,7 @@ select
 from correspondence_pdbs as P
 join correspondence_info as I
 on
-    I.id = P.correspondence_id
+    I.id = P.id
 where
     P.pdb_id1 = :pdb
     and I.good_alignment = 1
@@ -24,7 +24,7 @@ select
 from correspondence_pdbs as P
 join correspondence_info as I
 on
-    I.id = P.correspondence_id
+    I.id = P.id
 join chain_info as C1
 on
     C1.pdb_id = P.pdb_id1
@@ -89,7 +89,7 @@ class Helper(object):
 
             data = []
             for result in query:
-                corr_id = result.correspondence_id
+                corr_id = result.id
                 chain1 = {'id': result.chain_id1, 'name': result.chain_name1}
                 chain1['pdb'] = pdb1
                 chain2 = {'id': result.chain_id2, 'name': result.chain_name2}
