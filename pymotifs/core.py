@@ -150,6 +150,9 @@ class Stage(object):
     """ Maximum length of time between updates. False for forever. """
     update_gap = None
 
+    """ What stages this stage depends upon. """
+    dependecies = set()
+
     def __init__(self, config, session_maker):
         """Build a new Stage.
 
