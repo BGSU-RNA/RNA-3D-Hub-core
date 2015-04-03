@@ -56,6 +56,17 @@ where
 """
 
 
+UNIT_MAPPING = """
+select
+    *
+from correspondence_units
+where
+    pdb_id1 = :pdb1
+    and pdb_id2 = :pdb2
+;
+"""
+
+
 class Helper(object):
     def __init__(self, maker):
         self.session = core.Session(maker)
@@ -111,7 +122,47 @@ class Helper(object):
         :param dict chain2: The second chain.
         :returns: An ordering dictionary.
         """
+        ordering = {}
+        for result in self.__ordering__(corr_id, chain1, chain2):
+            ordering[result.unit_id1] = result.correspondence_index
+            ordering[result.unit_id2] = result.correspondence_index
 
+        return ordering
+
+    def pdb_mapping(self, pdb1, pdb2, reversed=False):
+        """Get the mapping between two structures, ignoring the chain ids. This
+        mapping is one way by default, that is pdb1 to pdb2 only, not the
+        reverse. This can be changed with the reversed
+        """
+
+        with self.session() as session:
+            raw = text(UNIT_MAPPING).\
+                bindparams(pdb1=pdb1, pdb2=pdb2)
+            results = session.execute(raw)
+
+            mapping = {}
+            corr_id = None
+            for result in results:
+                if corr_id is None:
+                    corr_id = result.correspondence_id
+
+                mapping[result.unit_id1] = result.unit_id2
+                if reversed:
+                    mapping[result.unit_id2] = mapping[result.unit_id1]
+
+            return corr_id, mapping
+
+    def mapping(self, corr_id, chain1, chain2):
+        """Get a mapping from nucleotides in chain1 to nucleotides in chain2.
+        """
+        mapping = {}
+        for result in self.__ordering__(corr_id, chain1, chain2):
+            mapping[result.unit_id1] = result.unit_id2
+            mapping[result.unit_id2] = result.unit_id1
+
+        return mapping
+
+    def __ordering__(self, corr_id, chain1, chain2):
         with self.session() as session:
             raw = text(UNIT_ORDERING).\
                 bindparams(pdb1=chain1['pdb'], chain1=chain1['name'],
@@ -119,9 +170,5 @@ class Helper(object):
                            corr_id=corr_id)
 
             query = session.execute(raw)
-
-            ordering = {}
             for result in query:
-                ordering[result.unit_id1] = result.correspondence_index
-                ordering[result.unit_id2] = result.correspondence_index
-            return ordering
+                yield result
