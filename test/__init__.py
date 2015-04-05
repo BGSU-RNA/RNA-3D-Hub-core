@@ -78,6 +78,6 @@ class CifStageTest(StageTest):
             cls.structure = None
 
     def setUp(self):
-        super(CifStageTest, self).setUp
+        super(CifStageTest, self).setUp()
         self.structure = self.__class__.structure
         self.cif = self.__class__.cif

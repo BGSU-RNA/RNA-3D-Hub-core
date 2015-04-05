@@ -3,6 +3,8 @@ from nose import SkipTest
 from test import StageTest
 from test import CifStageTest
 
+import numpy as np
+
 from pymotifs.units.distances import Loader
 
 
@@ -23,8 +25,14 @@ class ComputingCentersTest(CifStageTest):
     loader_class = Loader
     filename = 'test/files/cif/124D.cif'
 
+    def setUp(self):
+        super(ComputingCentersTest, self).setUp()
+        self.residues = list(self.structure.residues())
+
     def test_given_rna_gets_base_center(self):
-        raise SkipTest()
+        val = self.loader.center(self.residues[8])
+        ans = np.array([-0.4305, -3.74425, 18.200875])
+        np.testing.assert_array_almost_equal(ans, val)
 
     def test_given_aa_gets_backbone_center(self):
         raise SkipTest()
@@ -40,11 +48,14 @@ class ComputingDistancesTest(CifStageTest):
     loader_class = Loader
     filename = 'test/files/cif/124D.cif'
 
-    def test_can_compute_rna_rna_distance(self):
-        raise SkipTest()
+    def setUp(self):
+        super(ComputingDistancesTest, self).setUp()
+        self.residues = list(self.structure.residues())
 
-    def test_can_compute_rna_to_water_distance(self):
-        raise SkipTest()
+    def test_can_compute_rna_rna_distance(self):
+        val = self.loader.distance(self.residues[8], self.residues[9])
+        ans = 4.266
+        np.testing.assert_almost_equal(ans, val, decimal=1)
 
     def test_computes_rna_to_any_distance(self):
         raise SkipTest()
@@ -65,4 +76,5 @@ class DistancesLoaderTest(CifStageTest):
 
     def test_can_load_distances(self):
         raise SkipTest()
-        self.assertEquals(3284, len(self.distances))
+        # val = list(self.loader.data(self.structure))
+        # self.assertEquals(3284, len(val))

@@ -1,7 +1,6 @@
 import numpy as np
 
 import pymotifs.core as core
-from pymotifs.utils import units
 
 from pymotifs.models import UnitInfo
 from pymotifs.models import UnitPairsDistances
@@ -16,28 +15,27 @@ class Loader(core.SimpleLoader):
             filter(UnitInfo.pdb_id == pdb)
 
     def center(self, residue):
-        type = units.component_type(residue)
-        if type == 'rna' or type == 'dna':
+        if 'base' in residue.centers:
             return residue.centers['base']
-        if type == 'aa':
+        if 'aa_backbone' in residue.centers:
             return residue.centers['backbone']
-        if type == 'water' or type is None:
+        if residue.sequence == 'HOH':
             return None
-        return residue.center
+        return np.mean(residue.coordinates(), axis=0)
 
     def distance(self, residue1, residue2):
         center1 = self.center(residue1)
         center2 = self.center(residue2)
 
-        if center1 and center2:
-            return np.linalg.norm(center1, center2)
+        if center1 is not None and center2 is not None:
+            return np.linalg.norm(center1 - center2)
         return None
 
     def data(self, pdb):
         structure = self.structure(pdb)
         for residue1 in structure.residues():
             for residue2 in structure.residues():
-                if residue1 == residue2 or residue1 > residue2:
+                if residue1 == residue2:
                     next
 
                 distance = self.distance(residue1, residue2)
