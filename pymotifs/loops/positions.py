@@ -14,7 +14,7 @@ class Loader(core.Loader):
         super(Loader, self).__init__(*args, **kwargs)
         self.precomputed = self.config['locations']['loops_mat_files']
 
-    def remove(self, pdb):
+    def remove(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(LoopsAll).filter_by(pdb=pdb)
             ids = [result.id for result in query]
@@ -29,7 +29,7 @@ class Loader(core.Loader):
 
         return True
 
-    def has_data(self, pdb):
+    def has_data(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(LoopPositions).\
                 join(LoopsAll, LoopsAll.id == LoopPositions.loop_id).\
@@ -82,7 +82,7 @@ class Loader(core.Loader):
             os.remove(output_file)
         return data
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         """Update loop_positions table by loading data from the mat files
         stored in the PrecomputedData folder
         """
