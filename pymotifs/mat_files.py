@@ -11,7 +11,7 @@ from pymotifs.export.cifatom import Exporter as CifAtom
 
 class Loader(core.Loader):
     allow_no_data = True
-    dependencies = set(CifAtom)
+    dependencies = set([CifAtom])
 
     def filename(self, pdb):
         return os.path.join(self.config['locations']['fr3d_root'],

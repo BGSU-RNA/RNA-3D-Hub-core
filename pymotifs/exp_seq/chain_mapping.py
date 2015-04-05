@@ -8,7 +8,7 @@ from pymotifs.exp_seq.info import Loader as InfoLoader
 
 
 class Loader(core.Loader):
-    dependencies = set(ChainLoader, InfoLoader)
+    dependencies = set([ChainLoader, InfoLoader])
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:

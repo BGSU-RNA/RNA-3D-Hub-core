@@ -8,7 +8,7 @@ from pymotifs.matfiles import Loader as MatLoader
 
 
 class Loader(core.MassLoader):
-    dependencies = set(MatLoader)
+    dependencies = set([MatLoader])
 
     def data(self, *args, **kwargs):
         now = datetime.datetime.now()

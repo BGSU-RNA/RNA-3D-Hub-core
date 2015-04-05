@@ -35,7 +35,7 @@ WHERE
 class Loader(core.Loader):
     name = 'interaction_summary'
     update_gap = False
-    dependencies = set(InterLoader)
+    dependencies = set([InterLoader])
 
     def has_data(self, entry):
         pdb, chain = entry

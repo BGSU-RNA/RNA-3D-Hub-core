@@ -9,7 +9,7 @@ from pymotifs.exp_seq.info import Loader as InfoLoader
 
 
 class Loader(core.Loader):
-    dependencies = set(InfoLoader)
+    dependencies = set([InfoLoader])
 
     def query(self, session, pdb):
         return session.query(Position).\

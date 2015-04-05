@@ -10,7 +10,7 @@ from pymotifs.units.info import Loader as InfoLoader
 
 class Loader(core.SimpleLoader):
     max_distance = 10.0
-    dependencies = set(InfoLoader)
+    dependencies = set([InfoLoader])
 
     def query(self, session, pdb):
         return session.query(UnitPairsDistances).\

@@ -9,7 +9,7 @@ from pymotifs.species_mapping import Loader as SpeciesLoader
 
 
 class Loader(core.Loader):
-    dependencies = set(ChainLoader, SpeciesLoader)
+    dependencies = set([ChainLoader, SpeciesLoader])
 
     def has_data(self, pdb):
         with self.session() as session:

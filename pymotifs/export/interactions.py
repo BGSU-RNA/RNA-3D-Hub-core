@@ -11,7 +11,7 @@ from pymotifs.interactions.pairwise import Loader as InterLoader
 class InteractionExporter(core.Stage):
     headers = ['unit_id1', 'unit_id2', 'FR3D basepair (f_lwbp)',
                'FR3D stacking (f_stacks)', 'FR3D base phosphate (f_bphs)']
-    dependencies = set(InterLoader)
+    dependencies = set([InterLoader])
 
     def is_missing(self, *args, **kwargs):
         return True

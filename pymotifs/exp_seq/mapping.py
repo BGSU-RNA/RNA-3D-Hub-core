@@ -12,7 +12,7 @@ from pymotifs.units.info import Loader as UnitLoader
 
 class Loader(core.Loader):
     insert_max = 5000
-    dependencies = set(InfoLoader, UnitLoader)
+    dependencies = set([InfoLoader, UnitLoader])
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:

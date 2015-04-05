@@ -151,7 +151,7 @@ class Stage(object):
     update_gap = None
 
     """ What stages this stage depends upon. """
-    dependecies = set()
+    dependencies = set()
 
     def __init__(self, config, session_maker):
         """Build a new Stage.
@@ -463,7 +463,8 @@ class Loader(Stage):
             self.logger.error("No data produced")
             raise InvalidState("Missing data")
         elif not data:
-            self.logger.warning("No data produced")
+            if data is not None:
+                self.logger.warning("No data produced")
             return
 
         self.store(data, **kwargs)
@@ -566,16 +567,22 @@ class MassLoader(Loader):
 
 
 class MultiStageLoader(Stage):
-    stages = []
+    """This acts as a simple way to aggregate a bunch of loaders into one
+    stage. It is really useful sometimes to simply run say all unit loaders
+    without having to do each one individually or know which ones depend on
+    each other. The loader itself does nothing but provide a way to run all
+    other loaders this depends on.
+    """
 
-    def __init__(self, *args):
-        self.steps = []
-        for stage in self.stages:
-            self.steps.append(stage(*args))
+    def is_missing(self, *args, **kwargs):
+        """Nothing is ever missing.
+        """
+        return False
 
-    def __call__(self, pdbs, **kwargs):
-        for step in self.steps:
-            step(pdbs, **kwargs)
+    def process(self, *args, **kwargs):
+        """Does nothing.
+        """
+        pass
 
 
 class Exporter(Stage):

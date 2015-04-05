@@ -4,7 +4,7 @@ from pymotifs.matfiles import Loader as MatLoader
 
 
 class BestChainsAndModelsLoader(core.SimpleLoader):
-    dependencies = set(MatLoader)
+    dependencies = set([MatLoader])
 
     def __init__(self, *args, **kwargs):
         super(BestChainsAndModelsLoader, self).__init__(*args, **kwargs)

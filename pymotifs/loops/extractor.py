@@ -15,7 +15,7 @@ class Loader(core.SimpleLoader):
     loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
-    dependencies = set(ReleaseLoader)
+    dependencies = set([ReleaseLoader])
 
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)

@@ -13,7 +13,7 @@ from fr3d.cif.reader import ComplexOperatorException
 
 
 class Exporter(core.Stage):
-    dependecies = set(Downloader)
+    dependecies = set([Downloader])
 
     def filename(self, pdb):
         return os.path.join(self.config['locations']['fr3d_root'], "PDBFiles",

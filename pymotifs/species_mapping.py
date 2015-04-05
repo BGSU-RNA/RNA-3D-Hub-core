@@ -27,7 +27,7 @@ class Loader(core.MassLoader):
 
     merge_data = True
 
-    dependencies = set(ChainLoader)
+    dependencies = set([ChainLoader])
 
     def structure_taxon_ids(self, *args, **kwargs):
         """This transform is a bit special. We actually ignore the input to the

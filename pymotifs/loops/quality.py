@@ -16,7 +16,7 @@ from pymotifs.loops.extractor import Loader as InfoLoader
 
 
 class LoopQualityLoader(core.Loader):
-    dependencies = set(InfoLoader)
+    dependencies = set([InfoLoader])
 
     def transform(self, pdb):
         helper = Release(self.config, self.session.maker)

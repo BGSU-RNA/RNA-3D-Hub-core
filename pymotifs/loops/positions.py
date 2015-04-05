@@ -10,7 +10,7 @@ from pymotifs.loops.extractor import Loader as InfoLoader
 
 class Loader(core.Loader):
     merge_data = True
-    dependencies = set(InfoLoader)
+    dependencies = set([InfoLoader])
 
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)

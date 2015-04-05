@@ -12,7 +12,7 @@ AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 
 class Loader(core.SimpleLoader):
     update_gap = False
-    dependencies = set(Downloader, PdbLoader)
+    dependencies = set([Downloader, PdbLoader])
 
     def query(self, session, pdb):
         return session.query(UnitInfo).filter_by(pdb_id=pdb)

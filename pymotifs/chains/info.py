@@ -7,7 +7,7 @@ from pymotifs.pdbs import Loader as PdbLoader
 
 class Loader(core.MassLoader):
     merge_data = True
-    dependencies = set(PdbLoader)
+    dependencies = set([PdbLoader])
 
     names = {
         'structureId': 'pdb_id',
