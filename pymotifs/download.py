@@ -1,5 +1,5 @@
 """
-A program for downloading .cif, files for all RNA-containing
+A program for downloading .cif files for all RNA-containing
 3D structures.
 """
 
@@ -13,6 +13,7 @@ class Downloader(core.Loader):
     file_url = 'http://www.rcsb.org/pdb/files/'
     name = 'downloader'
     update_gap = False
+    dependencies = set()
 
     def __init__(self, *args, **kwargs):
         super(Downloader, self).__init__(*args, **kwargs)

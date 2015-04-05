@@ -7,6 +7,7 @@ import pymotifs.utils as ut
 import pymotifs.core as core
 from pymotifs.models import UnitInfo as Unit
 from pymotifs.models import UnitQuality as Quality
+from pymotifs.units.info import Loader as InfoLoader
 
 from fr3d.unit_ids import encode
 
@@ -80,6 +81,7 @@ class Parser(object):
 
 
 class Loader(core.SimpleLoader):
+    dependencies = set([InfoLoader])
 
     def __init__(self, *args):
         super(Loader, self).__init__(*args)

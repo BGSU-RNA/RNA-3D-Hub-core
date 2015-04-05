@@ -1,9 +1,11 @@
 from pymotifs import core
 from pymotifs.models import ExpSeqInfo as Info
 from pymotifs.models import ChainInfo
+from pymotifs.chains.info import Loader as ChainLoader
 
 
 class Loader(core.Loader):
+    dependencies = set([ChainLoader])
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:

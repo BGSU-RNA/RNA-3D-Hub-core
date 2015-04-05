@@ -4,6 +4,8 @@ from pymotifs.dispatcher import Dispatcher
 from pymotifs.units.info import Loader
 from pymotifs.units.quality import Loader as Quality
 from pymotifs.units import Loader as UnitLoader
+from pymotifs.download import Downloader
+from pymotifs.pdbs.info import Loader as PdbLoader
 
 
 class DispatcherTest(ut.TestCase):
@@ -44,3 +46,17 @@ class LoadingTest(ut.TestCase):
         loader = self.dispatcher.is_loader('pymotifs.units.info')
         val = loader(UnitLoader)
         self.assertFalse(val)
+
+
+class LoadingStagesTest(ut.TestCase):
+    def setUp(self):
+        self.dispatcher = Dispatcher('units.info')
+
+    def test_can_give_only_selected_stage(self):
+        val = self.dispatcher.stages('units.info')
+        self.assertEquals([Loader], val)
+
+    def test_can_get_with_all_dependecies(self):
+        self.dispatcher.dependencies = True
+        val = sorted(self.dispatcher.stages('units.info'))
+        self.assertEquals([Downloader, PdbLoader, Loader], val)

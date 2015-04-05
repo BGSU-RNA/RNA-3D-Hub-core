@@ -4,8 +4,12 @@ from pymotifs.models import ChainInfo
 from pymotifs.utils.structures import Structure
 from pymotifs.utils.structures import SYNTHEIC
 
+from pymotifs.chains.info import Loader as ChainLoader
+from pymotifs.species_mapping import Loader as SpeciesLoader
+
 
 class Loader(core.Loader):
+    dependencies = set([ChainLoader, SpeciesLoader])
 
     def has_data(self, pdb):
         with self.session() as session:

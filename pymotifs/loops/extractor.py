@@ -8,12 +8,14 @@ import os
 from pymotifs.models import LoopsAll
 from pymotifs import core
 from pymotifs.utils.units import Translator
+from pymotifs.loops.release import Loader as ReleaseLoader
 
 
 class Loader(core.SimpleLoader):
     loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
+    dependencies = set([ReleaseLoader])
 
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)

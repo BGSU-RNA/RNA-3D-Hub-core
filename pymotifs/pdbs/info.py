@@ -15,6 +15,8 @@ class Loader(core.MassLoader):
     """
     merge_data = True
 
+    dependencies = set()
+
     names = {
         'structureId': 'id',
         'structureTitle': 'title',

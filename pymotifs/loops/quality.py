@@ -12,9 +12,11 @@ from pymotifs import core
 from pymotifs.utils.releases import Release
 from pymotifs.models import LoopQa
 from pymotifs.models import LoopsAll
+from pymotifs.loops.extractor import Loader as InfoLoader
 
 
 class LoopQualityLoader(core.Loader):
+    dependencies = set([InfoLoader])
 
     def transform(self, pdb):
         helper = Release(self.config, self.session.maker)

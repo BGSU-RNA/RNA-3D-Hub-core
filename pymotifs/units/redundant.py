@@ -7,9 +7,11 @@ import csv
 
 from pymotifs import core
 from pymotifs.models import UnitRedundancies
+from pymotifs.mat_files import Loader as MatLoader
 
 
 class RedundantNucleotidesLoader(core.SimpleLoader):
+    dependencies = set([MatLoader])
 
     def _parse(self, raw, pdb_file):
         data = []

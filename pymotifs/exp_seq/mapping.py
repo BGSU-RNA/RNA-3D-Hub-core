@@ -6,9 +6,13 @@ from pymotifs.models import ExpSeqPosition as ExpPosition
 from pymotifs.models import ExpSeqUnitMapping as UnitMapping
 from pymotifs.models import ExpSeqChainMapping as ChainMapping
 
+from pymotifs.exp_seq.info import Loader as InfoLoader
+from pymotifs.units.info import Loader as UnitLoader
+
 
 class Loader(core.Loader):
     insert_max = 5000
+    dependencies = set([InfoLoader, UnitLoader])
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:

@@ -2,9 +2,12 @@ from pymotifs import core
 from pymotifs.utils.pdb import CustomReportHelper
 from pymotifs.models import ChainInfo
 
+from pymotifs.pdbs import Loader as PdbLoader
+
 
 class Loader(core.MassLoader):
     merge_data = True
+    dependencies = set([PdbLoader])
 
     names = {
         'structureId': 'pdb_id',
