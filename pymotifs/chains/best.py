@@ -1,8 +1,10 @@
 from pymotifs import core
 from pymotifs.models import PdbBestChainsAndModels
+from pymotifs.matfiles import Loader as MatLoader
 
 
 class BestChainsAndModelsLoader(core.SimpleLoader):
+    dependencies = set(MatLoader)
 
     def __init__(self, *args, **kwargs):
         super(BestChainsAndModelsLoader, self).__init__(*args, **kwargs)

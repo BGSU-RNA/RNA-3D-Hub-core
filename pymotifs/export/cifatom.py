@@ -6,11 +6,14 @@ import os
 
 from pymotifs import core
 
+from pymotifs.download import Downloader
+
 from fr3d.cif.writer import CifAtom
 from fr3d.cif.reader import ComplexOperatorException
 
 
 class Exporter(core.Stage):
+    dependecies = set(Downloader)
 
     def filename(self, pdb):
         return os.path.join(self.config['locations']['fr3d_root'], "PDBFiles",

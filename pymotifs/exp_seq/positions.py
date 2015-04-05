@@ -5,8 +5,11 @@ from pymotifs.models import ExpSeqPosition as Position
 from pymotifs.models import ExpSeqChainMapping as Mapping
 from pymotifs.models import ChainInfo
 
+from pymotifs.exp_seq.info import Loader as InfoLoader
+
 
 class Loader(core.Loader):
+    dependencies = set(InfoLoader)
 
     def query(self, session, pdb):
         return session.query(Position).\

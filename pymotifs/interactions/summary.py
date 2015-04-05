@@ -2,6 +2,7 @@ from pymotifs import core
 
 from pymotifs.models import PdbBestChainsAndModels
 from pymotifs.models import PdbHelixLoopInteractionSummary as Summary
+from pymotifs.interactions.pairwise import Loader as InterLoader
 
 QUERY_TEMPLATE = '''
 SELECT
@@ -34,6 +35,7 @@ WHERE
 class Loader(core.Loader):
     name = 'interaction_summary'
     update_gap = False
+    dependencies = set(InterLoader)
 
     def has_data(self, entry):
         pdb, chain = entry

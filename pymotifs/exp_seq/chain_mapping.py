@@ -3,9 +3,13 @@ from pymotifs import core
 from pymotifs.models import ExpSeqInfo as Exp
 from pymotifs.models import ExpSeqChainMapping as Mapping
 from pymotifs.models import ChainInfo
+from pymotifs.chains.info import Loader as ChainLoader
+from pymotifs.exp_seq.info import Loader as InfoLoader
 
 
 class Loader(core.Loader):
+    dependencies = set(ChainLoader, InfoLoader)
+
     def remove(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(ChainInfo.id).filter_by(pdb_id=pdb)

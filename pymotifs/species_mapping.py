@@ -3,6 +3,7 @@ from Bio import Entrez
 from pymotifs import core
 from pymotifs import utils
 from pymotifs import models as mod
+from pymotifs.chains.info import Loader as ChainLoader
 
 
 class Loader(core.MassLoader):
@@ -25,6 +26,8 @@ class Loader(core.MassLoader):
     download_limit = 200
 
     merge_data = True
+
+    dependencies = set(ChainLoader)
 
     def structure_taxon_ids(self, *args, **kwargs):
         """This transform is a bit special. We actually ignore the input to the
