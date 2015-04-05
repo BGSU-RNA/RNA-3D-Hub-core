@@ -17,6 +17,22 @@ class InteractionExporter(core.Stage):
     def remove(self, *args, **kwargs):
         pass
 
+    def to_process(self, pdbs, **kwargs):
+        """If we are given the all flag then we should export all interactions,
+        otherwise we only export interactions for the requested structures.
+
+        :pdbs: The list of pdbs to get interactions for.
+        :kwargs: All keyword arguments.
+        :returns: The list of pdbs to get interactions for.
+        """
+
+        if not kwargs.get('all'):
+            return pdbs
+
+        with self.session() as session:
+            query = session.query(UnitPairsInteractions.pdb_id).distinct()
+        return [result.pdb_id for result in query]
+
     def compress(self, temp, **kwargs):
         temp_output_file = self.filename() + '-temp'
         temp.seek(0)
