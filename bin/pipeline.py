@@ -53,7 +53,7 @@ def load_config(filename):
 def run(name, config, pdbs, opts):
     setup_logging(opts)
 
-    if opts.pop('all'):
+    if opts['all']:
         pdbs = pdb.RnaPdbsHelper()()
 
     if opts.pop('known'):
