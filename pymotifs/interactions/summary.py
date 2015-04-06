@@ -5,19 +5,20 @@ from pymotifs.models import UnitPairsInteractions
 from pymotifs.models import PdbHelixLoopInteractionSummary as Summary
 from pymotifs.interactions.pairwise import Loader as InterLoader
 
+
 QUERY_TEMPLATE = '''
 SELECT
     count(if(f_lwbp regexp '^[ct]' {unique}, 1, NULL)) as 'bps',
     count(if(f_stacks regexp '^s' {unique}, 1, NULL)) as 'stacks',
     count(if(f_bphs regexp '^[1-9]'
-            or (f_bphs = '0BPh' and iPdbSig != jPdbSig), 1, NULL)) as 'bphs'
-FROM pdb_pairwise_interactions
+            or (f_bphs = '0BPh' and unit1_id != unit2_id), 1, NULL)) as 'bphs'
+FROM unit_pairs_interactions
 JOIN {table1} as N1
 ON
-    iPdbSig = N1.id
+    unit1_id = N1.id
 JOIN {table2} as N2
 ON
-    jPdbSig = N2.id
+    unit2_id = N2.id
 WHERE
     pdb_id = :pdb
     AND N1.chain = N2.chain
@@ -26,7 +27,7 @@ WHERE
         (f_lwbp regexp '^[ct]' {unique}) or
         (f_stacks regexp '^s' {unique}) or
         (f_bphs regexp '^[1-9]') or
-        (f_bphs = '0BPh' and iPdbSig != jPdbSig)
+        (f_bphs = '0BPh' and unit1_id != unit2_id)
     )
     AND f_crossing {operator} 4
 ;
@@ -37,7 +38,7 @@ class Loader(core.SimpleLoader):
     dependencies = set([InterLoader])
 
     def query(self, session, pdb):
-        return session.query(Summary).filter_by(pdb=pdb)
+            return session.query(Summary).filter_by(pdb=pdb)
 
     def table(self, element):
         if element == 'helix':
@@ -56,7 +57,7 @@ class Loader(core.SimpleLoader):
 
         unique = ''
         if element1 == element2:
-            unique = 'and iPdbSig < jPdbSig'
+            unique = 'and unit1_id < unit2_id'
 
         return QUERY_TEMPLATE.format(unique=unique, operator=operator,
                                      table1=self.table(element1),
@@ -90,9 +91,9 @@ class Loader(core.SimpleLoader):
             return [result.chain for result in query]
 
     def data(self, pdb, **kwargs):
+        parts = ['helix', 'loop']
+        value_names = ['bps', 'stacks', 'bphs']
         for chain in self.chains(pdb):
-            parts = ['helix', 'loop']
-            value_names = ['bps', 'stacks', 'bphs']
             summary = Summary(pdb=pdb, chain=chain)
 
             for range_name in ['lr', 'sr']:

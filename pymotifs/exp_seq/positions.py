@@ -12,7 +12,7 @@ class Loader(core.Loader):
     dependencies = set([InfoLoader])
 
     def query(self, session, pdb):
-        return session.query(Position).\
+        return session.query(Position.id).\
             join(Mapping, Position.exp_seq_id == Mapping.exp_seq_id).\
             join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
             filter(ChainInfo.pdb_id == pdb)
@@ -43,9 +43,11 @@ class Loader(core.Loader):
     def positions(self, exp_id, sequence):
         positions = []
         for index, char in enumerate(sequence):
-            positions.append({'exp_seq_id': exp_id,
-                              'unit': char,
-                              'index': index})
+            positions.append({
+                'exp_seq_id': exp_id,
+                'unit': char,
+                'index': index
+            })
         return positions
 
     def data(self, pdb, **kwargs):

@@ -33,7 +33,7 @@ def should_reflect(tablename, *args):
 
 def reflect(engine):
     metadata.bind = engine
-    metadata.reflect(only=should_reflect)
+    metadata.reflect(only=should_reflect, views=True)
     Base.prepare(classname_for_table=camelize_classname)
     for klass in Base.classes:
         globals()[klass.__name__] = klass

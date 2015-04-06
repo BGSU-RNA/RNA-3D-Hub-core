@@ -158,3 +158,17 @@ class RnaChainsTest(QueryUtilTest):
     def test_does_not_load_mislabeled_chain(self):
         val = self.db_obj.rna_chains('3CPW', strict=True)
         self.assertTrue('A' not in val)
+
+
+class LoopLoadingTest(QueryUtilTest):
+    query_class = st.Structure
+
+    def test_can_load_data(self):
+        val = self.db_obj.loop('IL_1FG0_007')
+        ans = {
+            'id': 'IL_1FG0_007',
+            'nts': [],
+            'endpoints': [('1FG0_AU_1_A_2331_C_', '1FG0_AU_1_A_2333_G_'),
+                          ('1FG0_AU_1_A_2351_C_', '1FG0_AU_1_A_2355_G_')]
+        }
+        self.assertEquals(ans, val)

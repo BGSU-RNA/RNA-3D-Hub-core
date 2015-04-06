@@ -137,6 +137,9 @@ class Stage(object):
     """ What stages this stage depends upon. """
     dependencies = set()
 
+    """Flag if we should mark stuff as processed."""
+    mark = True
+
     def __init__(self, config, session_maker):
         """Build a new Stage.
 
@@ -307,18 +310,19 @@ class Stage(object):
                 self.process(entry, **kwargs)
 
             except Skip as err:
-                self.logger.warn("Skipping entry %s Reason %s", entry,
-                                 str(err))
+                self.logger.warn("Skipping entry %s. Reason %s",
+                                 entry, str(err))
                 continue
 
             except Exception as err:
-                self.logger.error("Error raised in process of %s", entry)
+                self.logger.error("Error raised in processing of %s", entry)
                 self.logger.exception(err)
                 if self.stop_on_failure:
                     raise StageFailed(self.name)
                 continue
 
-            self.mark_processed(entry, **kwargs)
+            if self.mark:
+                self.mark_processed(entry, **kwargs)
 
 
 class Loader(Stage):
@@ -451,7 +455,7 @@ class SimpleLoader(Loader):
 
     def has_data(self, *args, **kwargs):
         with self.session() as session:
-            return bool(self.query(session, *args).first())
+            return bool(self.query(session, *args).count())
 
     def remove(self, *args, **kwargs):
         with self.session() as session:

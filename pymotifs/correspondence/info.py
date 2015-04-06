@@ -1,95 +1,79 @@
 from pymotifs import core
-from pymotifs.models import ExpSeqInfo as ExpSeq
 from pymotifs.models import CorrespondenceInfo as Info
 
-from pymotifs.utils.structures import NR as NrUtil
-from pymotifs.utils.structures import Structure as StructureUtil
+from sqlalchemy.sql.expression import text
 
 
-class MissingExpSeq(core.InvalidState):
-    pass
+# This uses a cross join which is very expensive but should be ok here as there
+# are relatively few unique rna sequences.
+QUERY = """
+select distinct
+    if(E1.length >= E2.length, E1.id, E2.id),
+    if(E1.length >= E2.length, E2.id, E1.id)
+from exp_seq_info as E1
+join exp_seq_info as E2
+join exp_seq_chain_mapping as M1
+on
+    M1.exp_seq_id = E1.id
+join exp_seq_chain_mapping as M2
+on
+    M2.exp_seq_id = E2.id
+join chain_info as I1
+on
+    I1.id = M1.chain_id
+join chain_info as I2
+on
+    I2.id = M2.chain_id
+where
+    I1.pdb_id in ({items})
+    and I2.pdb_id in ({items})
+    and (
+    (
+        E1.length < 36
+        and E2.length = E1.length
+    )
+    or (
+        E2.length <= 2 * E1.length
+        and E2.length >= (E1.length / E2.length)
+    )
+    )
+;
+"""
 
 
-class Loader(core.Loader):
-    name = 'correspondence_info'
-    update_gap = False
+class Loader(core.SimpleLoader):
+    """A class to load up all pairs of experimental sequences that should have
+    an alignment attempted. This does not work per structure as many other
+    things do, but instead will compute all possible pairs and then work per
+    pair, inserting or storing each pair as needed.
+    """
+
+    short_cutoff = 36
     allow_no_data = True
-    stop_on_failure = False
+    mark = False
 
-    def __init__(self, config, maker):
-        self.util = NrUtil(maker)
-        self.structure = StructureUtil(maker)
-        super(Loader, self).__init__(config, maker)
+    def to_process(self, pdbs, **kwargs):
+        """Here we transform the list of pdbs to a list of pairs of
+        experimental sequences to try and align. This simplifies a lot of the
+        logic later on, but does cause problems with marking stuff as
+        processed.
 
-    def transform(self, pdb, **kwargs):
-        """We transform the pdb into the exp_seq_id that corresponds to the
-        longest chain in that structure. This means we will attempt to align
-        only the longest chain to other similar structures.
+        :pdbs: The list of pdbs to process.
         """
-        exp_id = self.exp_seq_id(pdb)
-        self.logger.info("Using exp_seq_id %s for %s", exp_id, pdb)
-        return [exp_id]
 
-    def exp_seq_id(self, pdb):
-        chain = self.structure.longest_chain(pdb)
+        items = ','.join(['"%s"' % pdb for pdb in pdbs])
 
+        pairs = []
         with self.session() as session:
-            query = session.query(ExpSeq).filter_by(pdb=pdb, chain=chain)
-            result = query.first()
-            if not result:
-                self.logger.debug("No exp_seq for %s|%s", pdb, chain)
-                return None
-            result = result.id
-        return result
+            query = session.execute(text(QUERY.format(items=items)))
+            for result in query.fetchall():
+                pairs.append((result[0], result[1]))
 
-    def pdb(self, exp_seq_id):
-        with self.session() as session:
-            query = session.query(ExpSeq).filter_by(id=exp_seq_id)
-            result = query.first()
-            if not result:
-                self.logger.error("Could not find ExpSeq for given id")
-                raise core.InvalidState("Missing exp_seq_id")
-            return result.pdb, result.chain
+        return pairs
 
-    def possible(self, exp_seq_id):
-        pdb, chain = self.pdb(exp_seq_id)
-        members = set(self.util.members(pdb))
+    def query(self, session, pair, **kwargs):
+        return session.query(Info).\
+            filter_by(exp_seq_id1=pair[0], exp_seq_id2=pair[1])
 
-        possible = []
-        for member in members:
-            other_id = self.exp_seq_id(member)
-            if other_id is None:
-                self.logger.info("Skipping %s as it has no exp_seq_id", member)
-            possible.append(other_id)
-        return possible
-
-    def known(self, exp_seq_id):
-        with self.session() as session:
-            query = session.query(Info).filter(Info.exp_seq_id1 == exp_seq_id)
-            return [result.exp_seq_id2 for result in query]
-
-    def missing(self, exp_seq_id):
-        return set(self.possible(exp_seq_id)) - set(self.known(exp_seq_id))
-
-    def has_data(self, exp_seq_id):
-        """We check if we have all data for this exp_seq_id by seeing if we
-        aligned this to all possible sequences.
-        """
-        return not bool(self.missing(exp_seq_id))
-
-    def remove(self, pdb):
-        """Removes all old correspondences for the given pdb. This will only
-        remove the ones marked by possible.
-        """
-        possible = self.possible(pdb)
-        with self.session() as session:
-            session.query(Info).filter_by(pdb1=pdb).\
-                filter(Info.pdb2.in_(possible)).\
-                delete(synchronize_session=False)
-
-    def data(self, exp_seq_id, **kwargs):
-        data = []
-        for other in self.missing(exp_seq_id):
-            self.logger.debug("Using second exp_seq %s", other)
-            data.append(Info(exp_seq_id1=exp_seq_id, exp_seq_id2=other))
-        return data
+    def data(self, pair, **kwargs):
+        return Info(exp_seq_id1=pair[0], exp_seq_id2=pair[1])

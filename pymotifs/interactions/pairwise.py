@@ -12,7 +12,7 @@ import pymotifs.core as core
 
 from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.units.info import Loader as InfoLoader
-from pymotifs.pdbs.infor import Loader as PdbLoader
+from pymotifs.pdbs.info import Loader as PdbLoader
 
 from pymotifs.models import UnitPairsInteractions as Interaction
 

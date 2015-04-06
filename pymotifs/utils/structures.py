@@ -184,14 +184,22 @@ class Structure(Base):
             query = session.query(mod.LoopPositions).\
                 join(mod.LoopsAll, mod.LoopPositions.loop_id == mod.LoopsAll.id).\
                 filter(mod.LoopsAll.pdb == pdb).\
-                order_by(mod.LoopsAll.id)
+                order_by(mod.LoopsAll.id, mod.LoopPositions.position)
 
             grouped = it.groupby(it.imap(ut.row2dict, query),
                                  lambda a: a['loop_id'])
+
             for loop_id, positions in grouped:
+                positions = list(positions)
+                endpoints = []
+                for pos in positions:
+                    if pos.border:
+                        endpoints.append(pos['nt_id'])
+
                 loops.append({
                     'id': loop_id,
-                    'nts': [pos['nt_id'] for pos in positions]
+                    'nts': [pos['nt_id'] for pos in positions],
+                    'endpoints': list(ut.grouper(2, endpoints))
                 })
 
         return loops
