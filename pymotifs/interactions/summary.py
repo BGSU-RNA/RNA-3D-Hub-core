@@ -69,8 +69,7 @@ class Loader(core.SimpleLoader):
 
             results = results.fetchone()
             if not results:
-                raise core.SkipValue("Couldn't compute %s %s" %
-                                     element1, element2)
+                raise core.Skip("Couldn't compute %s %s", element1, element2)
 
             return results['bps'], results['stacks'], results['bphs']
 

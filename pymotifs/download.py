@@ -47,9 +47,9 @@ class Downloader(core.Loader):
             content = self.gzip(self.url(name))
         except:
             self.logger.error('%s could not be downloaded', name)
-            raise core.SkipValue("Couldn't get %s" % name)
+            raise core.Skip("Couldn't get %s" % name)
 
         if not content:
-            core.SkipValue("Downloaded empty file %s" % name)
+            core.Skip("Downloaded empty file %s" % name)
 
         return destination, content

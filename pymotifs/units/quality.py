@@ -98,7 +98,7 @@ class Loader(core.SimpleLoader):
         try:
             response = self.fetcher(filename)
         except ut.RetryFailedException:
-            raise core.SkipPdb("Could not download data for %s" % pdb)
+            raise core.Skip("Could not download data for %s" % pdb)
 
         parser = Parser(response)
         if not parser.has_rsr() and not parser.has_dcc():

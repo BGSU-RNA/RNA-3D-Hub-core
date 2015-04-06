@@ -88,7 +88,7 @@ class Loader(core.SimpleLoader):
             raise core.MatlabFailed(err_msg)
 
         if loops == 0:
-            raise core.SkipValue('No %s in %s' % loop_type, pdb_id)
+            raise core.Skip('No %s in %s' % (loop_type, pdb_id))
 
         self.logger.info('Found %i loops', count)
 
