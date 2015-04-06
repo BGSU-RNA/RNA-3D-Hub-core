@@ -36,6 +36,7 @@ def setup_logging(opts):
         log_args['filename'] = opts.pop('log_file')
 
     logging.basicConfig(**log_args)
+    logging.captureWarnings(True)
     base = logging.getLogger()
     pool_logger = logging.getLogger('sqlalchemy.pool')
     pool_logger.setLevel(logging.ERROR)
