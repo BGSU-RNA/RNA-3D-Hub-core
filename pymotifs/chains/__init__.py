@@ -6,4 +6,4 @@ from pymotifs.chains.species import Loader as SpeciesLoader
 
 
 class Loader(core.MultiStageLoader):
-    stages = [InfoLoader, BestChainsAndModelsLoader, SpeciesLoader]
+    dependencies = set([InfoLoader, BestChainsAndModelsLoader, SpeciesLoader])

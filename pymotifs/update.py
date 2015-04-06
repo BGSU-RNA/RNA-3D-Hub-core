@@ -14,10 +14,10 @@ from pymotifs import interactions
 
 
 class Loader(core.MultiStageLoader):
-    stages = [download.Downloader,
-              export.CifAtom,
-              pdbs.Loader,
-              chains.Loader,
-              units.Loader,
-              interactions.Loader,
-              loops.Loader]
+    dependencies = set([download.Downloader,
+                        export.CifAtom,
+                        pdbs.Loader,
+                        chains.Loader,
+                        units.Loader,
+                        interactions.Loader,
+                        loops.Loader])

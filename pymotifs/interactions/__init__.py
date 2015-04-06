@@ -5,4 +5,4 @@ from pymotifs.interactions.summary import Loader as SummaryLoader
 
 
 class Loader(core.MultiStageLoader):
-    stages = [PairwiseLoader, SummaryLoader]
+    dependencies = set([PairwiseLoader, SummaryLoader])

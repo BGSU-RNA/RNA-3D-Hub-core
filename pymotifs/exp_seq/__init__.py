@@ -7,4 +7,5 @@ from pymotifs.exp_seq.chain_mapping import Loader as ChainMappingLoader
 
 
 class Loader(core.MultiStageLoader):
-    stages = [InfoLoader, PositionsLoader, ChainMappingLoader, MappingLoader]
+    dependencies = set([InfoLoader, PositionsLoader, ChainMappingLoader,
+                        MappingLoader])
