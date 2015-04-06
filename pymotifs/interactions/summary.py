@@ -1,6 +1,7 @@
 from pymotifs import core
 
-from pymotifs.models import PdbBestChainsAndModels
+from pymotifs.models import UnitInfo
+from pymotifs.models import UnitPairsInteractions
 from pymotifs.models import PdbHelixLoopInteractionSummary as Summary
 from pymotifs.interactions.pairwise import Loader as InterLoader
 
@@ -32,32 +33,11 @@ WHERE
 '''
 
 
-class Loader(core.Loader):
-    name = 'interaction_summary'
-    update_gap = False
+class Loader(core.SimpleLoader):
     dependencies = set([InterLoader])
 
-    def has_data(self, entry):
-        pdb, chain = entry
-        with self.session() as session:
-            query = session.query(Summary).filter_by(pdb=pdb, chain=chain)
-            return bool(query.count())
-
-    def transform(self, pdb, **kwargs):
-        with self.session() as session:
-            query = session.query(PdbBestChainsAndModels).filter_by(pdb_id=pdb)
-
-            best = query.first()
-            if not best:
-                raise core.SkipPdb("Could not get best chain for %s" % pdb)
-
-            return [(pdb, chain) for chain in best.best_chains.split(',')]
-
-    def remove(self, entry):
-        pdb, chain = entry
-        with self.session() as session:
-            session.query(Summary).filter_by(pdb=pdb, chain=chain).\
-                delete(synchronize_session='fetch')
+    def query(self, session, pdb):
+        return session.query(Summary).filter_by(pdb=pdb)
 
     def table(self, element):
         if element == 'helix':
@@ -82,7 +62,7 @@ class Loader(core.Loader):
                                      table1=self.table(element1),
                                      table2=self.table(element2))
 
-    def query(self, pdb, chain, element1, element2, range_type):
+    def summary_query(self, pdb, chain, element1, element2, range_type):
         query = self.build(element1, element2, range_type)
         with self.session() as session:
             results = session.execute(query, {'pdb': pdb, 'chain': chain})
@@ -94,18 +74,35 @@ class Loader(core.Loader):
 
             return results['bps'], results['stacks'], results['bphs']
 
-    def data(self, entry, **kwargs):
-        pdb, chain = entry
-        parts = ['helix', 'loop']
-        value_names = ['bps', 'stacks', 'bphs']
-        summary = Summary(pdb=pdb, chain=chain)
+    def chains(self, pdb):
+        """Get all chains that have interactions. This only gets chains where
+        the first interaction is in the chain.
 
-        for range_name in ['lr', 'sr']:
-            for part1 in parts:
-                for part2 in parts:
-                    values = self.query(pdb, chain, part1, part2, range_name)
-                    for name, value in zip(value_names, values):
-                        full = '%s_%s_%s_%s' % (range_name, part1, part2, name)
-                        setattr(summary, full, value)
+        :pdb: The pdb id to get interactions for.
+        :returns: A list of all chains for the given pdb file.
+        """
 
-        return summary
+        with self.session() as session:
+            query = session.query(UnitInfo.chain).\
+                join(UnitPairsInteractions,
+                     UnitPairsInteractions.unit1_id == UnitInfo.id).\
+                filter(UnitInfo.pdb_id == pdb).\
+                distinct()
+            return [result.chain for result in query]
+
+    def data(self, pdb, **kwargs):
+        for chain in self.chains(pdb):
+            parts = ['helix', 'loop']
+            value_names = ['bps', 'stacks', 'bphs']
+            summary = Summary(pdb=pdb, chain=chain)
+
+            for range_name in ['lr', 'sr']:
+                for part1 in parts:
+                    for part2 in parts:
+                        values = self.summary_query(pdb, chain, part1, part2,
+                                                    range_name)
+                        for name, value in zip(value_names, values):
+                            full = '%s_%s_%s_%s' % (range_name, part1, part2,
+                                                    name)
+                            setattr(summary, full, value)
+            yield summary
