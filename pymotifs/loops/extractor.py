@@ -20,17 +20,13 @@ class Loader(core.SimpleLoader):
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)
 
-    def transform(self, pdb, **kwargs):
-        return [(pdb, type) for type in self.loop_types]
-
     def must_recompute(self, entry, recalculate=False, **kwargs):
         return bool(recalculate) or \
             self.config[self.name].get('recompute') or \
             self.config['recalculate'].get(entry[1])
 
-    def query(self, session, entry):
-        return session.query(LoopsAll).\
-            filter_by(pdb=entry[0], type=entry[1])
+    def query(self, session, pdb):
+        return session.query(LoopsAll).filter_by(pdb=pdb)
 
     def _next_loop_number_string(self, current):
         """Compute the next loop number string. This will pad to either 3 or 6
@@ -165,7 +161,10 @@ class Loader(core.SimpleLoader):
                 mapping[units] = result.id
         return mapping
 
-    def data(self, entry, **kwargs):
-        pdb_id, loop_type = entry
-        mapping = self._get_loop_mapping(pdb_id, loop_type)
-        return self._extract_loops(pdb_id, loop_type, mapping)
+    def data(self, pdb, **kwargs):
+        data = []
+        for loop_type in self.loop_types:
+            mapping = self._get_loop_mapping(pdb, loop_type)
+            data.extend(self._extract_loops(pdb, loop_type, mapping))
+
+        return data

@@ -18,12 +18,10 @@ from pymotifs.loops.extractor import Loader as InfoLoader
 class LoopQualityLoader(core.Loader):
     dependencies = set([InfoLoader])
 
-    def transform(self, pdb):
+    def has_data(self, pdb, **kwargs):
         helper = Release(self.config, self.session.maker)
-        return (pdb, helper.current('loop'))
+        release_id = helper.current('loop')
 
-    def has_data(self, entry):
-        pdb, release_id = entry
         with self.session() as session:
             query = session.query(LoopQa.id).\
                 join(LoopsAll, LoopsAll.id == LoopQa.id).\
@@ -32,10 +30,12 @@ class LoopQualityLoader(core.Loader):
 
             return bool(query.count())
 
-    def remove(self, entry):
-        pdb, release_id = entry
+    def remove(self, pdb, **kwargs):
+        helper = Release(self.config, self.session.maker)
+        release_id = helper.current('loop')
         with self.session() as session:
-            query = session.query(LoopsAll.id).filter_by(pdb=pdb)
+            query = session.query(LoopsAll.id).\
+                filter_by(pdb=pdb, release_id=release_id)
             loop_ids = [result.id for result in query]
 
         if not loop_ids:
@@ -74,9 +74,11 @@ class LoopQualityLoader(core.Loader):
 
         return data
 
-    def data(self, entry):
+    def data(self, pdb, **kwargs):
 
-        pdb, release_id = entry
+        helper = Release(self.config, self.session.maker)
+        release_id = helper.current('loop')
+
         mlab = core.Matlab(self.config['locations']['fr3d_root'])
         [ifn, err_msg] = mlab.aLoopQualityAssurance(pdb, nout=2)
 
