@@ -27,7 +27,7 @@ class RedundantNucleotidesLoader(core.SimpleLoader):
     def query(self, session, pdb):
         return session.query(UnitRedundancies).filter_by(pdb_id=pdb)
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         matlab = core.Matlab(self.config['locations']['fr3d_root'])
         ifn, err_msg = matlab.loadRedundantNucleotides(pdb, nout=2)
         if err_msg != '':

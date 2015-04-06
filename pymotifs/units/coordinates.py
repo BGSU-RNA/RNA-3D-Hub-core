@@ -13,5 +13,5 @@ class Loader(core.SimpleLoader):
             join(UnitInfo, UnitInfo.id == UnitCoordinates.id).\
             filter(UnitInfo.pdb_id == pdb)
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         pass

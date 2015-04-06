@@ -33,7 +33,7 @@ class Loader(core.SimpleLoader):
             return np.linalg.norm(center1 - center2)
         return None
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
         for residue1 in structure.residues():
             for residue2 in structure.residues():

@@ -33,6 +33,6 @@ class Loader(core.SimpleLoader):
                         chain_index=getattr(nt, 'chain_index', None),
                         unit_type_id=self.type(nt))
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
         return [self.as_unit(nt) for nt in structure.residues(polymeric=None)]
