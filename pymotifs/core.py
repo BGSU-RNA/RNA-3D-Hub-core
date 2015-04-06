@@ -39,22 +39,6 @@ class Skip(Exception):
     pass
 
 
-class SkipPdb(Skip):
-    """This is an exception that is raised to indicate we should skip
-    processing this pdb. This means all values from the transformed pdb will be
-    skipped as well. This can be raised during transform, has_data, and data.
-    """
-    pass
-
-
-class SkipValue(Skip):
-    """
-    This is raised to indicate that we should skip the transformed value, but
-    not the entire PDB. This can be raised during has_data, and data.
-    """
-    pass
-
-
 class MatlabFailed(Exception):
     """An exception meant to be used if matlab commands fail for some reason.
     """
@@ -206,7 +190,7 @@ class Stage(object):
         except ComplexOperatorException:
             self.logger.warning("Got a complex operator for %s, so skipping",
                                 pdb)
-            raise SkipPdb("Complex operator must be skipped")
+            raise Skip("Complex operator must be skipped")
 
     def structure(self, pdb):
         """A method to load the cif file and get the structure for the given
@@ -218,19 +202,6 @@ class Stage(object):
             return pdb
 
         return self.cif(pdb).structure()
-
-    def transform(self, pdb, **kwargs):
-        """This method takes the a pdb that we are given to process and
-        transforms into values that can be given to `self.data`. By default it
-        simply yields the given object. This is intended to be used in cases
-        where we need to limit the list of pdbs to select ones. Or where we
-        take list of pdbs and get a list of pairs, like with getting nt-nt
-        correspondence.
-
-        :pdb: The pdb.
-        :returns: A list of things to send to data.
-        """
-        return pdb
 
     def must_recompute(self, pdb, recalculate=False, **kwargs):
         """Detect if we have been told to recompute this stage for this pdb.
@@ -311,8 +282,8 @@ class Stage(object):
     def __call__(self, given, **kwargs):
         """Process all given inputs. This will first transform all inputs with
         the `to_process` method. If there are no entries then a critical
-        exception is raised. Next we go through one entry at a time and apply
-        `transform` to it. TWe then use `should_process` to it. If this returns
+        exception is raised. We then use `should_process` to determine if we
+        should process each entry. If this returns
         true then we call `process`. Once done we call `mark_processed`.
 
         :given: A list of pdbs to process.
@@ -329,21 +300,19 @@ class Stage(object):
             self.logger.info("Processing %s: %s/%s", entry, index + 1,
                              len(entries))
 
-            transformed = self.transform(entry)
             try:
-                if not self.should_process(transformed, **kwargs):
-                    self.logger.debug("No need to process %s", transformed)
+                if not self.should_process(entry, **kwargs):
+                    self.logger.debug("No need to process %s", entry)
                     continue
-                self.process(transformed, **kwargs)
+                self.process(entry, **kwargs)
 
-            except SkipPdb as err:
-                self.logger.warn("Skipping entry %s Reason %s", transformed,
+            except Skip as err:
+                self.logger.warn("Skipping entry %s Reason %s", entry,
                                  str(err))
                 continue
 
             except Exception as err:
-                self.logger.error("Error raised in should_process of %s" %
-                                  transformed)
+                self.logger.error("Error raised in process of %s", entry)
                 self.logger.exception(err)
                 if self.stop_on_failure:
                     raise StageFailed(self.name)
