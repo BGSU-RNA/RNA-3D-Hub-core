@@ -1,6 +1,6 @@
 from pymotifs import core
 from pymotifs.models import PdbBestChainsAndModels
-from pymotifs.matfiles import Loader as MatLoader
+from pymotifs.mat_files import Loader as MatLoader
 
 
 class BestChainsAndModelsLoader(core.SimpleLoader):

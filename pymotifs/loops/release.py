@@ -4,7 +4,7 @@ from pymotifs import core
 from pymotifs.models import LoopReleases
 from pymotifs.utils.releases import Release
 
-from pymotifs.matfiles import Loader as MatLoader
+from pymotifs.mat_files import Loader as MatLoader
 
 
 class Loader(core.MassLoader):

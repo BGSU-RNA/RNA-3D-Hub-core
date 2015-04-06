@@ -10,7 +10,7 @@ import collections as coll
 
 import pymotifs.core as core
 
-from pymotifs.matfiles import Loader as MatLoader
+from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.units.info import Loader as InfoLoader
 from pymotifs.pdbs.infor import Loader as PdbLoader
 
