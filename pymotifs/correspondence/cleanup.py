@@ -11,10 +11,13 @@ from pymotifs import core
 
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
+from pymotifs.correspondence.info import Loader as InfoLoader
+from pymotifs.correspondence.summary import Loader as SummaryLoader
 
 
 class Loader(core.Stage):
     mark = False
+    dependencies = set([SummaryLoader, InfoLoader])
 
     def to_process(self, pdbs, **kwargs):
         """We transform the list of pdbs into the list of correspondences.

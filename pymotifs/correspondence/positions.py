@@ -8,6 +8,8 @@ from pymotifs.models import ExpSeqPosition
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
 from pymotifs.models import RnaUnitModifiedCorrespondencies
+from pymotifs.exp_seq.info import Loader as InfoLoader
+from pymotifs.exp_seq.positions import Loader as PositionLoader
 
 from pymotifs.utils.alignment import align
 
@@ -17,6 +19,8 @@ class Loader(core.Loader):
     it.
     """
     mark = False
+
+    dependencies = set([InfoLoader, PositionLoader])
 
     def __init__(self, config, maker):
         super(Loader, self).__init__(config, maker)

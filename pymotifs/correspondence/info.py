@@ -1,5 +1,6 @@
 from pymotifs import core
 from pymotifs.models import CorrespondenceInfo as Info
+from pymotifs.exp_seq.info import Loader as ExpSeqInfo
 
 from sqlalchemy.sql.expression import text
 
@@ -69,6 +70,8 @@ class Loader(core.SimpleLoader):
     things do, but instead will compute all possible pairs and then work per
     pair, inserting or storing each pair as needed.
     """
+
+    dependencies = set([ExpSeqInfo])
 
     short_cutoff = 36
     allow_no_data = True
