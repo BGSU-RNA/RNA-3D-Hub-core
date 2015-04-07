@@ -8,8 +8,14 @@ from sqlalchemy.sql.expression import text
 # are relatively few unique rna sequences.
 QUERY = """
 select distinct
-    if(E1.length >= E2.length, E1.id, E2.id),
-    if(E1.length >= E2.length, E2.id, E1.id)
+    E1.id,
+    E2.id,
+    E1.sequence,
+    E1.length,
+    E2.sequence,
+    E2.length,
+    S1.species_id,
+    S2.species_id
 from exp_seq_info as E1
 join exp_seq_info as E2
 join exp_seq_chain_mapping as M1
@@ -18,6 +24,12 @@ on
 join exp_seq_chain_mapping as M2
 on
     M2.exp_seq_id = E2.id
+join chain_species as S1
+on
+    S1.chain_id = M1.chain_id
+join chain_species as S2
+on
+    S2.chain_id = M2.chain_id
 join chain_info as I1
 on
     I1.id = M1.chain_id
@@ -25,18 +37,28 @@ join chain_info as I2
 on
     I2.id = M2.chain_id
 where
-    I1.pdb_id in ({items})
-    and I2.pdb_id in ({items})
+    E1.length >= E2.length
     and (
     (
         E1.length < 36
         and E2.length = E1.length
     )
     or (
-        E2.length <= 2 * E1.length
-        and E2.length >= (E1.length / E2.length)
+        (E1.length * 0.5) <= E2.length
+        and E2.length <= (2 * E1.length)
+        and (
+            (E1.length < 2000 and E2.length < 2000)
+            or (E1.length > 2000 and E2.length > 2000)
+        )
     )
     )
+    and (
+        (S1.id is null or S2.id is null)
+        or (S1.species_id = 32360 or S2.species_id = 32360)
+        or (S1.species_id = S2.species_id)
+    )
+    and I1.pdb_id in ({items})
+    and I2.pdb_id in ({items})
 ;
 """
 
