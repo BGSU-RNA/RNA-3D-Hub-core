@@ -8,4 +8,4 @@ from pymotifs.correspondence.summary import Loader as SummaryLoader
 
 
 class Loader(core.MultiStageLoader):
-    stages = [InfoLoader, PositionLoader, SummaryLoader, Cleanup]
+    dependencies = set([InfoLoader, PositionLoader, SummaryLoader, Cleanup])
