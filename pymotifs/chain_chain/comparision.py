@@ -11,6 +11,8 @@ from pymotifs.utils import correspondence as corr
 
 from pymotifs.models import ChainInfo
 from pymotifs.models import ChainChainSimilarity as Similarity
+from pymotifs.correspondence import Loader as CorrespondenceLoader
+from pymotifs.downloader import Downloader
 
 from fr3d.geometry.discrepancy import discrepancy
 
@@ -19,6 +21,8 @@ class Loader(core.Loader):
     """A Loader to get all chain to chain similarity data.
     """
     allow_no_data = True
+
+    dependencies = set([CorrespondenceLoader, Downloader])
 
     def has_data(self, pdb, **kwargs):
         """Check if there are any chain_chain_similarity entries for this pdb.
