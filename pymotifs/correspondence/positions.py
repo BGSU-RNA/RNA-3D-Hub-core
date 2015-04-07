@@ -81,8 +81,7 @@ class Loader(core.Loader):
 
                 if seq not in self.valid_sequence:
                     if index != size:
-                        raise core.SkipPdb("Bad unit %s for %s" %
-                                           (seq, seq_id))
+                        raise core.Skip("Bad unit %s for %s" % (seq, seq_id))
 
                     self.logger.warning(("Skipping bad unit %s for %s as"
                                          "it may be a tRNA/AA"), seq, seq_id)
