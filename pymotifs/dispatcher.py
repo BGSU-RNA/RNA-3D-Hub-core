@@ -3,7 +3,7 @@ import inspect
 
 from pymotifs.core import Stage
 
-from pymotifs.utils.toposort import toposort_flatten
+from pymotifs.utils.toposort import toposort
 
 
 class Dispatcher(object):
@@ -15,7 +15,7 @@ class Dispatcher(object):
     def __init__(self, name, *args, **kwargs):
         self.name = name
         self._args = args
-        self.dependencies = kwargs.get('dependencies')
+        self.skip_dependencies = kwargs.get('skip_dependencies')
         self.logger = logging.getLogger(__name__)
 
     def get_stage(self, name):
@@ -41,7 +41,7 @@ class Dispatcher(object):
         """
 
         stage = self.get_stage(name)
-        if not self.dependencies:
+        if self.skip_dependencies:
             return [stage]
 
         deps = {stage: stage.dependencies}
@@ -52,8 +52,10 @@ class Dispatcher(object):
                 deps[current] = current.dependencies
                 stack.extend(current.dependencies)
 
-        stages = toposort_flatten(deps)
-        stages.append(stage)
+        stages = list(toposort(deps))
+        if stage not in stages:
+            self.logger.warning("Likely there is an issue in toposort")
+            stages.append(stage)
         return stages
 
     def is_loader(self, name):
