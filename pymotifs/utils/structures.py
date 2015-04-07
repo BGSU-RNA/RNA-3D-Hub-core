@@ -234,7 +234,10 @@ class Structure(Base):
             species_ids = [result.species_id for result in query]
 
             if len(species_ids) != len(tax_ids):
-                raise UnknownTaxonomyException("Could not find all tax ids")
+                missing = set(species_ids).symmetric_difference(set(tax_ids))
+                missing = [str(tax_id) for tax_id in missing]
+                raise UnknownTaxonomyException("Missing tax ids %s",
+                                               ','.join(missing))
 
             if simplify:
                 if len(species_ids) > 1:
