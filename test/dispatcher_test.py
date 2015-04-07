@@ -53,10 +53,10 @@ class LoadingStagesTest(ut.TestCase):
         self.dispatcher = Dispatcher('units.info')
 
     def test_can_give_only_selected_stage(self):
+        self.dispatcher.skip_dependencies = True
         val = self.dispatcher.stages('units.info')
         self.assertEquals([Loader], val)
 
     def test_can_get_with_all_dependecies(self):
-        self.dispatcher.dependencies = True
         val = sorted(self.dispatcher.stages('units.info'))
-        self.assertEquals([Downloader, PdbLoader, Loader], val)
+        self.assertEquals(sorted([Downloader, PdbLoader, Loader]), val)
