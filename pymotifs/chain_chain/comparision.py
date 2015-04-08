@@ -20,7 +20,6 @@ from fr3d.geometry.discrepancy import discrepancy
 class Loader(core.Loader):
     """A Loader to get all chain to chain similarity data.
     """
-    allow_no_data = True
 
     dependencies = set([CorrespondenceLoader, Downloader])
 
@@ -122,6 +121,9 @@ class Loader(core.Loader):
         cif1.infer_hydrogens()
 
         others = util.pdbs(cif1.pdb)
+        if not others:
+            raise core.Skip("Nothing to compare %s to" % cif1.pdb)
+
         for index, pdb2 in enumerate(others):
             self.logger.debug("Comparing to %s #%i/%i",
                               pdb2, index, len(others))
