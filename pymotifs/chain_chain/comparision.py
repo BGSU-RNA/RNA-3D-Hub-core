@@ -12,7 +12,7 @@ from pymotifs.utils import correspondence as corr
 from pymotifs.models import ChainInfo
 from pymotifs.models import ChainChainSimilarity as Similarity
 from pymotifs.correspondence import Loader as CorrespondenceLoader
-from pymotifs.downloader import Downloader
+from pymotifs.download import Downloader
 
 from fr3d.geometry.discrepancy import discrepancy
 
