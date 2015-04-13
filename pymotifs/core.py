@@ -96,7 +96,7 @@ class Session(object):
         self.maker = session_maker
 
     @contextmanager
-    def __call__(self, log_exceptions=True):
+    def __call__(self):
         """Context handler for the session. This creates a new session and
         yields it. It will catch, log, and re raise any exceptions that occur.
         It will also commit and close all sessions.
@@ -108,10 +108,8 @@ class Session(object):
         except Skip:
             session.rollback()
             raise
-        except Exception as err:
-            if log_exceptions:
-                self.logger.error("Transaction failed. Rolling back.")
-                self.logger.exception(err)
+        except Exception:
+            self.logger.error("Transaction failed. Rolling back.")
             session.rollback()
             raise
         finally:
@@ -251,7 +249,7 @@ class Stage(object):
             return True
 
         if self.is_missing(entry, **kwargs):
-            self.logger.debug("Missing data form %s. Will recompute", entry)
+            self.logger.debug("Missing data from %s. Will recompute", entry)
             return True
         return False
 
@@ -434,7 +432,8 @@ class Loader(Stage):
 
         if not self.allow_no_data and not data:
             self.logger.error("No data produced")
-            raise InvalidState("Missing data")
+            raise InvalidState("Stage %s produced no data processing %s" %
+                               (self.name, entry))
         elif not data:
             if data is not None:
                 self.logger.warning("No data produced")
