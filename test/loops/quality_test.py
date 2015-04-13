@@ -35,10 +35,10 @@ class QueryingTest(StageTest):
     loader_class = LoopQualityLoader
 
     def test_can_detect_if_has_data(self):
-        self.assertTrue(self.loader.has_data(('1GID', '1.0')))
+        self.assertTrue(self.loader.has_data('1GID'))
 
     def test_can_detect_if_has_no_data(self):
-        self.assertFalse(self.loader.has_data(('0GID', '1.0')))
+        self.assertFalse(self.loader.has_data('0GID'))
 
     def test_can_remove_known_data(self):
         raise SkipTest()
@@ -53,7 +53,7 @@ class MatlabTests(StageTest):
 
     def setUp(self):
         super(ParsingTest, self).setUp()
-        self.data = self.loader.data(('1GID', '2.0'))
+        self.data = self.loader.data('1GID')
 
     def test_gets_all_loop_quality(self):
         self.assertEquals(22, len(self.data))

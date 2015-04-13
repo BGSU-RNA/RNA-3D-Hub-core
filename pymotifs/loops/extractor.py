@@ -140,7 +140,7 @@ class Loader(core.SimpleLoader):
         translator = Translator(self.session.maker)
 
         with self.session() as session:
-            query = self.query(session, (pdb_id, loop_type))
+            query = self.query(session, pdb_id)
             for result in query:
                 unit_list = result.nt_ids.split(',')
                 seperator = unit_list[0][4]
