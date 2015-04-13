@@ -35,4 +35,5 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
-        return [self.as_unit(nt) for nt in structure.residues(polymeric=None)]
+        for nt in structure.residues(polymeric=None):
+            yield self.as_unit(nt)
