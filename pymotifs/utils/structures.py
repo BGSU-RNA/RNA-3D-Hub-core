@@ -15,20 +15,6 @@ SYNTHEIC = (32630, 'synthetic construct')
 
 LONG_RANGE_CUTOFF = 4
 
-POLYMER_UNITS_QUERY = '''
-select *
-from polymer_units as P
-join pdb_unit_ordering as O
-on
-    O.nt_id = P.id
-where
-    P.pdb_id = :pdb
-    and P.model = 1
-    and P.chain = :chain
-    and P.model = :model
-order by P.polymer_id, O.index
-'''
-
 CURRENT_REP_QUERY = '''
 select rep_id
 from nr_current_representative
@@ -60,29 +46,6 @@ class Base(object):
     """
     def __init__(self, maker):
         self.session = core.Session(maker)
-
-
-class Polymers(Base):
-    """Methods for getting information about polymers.
-    """
-
-    def polymer_sequences(self, pdb, chain, model=1):
-        results = self.__polymer_units__(pdb=pdb, chain=chain, model=model)
-        sequence = []
-        for _, nts in it.groupby(results, lambda r: r.polymer_id):
-            sequence.append(''.join([nt.unit for nt in nts]))
-        return sequence
-
-    def unit_ids(self, pdb, chain, model=1):
-        results = self.__polymer_units__(pdb=pdb, chain=chain, model=model)
-        return [result.id for result in results]
-
-    def __polymer_units__(self, **data):
-        with self.session() as session:
-            result = session.execute(POLYMER_UNITS_QUERY, data)
-
-        Record = coll.namedtuple('Record', result.keys())
-        return it.imap(lambda r: Record(*r), result.fetchall())
 
 
 class NR(Base):
