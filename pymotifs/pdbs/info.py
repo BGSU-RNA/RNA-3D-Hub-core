@@ -28,10 +28,6 @@ class Loader(core.MassLoader):
         'resolution': 'resolution'
     }
 
-    def __init__(self, *args):
-        super(Loader, self).__init__(*args)
-        self.helper = CustomReportHelper(fields=self.names.keys())
-
     def rename(self, report):
         renamed = {}
         for key, name in self.names.items():
@@ -51,8 +47,13 @@ class Loader(core.MassLoader):
         return renamed
 
     def data(self, pdbs, **kwargs):
-        data = self.helper(pdbs)
+        helper = CustomReportHelper(fields=self.names.keys())
+        data = helper(pdbs)
         if not data:
             raise core.StageFailed("Could not load data for all pdbs %s" %
-                                   pdbs)
+                                   str(pdbs))
+
+        if len(data) != len(pdbs):
+            self.logger.error("Could not get all data for all pdbs")
+
         return [PdbInfo(**self.rename(report)) for report in data]
