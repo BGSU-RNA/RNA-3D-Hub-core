@@ -316,6 +316,7 @@ class Stage(object):
                 self.logger.error("Error raised in processing of %s", entry)
                 self.logger.exception(err)
                 if self.stop_on_failure:
+                    self.remove(entry)
                     raise StageFailed(self.name)
                 continue
 
