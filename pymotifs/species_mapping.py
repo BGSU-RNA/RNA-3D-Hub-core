@@ -27,6 +27,8 @@ class Loader(core.MassLoader):
 
     merge_data = True
 
+    allow_no_data = True
+
     dependencies = set([ChainLoader])
 
     def structure_taxon_ids(self, *args, **kwargs):
