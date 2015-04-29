@@ -86,10 +86,10 @@ class Structure(Base):
                                   mod.ChainInfo.id).\
                 filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)')
 
-            if isinstance(query, list):
-                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
-            else:
+            if isinstance(pdb, basestring):
                 query = query.filter_by(pdb_id=pdb)
+            else:
+                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
 
             if strict:
                 func = mod.ChainInfo.sequence.op('regexp')

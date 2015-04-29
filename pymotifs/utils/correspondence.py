@@ -17,8 +17,10 @@ where
 """
 
 ALL_CHAINS_QUERY = """
-select
-    P.*,
+select distinct
+    P.id,
+    P.chain_name1,
+    P.chain_name2,
     C1.id as 'chain_id1',
     C2.id as 'chain_id2'
 from correspondence_pdbs as P
@@ -63,6 +65,30 @@ from correspondence_units
 where
     pdb_id1 = :pdb1
     and pdb_id2 = :pdb2
+;
+"""
+
+ALIGNED_CHAINS = """
+select distinct
+    C1.id as 'chain_id1',
+    C2.id as 'chain_id2'
+from correspondence_pdbs as P
+join correspondence_info as I
+on
+    I.id = P.id
+join chain_info as C1
+on
+    C1.pdb_id = P.pdb_id1
+    and C1.chain_name = P.chain_name1
+join chain_info as C2
+on
+    C2.pdb_id = P.pdb_id2
+    and C2.chain_name = P.chain_name2
+where
+    P.pdb_id1 in ({pdbs})
+    and P.pdb_id2 in ({pdbs})
+    and I.good_alignment = 1
+    and C1.id != C2.id
 ;
 """
 
@@ -161,6 +187,24 @@ class Helper(object):
             mapping[result.unit_id2] = result.unit_id1
 
         return mapping
+
+    def aligned_chains(self, pdbs):
+        ids = ','.join('"%s"' % pdb for pdb in pdbs)
+
+        mapping = {}
+        with self.session() as session:
+            raw = text(ALIGNED_CHAINS.format(pdbs=ids))
+            results = session.execute(raw)
+
+            for result in results:
+                if result.chain_id1 not in mapping:
+                    mapping[result.chain_id1] = set()
+                if result.chain_id2 not in mapping:
+                    mapping[result.chain_id2] = set()
+
+                mapping[result.chain_id1].add(result.chain_id2)
+                mapping[result.chain_id2].add(result.chain_id1)
+            return mapping
 
     def __ordering__(self, corr_id, chain1, chain2):
         with self.session() as session:
