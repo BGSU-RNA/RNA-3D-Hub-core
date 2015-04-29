@@ -4,7 +4,8 @@
 # Note that connections[i] does not need to contain i; that is assumed
 # Note that connections[i] may contain j without connections[j] containing i; the program adds i to connections[j]; it assumes symmetry.
 
-def findconnectedsets(connections):
+
+def find_connected(connections):
 
     considered = {}
     for i in connections.keys():
@@ -53,4 +54,4 @@ if __name__ == "__main__":
     for key in connections.keys():
         connections[key] = set(connections[key])
 
-    findconnectedsets(connections)
+    find_connected(connections)
