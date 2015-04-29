@@ -12,34 +12,46 @@ from pymotifs.exp_seq.chain_mapping import Loader as ExpMappingLoader
 class Loader(core.Loader):
     dependencies = set([ExpMappingLoader, InfoLoader])
 
-    def query(self, session, pdb):
-        return session.query(Position.id).\
-            join(Mapping, Position.exp_seq_id == Mapping.exp_seq_id).\
-            join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
-            filter(ChainInfo.pdb_id == pdb)
-
-    def has_data(self, pdb, **kwargs):
+    def to_process(self, pdbs, **kwargs):
         with self.session() as session:
-            query = self.query(session, pdb)
+            query = session.query(Mapping.exp_seq_id).\
+                join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
+                filter(ChainInfo.pdb_id.in_(pdbs)).\
+                distinct()
+
+            return [result.exp_seq_id for result in query]
+
+    # def known(self, pdb):
+    #     with self.session() as session:
+    #         query = session.query(Position.exp_seq_id).\
+    #             join(Mapping, Position.exp_seq_id == Mapping.exp_seq_id).\
+    #             join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
+    #             filter(ChainInfo.pdb_id == pdb).\
+    #             distinct()
+
+    #     return set(result.exp_seq_id for result in query)
+
+#     def missing(self, pdb):
+#         helper = Structure(self.session.maker)
+#         possible = set(p[1] for p in helper.rna_chains(pdb, return_id=True))
+#         return possible - set(self.known(pdb))
+
+    def has_data(self, exp_seq_id, **kwargs):
+        with self.session() as session:
+            query = session.query(Position).\
+                filter(Position.exp_seq_id == exp_seq_id)
+
             return bool(query.count())
 
-    def remove(self, pdb, **kwargs):
+    def remove(self, exp_seq_id, **kwargs):
         with self.session() as session:
-            query = self.query(session, pdb)
-            ids = [result.id for result in query]
-
-        with self.session() as session:
-            query = session.query(Position.id).\
-                filter(Position.id.in_(ids)).\
+            session.query(Position).\
+                filter(Position.exp_seq_id == exp_seq_id).\
                 delete(synchronize_session=False)
 
-    def sequences(self, pdb):
+    def sequence(self, exp_seq_id):
         with self.session() as session:
-            query = session.query(Exp).\
-                join(Mapping, Exp.id == Mapping.exp_seq_id).\
-                join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
-                filter(ChainInfo.pdb_id == pdb)
-            return [(result.id, result.sequence) for result in query]
+            return session.query(Exp).get(exp_seq_id).sequence
 
     def positions(self, exp_id, sequence):
         positions = []
@@ -51,9 +63,10 @@ class Loader(core.Loader):
             })
         return positions
 
-    def data(self, pdb, **kwargs):
+    def data(self, exp_seq_id, **kwargs):
         data = []
-        for (exp_id, sequence) in self.sequences(pdb):
-            for position in self.positions(exp_id, sequence):
-                data.append(Position(**position))
+        sequence = self.sequence(exp_seq_id)
+        for position in self.positions(exp_seq_id, sequence):
+            data.append(Position(**position))
+
         return data
