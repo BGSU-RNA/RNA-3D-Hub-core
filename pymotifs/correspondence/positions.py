@@ -42,13 +42,21 @@ class Loader(core.Loader):
             return [result.id for result in query]
 
     def has_data(self, corr_id, **kwargs):
-        """This is an unusual check for data. We do not just look up to see if
-        positions with the given corr_id exist, instead we check to see if in
-        the info table we have summerized the alignment. In that case we do not
-        need to recompute the alignment and store the positions. We later
-        cleanup the alignments to remove any bad ones, so we cannot just check
-        that we need to align by using the positions.
+        """This is an unusual check for data. We do not first look up to see if
+        positions with the given corr_id exist. If that is not the case, we
+        then check to see if in the info table we have summerized the
+        alignment. In that case we do not need to recompute the alignment and
+        store the positions. We later cleanup the alignments to remove any bad
+        ones, so we cannot just check that we need to align by using the
+        positions.
         """
+
+        with self.session() as session:
+            query = session.query(Position).\
+                filter(Position.correspondence_id == corr_id)
+
+            if query.count():
+                return True
 
         with self.session() as session:
             query = session.query(Info).\

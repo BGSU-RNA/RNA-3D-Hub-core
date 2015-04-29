@@ -1,6 +1,10 @@
 from pymotifs import core
 from pymotifs.models import CorrespondenceInfo as Info
+
 from pymotifs.exp_seq.info import Loader as ExpSeqInfo
+from pymotifs.exp_seq.chain_mapping import Loader as ExpSeqChainMapping
+from pymotifs.chains.info import Loader as ChainInfo
+from pymotifs.chains.species import Loader as ChainSpecies
 
 from sqlalchemy.sql.expression import text
 
@@ -40,6 +44,11 @@ on
 where
     E1.length >= E2.length
     and (
+        E1.length > E2.length
+        or E1.id = E2.id
+        or (E1.length = E2.length and E1.id < E2.id)
+    )
+    and (
     (
         E1.length < 36
         and E2.length = E1.length
@@ -71,7 +80,8 @@ class Loader(core.SimpleLoader):
     pair, inserting or storing each pair as needed.
     """
 
-    dependencies = set([ExpSeqInfo])
+    dependencies = set([ChainSpecies, ExpSeqInfo, ExpSeqChainMapping,
+                        ChainInfo])
 
     short_cutoff = 36
     allow_no_data = True
