@@ -405,10 +405,19 @@ class Loader(Stage):
             if not isinstance(data, coll.Iterable):
                 add(data)
             else:
+                saved = False
                 for index, datum in enumerate(data):
                     add(datum)
+                    saved = True
                     if index % self.insert_max == 0:
                         session.commit()
+
+                if not saved:
+                    if not self.allow_no_data:
+                        self.logger.error("No data produced")
+                        raise InvalidState("No data produced")
+                    else:
+                        self.logger.warning("No data saved")
 
             session.commit()
             self.logger.debug("Done committing")
