@@ -6,6 +6,8 @@ then place them in the database.
 
 import itertools as it
 
+import numpy as np
+
 from pymotifs import core
 from pymotifs.utils import correspondence as corr
 
@@ -13,15 +15,22 @@ from pymotifs.models import ChainInfo
 from pymotifs.models import ChainChainSimilarity as Similarity
 from pymotifs.correspondence import Loader as CorrespondenceLoader
 from pymotifs.download import Downloader
+from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 
 from fr3d.geometry.discrepancy import discrepancy
+
+
+class MissingAllBaseCenters(Exception):
+    pass
 
 
 class Loader(core.Loader):
     """A Loader to get all chain to chain similarity data.
     """
+    allow_no_data = True
 
-    dependencies = set([CorrespondenceLoader, Downloader])
+    dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
+                        Downloader])
 
     def has_data(self, pdb, **kwargs):
         """Check if there are any chain_chain_similarity entries for this pdb.
@@ -70,35 +79,66 @@ class Loader(core.Loader):
 
         residues = chain.residues()
         residues = it.ifilter(lambda r: r.unit_id() in ordering, residues)
+        residues = sorted(residues, key=lambda r: ordering[r.unit_id()])
+        if not residues:
+            self.logger.error("Could not find any residues for %s", name)
+            return None
 
-        return sorted(residues, key=lambda r: ordering[r.unit_id()])
+        return residues
 
-    def compare(self, corr_id, chain1, chain2):
+    def discrepancy(self, corr_id, chain1, chain2):
         """Compare the chains. This will filter out all residues in the chain
         that do not have a base center computed.
         """
+        name1 = '%s||%s' % (chain1['pdb'], chain1['name'])
+        name2 = '%s||%s' % (chain2['pdb'], chain2['name'])
 
         residues1 = []
         residues2 = []
         for r1, r2 in zip(chain1['residues'], chain2['residues']):
             if 'base' in r1.centers and 'base' in r2.centers:
+                skip = False
+                if r1.centers['base'] is None:
+                    self.logger.warning("Bad center for %s", r1)
+                    skip = True
+                if r2.centers['base'] is None:
+                    self.logger.warning("Bad center for %s", r2)
+                    skip = True
+
+                if skip:
+                    continue
+
+                if len(r1.centers['base']) != len(r2.centers['base']):
+                    self.logger.warning("Base centers %s, %s differ in size",
+                                        r1, r2)
+                    continue
+
                 residues1.append(r1)
                 residues2.append(r2)
 
         if not residues1:
-            self.logger.error("No residues with base centers for %s||%s",
-                              chain1['pdb'], chain1['name'])
-            return None
+            self.logger.error("No residues with base centers for %s", name1)
+            raise MissingAllBaseCenters()
 
         if not residues2:
-            self.logger.error("No residues with base centers for %s||%s",
-                              chain2['pdb'], chain2['name'])
-            return None
+            self.logger.error("No residues with base centers for %s", name2)
+            disc = None
 
         self.logger.debug("Comparing %i pairs of residues", len(residues1))
 
-        disc = discrepancy(residues1, residues2)
-        self.logger.debug("Got discrepancy %f", disc)
+        try:
+            disc = discrepancy(residues1, residues2)
+            self.logger.debug("Got discrepancy %f", disc)
+        except Exception as err:
+            self.logger.error("Error computing discrepancy %s, %s %s",
+                              corr_id, name1, name2)
+            self.logger.exception(err)
+            disc = None
+
+        if np.isnan(disc):
+            self.logger.error("Got NaN for discrepancy between %s %s",
+                              name1, name2)
+            disc = None
 
         return {
             'chain_id1': chain1['id'],
@@ -139,14 +179,28 @@ class Loader(core.Loader):
 
                 ordering = util.ordering(corr_id, chain1, chain2)
                 if not ordering:
-                    raise core.InvalidState("No ordering for %s, %s" %
-                                            (chain1, chain2))
+                    self.logger.error("No ordering for %i, %s, %s",
+                                      corr_id, chain1, chain2)
+                    continue
 
                 chain1['residues'] = self.residues(cif1, chain1, ordering)
                 chain2['residues'] = self.residues(cif2, chain2, ordering)
 
-                compare = self.compare(corr_id, chain1, chain2)
-                if compare:
-                    data.append(Similarity(**compare))
+                if not chain1['residues'] or not chain2['residues']:
+                    continue
+
+                compare = {
+                    'chain_id1': chain1['id'],
+                    'chain_id2': chain2['id'],
+                    'correspondence_id': corr_id
+                }
+
+                discrepancy = self.discrepancy(corr_id, chain1, chain2)
+                compare['discrepancy'] = discrepancy
+                reversed = dict(compare)
+                reversed['chain_id1'] = compare['chain_id2']
+                reversed['chain_id2'] = compare['chain_id1']
+                data.append(Similarity(**compare))
+                data.append(Similarity(**reversed))
 
         return data
