@@ -69,6 +69,7 @@ class Matlab(object):
 
     def __getattr__(self, key):
         if self.mlab is None:
+            os.chdir(self._root)
             self.__startup__()
         self.logger.debug("Running %s", key)
 
