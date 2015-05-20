@@ -24,6 +24,6 @@ class Loader(core.Loader):
         os.remove(self.filename(pdb))
 
     def data(self, pdb, **kwargs):
-        matlab = core.Matlab()
+        matlab = core.Matlab(self.config['locations']['fr3d_root'])
         matlab.zAddNTData(pdb)
         return None
