@@ -97,7 +97,7 @@ class Loader(core.SimpleLoader):
             loop_id = self._get_loop_id(loop.loop_name, pdb_id, loop_type,
                                         mapping)
             mapping[loop.full_id] = loop_id
-            loops[index].Filename = loop_id
+            loops[index].Filename = str(loop_id)
 
             data.append(LoopsAll(
                 id=loop_id,
@@ -163,7 +163,7 @@ class Loader(core.SimpleLoader):
     def data(self, pdb, **kwargs):
         data = []
         for loop_type in self.loop_types:
-            mapping = self._get_loop_mapping(pdb, loop_type)
+            mapping = self._mapping(pdb, loop_type)
             data.extend(self._extract_loops(pdb, loop_type, mapping))
 
         return data
