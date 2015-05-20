@@ -1,13 +1,11 @@
 import itertools as it
 import collections as coll
 
-import networkx as nx
-import networkx.algorithms.components.connected as connected
-
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.nr import connectedsets as cs
 from pymotifs.utils import structures as st
+from pymotifs.utils import correspondence as cr
 
 
 class Grouper(core.Stage):
@@ -17,6 +15,8 @@ class Grouper(core.Stage):
     all chains as it only takes the best of each type from files. However, it
     does make a note about those other chains.
     """
+
+    internal_cutoff = 0.5
 
     def __init__(self, *args, **kwargs):
         super(Grouper, self).__init__(*args, **kwargs)
@@ -42,7 +42,7 @@ class Grouper(core.Stage):
             if isinstance(name, list):
                 name = min(name)
 
-            return (bp_nt, chain['length'], 1.0 / ord(name))
+            return (bp_nt, chain['length'], name)
 
         best = max(chains, key=ordering)
         best['equivalent'] = list(chains)
@@ -85,7 +85,9 @@ class Grouper(core.Stage):
             'bp': 0,
             'length': 0,
             'exp_length': 0,
-            'entity': []
+            'entity': [],
+            'source': [],
+            'lr': 0
         }
         chains.sort(key=lambda c: c['name'])
 
@@ -94,15 +96,22 @@ class Grouper(core.Stage):
             merged['db_id'].append(chain['db_id'])
             merged['name'].append(chain['name'])
             merged['entity'].append(chain['entity'])
+            merged['source'].append(chain['source'])
             merged['internal'] += chain['internal']
             merged['bp'] += chain['bp']
             merged['length'] += chain['length']
             merged['exp_length'] += chain['exp_length']
+            merged['lr'] += chain['lr']
 
         merged['id'] = ','.join(merged['id'])
         merged['entity'].sort()
         merged['external'] = helper.cross_chain(merged['pdb'], merged['name'],
                                                 count=True, family='cWW')
+
+        if set(merged.keys()) != set(chains[0].keys()):
+            missing = set(chains[0].keys()) - set(merged.keys())
+            self.logger.warning("Did not merge with all keys. Missing: %s",
+                                missing)
 
         return merged
 
@@ -120,6 +129,7 @@ class Grouper(core.Stage):
             return [self.merge_chains(chains)]
 
         mapping = {}
+        grouped = []
         connections = coll.defaultdict(set)
         helper = self.bp_helper
 
@@ -127,6 +137,14 @@ class Grouper(core.Stage):
             pdb = chain['pdb']
             chain_id = chain['name']
             mapping[chain['id']] = chain
+
+            if chain['internal']:
+                internal = float(chain['internal'])
+                external = float(chain['external'])
+                total = internal + external
+                if internal / total >= self.internal_cutoff:
+                    grouped.append(self.merge_chains([chain]))
+                    continue
 
             for chain2 in chains:
                 if chain2 == chain:
@@ -137,14 +155,77 @@ class Grouper(core.Stage):
             if chain['id'] not in connections:
                 connections[chain['id']] = set()
 
-        groups = cs.findconnectedsets(dict(connections))
+        groups = cs.find_connected(dict(connections))
 
-        grouped = []
         for group in groups.values():
             merged = self.merge_chains([mapping[name] for name in group])
             grouped.append(merged)
 
         return grouped
+
+    def bps(self, pdb, chain):
+        """Determine the total basepairs, internal cWW, external cWW,
+        and long range basepairs.
+
+        :pdb: A pdb id to lookup.
+        :chain: A chain to use.
+        :returns: A dictionary with bp, internal, external and lr entries,
+        which stores the respective data.
+        """
+
+        helper = self.bp_helper
+        return {
+            'bp': helper.representative(pdb, chain, count=True),
+            'lr': helper.representative(pdb, chain, count=True,
+                                        range_cutoff=st.LONG_RANGE_CUTOFF),
+            'internal': helper.representative(pdb, chain, count=True,
+                                              family='cWW'),
+            'external': helper.cross_chain(pdb, chain, count=True,
+                                           family='cWW')
+        }
+
+    def info(self, pdb, chain, molecule_type='rna', use_names=False):
+        """This loads all information about a chain into a dictionary. This
+        will load generic information about a chain, such as resolved, length,
+        database id, the source and information about basepairing. The
+        basepairing information is loaded from `bps`.
+
+        :pdb: The pdb to search.
+        :chain: The chain to search.
+        :returns: A dictionary with
+        """
+
+        data = {
+            'id': '%s|%s' % (pdb, chain),
+            'name': chain,
+            'pdb': pdb,
+        }
+
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.id,
+                                  mod.ChainInfo.chain_length,
+                                  mod.ChainInfo.entity_name).\
+                filter_by(pdb_id=pdb, chain_name=chain)
+
+            result = query.one()
+            data['db_id'] = result.id
+            data['exp_length'] = result.chain_length
+            data['entity'] = result.entity_name
+
+        data['source'] = None
+        try:
+            data['source'] = self.struct_helper.source(pdb, chain,
+                                                       simplify=True)
+        except:
+            self.logger.warn("Failed to find all taxon ids for %s", data['id'])
+
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.id).\
+                filter_by(pdb_id=pdb, chain=chain, unit_type_id=molecule_type)
+            data['length'] = query.count()
+
+        data.update(self.bps(pdb, chain))
+        return data
 
     def chains(self, pdb):
         """Load all chains from a given pdb. This will get the RNA chains as
@@ -175,71 +256,10 @@ class Grouper(core.Stage):
         :chains: A list of chains.
         :returns: A dictionary of dictionaries.
         """
-        pass
+        pdbs = set(chain['pdb'] for chain in chains)
 
-    def bps(self, pdb, chain):
-        """Determine the total basepairs, internal cWW, external cWW,
-        and long range basepairs.
-
-        :pdb: A pdb id to lookup.
-        :chain: A chain to use.
-        :returns: A dictionary with bp, internal, external and lr entries,
-        which stores the respective data.
-        """
-        helper = self.bp_helper
-        return {
-            'bp': helper.representative(pdb, chain, count=True),
-            'lr': helper.representative(pdb, chain, count=True,
-                                        range_cutoff=st.LONG_RANGE_CUTOFF),
-            'internal': helper.representative(pdb, chain, count=True,
-                                              family='cWW'),
-            'external': helper.cross_chain(pdb, chain, count=True,
-                                           family='cWW')
-        }
-
-    def info(self, pdb, chain, molecule_type='rna'):
-        """This loads all information about a chain into a dictionary. This
-        will load generic information about a chain, such as resolved, length,
-        database id, the source and information about basepairing. The
-        basepairing information is loaded from `bps`.
-
-        :pdb: The pdb to search.
-        :chain: The chain to search.
-        :returns: A dictionary with
-        """
-
-        data = {
-            'id': '%s|%s' % (pdb, chain),
-            'name': chain,
-            'pdb': pdb,
-        }
-
-        with self.session() as session:
-            query = session.query(mod.ChainInfo.id,
-                                  mod.ChainInfo.chain_length,
-                                  mod.ChainInfo.entity_name).\
-                filter_by(pdb_id=pdb, chain_name=chain)
-
-            result = query.one()
-            data['db_id'] = result.id
-            data['exp_length'] = result.chain_length
-            data['entity'] = result.entity_name
-
-        try:
-            data['source'] = self.struct_helper.source(pdb, chain,
-                                                       simplify=True)
-        except:
-            self.logger.warn("Failed to find all taxon ids for %s, %s", pdb,
-                             chain)
-            data['source'] = None
-
-        with self.session() as session:
-            query = session.query(mod.UnitInfo.id).\
-                filter_by(pdb_id=pdb, chain=chain, unit_type_id=molecule_type)
-            data['length'] = query.count()
-
-        data.update(self.bps(pdb, chain))
-        return data
+        helper = cr.Helper(self.session.maker)
+        return helper.aligned_chains(pdbs)
 
     def is_equivalent(self, alignments, chain1, chain2):
         """Determine if two chains are equivalent.
@@ -250,8 +270,31 @@ class Grouper(core.Stage):
         :chain2: The second chain.
         :returns: True if the two chains are equivalent, False otherwise
         """
-        if chain1['source'] != chain2['source']:
+        if len(chain1['source']) != len(chain2['source']):
             return False
+
+        for source1, source2 in zip(chain1['source'], chain2['source']):
+            if source1 and source2 and source1 != source2:
+                self.logger.debug("Splitting %s, %s: Conflicting species",
+                                  chain1['id'], chain2['id'])
+                return False
+
+        # TODO: Split only if entire alignment is bad. This has a different set
+        # of cutoffs as the a small chain may not align but a large may leading
+        # to an overall valid alignment
+        ids1 = it.chain(chain1['db_id'])
+        ids2 = it.chain(chain2['db_id'])
+        for id1, id2 in zip(ids1, ids2):
+            if id1 not in alignments:
+                self.logger.debug("Splitting %s %s: Unaligned %s",
+                                  chain1['id'], chain2['id'], chain1['id'])
+                return False
+
+            if id2 not in alignments[id1]:
+                self.logger.debug("Splitting %s, %s: Poor alignment",
+                                  chain1['id'], chain2['id'])
+                return False
+
         return True
 
     def group(self, chains, alignments):
@@ -260,12 +303,22 @@ class Grouper(core.Stage):
         :chains: A list of chains to group.
         :returns: A list of lists of the connected components.
         """
-        graph = nx.Graph()
+
+        graph = coll.defaultdict(set)
+        mapping = {}
         for chain1 in chains:
+            mapping[chain1['id']] = chain1
+
             for chain2 in chains:
-                if self.is_equivalent(alignments, chain1, chain2):
-                    graph.add_edge(chain1, chain2)
-        return connected.connected_components(graph)
+                if chain1 == chain2 or \
+                        self.is_equivalent(alignments, chain1, chain2):
+                    graph[chain1['id']].add(chain2['id'])
+                    graph[chain2['id']].add(chain1['id'])
+
+        groups = []
+        for ids in cs.find_connected(graph).values():
+            groups.append(mapping[id] for id in ids)
+        return groups
 
     def representative(self, group):
         """Compute the representative for a group of chains.
@@ -273,15 +326,23 @@ class Grouper(core.Stage):
         :group: A list of chains.
         :returns: The representative entry from the list.
         """
-        pass
+        rep = self.best(group)
+        del rep['equivalent']
+        return rep
 
-    def __call__(self, pdbs):
-        chains = self.nr_chains(pdbs)
+    def __call__(self, pdbs, **kwargs):
+        chains = it.imap(self.nr_chains, pdbs)
+        chains = list(it.chain.from_iterable(chains))
+
         alignments = self.alignment_info(chains)
         groups = []
         for group in self.group(chains, alignments):
+            members = list(group)
+            representative = self.representative(members)
+            members.remove(representative)
             groups.append({
-                'members': group,
-                'representative': self.representative(group)
+                'members': members,
+                'representative': representative
             })
+
         return groups
