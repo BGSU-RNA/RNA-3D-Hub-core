@@ -139,6 +139,9 @@ class Stage(object):
     """Flag if we should mark stuff as processed."""
     mark = True
 
+    """If we should skip complex operators"""
+    skip_complex = True
+
     def __init__(self, config, session_maker):
         """Build a new Stage.
 
@@ -189,10 +192,12 @@ class Stage(object):
         try:
             with open(self._cif(pdb), 'rb') as raw:
                 return Cif(raw)
-        except ComplexOperatorException:
-            self.logger.warning("Got a complex operator for %s, so skipping",
-                                pdb)
-            raise Skip("Complex operator must be skipped")
+        except ComplexOperatorException as err:
+            if self.skip_complex:
+                self.logger.warning("Got a complex operator for %s, skipping",
+                                    pdb)
+                raise Skip("Complex operator must be skipped")
+            raise err
 
     def structure(self, pdb):
         """A method to load the cif file and get the structure for the given
