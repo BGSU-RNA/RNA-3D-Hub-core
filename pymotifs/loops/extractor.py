@@ -76,8 +76,7 @@ class Loader(core.SimpleLoader):
 
         location = os.path.join(self.config['locations']['loops_mat_files'])
         try:
-            mlab = core.mlab
-            mlab.setup()
+            mlab = core.Matlab(self.config['locations']['fr3d_root'])
             [loops, count, err_msg] = \
                 mlab.extractLoops(pdb_id, loop_type, nout=3)
         except Exception as err:
