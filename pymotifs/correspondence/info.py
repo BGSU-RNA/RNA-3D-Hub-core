@@ -63,9 +63,13 @@ where
     )
     )
     and (
-        (S1.id is null or S2.id is null)
-        or (S1.species_id = 32360 or S2.species_id = 32360)
-        or (S1.species_id = S2.species_id)
+        S1.id is NULL
+        or S2.id is NULL
+        or S1.species_id is NULL
+        or S2.species_id is NULL
+        or S1.species_id = 32360
+        or S2.species_id = 32360
+        or S1.species_id = S2.species_id
     )
     and I1.pdb_id in ({items})
     and I2.pdb_id in ({items})
@@ -83,7 +87,6 @@ class Loader(core.SimpleLoader):
     dependencies = set([ChainSpecies, ExpSeqInfo, ExpSeqChainMapping,
                         ChainInfo])
 
-    short_cutoff = 36
     allow_no_data = True
     mark = False
 
