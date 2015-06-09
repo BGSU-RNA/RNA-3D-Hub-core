@@ -117,15 +117,32 @@ class Session(object):
             session.close()
 
 
-class Stage(object):
+class Base(object):
+    """This is a simple utility class. Several things in core and outside of
+    core need a basic class to inherit from that adds a logger, session
+    handler, config, etc. This provides such a base class.
+    """
+
+    def __init__(self, config, session_maker):
+        """Build a new Base.
+
+        :config: The config object to build with.
+        :session_maker: The Session object to handle database connections.
+        """
+
+        self.config = coll.defaultdict(dict)
+        self.config.update(config)
+        self.name = self.__class__.__module__
+        self.session = Session(session_maker)
+        self.logger = logging.getLogger(self.name)
+
+
+class Stage(Base):
     """
     This is a base class for both loaders and exporters to inherit from. It
     contains the functionality common to all things that are part of our
     pipeline.
     """
-
-    """ The name of this stage."""
-    name = None
 
     """ If we should stop the whole stage if one part fails. """
     stop_on_failure = True
@@ -142,19 +159,13 @@ class Stage(object):
     """If we should skip complex operators"""
     skip_complex = True
 
-    def __init__(self, config, session_maker):
+    def __init__(self, *args, **kwargs):
         """Build a new Stage.
 
         :config: The config object to build with.
         :session_maker: The Session object to handle database connections.
         """
-
-        self.config = coll.defaultdict(dict)
-        self.config.update(config)
-        self.name = self.name or self.__class__.__module__
-
-        self.session = Session(session_maker)
-        self.logger = logging.getLogger(self.name)
+        super(Stage, self).__init__(*args, **kwargs)
         self._cif = ut.CifFileFinder(self.config)
 
     @abc.abstractmethod
