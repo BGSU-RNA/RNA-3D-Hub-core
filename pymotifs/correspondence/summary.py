@@ -40,7 +40,7 @@ class Loader(core.Loader):
         adding any rows when we do this, to force a recompute of this data you
         should do a recompute on the whole correspondence level information.
         """
-        pass
+        self.logger.info("Not removing anything, recompute all correspondence")
 
     def has_data(self, corr_id, **kwargs):
         """Check if we have summarized this correspondence before. This only
@@ -61,7 +61,7 @@ class Loader(core.Loader):
             info = session.query(Info).get(corr_id)
             return utils.row2dict(info)
 
-    def min_size(self, info):
+    def sizes(self, info):
         """Compute the minimum size of the experimental sequences used in this
         correspondence.
 
@@ -80,38 +80,33 @@ class Loader(core.Loader):
                 filter(Info.id == info['id'])
             result = query.one()
 
-            return min(result.first, result.second)
+            return sorted([result.first, result.second])
 
-    def bad_alignment(self, info, **kwargs):
+    def good_alignment(self, info, min_size, max_size, **kwargs):
         """Detect if the given correspondence id is below our cutoffs for a
         good match.
         """
 
         if not info['aligned_count']:
+            return False
+
+        if min_size < 19:
+            if min_size == max_size:
+                return info['mismatch_count'] == 0
+            return False
+
+        if min_size < 80:
+            return info['match_count'] >= min_size - 4
+
+        if max_size > min_size * 2 or min_size > max_size * 2:
+            return False
+
+        if not info['mismatch_count']:
             return True
 
-        size = self.min_size(info)
-        if size <= 36:
-            return not bool(info['mismatch_count'])
-        if size <= 80:
-            return info['mismatch_count'] > 4
-        return 0.9 <= (float(info['mismatch_count']) / float(size))
+        return float(info['match_count']) / float(min_size) >= 0.95
 
-    def data(self, corr_id, **kwargs):
-        """Compute the summary for the given correspondence id. This will
-        update the entry with the counts of match, mismatch and such.
-        """
-
-        data = self.current(corr_id)
-        data.update({
-            'length': 0,
-            'aligned_count': 0,
-            'first_gap_count': 0,
-            'second_gap_count': 0,
-            'match_count': 0,
-            'mismatch_count': 0
-        })
-
+    def alignment(self, corr_id):
         with self.session() as session:
             p1 = aliased(ExpPosition)
             p2 = aliased(ExpPosition)
@@ -124,22 +119,47 @@ class Loader(core.Loader):
                 order_by(Position.index).\
                 group_by(Position.index)
 
+            results = []
             for result in query:
-                unit1 = result.unit1
-                unit2 = result.unit2
-                data['length'] += 1
+                results.append({'unit1': result.unit1, 'unit2': result.unit2})
+        return results
 
-                if unit1 and unit2:
-                    data['aligned_count'] += 1
-                    if unit1 == unit2:
-                        data['match_count'] += 1
-                    else:
-                        data['mismatch_count'] += 1
-                if not unit1:
-                    data['first_gap_count'] += 1
-                if not unit2:
-                    data['second_gap_count'] += 1
+    def summary(self, positions):
+        data = {
+            'length': len(positions),
+            'aligned_count': 0,
+            'first_gap_count': 0,
+            'second_gap_count': 0,
+            'match_count': 0,
+            'mismatch_count': 0
+        }
 
-        data['good_alignment'] = not self.bad_alignment(data)
+        for position in positions:
+            unit1 = position['unit1']
+            unit2 = position['unit2']
+
+            if unit1 and unit2:
+                data['aligned_count'] += 1
+                if unit1 == unit2:
+                    data['match_count'] += 1
+                else:
+                    data['mismatch_count'] += 1
+
+            if not unit1:
+                data['first_gap_count'] += 1
+            if not unit2:
+                data['second_gap_count'] += 1
+
+        return data
+
+    def data(self, corr_id, **kwargs):
+        """Compute the summary for the given correspondence id. This will
+        update the entry with the counts of match, mismatch and such.
+        """
+
+        data = self.current(corr_id)
+        min_size, max_size = self.sizes(data)
+        data.update(self.summary(self.alignment(corr_id)))
+        data['good_alignment'] = self.good_alignment(data, min_size, max_size)
 
         return Info(**data)
