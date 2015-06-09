@@ -23,7 +23,7 @@ sys.path.append(pymotifs)
 from pymotifs import models
 from pymotifs.utils import pdb
 from pymotifs.utils import known
-from pymotifs.nr.groups import Grouper
+from pymotifs.nr.groups.simplified import Grouper
 
 logger = logging.getLogger(__name__)
 
@@ -52,16 +52,18 @@ def load_config(filename):
 
 
 def save(filename, groups):
-    headers = ['group', 'pdb', 'chain', 'length', 'source', 'discrepancy']
-    groups.sort(key=lambda g: g['representative']['length'])
+    headers = ['group', 'id', 'length', 'source', 'sequence',
+               'discrepancy']
 
     def as_row(index, data):
         row = dict(data)
+        # print(data)
         row['group'] = 'group-%i' % index
-        row['chain'] = ','.join(row['name'])
-        row['source'] = ','.join(str(s) for s in row['source'])
+        # row['id'] = group['id']
+        row['length'] = row['chains'][0]['exp_length']
+        row['source'] = ','.join(str(c['source']) for c in row['chains'])
         row['discrepancy'] = ''
-        row['sequence'] = ''
+        row['sequence'] = row['chains'][0]['sequence']
         return row
 
     with open(filename, 'wb') as out:
