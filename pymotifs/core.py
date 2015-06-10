@@ -17,6 +17,8 @@ from fr3d.data import Structure
 from pymotifs import models as mod
 from pymotifs import utils as ut
 
+SKIP = set(['4V3P'])
+
 
 class StageFailed(Exception):
     """This is raised when one stage of the pipeline fails.
@@ -317,6 +319,10 @@ class Stage(Base):
         for index, entry in enumerate(entries):
             self.logger.info("Processing %s: %s/%s", entry, index + 1,
                              len(entries))
+
+            if entry in SKIP:
+                self.logger.warning("Hardcoded skipping of %s" % entry)
+                continue
 
             try:
                 if not self.should_process(entry, **kwargs):
