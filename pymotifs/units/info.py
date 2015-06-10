@@ -1,3 +1,5 @@
+import itertools as it
+
 import pymotifs.core as core
 
 from Bio.Alphabet import ThreeLetterProtein
@@ -35,5 +37,4 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
-        for nt in structure.residues(polymeric=None):
-            yield self.as_unit(nt)
+        return it.imap(self.as_unit, structure.residues(polymeric=None))
