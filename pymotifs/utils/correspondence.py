@@ -71,31 +71,30 @@ where
 ALIGNED_CHAINS = """
 select distinct
     C1.id as 'chain_id1',
-    C2.id as 'chain_id2'
+    C2.id as 'chain_id2',
+    I.good_alignment as 'good_alignment'
 from correspondence_pdbs as P
 join correspondence_info as I
 on
     I.id = P.id
 join chain_info as C1
 on
-    C1.pdb_id = P.pdb_id1
-    and C1.chain_name = P.chain_name1
+    C1.id = P.chain_id1
 join chain_info as C2
 on
-    C2.pdb_id = P.pdb_id2
-    and C2.chain_name = P.chain_name2
+    C2.id = P.chain_id2
 where
     P.pdb_id1 in ({pdbs})
     and P.pdb_id2 in ({pdbs})
-    and I.good_alignment = 1
     and C1.id != C2.id
 ;
 """
 
 
-class Helper(object):
-    def __init__(self, maker):
-        self.session = core.Session(maker)
+class Helper(core.Base):
+    """A helper to load correspondence information. For example, getting what
+    pdbs correspondence to other pdbs and such.
+    """
 
     def pdbs(self, pdb):
         """Get all pdbs which have been aligned to the given pdb and whose
@@ -181,11 +180,11 @@ class Helper(object):
     def mapping(self, corr_id, chain1, chain2):
         """Get a mapping from nucleotides in chain1 to nucleotides in chain2.
         """
+
         mapping = {}
         for result in self.__ordering__(corr_id, chain1, chain2):
             mapping[result.unit_id1] = result.unit_id2
             mapping[result.unit_id2] = result.unit_id1
-
         return mapping
 
     def aligned_chains(self, pdbs):
@@ -198,12 +197,13 @@ class Helper(object):
 
             for result in results:
                 if result.chain_id1 not in mapping:
-                    mapping[result.chain_id1] = set()
+                    mapping[result.chain_id1] = {}
                 if result.chain_id2 not in mapping:
-                    mapping[result.chain_id2] = set()
+                    mapping[result.chain_id2] = {}
 
-                mapping[result.chain_id1].add(result.chain_id2)
-                mapping[result.chain_id2].add(result.chain_id1)
+                status = result.good_alignment == 1
+                mapping[result.chain_id1][result.chain_id2] = status
+                mapping[result.chain_id2][result.chain_id1] = status
             return mapping
 
     def __ordering__(self, corr_id, chain1, chain2):
