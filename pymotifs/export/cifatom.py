@@ -26,7 +26,12 @@ class Exporter(core.Stage):
     def is_missing(self, entry, **kwargs):
         """Will check if the file produce by filename() exists.
         """
-        return not os.path.exists(self.filename(entry))
+        filename = self.filename(entry)
+        try:
+            return not os.path.isfile(filename) and \
+                os.path.getsize(filename) > 0
+        except:
+            return False
 
     def process(self, pdb, **kwargs):
         filename = self.filename(pdb)
