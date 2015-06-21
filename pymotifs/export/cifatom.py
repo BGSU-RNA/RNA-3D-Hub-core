@@ -12,6 +12,10 @@ from fr3d.cif.writer import CifAtom
 from fr3d.cif.reader import ComplexOperatorException
 
 
+class CifAtomExportFailed(Exception):
+    pass
+
+
 class Exporter(core.Stage):
     dependencies = set([Downloader])
 
@@ -25,9 +29,16 @@ class Exporter(core.Stage):
         return not os.path.exists(self.filename(entry))
 
     def process(self, pdb, **kwargs):
-        with open(self.filename(pdb), 'wb') as out:
+        filename = self.filename(pdb)
+        with open(filename, 'wb') as out:
             writer = CifAtom(out)
             try:
                 writer(self.structure(pdb))
             except ComplexOperatorException:
                 self.logger.warning("Cannot export %s to cifatom", pdb)
+
+        if not os.path.isfile(filename):
+            raise CifAtomExportFailed("No file written")
+
+        if os.path.getsize(filename) == 0:
+            raise CifAtomExportFailed("No atoms written")
