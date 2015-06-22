@@ -17,7 +17,8 @@ class Grouper(core.Base):
     """
 
     cutoffs = {
-        'internal': 0.5
+        'internal': 0.5,
+        'internal_count': 5
     }
 
     def is_autonomous(self, chain):
@@ -29,6 +30,8 @@ class Grouper(core.Base):
 
         internal = float(chain['internal'])
         if not internal:
+            return False
+        if internal < self.cutoffs['internal_count']:
             return False
         total = internal + float(chain['external'])
         fraction = internal / total
