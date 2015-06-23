@@ -29,9 +29,7 @@ class Grouper(core.Base):
         """
 
         internal = float(chain['internal'])
-        if not internal:
-            return False
-        if internal < self.cutoffs['internal_count']:
+        if not internal or internal < self.cutoffs['internal_count']:
             return False
         total = internal + float(chain['external'])
         fraction = internal / total
