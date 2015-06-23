@@ -91,6 +91,12 @@ class Loader(core.Loader):
                 seq_id = result.id
                 seq = self.translation.get(result.unit, result.unit)
 
+                # X is really N, but old PDB data doesn't respect that.
+                if 'X' in seq:
+                    self.logger.debug("For sequence %s, changing X to N",
+                                      exp_id)
+                    seq = seq.replace('X', 'N')
+
                 if seq not in self.valid_sequence:
                     if index != size:
                         raise core.Skip("Bad unit %s for %s" % (seq, seq_id))
