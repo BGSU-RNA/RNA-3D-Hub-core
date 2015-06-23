@@ -13,6 +13,7 @@ on
 where
     P.pdb_id1 = :pdb
     and I.good_alignment = 1
+    and P.pdb_id1 != P.pdb_id2
 ;
 """
 
@@ -31,28 +32,42 @@ join chain_info as C1
 on
     C1.pdb_id = P.pdb_id1
     and C1.chain_name = P.chain_name1
+join autonomous_chains as A1
+on
+    A1.chain_id = C1.id
 join chain_info as C2
 on
     C2.pdb_id = P.pdb_id2
     and C2.chain_name = P.chain_name2
+join autonomous_chains as A2
+on
+    A2.chain_id = C2.id
 where
     P.pdb_id1 = :pdb1
     and P.pdb_id2 = :pdb2
     and I.good_alignment = 1
     and C1.id != C2.id
+    and A1.is_reference = 1
+    and A2.is_reference = 1
 ;
 """
 
 
 UNIT_ORDERING = """
 select
-    *
-from correspondence_units
+    U.*
+from correspondence_units as U
+join chain_info as I1
+on
+    I1.pdb_id = U.pdb_id1
+    and I1.chain_name = U.chain_name1
+join chain_info as I2
+on
+    I2.pdb_id = U.pdb_id2
+    and I2.chain_name = U.chain_name2
 where
-    pdb_id1 = :pdb1
-    and pdb_id2 = :pdb2
-    and chain_name1 = :chain1
-    and chain_name2 = :chain2
+    I1.id = :chain1
+    and I2.id = :chain2
     and correspondence_id = :corr_id
 ;
 """
@@ -112,7 +127,8 @@ class Helper(core.Base):
         will return a list of 3 element tuples. The first will be the
         correspondence id, the second is a dict for chain1 and a second is a
         dict for chain2. Each chain dict will contain the name, the id, and the
-        pdb.
+        pdb. It will only load the reference chains from autonomous groups
+        between the two structures.
 
         :params string pdb1: The first pdb.
         :params string pdb2: The second pdb.
@@ -134,7 +150,7 @@ class Helper(core.Base):
 
         return data
 
-    def ordering(self, corr_id, chain1, chain2):
+    def ordering(self, corr_id, chain_id1, chain_id2):
         """Load the ordering of units in the given chain to chain
         correspondence. This will find the ordering of units in the
         correspondence from chain1 to chain2. The resulting dictionary will
@@ -148,7 +164,8 @@ class Helper(core.Base):
         :returns: An ordering dictionary.
         """
         ordering = {}
-        for result in self.__ordering__(corr_id, chain1, chain2):
+
+        for result in self.__ordering__(corr_id, chain_id1, chain_id2):
             ordering[result.unit_id1] = result.correspondence_index
             ordering[result.unit_id2] = result.correspondence_index
 
@@ -182,7 +199,7 @@ class Helper(core.Base):
         """
 
         mapping = {}
-        for result in self.__ordering__(corr_id, chain1, chain2):
+        for result in self.__ordering__(corr_id, chain1['id'], chain2['id']):
             mapping[result.unit_id1] = result.unit_id2
             mapping[result.unit_id2] = result.unit_id1
         return mapping
@@ -206,12 +223,10 @@ class Helper(core.Base):
                 mapping[result.chain_id2][result.chain_id1] = status
             return mapping
 
-    def __ordering__(self, corr_id, chain1, chain2):
+    def __ordering__(self, corr_id, chain_id1, chain_id2):
         with self.session() as session:
             raw = text(UNIT_ORDERING).\
-                bindparams(pdb1=chain1['pdb'], chain1=chain1['name'],
-                           pdb2=chain2['pdb'], chain2=chain2['name'],
-                           corr_id=corr_id)
+                bindparams(chain1=chain_id1, chain2=chain_id2, corr_id=corr_id)
 
             query = session.execute(raw)
             for result in query:
