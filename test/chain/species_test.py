@@ -47,3 +47,7 @@ class GettingDataTest(StageTest):
                      key=lambda e: e[0])
         ans = [(14398, 562), (14399, 562)]
         self.assertEquals(ans, val)
+
+    def test_can_find_species_when_name_and_id_differ(self):
+        raise SkipTest()
+        # Test 4V4Q|*|DV 4L6M|*|V,4L6M|*|W
