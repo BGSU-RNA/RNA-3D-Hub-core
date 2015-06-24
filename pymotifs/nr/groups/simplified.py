@@ -1,14 +1,19 @@
 import itertools as it
 import collections as coll
-from pprint import pprint
 
 import networkx as nx
 
 from pymotifs import core
-from pymotifs.nr import connectedsets as cs
-from pymotifs.nr.groups.autonomous import AutonomousGrouper
+from pymotifs.utils import result2dict
+
+from pymotifs.models import ChainInfo
+from pymotifs.models import ChainSpecies
+from pymotifs.models import AutonomousInfo
+from pymotifs.models import AutonomousChains
+from pymotifs.models import ChainChainSimilarity
+
+from pymotifs.utils import connectedsets as cs
 from pymotifs.utils import correspondence as cr
-from pymotifs.nr.chains import Info as ChainLoader
 from pymotifs.utils.structures import SYNTHEIC
 
 
@@ -25,6 +30,10 @@ class Grouper(core.Base):
     does make a note about those other chains.
     """
 
+    cutoffs = {
+        'discrepancy': 0.5
+    }
+
     def chains(self, pdb):
         """Load all autonomous chains from a given pdb. This will get the RNA chains as
         well as load some interaction data about the chains.
@@ -34,9 +43,55 @@ class Grouper(core.Base):
         is that which is provided by the info method.
         """
 
-        loader = ChainLoader(self.config, self.session.maker)
-        grouper = AutonomousGrouper(self.config, self.session.maker)
-        return grouper(loader.load_all(pdb))[0]
+        with self.session() as session:
+            query = session.query(AutonomousChains.chain_id.label('db_id'),
+                                  AutonomousChains.is_reference,
+                                  AutonomousChains.is_autonomous,
+                                  AutonomousChains.autonomous_id.label('id'),
+                                  ChainInfo.pdb_id.label('pdb'),
+                                  ChainInfo.chain_length.label('exp_length'),
+                                  ChainInfo.sequence,
+                                  ChainSpecies.species_id.label('source')).\
+                join(AutonomousInfo,
+                     AutonomousInfo.id == AutonomousChains.autonomous_id).\
+                join(ChainInfo,
+                     ChainInfo.id == AutonomousChains.chain_id).\
+                join(ChainSpecies,
+                     ChainSpecies.chain_id == ChainInfo.id).\
+                filter(AutonomousInfo.pdb_id == pdb).\
+                order_by(AutonomousChains.autonomous_id)
+
+            grouped = it.groupby(it.imap(result2dict, query),
+                                 lambda g: g['id'])
+            groups = []
+            for group_id, chains in grouped:
+                chains = sorted(chains, key=lambda c: c['is_reference'])
+                groups.append({
+                    'id':  group_id,
+                    'pdb': chains[0]['pdb'],
+                    'chains': chains
+                })
+
+        return groups
+
+    def discrepancy(self, groups):
+        chain_ids = []
+        for group in groups:
+            chain_ids.extend(chain['db_id'] for chain in group['chains'])
+
+        with self.session() as session:
+            query = session.query(ChainChainSimilarity).\
+                filter(ChainChainSimilarity.chain_id1.in_(chain_ids)).\
+                filter(ChainChainSimilarity.chain_id2.in_(chain_ids))
+
+            discrepancy = coll.defaultdict(dict)
+            for result in query:
+                id1 = result.chain_id1
+                id2 = result.chain_id2
+                discrepancy[id1][id2] = result.discrepancy
+                discrepancy[id2][id1] = result.discrepancy
+
+        return dict(discrepancy)
 
     def alignments(self, chains):
         """Load the data about alignments between all pairs of chains.
@@ -90,10 +145,30 @@ class Grouper(core.Base):
         self.logger.debug("Good species: %s, %s", group1['id'], group2['id'])
         return True
 
-    def has_good_discrepancy(self, group1, group2):
+    def has_good_discrepancy(self, all_discrepancy, group1, group2):
+        db_id1 = group1['chains'][0]['db_id']
+        db_id2 = group2['chains'][0]['db_id']
+        if db_id1 not in all_discrepancy:
+            self.logger.debug("Splitting %s %s: No discrepancy for %s",
+                              group1['id'], group2['id'], group1['id'])
+            return False
+
+        discrepancy = all_discrepancy[db_id1]
+        if db_id2 not in discrepancy:
+            self.logger.debug("Splitting %s %s: No discrepancy between them",
+                              group1['id'], group2['id'])
+            return False
+
+        if discrepancy[db_id2] > self.cutoffs['discrepancy']:
+            self.logger.debug("Splitting %s %s: Too large discrepancy %f",
+                              group1['id'], group2['id'], discrepancy[db_id2])
+            return False
+
+        self.logger.debug("Good discrepancy: %s, %s",
+                          group1['id'], group2['id'])
         return True
 
-    def are_equivalent(self, alignments, group1, group2):
+    def are_equivalent(self, alignments, discrepancies, group1, group2):
         """Determine if two chains are equivalent. This requires that the
         chains align well and are not of conflicting species.
 
@@ -106,7 +181,7 @@ class Grouper(core.Base):
 
         return self.are_similar_species(group1, group2) and \
             self.has_good_alignment(alignments, group1, group2) and \
-            self.has_good_discrepancy(group1, group2)
+            self.has_good_discrepancy(discrepancies, group1, group2)
 
     def validate(self, connections, group):
         pairs = it.product(group, group)
@@ -117,7 +192,7 @@ class Grouper(core.Base):
             self.logger.debug("Pair %s, %s not connected", *pair)
         self.logger.debug("%i pairs are not connected", len(pairs))
 
-    def group(self, chains, alignments):
+    def group(self, chains, alignments, discrepancies):
         """Group all chains into connected components.
 
         :chains: A list of chains to group.
@@ -133,7 +208,8 @@ class Grouper(core.Base):
 
             for chain2 in chains:
                 if chain1 == chain2 or \
-                        self.are_equivalent(alignments, chain1, chain2):
+                        self.are_equivalent(alignments, discrepancies, chain1,
+                                            chain2):
                     self.logger.debug("Equivalent: %s %s",
                                       chain1['id'], chain2['id'])
 
@@ -165,28 +241,6 @@ class Grouper(core.Base):
 
         return chains[0]
 
-        # def ordering(chain):
-        #     if chain['bp'] == 0:
-        #         bp_nt = 0
-        #     else:
-        #         bp_nt = float(chain['bp']) / float(chain['length'])
-
-        #     name = chain['name']
-        #     if isinstance(name, list):
-        #         name = min(name)
-
-        #     return (bp_nt, chain['length'])
-
-        # ordered = sorted(chains, key=ordering)
-        # _, best = next(it.groupby(ordered, key=ordering))
-        # best = list(best)
-
-        # # If there is more than 1 chain that is the best, we pick the one
-        # # with the smallest name, ie, A instead of C.
-        # if len(best) > 1:
-        #     return min(best, key=lambda b: b['name'])
-        # return best[0]
-
     def __call__(self, pdbs, **kwargs):
         """Group all chains in the given list of pdbs.
 
@@ -202,8 +256,9 @@ class Grouper(core.Base):
 
         groups = []
         alignments = self.alignments(chains)
+        discrepancy = self.discrepancy(chains)
 
-        for group in self.group(chains, alignments):
+        for group in self.group(chains, alignments, discrepancy):
             members = list(group)
             representative = self.representative(members)
             members.remove(representative)
@@ -212,4 +267,4 @@ class Grouper(core.Base):
                 'representative': representative
             })
 
-        return sorted(groups, key=ordering)
+        return groups

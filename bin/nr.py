@@ -23,7 +23,6 @@ sys.path.append(pymotifs)
 from pymotifs import models
 from pymotifs.utils import pdb
 from pymotifs.utils import known
-from pymotifs.nr.groups.simplified import Grouper
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +92,8 @@ def run(config, filename, pdbs, opts):
     models.reflect(engine)
     Session = sessionmaker(bind=engine)
 
-    grouper = Grouper(config, Session)
+    from pymotifs.nr.groups import simplified
+    grouper = simplified.Grouper(config, Session)
     groups = grouper(pdbs, **opts)
     save(filename, groups)
 
