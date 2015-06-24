@@ -13,7 +13,6 @@ on
 where
     P.pdb_id1 = :pdb
     and I.good_alignment = 1
-    and P.pdb_id1 != P.pdb_id2
 ;
 """
 

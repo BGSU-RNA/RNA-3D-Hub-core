@@ -60,8 +60,6 @@ class Loader(core.Loader):
             raise core.Skip("No pdbs to compare %s to" % pdb)
 
         for pdb2 in others:
-            if pdb2 == pdb:
-                continue
 
             corresponding = util.chains(pdb, pdb2)
             if not corresponding:
