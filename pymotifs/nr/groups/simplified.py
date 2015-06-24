@@ -18,8 +18,8 @@ from pymotifs.utils.structures import SYNTHEIC
 
 
 def ordering(group):
-    rep = group['representative']
-    return (rep['summary']['exp_length'], rep['chains'][0]['sequence'])
+    rep = group['representative']['chains'][0]
+    return (rep['exp_length'], rep['sequence'])
 
 
 class Grouper(core.Base):
@@ -149,9 +149,8 @@ class Grouper(core.Base):
         db_id1 = group1['chains'][0]['db_id']
         db_id2 = group2['chains'][0]['db_id']
         if db_id1 not in all_discrepancy:
-            self.logger.debug("Splitting %s %s: No discrepancy for %s",
-                              group1['id'], group2['id'], group1['id'])
-            return False
+            self.logger.warning("No computed discrepancy for %s", group1['id'])
+            return True
 
         discrepancy = all_discrepancy[db_id1]
         if db_id2 not in discrepancy:
@@ -267,4 +266,4 @@ class Grouper(core.Base):
                 'representative': representative
             })
 
-        return groups
+        return sorted(groups, key=ordering)
