@@ -50,7 +50,7 @@ def load_config(filename):
         return config
 
 
-def save(filename, groups):
+def format_group(out, groups):
     headers = ['group', 'id', 'length', 'source', 'sequence',
                'discrepancy']
 
@@ -65,15 +65,37 @@ def save(filename, groups):
         row['sequence'] = row['chains'][0]['sequence']
         return row
 
-    with open(filename, 'wb') as out:
-        writer = csv.DictWriter(out, headers, delimiter="\t",
-                                extrasaction="ignore")
+    writer = csv.DictWriter(out, headers, delimiter="\t",
+                            extrasaction="ignore")
 
-        writer.writerow(dict(zip(headers, headers)))
-        for index, group in enumerate(groups):
-            writer.writerow(as_row(index, group['representative']))
-            for member in group['members']:
-                writer.writerow(as_row(index, member))
+    writer.writerow(dict(zip(headers, headers)))
+    for index, group in enumerate(groups):
+        writer.writerow(as_row(index, group['representative']))
+        for member in group['members']:
+            writer.writerow(as_row(index, member))
+
+
+def format_compare(out, groups):
+    grouped = []
+    for group in groups:
+        chains = [c['id'].split(',')[0] for c in group['members']]
+        chains.append(group['representative']['id'].split(',')[0])
+        grouped.append(sorted(chains))
+
+    for entry in sorted(grouped):
+        out.write(" ".join(entry))
+        out.write("\n")
+
+
+def save(config, filename, groups):
+    with open(filename, 'wb') as raw:
+        if config['format'] == 'group':
+            return format_group(raw, groups)
+        elif config['format'] == 'compare':
+            return format_compare(raw, groups)
+
+        sys.stderr.write("Bad format\n")
+        sys.exit(1)
 
 
 def run(config, filename, pdbs, opts):
@@ -95,7 +117,7 @@ def run(config, filename, pdbs, opts):
     from pymotifs.nr.groups import simplified
     grouper = simplified.Grouper(config, Session)
     groups = grouper(pdbs, **opts)
-    save(filename, groups)
+    save(opts, filename, groups)
 
 
 if __name__ == '__main__':
@@ -113,6 +135,8 @@ if __name__ == '__main__':
                         help="Config file to use")
     parser.add_argument('--known', action='store_true',
                         help="Use only downloaded pdbs")
+    parser.add_argument('--format', dest='format', default='group',
+                        choices=['group', 'compare'])
 
     parser.add_argument('--log-file', dest='log_file', default='',
                         help="Log file to use")
