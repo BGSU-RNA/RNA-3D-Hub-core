@@ -579,15 +579,19 @@ class MultiStageLoader(Stage):
     other loaders this depends on.
     """
 
+    """The list of stages that are children of this loader"""
+    stages = []
+
     def is_missing(self, *args, **kwargs):
-        """Nothing is ever missing.
+        """We always rerun the given input.
         """
-        return False
+        return True
 
     def process(self, *args, **kwargs):
-        """Does nothing.
+        """Run each stage with the given input.
         """
-        pass
+        for stage in self.stages:
+            stage(*args, **kwargs)
 
 
 class Exporter(Stage):
