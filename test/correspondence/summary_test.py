@@ -1,5 +1,4 @@
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.correspondence.summary import Loader
 
@@ -43,6 +42,10 @@ class CheckingMediumAlignmentsTest(StageTest):
         info = {'aligned_count': 0, 'match_count': 0, 'mismatch_count': 0}
         self.assertFalse(self.loader.good_alignment(info, 78, 78))
 
+    def test_fails_with_realistic_example(self):
+        info = {'aligned_count': 25, 'match_count': 23, 'mismatch_count': 5}
+        self.assertFalse(self.loader.good_alignment(info, 28, 26))
+
 
 class CheckingLargeAlignmentsTest(StageTest):
     loader_class = Loader
@@ -63,7 +66,7 @@ class CheckingLargeAlignmentsTest(StageTest):
         info = {'aligned_count': 100, 'match_count': 94, 'mismatch_count': 6}
         self.assertFalse(self.loader.good_alignment(info, 100, 200))
 
-    def test_fails_with_less_than_95_percent_similarity_ignoring_longest(self):
+    def test_passes_with_95_percent_similarity_ignoring_longest(self):
         info = {'aligned_count': 100, 'match_count': 95, 'mismatch_count': 5}
         self.assertTrue(self.loader.good_alignment(info, 100, 200))
 

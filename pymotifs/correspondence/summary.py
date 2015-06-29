@@ -96,7 +96,7 @@ class Loader(core.Loader):
             return False
 
         if min_size < 80:
-            return info['match_count'] >= min_size - 4
+            return info['mismatch_count'] <= 4
 
         if max_size > min_size * 2 or min_size > max_size * 2:
             return False
@@ -144,6 +144,8 @@ class Loader(core.Loader):
                     data['match_count'] += 1
                 else:
                     data['mismatch_count'] += 1
+            else:
+                data['mismatch_count'] += 1
 
             if not unit1:
                 data['first_gap_count'] += 1
