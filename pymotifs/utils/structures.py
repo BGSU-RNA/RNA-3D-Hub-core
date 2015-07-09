@@ -11,21 +11,9 @@ from pymotifs import core
 from pymotifs import utils as ut
 from pymotifs import models as mod
 
-LONG_RANGE_CUTOFF = 4
+SYNTHEIC = (32630, 'synthetic construct')
 
-POLYMER_UNITS_QUERY = '''
-select *
-from polymer_units as P
-join pdb_unit_ordering as O
-on
-    O.nt_id = P.id
-where
-    P.pdb_id = :pdb
-    and P.model = 1
-    and P.chain = :chain
-    and P.model = :model
-order by P.polymer_id, O.index
-'''
+LONG_RANGE_CUTOFF = 4
 
 CURRENT_REP_QUERY = '''
 select rep_id
@@ -60,29 +48,6 @@ class Base(object):
         self.session = core.Session(maker)
 
 
-class Polymers(Base):
-    """Methods for getting information about polymers.
-    """
-
-    def polymer_sequences(self, pdb, chain, model=1):
-        results = self.__polymer_units__(pdb=pdb, chain=chain, model=model)
-        sequence = []
-        for _, nts in it.groupby(results, lambda r: r.polymer_id):
-            sequence.append(''.join([nt.unit for nt in nts]))
-        return sequence
-
-    def unit_ids(self, pdb, chain, model=1):
-        results = self.__polymer_units__(pdb=pdb, chain=chain, model=model)
-        return [result.id for result in results]
-
-    def __polymer_units__(self, **data):
-        with self.session() as session:
-            result = session.execute(POLYMER_UNITS_QUERY, data)
-
-        Record = coll.namedtuple('Record', result.keys())
-        return it.imap(lambda r: Record(*r), result.fetchall())
-
-
 class NR(Base):
     def members(self, pdb):
         with self.session() as session:
@@ -100,6 +65,44 @@ class NR(Base):
 
 
 class Structure(Base):
+    def rna_chains(self, pdb, return_id=False, strict=False):
+        """This will get all chains labeled as RNA for a given structure or
+        structures. This has a strict mode which can fitler out chains which
+        are not standard RNA, however, this may also filter out chains where
+        are RNA incorrectly. For example, things with modified bases listed in
+        their sequence. The strict mode is needed when dealing with things like
+        3CPW|A which is labeled as RNA but is actually a protein chain.
+
+        :pdb: The pdb id or a list of pdb ids to query.
+        :return_id: A boolean to indicate if we should return a tuple that is
+        chain_id, chain_name or just chain_name.
+        :strict: A flag that will exclude any chains that are not composed of
+        only ACGUN.
+        :returns: A list of the names or a tuple of the ids and names.
+        """
+
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.chain_name,
+                                  mod.ChainInfo.id).\
+                filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)')
+
+            if isinstance(pdb, basestring):
+                query = query.filter_by(pdb_id=pdb)
+            else:
+                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
+
+            if strict:
+                func = mod.ChainInfo.sequence.op('regexp')
+                query = query.filter(func('^[ACGUN]$'))
+
+            data = []
+            for result in query:
+                entry = result.chain_name
+                if return_id:
+                    entry = (result.chain_name, result.id)
+                data.append(entry)
+            return data
+
     def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
@@ -144,19 +147,27 @@ class Structure(Base):
             query = session.query(mod.LoopPositions).\
                 join(mod.LoopsAll, mod.LoopPositions.loop_id == mod.LoopsAll.id).\
                 filter(mod.LoopsAll.pdb == pdb).\
-                order_by(mod.LoopsAll.id)
+                order_by(mod.LoopsAll.id, mod.LoopPositions.position)
 
             grouped = it.groupby(it.imap(ut.row2dict, query),
                                  lambda a: a['loop_id'])
+
             for loop_id, positions in grouped:
+                positions = list(positions)
+                endpoints = []
+                for pos in positions:
+                    if pos.border:
+                        endpoints.append(pos['nt_id'])
+
                 loops.append({
                     'id': loop_id,
-                    'nts': [pos['nt_id'] for pos in positions]
+                    'nts': [pos['nt_id'] for pos in positions],
+                    'endpoints': list(ut.grouper(2, endpoints))
                 })
 
         return loops
 
-    def source(self, pdb, chain):
+    def source(self, pdb, chain, simplify=False):
         """This is a method to extract all species level taxonomy ids for a
         given chain. A chain can be composed of more than one, thus a list.
         However, in some cases there is no known taxnomy id, in this case an
@@ -169,10 +180,13 @@ class Structure(Base):
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.taxonomy_id).\
-                filter_by(pdb_id=pdb, chain_id=chain)
+                filter_by(pdb_id=pdb).\
+                filter_by(chain_name=chain)
 
             tax_ids = query.one().taxonomy_id
             if tax_ids is None:
+                if simplify:
+                    return None
                 return []
 
             tax_ids = [int(tax_id) for tax_id in tax_ids.split(',')]
@@ -183,7 +197,17 @@ class Structure(Base):
             species_ids = [result.species_id for result in query]
 
             if len(species_ids) != len(tax_ids):
-                raise UnknownTaxonomyException("Could not find all tax ids")
+                missing = set(species_ids).symmetric_difference(set(tax_ids))
+                missing = [str(tax_id) for tax_id in missing]
+                raise UnknownTaxonomyException("Missing tax ids %s",
+                                               ','.join(missing))
+
+            if simplify:
+                if len(species_ids) > 1:
+                    return SYNTHEIC[0]
+                if not species_ids:
+                    return None
+                return species_ids[0]
 
             return sorted(species_ids)
 

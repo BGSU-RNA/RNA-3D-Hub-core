@@ -11,7 +11,7 @@ class Loader(core.SimpleLoader):
             join(UnitInfo, UnitInfo.id == UnitCenters.id).\
             filter(UnitInfo.pdb == pdb)
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
         for residue in structure.residues():
             if residue.type == 'rna':

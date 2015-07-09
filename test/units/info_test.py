@@ -6,7 +6,6 @@ from pymotifs.units.info import Loader
 
 from fr3d.cif.reader import Cif
 from fr3d.data import Component
-from fr3d.data import Structure
 
 
 class DetectingComponentTypeTest(StageTest):
@@ -43,7 +42,7 @@ class CreatingUnitsTest(StageTest):
 
     @classmethod
     def setUpClass(cls):
-        with open('files/cif/1GID.cif', 'rb') as raw:
+        with open('test/files/cif/1GID.cif', 'rb') as raw:
             cls.structure = Cif(raw).structure()
 
     def setUp(self):
@@ -61,6 +60,9 @@ class CreatingUnitsTest(StageTest):
         val = self.data.pdb_id
         ans = '1GID'
         self.assertEqual(ans, val)
+
+    def test_sets_the_model(self):
+        self.assertEquals(1, self.data.model)
 
     def test_sets_the_chain(self):
         val = self.data.chain
@@ -115,7 +117,7 @@ class BuildingAllUnitsTest(StageTest):
 
     @classmethod
     def setUpClass(cls):
-        with open('files/cif/1GID.cif', 'rb') as raw:
+        with open('test/files/cif/1GID.cif', 'rb') as raw:
             cls.structure = Cif(raw).structure()
 
     def setUp(self):
@@ -132,41 +134,13 @@ class BuildingAllUnitsTest(StageTest):
 class QueryingTest(StageTest):
     loader_class = Loader
 
-    @classmethod
-    def setUpClass(cls):
-        with open('files/cif/1GID.cif', 'rb') as raw:
-            cls.structure = Cif(raw).structure()
-
-    def setUp(self):
-        super(QueryingTest, self).setUp()
-        self.structure = self.__class__.structure
-        self.data = list(self.loader.data(self.structure))
-
     def test_creates_query_that_counts(self):
         with self.loader.session() as session:
-            query = self.loader.query(session, self.structure)
+            query = self.loader.query(session, '1GID')
             self.assertEquals(350, query.count())
 
     def test_knows_data_exists(self):
-        self.assertTrue(self.loader.has_data(self.structure))
+        self.assertTrue(self.loader.has_data('1GID'))
 
-
-class TransformTest(StageTest):
-    loader_class = Loader
-
-    def setUp(self):
-        super(TransformTest, self).setUp()
-        self.transformed = self.loader.transform('1GID')
-
-    def test_transform_loads_a_cif(self):
-        self.assertTrue(isinstance(self.transformed, list))
-
-    def test_has_correct_length(self):
-        self.assertEquals(1, len(self.transformed))
-
-    def test_creates_a_structure(self):
-        self.assertTrue(isinstance(self.transformed[0], Structure))
-
-    def test_accepts_keyword_arguments(self):
-        val = self.loader.transform('1GID', bob=True)
-        self.assertTrue(isinstance(val, list))
+    def test_knows_if_no_data_exists(self):
+        self.assertFalse(self.loader.has_data('0GID'))

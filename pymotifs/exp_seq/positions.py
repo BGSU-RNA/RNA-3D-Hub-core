@@ -1,59 +1,72 @@
 from pymotifs import core
-from pymotifs import utils
 
 from pymotifs.models import ExpSeqInfo as Exp
 from pymotifs.models import ExpSeqPosition as Position
+from pymotifs.models import ExpSeqChainMapping as Mapping
+from pymotifs.models import ChainInfo
 
-from rnastructure.tertiary.cif import CIF
+from pymotifs.exp_seq.info import Loader as InfoLoader
+from pymotifs.exp_seq.chain_mapping import Loader as ExpMappingLoader
 
 
 class Loader(core.Loader):
-    name = 'exp_seq_positions'
-    update_gap = False
-    insert_max = 5000
-    allow_no_data = True
+    dependencies = set([ExpMappingLoader, InfoLoader])
 
-    def __init__(self, config, maker):
-        self.finder = utils.CifFileFinder(config)
-        super(Loader, self).__init__(config, maker)
-
-    def has_data(self, entry):
-        exp_id, pdb, chain = entry
+    def to_process(self, pdbs, **kwargs):
         with self.session() as session:
-            query = session.query(Position).filter_by(exp_seq_id=exp_id)
+            query = session.query(Mapping.exp_seq_id).\
+                join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
+                filter(ChainInfo.pdb_id.in_(pdbs)).\
+                distinct()
+
+            return [result.exp_seq_id for result in query]
+
+    # def known(self, pdb):
+    #     with self.session() as session:
+    #         query = session.query(Position.exp_seq_id).\
+    #             join(Mapping, Position.exp_seq_id == Mapping.exp_seq_id).\
+    #             join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
+    #             filter(ChainInfo.pdb_id == pdb).\
+    #             distinct()
+
+    #     return set(result.exp_seq_id for result in query)
+
+#     def missing(self, pdb):
+#         helper = Structure(self.session.maker)
+#         possible = set(p[1] for p in helper.rna_chains(pdb, return_id=True))
+#         return possible - set(self.known(pdb))
+
+    def has_data(self, exp_seq_id, **kwargs):
+        with self.session() as session:
+            query = session.query(Position).\
+                filter(Position.exp_seq_id == exp_seq_id)
+
             return bool(query.count())
 
-    def remove(self, entry):
+    def remove(self, exp_seq_id, **kwargs):
         with self.session() as session:
-            session.query(Position).filter_by(exp_seq_id=entry[0]).\
+            session.query(Position).\
+                filter(Position.exp_seq_id == exp_seq_id).\
                 delete(synchronize_session=False)
 
-    def transform(self, pdb, **kwargs):
-        mapped = []
+    def sequence(self, exp_seq_id):
         with self.session() as session:
-            query = session.query(Exp).filter_by(pdb=pdb)
-            for result in query:
-                mapped.append((result.id, result.pdb, result.chain))
-        return mapped
+            return session.query(Exp).get(exp_seq_id).sequence
 
-    def data(self, entry, **kwargs):
-        exp_id, pdb, chain = entry
-        with open(self.finder(pdb), 'rb') as raw:
-            cif = CIF(raw)
+    def positions(self, exp_id, sequence):
+        positions = []
+        for index, char in enumerate(sequence):
+            positions.append({
+                'exp_seq_id': exp_id,
+                'unit': char,
+                'index': index
+            })
+        return positions
 
+    def data(self, exp_seq_id, **kwargs):
         data = []
-        seen = set()
-        chain = cif.chain('1_555', 1, chain)
-        try:
-            seq = chain.experimental_sequence_mapping()
-        except ValueError as err:
-            self.logger.warning("Can't map %s, %s", pdb, chain)
-            raise core.SkipValue(str(err))
+        sequence = self.sequence(exp_seq_id)
+        for position in self.positions(exp_seq_id, sequence):
+            data.append(Position(**position))
 
-        for index, (seq, seq_id, _) in enumerate(seq):
-            if seq_id not in seen:
-                seen.add(seq_id)
-                data.append(Position(id=seq_id, unit=seq,
-                                     index=index + 1,
-                                     exp_seq_id=exp_id))
         return data

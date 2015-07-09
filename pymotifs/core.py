@@ -11,9 +11,14 @@ except:
     pass
 
 from fr3d.cif.reader import Cif
+from fr3d.cif.reader import ComplexOperatorException
+from fr3d.data import Structure
 
 from pymotifs import models as mod
 from pymotifs import utils as ut
+
+# This is a very large virus file that should be skipped. Add other files as necessary
+SKIP = set(['4V3P'])
 
 
 class StageFailed(Exception):
@@ -33,22 +38,6 @@ class InvalidState(Exception):
 
 class Skip(Exception):
     """Base class for skipping things.
-    """
-    pass
-
-
-class SkipPdb(Skip):
-    """This is an exception that is raised to indicate we should skip
-    processing this pdb. This means all values from the transformed pdb will be
-    skipped as well. This can be raised during transform, has_data, and data.
-    """
-    pass
-
-
-class SkipValue(Skip):
-    """
-    This is raised to indicate that we should skip the transformed value, but
-    not the entire PDB. This can be raised during has_data, and data.
     """
     pass
 
@@ -75,17 +64,30 @@ class Matlab(object):
 
     def __startup__(self):
         self.logger.debug('Starting up matlab')
-        os.chdir(self._root)
         self.mlab = mlab
-        self.mlab._autosync_dirs = False
+        # self.mlab._autosync_dirs = False
         self.mlab.setup()
+        os.chdir(self._root)
         self.logger.debug('Matlab started')
 
     def __getattr__(self, key):
         if self.mlab is None:
+            os.chdir(self._root)
             self.__startup__()
         self.logger.debug("Running %s", key)
-        return getattr(self.mlab, key)
+
+        attr = getattr(self.mlab, key)
+
+        def func(*args, **kwargs):
+            corrected = []
+            for arg in args:
+                if isinstance(arg, basestring):
+                    corrected.append(str(arg))
+                else:
+                    corrected.append(arg)
+            return attr(*corrected, **kwargs)
+
+        return func
 
 
 class Session(object):
@@ -98,7 +100,7 @@ class Session(object):
         self.maker = session_maker
 
     @contextmanager
-    def __call__(self, log_exceptions=True):
+    def __call__(self):
         """Context handler for the session. This creates a new session and
         yields it. It will catch, log, and re raise any exceptions that occur.
         It will also commit and close all sessions.
@@ -110,34 +112,22 @@ class Session(object):
         except Skip:
             session.rollback()
             raise
-        except Exception as err:
-            if log_exceptions:
-                self.logger.error("Transaction failed. Rolling back.")
-                self.logger.exception(err)
+        except Exception:
+            self.logger.error("Transaction failed. Rolling back.")
             session.rollback()
             raise
         finally:
             session.close()
 
 
-class Stage(object):
+class Base(object):
+    """This is a simple utility class. Several things in core and outside of
+    core need a basic class to inherit from that adds a logger, session
+    handler, config, etc. This provides such a base class.
     """
-    This is a base class for both loaders and exporters to inherit from. It
-    contains the functionality common to all things that are part of our
-    pipeline.
-    """
-
-    """ The name of this stage."""
-    name = None
-
-    """ If we should stop the whole stage if one part fails. """
-    stop_on_failure = True
-
-    """ Maximum length of time between updates. False for forever. """
-    update_gap = None
 
     def __init__(self, config, session_maker):
-        """Build a new Stage.
+        """Build a new Base.
 
         :config: The config object to build with.
         :session_maker: The Session object to handle database connections.
@@ -145,10 +135,40 @@ class Stage(object):
 
         self.config = coll.defaultdict(dict)
         self.config.update(config)
-        self.name = self.name or self.__class__.__module__
-
+        self.name = self.__class__.__module__
         self.session = Session(session_maker)
         self.logger = logging.getLogger(self.name)
+
+
+class Stage(Base):
+    """
+    This is a base class for both loaders and exporters to inherit from. It
+    contains the functionality common to all things that are part of our
+    pipeline.
+    """
+
+    """ If we should stop the whole stage if one part fails. """
+    stop_on_failure = True
+
+    """ Maximum length of time between updates. False for forever. """
+    update_gap = None
+
+    """ What stages this stage depends upon. """
+    dependencies = set()
+
+    """Flag if we should mark stuff as processed."""
+    mark = True
+
+    """If we should skip complex operators"""
+    skip_complex = True
+
+    def __init__(self, *args, **kwargs):
+        """Build a new Stage.
+
+        :config: The config object to build with.
+        :session_maker: The Session object to handle database connections.
+        """
+        super(Stage, self).__init__(*args, **kwargs)
         self._cif = ut.CifFileFinder(self.config)
 
     @abc.abstractmethod
@@ -180,8 +200,18 @@ class Stage(object):
         :pdb: PDB id to parse.
         :returns: A parsed cif file.
         """
-        with open(self._cif(pdb), 'rb') as raw:
-            return Cif(raw)
+        if isinstance(pdb, Cif):
+            return pdb
+
+        try:
+            with open(self._cif(pdb), 'rb') as raw:
+                return Cif(raw)
+        except ComplexOperatorException as err:
+            if self.skip_complex:
+                self.logger.warning("Got a complex operator for %s, skipping",
+                                    pdb)
+                raise Skip("Complex operator must be skipped")
+            raise err
 
     def structure(self, pdb):
         """A method to load the cif file and get the structure for the given
@@ -189,20 +219,10 @@ class Stage(object):
         :pdb: The pdb id to get the structure for.
         :returns: The FR3D structure for the given PDB.
         """
+        if isinstance(pdb, Structure):
+            return pdb
+
         return self.cif(pdb).structure()
-
-    def transform(self, pdb, **kwargs):
-        """This method takes the a pdb that we are given to process and
-        transforms into values that can be given to `self.data`. By default it
-        simply yields the given object. This is intended to be used in cases
-        where we need to limit the list of pdbs to select ones. Or where we
-        take list of pdbs and get a list of pairs, like with getting nt-nt
-        correspondence.
-
-        :pdb: The pdb.
-        :returns: A list of things to send to data.
-        """
-        return [pdb]
 
     def must_recompute(self, pdb, recalculate=False, **kwargs):
         """Detect if we have been told to recompute this stage for this pdb.
@@ -249,7 +269,7 @@ class Stage(object):
             return True
 
         if self.is_missing(entry, **kwargs):
-            self.logger.debug("Missing data form %s. Will recompute", entry)
+            self.logger.debug("Missing data from %s. Will recompute", entry)
             return True
         return False
 
@@ -283,8 +303,8 @@ class Stage(object):
     def __call__(self, given, **kwargs):
         """Process all given inputs. This will first transform all inputs with
         the `to_process` method. If there are no entries then a critical
-        exception is raised. Next we go through one entry at a time and apply
-        `transform` to it. TWe then use `should_process` to it. If this returns
+        exception is raised. We then use `should_process` to determine if we
+        should process each entry. If this returns
         true then we call `process`. Once done we call `mark_processed`.
 
         :given: A list of pdbs to process.
@@ -301,49 +321,31 @@ class Stage(object):
             self.logger.info("Processing %s: %s/%s", entry, index + 1,
                              len(entries))
 
+            if entry in SKIP:
+                self.logger.warning("Hardcoded skipping of %s" % entry)
+                continue
+
             try:
-                iterable = self.transform(entry, **kwargs)
-            except SkipPdb as err:
-                self.logger.warn("Skipping entry %s. Reason: %s", entry,
-                                 str(err))
+                if not self.should_process(entry, **kwargs):
+                    self.logger.debug("No need to process %s", entry)
+                    continue
+                self.process(entry, **kwargs)
+
+            except Skip as err:
+                self.logger.warn("Skipping entry %s. Reason %s",
+                                 entry, str(err))
                 continue
+
             except Exception as err:
-                self.logger.error("Transforming %s failed, skipping", entry)
+                self.logger.error("Error raised in processing of %s", entry)
                 self.logger.exception(err)
+                if self.stop_on_failure:
+                    self.remove(entry)
+                    raise StageFailed(self.name)
                 continue
 
-            if not iterable:
-                self.logger.info("Nothing from transfrom for %s", entry)
-                continue
-
-            for trans_index, transformed in enumerate(iterable):
-                self.logger.info("Processing %s (%s) %s: %s/%s",
-                                 transformed, entry, index + 1,
-                                 trans_index + 1, len(iterable))
-
-                try:
-                    if not self.should_process(transformed, **kwargs):
-                        self.logger.debug("No need to process %s", transformed)
-                        continue
-                    self.process(transformed, **kwargs)
-
-                except SkipPdb as err:
-                    self.logger.warn("Skipping entry %s Reason %s", entry,
-                                     str(err))
-                    break
-                except SkipValue as err:
-                    self.logger.warn("Skipping %s Reason %s", transformed,
-                                     str(err))
-                    continue
-                except Exception as err:
-                    self.logger.error("Error raised in should_process of %s" %
-                                      transformed)
-                    self.logger.exception(err)
-                    if self.stop_on_failure:
-                        raise StageFailed(self.name)
-                    continue
-
-            self.mark_processed(entry, **kwargs)
+            if self.mark:
+                self.mark_processed(entry, **kwargs)
 
 
 class Loader(Stage):
@@ -365,7 +367,7 @@ class Loader(Stage):
 
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
-        """Compute the data for the given pdb file.
+        """Compute the data for the given cif file.
         """
         pass
 
@@ -427,10 +429,19 @@ class Loader(Stage):
             if not isinstance(data, coll.Iterable):
                 add(data)
             else:
+                saved = False
                 for index, datum in enumerate(data):
                     add(datum)
+                    saved = True
                     if index % self.insert_max == 0:
                         session.commit()
+
+                if not saved:
+                    if not self.allow_no_data:
+                        self.logger.error("No data produced")
+                        raise InvalidState("No data produced")
+                    else:
+                        self.logger.warning("No data saved")
 
             session.commit()
             self.logger.debug("Done committing")
@@ -455,9 +466,11 @@ class Loader(Stage):
 
         if not self.allow_no_data and not data:
             self.logger.error("No data produced")
-            raise InvalidState("Missing data")
+            raise InvalidState("Stage %s produced no data processing %s" %
+                               (self.name, entry))
         elif not data:
-            self.logger.warning("No data produced")
+            if data is not None:
+                self.logger.warning("No data produced")
             return
 
         self.store(data, **kwargs)
@@ -475,7 +488,7 @@ class SimpleLoader(Loader):
 
     def has_data(self, *args, **kwargs):
         with self.session() as session:
-            return bool(self.query(session, *args).first())
+            return bool(self.query(session, *args).count())
 
     def remove(self, *args, **kwargs):
         with self.session() as session:
@@ -550,7 +563,7 @@ class MassLoader(Loader):
                              str(err))
             return
         except Exception as err:
-            self.logger.error("Error raised in should_process all entries")
+            self.logger.error("Error raised in process all entries")
             self.logger.exception(err)
             if self.stop_on_failure:
                 raise StageFailed(self.name)
@@ -560,16 +573,26 @@ class MassLoader(Loader):
 
 
 class MultiStageLoader(Stage):
+    """This acts as a simple way to aggregate a bunch of loaders into one
+    stage. It is really useful sometimes to simply run say all unit loaders
+    without having to do each one individually or know which ones depend on
+    each other. The loader itself does nothing but provide a way to run all
+    other loaders this depends on.
+    """
+
+    """The list of stages that are children of this loader"""
     stages = []
 
-    def __init__(self, *args):
-        self.steps = []
-        for stage in self.stages:
-            self.steps.append(stage(*args))
+    def is_missing(self, *args, **kwargs):
+        """We always rerun the given input.
+        """
+        return True
 
-    def __call__(self, pdbs, **kwargs):
-        for step in self.steps:
-            step(pdbs, **kwargs)
+    def process(self, *args, **kwargs):
+        """Run each stage with the given input.
+        """
+        for stage in self.stages:
+            stage(*args, **kwargs)
 
 
 class Exporter(Stage):
@@ -580,9 +603,9 @@ class Exporter(Stage):
     mode = None
 
     def __init__(self, *args, **kwargs):
+        super(Exporter, self).__init__(*args, **kwargs)
         if not self.mode:
             raise InvalidState("Must define the mode")
-        super(Exporter, self).__init__(*args, **kwargs)
 
     @abc.abstractmethod
     def filename(self, entry):
@@ -597,32 +620,8 @@ class Exporter(Stage):
         pass
 
     def process(self, entry, **kwargs):
-        """
-        """
         with open(self.filename(entry), self.mode) as raw:
             raw.write(self.text(entry, **kwargs))
-
-
-class MassExporter(Exporter):
-    """An exporter that exports several files at once.
-    """
-    __metaclass__ = abc.ABCMeta
-
-    mode = 'a'
-
-    def is_missing(self, pdb):
-        """Always returns true, I assume we will always want to redo a mass
-        export.
-        """
-        return True
-
-    def __call__(self, pdbs, **kwargs):
-        """Deletes the previous mass export then redoes the full export.
-        """
-        filename = self.filename(None)
-        if os.path.exists(filename):
-            os.remove(filename)
-        super(MassExporter, self).__call__(pdbs, **kwargs)
 
 
 class PdbExporter(Exporter):

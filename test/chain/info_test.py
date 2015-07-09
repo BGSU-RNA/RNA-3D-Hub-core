@@ -42,7 +42,7 @@ class RenameTest(StageTest):
 
     def test_updates_the_names(self):
         val = self.loader.rename({'pdb_id': 'bob', 'chainId': 'CX'})
-        self.assertEquals('CX', val['chain_id'])
+        self.assertEquals('CX', val['chain_name'])
         self.assertTrue('chainId' not in val)
 
     def test_sets_missing_fields_to_none(self):

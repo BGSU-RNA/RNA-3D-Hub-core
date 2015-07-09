@@ -12,5 +12,6 @@ from pymotifs.export import Exporter as GeneralExporter
 
 
 class Loader(core.MultiLoader):
-    stages = [Downloader, CifAtomExpoter, PdbLoader, NtLoader, InterLoader,
-              ExpSeqLoader, ChainLoader, CorrLoader, GeneralExporter]
+    dependencies = set([Downloader, CifAtomExpoter, PdbLoader, NtLoader,
+                        InterLoader, ExpSeqLoader, ChainLoader, CorrLoader,
+                        GeneralExporter])

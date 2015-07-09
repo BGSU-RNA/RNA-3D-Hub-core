@@ -2,32 +2,25 @@ from pymotifs import core
 from pymotifs.utils.pdb import CustomReportHelper
 from pymotifs.models import ChainInfo
 
+from pymotifs.pdbs import Loader as PdbLoader
+
 
 class Loader(core.MassLoader):
     merge_data = True
+    dependencies = set([PdbLoader])
 
     names = {
         'structureId': 'pdb_id',
-        'chainId': 'chain_id',
+        'chainId': 'chain_name',
         'classification': 'classification',
         'macromoleculeType': 'macromolecule_type',
-        'classification': 'classification',
-        'macromoleculeType': 'macromolecule_type',
-        'entityId': 'entity_id',
+        'entityId': 'entity_name',
         'sequence': 'sequence',
         'chainLength': 'chain_length',
-        'db_id': 'db_id',
-        'db_name': 'db_name',
-        'molecularWeight': 'molecular_weight',
-        'secondaryStructure': "secondary_structure",
-        'entityMacromoleculeType': 'entity_macromolecule_type',
-        'Ki': 'ki',
-        'Kd': 'kd',
-        'compound': 'compound',
         'source': 'source',
         'taxonomyId': 'taxonomy_id',
-        'biologicalProcess': 'biological_process',
-        'cellularComponent': 'cellular_component'
+        'entityMacromoleculeType': 'entity_macromolecule_type',
+        'compound': 'compound'
     }
 
     def __init__(self, *args, **kwargs):
@@ -50,12 +43,12 @@ class Loader(core.MassLoader):
         with self.session() as session:
             query = session.query(ChainInfo.id,
                                   ChainInfo.pdb_id,
-                                  ChainInfo.chain_id).\
+                                  ChainInfo.chain_name).\
                 filter(ChainInfo.pdb_id.in_(pdbs)).\
-                filter(ChainInfo.chain_id.in_(chains))
+                filter(ChainInfo.chain_name.in_(chains))
 
             for result in query:
-                mapping[(result.pdb_id, result.chain_id)] = result.id
+                mapping[(result.pdb_id, result.chain_name)] = result.id
                 known_pdbs.add(result.pdb_id)
 
         for report in reports:

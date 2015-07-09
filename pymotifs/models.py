@@ -33,40 +33,10 @@ def should_reflect(tablename, *args):
 
 def reflect(engine):
     metadata.bind = engine
-    metadata.reflect(only=should_reflect)
+    metadata.reflect(only=should_reflect, views=True)
     Base.prepare(classname_for_table=camelize_classname)
     for klass in Base.classes:
         globals()[klass.__name__] = klass
-
-
-class LoopReleases(Base):
-    __tablename__ = 'loop_releases'
-
-    id = Column(String(4), primary_key=True)
-    date = Column(DateTime)
-    description = Column(Text)
-
-    def __init__(self, mode='', description=''):
-        self.description = description
-        self.mode = mode
-        self.compute_new_release_id()
-        self.get_date()
-
-    def compute_new_release_id(self, session):
-        prev = session.query(LoopReleases).\
-            order_by(desc(LoopReleases.date)).\
-            first()
-        if prev is None:
-            self.id = 0.1
-        elif self.mode == 'major':
-            parts = prev.id.split('.')
-            self.id = '.'.join([str(int(parts[0])+1), '0'])
-        else:
-            parts = prev.id.split('.')
-            self.id = '.'.join([parts[0], str(int(parts[1])+1)])
-
-    def get_date(self):
-        self.date = datetime.datetime.now()
 
 
 class MlReleases(Base):
@@ -210,34 +180,3 @@ class NrClasses(Base):
         self.populate_fields(id)
         self.version = int(self.version) + 1
         self.generate_id()
-
-
-class NrReleases(Base):
-    __tablename__ = 'nr_releases'
-
-    id = Column(String(6), primary_key=True)
-    date = Column(DateTime)
-    description = Column(Text)
-
-    def __init__(self, mode='minor', description=''):
-        self.description = description
-        self.mode = mode
-        self.compute_new_release_id()
-        self.get_date()
-
-    def compute_new_release_id(self, session):
-        prev = session.query(NrReleases).order_by(desc(NrReleases.date)).\
-            first()
-        if prev is None:
-            self.id = '0.1'
-        elif self.mode == 'major':
-            parts = prev.id.split('.')
-            self.id = '.'.join([str(int(parts[0])+1), '0'])
-        elif self.mode == 'reuse':
-            self.id = prev.id
-        else:
-            parts = prev.id.split('.')
-            self.id = '.'.join([parts[0], str(int(parts[1])+1)])
-
-    def get_date(self):
-        self.date = datetime.datetime.now()

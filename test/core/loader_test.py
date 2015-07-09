@@ -26,7 +26,7 @@ class RecomputingTest(StageTest):
         self.assertFalse(self.loader.should_process('known'))
 
     def test_will_recalc_if_missing_data(self):
-        self.assertFalse(self.loader.should_process('missing'))
+        self.assertTrue(self.loader.should_process('missing'))
 
     def test_recalculates_if_given_on_known_data(self):
         self.assertTrue(self.loader.should_process('known', recalculate=True))
@@ -119,7 +119,7 @@ class StoringWithAutoIncrement(StageTest):
 
     def test_merge_works_with_new_data(self):
         self.loader.merge_data = True
-        self.loader.store(ChainInfo(chain_id='X', pdb_id='000X',
+        self.loader.store(ChainInfo(chain_name='X', pdb_id='000X',
                           classification='bob'))
 
         with self.loader.session() as session:

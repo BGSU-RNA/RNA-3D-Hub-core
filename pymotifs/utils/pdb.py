@@ -87,7 +87,7 @@ class CustomReportHelper(object):
     ]
 
     def __init__(self, fields=None):
-        self.helper = utils.WebRequestHelper(method='get', parser=self.parse)
+        self.helper = utils.WebRequestHelper(method='post', parser=self.parse)
         if fields:
             self.fields = fields
 
@@ -131,18 +131,17 @@ class CustomReportHelper(object):
         """Gets a custom report in csv format for a single pdb file. Each chain
            is described in a separate line
         """
-        if isinstance(pdb_id, list):
+        ids = pdb_id
+        if not isinstance(pdb_id, str):
             ids = ','.join(pdb_id)
-        else:
-            ids = pdb_id
 
-        params = {
+        data = {
             'customReportColumns': ','.join(self.fields),
             'format': 'csv',
             'pdbids': ids
         }
         logger.info('Getting custom report for %s', pdb_id)
-        result = self.helper(self.url, params=params)
+        result = self.helper(self.url, data=data)
         return self.__unique__(result)
 
 

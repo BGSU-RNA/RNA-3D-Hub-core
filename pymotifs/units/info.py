@@ -1,36 +1,31 @@
+import itertools as it
+
 import pymotifs.core as core
 
 from Bio.Alphabet import ThreeLetterProtein
 
 from pymotifs.models import UnitInfo
+from pymotifs.utils import units
+from pymotifs.download import Downloader
+from pymotifs.pdbs.info import Loader as PdbLoader
 
 AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 
 
 class Loader(core.SimpleLoader):
     update_gap = False
+    dependencies = set([Downloader, PdbLoader])
 
-    def query(self, session, structure):
-        return session.query(UnitInfo).filter_by(pdb_id=structure.pdb)
-
-    def transform(self, pdb, **kwargs):
-        return [self.cif(pdb).structure()]
+    def query(self, session, pdb):
+        return session.query(UnitInfo).filter_by(pdb_id=pdb)
 
     def type(self, unit):
-        seq = unit.sequence.upper()
-        if seq in ['A', 'C', 'G', 'U']:
-            return 'rna'
-        if seq == 'HOH':
-            return 'water'
-        if seq in AA:
-            return 'aa'
-        if seq in ['DA', 'DC', 'DG', 'DT']:
-            return 'dna'
-        return None
+        return units.component_type(unit)
 
     def as_unit(self, nt):
         return UnitInfo(id=nt.unit_id(),
                         pdb_id=nt.pdb,
+                        model=nt.model,
                         chain=nt.chain,
                         unit=nt.sequence,
                         number=nt.number,
@@ -40,5 +35,6 @@ class Loader(core.SimpleLoader):
                         chain_index=getattr(nt, 'chain_index', None),
                         unit_type_id=self.type(nt))
 
-    def data(self, structure):
-        return [self.as_unit(nt) for nt in structure.residues(polymeric=None)]
+    def data(self, pdb, **kwargs):
+        structure = self.structure(pdb)
+        return it.imap(self.as_unit, structure.residues(polymeric=None))

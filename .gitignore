@@ -41,3 +41,4 @@ GTAGS
 GPATH
 GRTAGS
 conf/*.json
+data/

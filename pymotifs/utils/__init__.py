@@ -1,7 +1,5 @@
 import os
-import sys
 import logging
-import traceback
 from ftplib import FTP
 import cStringIO as sio
 import itertools as it
@@ -70,8 +68,15 @@ def row2dict(row):
     return d
 
 
+def result2dict(result):
+    d = {}
+    for name in result.keys():
+        d[name] = getattr(result, name)
+    return d
+
+
 def known(config, pdb=True, cif=True, pdb1=False):
-    path = os.path.join(config['locations']['fr3d_root'], 'FR3D', 'PDBFiles')
+    path = os.path.join(config['locations']['fr3d_root'], 'PDBFiles')
     names = coll.defaultdict(dict)
 
     for filename in os.listdir(path):

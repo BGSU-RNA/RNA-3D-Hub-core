@@ -36,9 +36,10 @@ def setup_logging(opts):
         log_args['filename'] = opts.pop('log_file')
 
     logging.basicConfig(**log_args)
+    # logging.captureWarnings(True)
     base = logging.getLogger()
     pool_logger = logging.getLogger('sqlalchemy.pool')
-    pool_logger.setLevel(logging.DEBUG)
+    pool_logger.setLevel(logging.ERROR)
     for handler in base.handlers:
         pool_logger.addHandler(handler)
 
@@ -53,7 +54,7 @@ def load_config(filename):
 def run(name, config, pdbs, opts):
     setup_logging(opts)
 
-    if opts.pop('all'):
+    if opts['all']:
         pdbs = pdb.RnaPdbsHelper()()
 
     if opts.pop('known'):
@@ -66,7 +67,8 @@ def run(name, config, pdbs, opts):
     models.reflect(engine)
     Session = sessionmaker(bind=engine)
 
-    dispatcher = Dispatcher(name, config, Session)
+    dispatcher = Dispatcher(name, config, Session,
+                            skip_dependencies=opts.get('skip_dependencies'))
 
     try:
         dispatcher(pdbs, **opts)
@@ -84,7 +86,7 @@ if __name__ == '__main__':
                         action='store_true',
                         help="Use all RNA containing PDBS")
     parser.add_argument('--config', dest='config',
-                        default='pymotifs/motifatlas.json',
+                        default='conf/motifatlas.json',
                         help="Config file to use")
     parser.add_argument('--recalculate', action='store_true',
                         help="Force all data to be recalculated")
@@ -92,6 +94,8 @@ if __name__ == '__main__':
                         help="Use only downloaded pdbs")
     parser.add_argument('--dry-run', action='store_true',
                         help="Do a dry run where we store nothing")
+    parser.add_argument('--skip-dependencies', action='store_true',
+                        help='Skip running any dependencies')
 
     parser.add_argument('--log-file', dest='log_file', default='',
                         help="Log file to use")

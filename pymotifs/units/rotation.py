@@ -24,7 +24,7 @@ class Loader(core.SimpleLoader):
             join(UnitInfo, UnitInfo.id == UnitRotations.id).\
             filter(UnitInfo.pdb == pdb)
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         """Get the rotation matrices for all RNA residues in the given pdb.
 
         :pdb: The pdb to process

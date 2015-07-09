@@ -19,7 +19,7 @@ class FileHelperTest(StageTest):
 class CoreRsrParserTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open('files/validation/4v7w_validation.xml.gz', 'rb') as raw:
+        with open('test/files/validation/4v7w_validation.xml.gz', 'rb') as raw:
             cls.parser = ntq.Parser(raw.read())
 
     def setUp(self):
@@ -35,13 +35,13 @@ class CoreRsrParserTest(unittest.TestCase):
         }
         val = self.parser._unit_id('1J5E', data)
         ans = '1J5E|1|A|C|10'
-        self.assertEqual(val, ans)
+        self.assertEqual(ans, val)
 
 
 class MissingRsRParserTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open('files/validation/1j5e_validation.xml.gz', 'rb') as raw:
+        with open('test/files/validation/1j5e_validation.xml.gz', 'rb') as raw:
             cls.parser = ntq.Parser(raw.read())
 
     def setUp(self):
@@ -54,7 +54,7 @@ class MissingRsRParserTest(unittest.TestCase):
 class HasRsRParserTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open('files/validation/4v7w_validation.xml.gz', 'rb') as raw:
+        with open('test/files/validation/4v7w_validation.xml.gz', 'rb') as raw:
             cls.parser = ntq.Parser(raw.read())
 
     def setUp(self):

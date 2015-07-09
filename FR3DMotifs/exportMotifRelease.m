@@ -38,7 +38,7 @@ function [] = exportMotifRelease(location)
             fprintf(MotifList,'"%s","%s"\n', loopid, motif_id);
                         
             for pos = 1:length(Search.Candidates(j,1:end-1))
-                NTid = aGetNTId(Search.File(Search.Candidates(j,end)),Search.Candidates(j,pos));
+                NTid = Search.File(Search.Candidates(j,end)).NT(Search.Candidates(j,pos)).ID;
                 fprintf(MotifPositions,'%s,%s,%s,%i\n',motif_id,loopid,NTid,pos);
             end
 
