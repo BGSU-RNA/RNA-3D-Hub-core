@@ -17,6 +17,7 @@ from fr3d.data import Structure
 from pymotifs import models as mod
 from pymotifs import utils as ut
 
+# This is a very large virus file that should be skipped. Add other files as necessary
 SKIP = set(['4V3P'])
 
 
@@ -366,7 +367,7 @@ class Loader(Stage):
 
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
-        """Compute the data for the given pdb file.
+        """Compute the data for the given cif file.
         """
         pass
 
