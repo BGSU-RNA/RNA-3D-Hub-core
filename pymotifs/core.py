@@ -527,7 +527,10 @@ class MassLoader(Loader):
         pass
 
     def has_data(self, pdbs, **kwargs):
-        pass
+        """This means we never have the data for a mass loader. Generally this
+        is the case.
+        """
+        return False
 
     def process(self, pdbs, **kwargs):
         data = self.data(pdbs)
