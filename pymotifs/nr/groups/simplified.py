@@ -259,11 +259,6 @@ class Grouper(core.Base):
 
         for group in self.group(chains, alignments, discrepancy):
             members = list(group)
-            representative = self.representative(members)
-            members.remove(representative)
-            groups.append({
-                'members': members,
-                'representative': representative
-            })
+            groups.append({'members': members})
 
         return sorted(groups, key=ordering)
