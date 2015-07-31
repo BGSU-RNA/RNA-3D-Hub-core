@@ -4,7 +4,7 @@ from pymotifs import core
 from pymotifs.models import NrReleases
 from pymotifs.utils.releases import Release
 
-from pymotifs.chain.info import Loader as ChainLoader
+from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.interactions import Loader as InteractionLoader
 
 
