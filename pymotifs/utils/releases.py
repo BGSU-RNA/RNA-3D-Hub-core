@@ -37,6 +37,27 @@ class Release(object):
         self.session = core.Session(session)
         self.config = config
 
+    def previous(self, release, mode='minor'):
+        if mode not in self.names:
+            raise UnknownReleaseMode(mode)
+
+        current = self.__parse__(release)
+        if mode == 'minor':
+            current['minor'] -= 1
+
+        if mode == 'major':
+            current['minor'] = 0
+            current['major'] -= 1
+
+        if current['major'] < 0:
+            current['major'] = 0
+            current['minor'] = 1
+
+        if current['minor'] < 0:
+            current['minor'] = 1
+
+        return self.__format__(current)
+
     def current(self, name):
         if name not in ['nr', 'loop', 'motif']:
             raise UnknownReleaseType(name)
@@ -56,31 +77,27 @@ class Release(object):
         if mode not in self.names:
             raise UnknownReleaseMode(mode)
 
+        current = self.__parse__(current)
+        if mode == 'minor':
+            current['minor'] += 1
+
+        if mode == 'major':
+            current['minor'] = 0
+            current['major'] += 1
+
+        return self.__format__(current)
+
+    def __parse__(self, release_id):
         try:
-            parts = map(int, current.split('.'))
+            parts = map(int, release_id.split('.'))
         except:
             raise BadlyFormattedRelease("Can't process release id: %s" %
-                                        current)
+                                        release_id)
 
         if len(parts) != 2:
             raise BadlyFormattedRelease("Release id must have major an minor")
 
-        current = dict(zip(self.names, parts))
-        func = getattr(self, '__%s__' % mode)
-
-        return self.__format__(func(current))
-
-    def __major__(self, current):
-        return {
-            'major': current['major'] + 1,
-            'minor': 0
-        }
-
-    def __minor__(self, current):
-        return {
-            'major': current['major'],
-            'minor': current['minor'] + 1
-        }
+        return dict(zip(self.names, parts))
 
     def __format__(self, current):
         return '.'.join((str(current['major']), str(current['minor'])))

@@ -33,7 +33,7 @@ class GettingWithNoCurrentReleaseTest(StageTest):
 
     def tearDown(self):
         with self.loader.session() as session:
-            session.execute('insert into ml_releases select * from ml_releases_tmp ;')
+            session.execute('insert into ml_releases select * from ml_releases_tmp;')
             session.execute('drop table ml_releases_tmp')
 
     def test_sets_missing_release_to_zero(self):
@@ -64,3 +64,22 @@ class ComputingNextReleaseIdTest(StageTest):
         self.assertRaises(BadlyFormattedRelease, self.loader.next, '1.')
         self.assertRaises(BadlyFormattedRelease, self.loader.next, 'a.')
         self.assertRaises(BadlyFormattedRelease, self.loader.next, '1.a')
+
+
+class GettingPreviousReleaseId(StageTest):
+    loader_class = Release
+
+    def test_can_get_previous_release(self):
+        self.assertEquals('1.72', self.loader.previous('1.73'))
+
+    def test_can_compute_previous_major_release(self):
+        self.assertEquals('1.0', self.loader.previous('2.54', mode='major'))
+
+    def test_computes_previous_minor_id(self):
+        self.assertEquals('3.2', self.loader.previous('3.3', mode='minor'))
+
+    def test_does_not_wrap_major_below_zero(self):
+        self.assertEquals('0.1', self.loader.previous('0.54', mode='major'))
+
+    def test_does_not_wrap_minor_below_zero(self):
+        self.assertEquals('0.1', self.loader.previous('0.0', mode='minor'))
