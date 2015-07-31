@@ -55,9 +55,6 @@ class Loader(core.MassLoader):
                 filter(NrClasses.nr_release_id == release_id).\
                 filter(NrClasses.resolution == cutoff)
 
-            if cutoff != 'all':
-                query = query.filter(PdbInfo.resolution <= float(cutoff))
-
             key = lambda v: (v.handle, v.version)
             ordered = sorted(query, key=key)
             grouped = it.groupby(ordered, key)
@@ -66,8 +63,10 @@ class Loader(core.MassLoader):
             for (handle, version), members in grouped:
                 results.append({
                     'members': [{'id': member.id} for member in members],
-                    'handle': handle,
-                    'version': int(version)
+                    'name': {
+                        'handle': handle,
+                        'version': int(version)
+                    }
                 })
 
         return results
