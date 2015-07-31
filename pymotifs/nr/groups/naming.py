@@ -2,8 +2,6 @@ import random
 
 from pymotifs import core
 
-from pymotifs.models import NrClasses
-
 
 class Namer(core.Base):
     size_cutoff = 2.0 / 3.0
@@ -17,10 +15,10 @@ class Namer(core.Base):
         autonomous2 = set(mem['id'] for mem in group2['members'])
 
         intersection = autonomous1.intersection(autonomous2)
-        if intersection:
-            return {'group': group2, 'intersection': intersection}
+        if not intersection:
+            return {}
 
-        return {}
+        return {'group': group2, 'intersection': intersection}
 
     def overlap_size(self, group, overlap):
         inter_size = len(overlap['intersection'])
@@ -31,7 +29,8 @@ class Namer(core.Base):
         return {
             'handle': group['handle'],
             'version': group['version'],
-            'comment': 'Exact match'
+            'comment': 'Exact match',
+            'type': 'exact',
         }
 
     def updated_name(self, group, parents):
@@ -42,23 +41,19 @@ class Namer(core.Base):
         return {
             'handle': group['handle'],
             'version': group['version'] + 1,
-            'comment': 'Updated, %s' % parent_comment
+            'comment': 'Updated, %s' % parent_comment,
+            'type': 'updated',
         }
 
-    def new_name(self, count):
+    def new_name(self, count, known):
         """Create a new name for a class. This will generate a new handle that
         has never been seen before and create a dictonary with the parts named.
 
         :returns: A naming dictonary.
         """
 
-        known = set()
-        with self.session() as session:
-            query = session.query(NrClasses.handle).distinct()
-            known = set(res.handle for res in query)
-
-        handle = None
-        while not handle or handle not in known:
+        handle = '%05d' % random.randrange(99999)
+        while handle in known:
             handle = '%05d' % random.randrange(99999)
 
         if not count:
@@ -73,54 +68,57 @@ class Namer(core.Base):
         return {
             'handle': handle,
             'version': 1,
-            'comment': 'New id, %s' % parent_comment
+            'comment': 'New id, %s' % parent_comment,
+            'type': 'new',
         }
 
-    def one_parent(self, group, parent):
+    def one_parent(self, group, parent, known):
         # - use same name if the groups are identical
         if self.overlap_size(group, parent) == 1:
-            print(parent)
             return self.same_name(parent['group']['name'])
 
         # - use a new name if the overlap is > 2/3
-        elif self.change_size(group, parent) >= self.size_cutoff:
+        elif self.overlap_size(group, parent) >= self.size_cutoff:
             return self.updated_name(parent['group']['name'], 1)
 
-        return self.new_name(1)
+        return self.new_name(1, known)
 
-    def two_parents(self, group, parents):
-        parent = min(parents, key=self.overlap_size)
+    def two_parents(self, group, parents, known):
+        parent = max(parents, key=lambda p: self.overlap_size(group, p))
         if self.overlap_size(group, parent) >= self.size_cutoff:
-            return self.updated_name(parent, 2)
-        return self.new_name(2)
+            return self.updated_name(parent['group']['name'], 2)
+        return self.new_name(2, known)
+
+    def many_parents(self, group, parents, known):
+        # If there is more than 2 parents we always use a new name
+        return self.new_name(len(parents), known)
 
     def parents(self, group, known_groups):
         parents = []
         for known in known_groups:
-            overlap = self.overlap(known, group)
+            overlap = self.overlap(group, known)
             if overlap:
                 parents.append(overlap)
         return parents
 
-    def __call__(self, groups, known_groups):
+    def __call__(self, groups, parent_groups, handles):
         named = []
         for group in groups:
-            parents = self.parents(group, known_groups)
+            parents = self.parents(group, parent_groups)
 
             # No overlaps means new group thus new name
             name = {}
             if not parents:
-                name = self.new_name(0)
+                name = self.new_name(0, handles)
 
             elif len(parents) == 1:
-                name = self.one_parent(group, parents[0])
+                name = self.one_parent(group, parents[0], handles)
 
             elif len(parents) == 2:
-                name = self.two_parents(group, parents)
+                name = self.two_parents(group, parents, handles)
 
-            # If there is more than 2 parents we always use a new name
             else:
-                name = self.new_name(len(parents))
+                name = self.many_parents(group, parents, handles)
 
             named_group = dict(group)
             named_group['parents'] = parents
