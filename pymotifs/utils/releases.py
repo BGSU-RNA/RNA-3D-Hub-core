@@ -29,6 +29,14 @@ class BadlyFormattedRelease(Exception):
     pass
 
 
+class ImpossibleRelease(Exception):
+    """This is raised if we are asking for a preivous release which is
+    impossible. For example release -1.0 would be an example which can happen
+    when getting the previous release of 0.0.
+    """
+    pass
+
+
 class Release(object):
 
     names = ['major', 'minor']
@@ -37,9 +45,12 @@ class Release(object):
         self.session = core.Session(session)
         self.config = config
 
-    def previous(self, release, mode='minor'):
+    def previous(self, release, mode='minor', bad_id='wrap'):
         if mode not in self.names:
             raise UnknownReleaseMode(mode)
+
+        if bad_id not in ['wrap', 'none', 'raise']:
+            raise ValueError('Invalid bad_id action %s' % bad_id)
 
         current = self.__parse__(release)
         if mode == 'minor':
@@ -50,10 +61,27 @@ class Release(object):
             current['major'] -= 1
 
         if current['major'] < 0:
-            current['major'] = 0
-            current['minor'] = 1
+            if bad_id == 'none':
+                return None
+
+            if bad_id == 'wrap':
+                current['major'] = 0
+                current['minor'] = 1
+
+            if bad_id == 'raise':
+                raise ImpossibleRelease(release)
 
         if current['minor'] < 0:
+            if bad_id == 'wrap':
+                current['minor'] = 0
+
+            if bad_id == 'none':
+                return None
+
+            if bad_id == 'raise':
+                raise ImpossibleRelease(release)
+
+        if current['major'] == 0 and current['minor'] == 0:
             current['minor'] = 1
 
         return self.__format__(current)

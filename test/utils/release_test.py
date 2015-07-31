@@ -4,7 +4,7 @@ from pymotifs.utils.releases import Release
 from pymotifs.utils.releases import UnknownReleaseType
 from pymotifs.utils.releases import UnknownReleaseMode
 from pymotifs.utils.releases import BadlyFormattedRelease
-
+from pymotifs.utils.releases import ImpossibleRelease
 
 class GettingReleaseIdTest(StageTest):
     loader_class = Release
@@ -82,4 +82,20 @@ class GettingPreviousReleaseId(StageTest):
         self.assertEquals('0.1', self.loader.previous('0.54', mode='major'))
 
     def test_does_not_wrap_minor_below_zero(self):
-        self.assertEquals('0.1', self.loader.previous('0.0', mode='minor'))
+        self.assertEquals('1.0', self.loader.previous('1.0', mode='minor'))
+
+    def test_will_give_none_if_requested_for_minor(self):
+        self.assertEquals(None, self.loader.previous('1.0', mode='minor',
+                                                     bad_id='none'))
+
+    def test_will_give_none_if_requested_for_major(self):
+        self.assertEquals(None, self.loader.previous('0.0', mode='major',
+                                                     bad_id='none'))
+
+    def test_will_raise_if_requested_for_bad_minor(self):
+        self.assertRaises(ImpossibleRelease, self.loader.previous,
+                          '1.0', mode='minor', bad_id='raise')
+
+    def test_will_raise_if_requested_for_bad_major(self):
+        self.assertRaises(ImpossibleRelease, self.loader.previous,
+                          '0.0', mode='major', bad_id='raise')
