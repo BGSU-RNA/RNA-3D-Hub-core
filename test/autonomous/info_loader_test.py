@@ -49,7 +49,7 @@ class InfoLoadingTest(StageTest):
 
     def test_can_load_source_when_there_are_several(self):
         info = self.loader.load('3T4B', 'A')
-        self.assertEquals(32630, info['source'])
+        self.assertEquals(None, info['source'])
 
     def test_can_load_source_when_source_is_none(self):
         self.assertEquals(None, self.loader.load('1ET4', 'A')['source'])
