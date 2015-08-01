@@ -11,8 +11,8 @@ class CifFileFinderTest(unittest.TestCase):
         self.cif = CifFileFinder({'locations': {'fr3d_root': path}})
 
     def test_can_find_a_cif_file(self):
-        val = self.cif("2AW7")
-        ans = os.path.abspath("./FR3D/PDBFiles/2AW7.cif")
+        val = self.cif("1GID")
+        ans = os.path.abspath("./FR3D/PDBFiles/1GID.cif")
         self.assertEqual(ans, val)
 
     def test_fails_for_missing_file(self):

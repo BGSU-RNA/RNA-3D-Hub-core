@@ -162,14 +162,15 @@ class StructureFileFinder(object):
             raise ValueError("Must define an extension")
 
     def __call__(self, pdb):
-        filename = os.path.abspath(os.path.join(self.location,
-                                                pdb + '.' + self.extension))
+        filename = os.path.join(self.location, pdb + '.' + self.extension)
+        filename = os.path.abspath(filename)
 
         if not os.path.exists(filename):
+            if not self.strict:
+                return None
+
             msg = "Could not find CIF file for %s.  Expected at: %s"
             raise MissingFileException(msg % (pdb, filename))
-        if not self.strict:
-            filename = None
 
         return filename
 
