@@ -1,5 +1,4 @@
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.nr.groups.naming import Namer
 from pymotifs.nr.classes import Loader as ClassLoader
@@ -325,7 +324,8 @@ class RealisticTest(StageTest):
         # http://rna.bgsu.edu/rna3dhub/nrlist/release/0.16/4.0A
         self.target = self.load_groups('0.16', include_names=False)
         self.parent = self.load_groups('0.15')
-        self.named = self.loader(self.target, self.parent, set([]))
+        self.handles = set([])
+        self.named = self.loader(self.target, self.parent, self.handles)
 
     def test_loaded_correct_number_of_groups(self):
         self.assertEquals(334, len(self.named))
@@ -394,3 +394,8 @@ class RealisticTest(StageTest):
                '95970', '96517', '96825', '96866', '96943', '97609', '97850',
                '98507', '98558', '98654', '99867']
         self.assertEquals(ans, val)
+
+    def test_updates_handles(self):
+        # The handles should be modified to contain entries for each named
+        # group.  It starts empty and then has 334 things added.
+        self.assertEqual(334, len(self.handles))

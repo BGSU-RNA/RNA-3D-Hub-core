@@ -124,5 +124,6 @@ class Namer(core.Base):
             named_group['parents'] = parents
             named_group.update(name)
             named.append(named_group)
+            handles.add(named_group['handle'])
 
         return named
