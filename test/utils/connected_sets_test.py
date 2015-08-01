@@ -1,6 +1,6 @@
 import unittest as ut
 
-from pymotifs.nr.connectedsets import find_connected as conn
+from pymotifs.utils.connectedsets import find_connected as conn
 
 
 class ConnectionTest(ut.TestCase):
