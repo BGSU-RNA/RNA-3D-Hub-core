@@ -7,56 +7,45 @@ from test import config
 
 
 class SomeStage(Stage):
-    name = 'bob'
-
     def is_missing(self, data, **kwargs):
         return data
 
 
-class NamelessStage(Stage):
-    pass
-
-
 class StageNameTest(Base):
-    def test_it_uses_the_given_name(self):
-        val = SomeStage(config, None).name
-        ans = 'bob'
-        self.assertEqual(ans, val)
-
     def test_it_can_generate_a_name(self):
-        val = NamelessStage(config, None).name
+        val = SomeStage(config, None).name
         ans = 'test.core.stage_test'
         self.assertEqual(ans, val)
 
 
-def LoggerTest(Base):
+class LoggerTest(Base):
     def test_it_creates_a_logger(self):
         val = SomeStage(config, None)
         self.assertTrue(val.logger)
 
     def test_it_assigns_the_loggers_name(self):
         val = SomeStage(config, None)
-        self.assertTrue('bob', val.logger.name)
+        self.assertEqual('test.core.stage_test', val.logger.name)
 
 
 class MustRecomputeTest(Base):
     def test_must_recompute_detects_if_given_recompute(self):
         conf = dict(config)
-        conf.update({'bob': {'recompute': False}})
+        conf.update({'test.core.stage_test': {'recompute': False}})
         stage = SomeStage(conf, None)
         val = stage.must_recompute(None, recalculate=True)
         self.assertTrue(val)
 
     def test_must_recompute_detects_config_has_recompute(self):
         conf = dict(config)
-        conf.update({'bob': {'recompute': True}})
+        conf.update({'test.core.stage_test': {'recompute': True}})
         stage = SomeStage(conf, None)
         val = stage.must_recompute(None, recalculate=False)
         self.assertTrue(val)
 
     def test_will_not_recompute_otherwise(self):
         conf = dict(config)
-        conf.update({'bob': {'recompute': False}})
+        conf.update({'test.core.stage_test': {'recompute': False}})
         stage = SomeStage(conf, None)
         val = stage.must_recompute(None, recalculate=False)
         self.assertFalse(val)
@@ -86,7 +75,7 @@ class ShouldProcessTest(Base):
 
     def test_will_reprocess_if_config_has_recompute(self):
         conf = dict(config)
-        conf.update({'bob': {'recompute': True}})
+        conf.update({'test.core.stage_test': {'recompute': True}})
         stage = SomeStage(conf, None)
         val = stage.should_process(None)
         self.assertTrue(val)
