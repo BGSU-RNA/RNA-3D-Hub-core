@@ -17,7 +17,8 @@ from fr3d.data import Structure
 from pymotifs import models as mod
 from pymotifs import utils as ut
 
-# This is a very large virus file that should be skipped. Add other files as necessary
+# This is a very large virus file that should be skipped. Add other files as
+# necessary
 SKIP = set(['4V3P'])
 
 
@@ -585,6 +586,13 @@ class MultiStageLoader(Stage):
 
     """The list of stages that are children of this loader"""
     stages = []
+
+    @ut.classproperty
+    def dependencies(cls):
+        deps = set()
+        for stage in cls.stages:
+            deps.update(stage.dependencies)
+        return deps
 
     def is_missing(self, *args, **kwargs):
         """We always rerun the given input.
