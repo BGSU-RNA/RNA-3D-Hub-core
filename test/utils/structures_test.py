@@ -21,16 +21,15 @@ class SourceTest(QueryUtilTest):
     def test_fails_if_it_cannot_find_all_taxon_ids(self):
         raise SkipTest()
 
-    def test_can_simplify_to_just_syntheic(self):
-        self.assertEquals(32630, self.db_obj.source('3T4B', 'A',
-                                                    simplify=True))
+    def test_can_simplify_none_to_none(self):
+        self.assertEquals(None, self.db_obj.source('3T4B', 'A', simplify=True))
 
     def test_simplifies_to_just_first_id(self):
         self.assertEquals(562, self.db_obj.source('2AW7', 'A', simplify=True))
 
     def test_can_handle_annotations_that_disagree(self):
         # TODO: Test 4L6M|*|V,4L6M|*|W
-        self.assertEquals(562, self.db_obj.source('4L6M', '6', simplify=True))
+        self.assertEquals(562, self.db_obj.source('4L6M', 'V', simplify=True))
 
 
 class RnaChainsTest(QueryUtilTest):
