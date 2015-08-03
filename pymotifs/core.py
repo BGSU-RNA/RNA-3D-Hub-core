@@ -65,6 +65,8 @@ class Matlab(object):
 
     def __startup__(self):
         self.logger.debug('Starting up matlab')
+        if 'mlab' not in globals():
+            raise Skip("No matlab around, skipping")
         self.mlab = mlab
         # self.mlab._autosync_dirs = False
         self.mlab.setup()
