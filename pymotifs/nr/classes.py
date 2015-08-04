@@ -85,6 +85,18 @@ class Loader(core.MassLoader):
         handles = self.known_handles()
         return namer(groups, previous, handles)
 
+    def within_cutoff(self, chains, cutoff):
+        if cutoff == 'all':
+            return sorted((dict(c) for c in chains), key=lambda d: d['rank'])
+
+        resolution = float(cutoff)
+        found = [dict(c) for c in chains if c['resolution'] <= resolution]
+        found.sort(key=lambda f: f['rank'])
+
+        for index, entry in enumerate(found):
+            entry['rank'] = index
+        return found
+
     def data(self, pdbs, **kwargs):
         helper = Release(self.config, self.session.maker)
         release_id = helper.current('nr')
@@ -99,7 +111,10 @@ class Loader(core.MassLoader):
             for resolution in self.resolution_groups:
                 parts = (resolution, entry['handle'], entry['version'])
                 name = 'NR_%s_%s.%i' % parts
-                mapping[(name, release_id)] = entry
+
+                filtered = self.within_cutoff(entry, resolution)
+                mapping[(name, release_id)] = filtered
+
                 data.append(NrClasses(name=name,
                                       nr_release_id=release_id,
                                       resolution=resolution,
