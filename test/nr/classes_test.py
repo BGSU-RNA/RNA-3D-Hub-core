@@ -16,9 +16,12 @@ class LoadReleaseTest(StageTest):
     def test_loads_correct_data(self):
         group = filter(lambda g: g['name']['handle'] == '00396', self.data)
         self.assertEqual(1, len(group))
-        name = {'handle': '00396', 'version': 1}
-        self.assertEqual(name, group[0]['name'])
-        self.assertEqual(5, len(group[0]['members']))
+        group = group[0]
+        name = {'handle': '00396', 'version': 1, 'full_name': 'NR_4.0_00396.1'}
+        self.assertTrue('class_id' in group['name'])
+        group['name'].pop('class_id')
+        self.assertEqual(name, group['name'])
+        self.assertEqual(5, len(group['members']))
 
     def test_loads_correct_members(self):
         group = filter(lambda g: g['name']['handle'] == '00396', self.data)

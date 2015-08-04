@@ -11,6 +11,7 @@ from pymotifs.nr.release import Loader as ReleaseLoader
 from pymotifs.nr.groups.simplified import Grouper
 from pymotifs.nr.groups.naming import Namer
 from pymotifs.utils.releases import Release
+from pymotifs.utils import tmp
 
 from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.interactions import Loader as InteractionLoader
@@ -32,18 +33,12 @@ class Loader(core.MassLoader):
 
             return bool(query.count())
 
-    def filter_by_resolution(self, groups, cutoff):
-        if cutoff == 'all':
-            return groups
-
-        cutoff = float(cutoff)
-        return groups
-
-    def load_release(self, release_id, cutoff='4.0'):
-
+    def load_release(self, release_id, cutoff='all'):
         with self.session() as session:
             query = session.query(NrClasses.handle.label('handle'),
                                   NrClasses.version.label('version'),
+                                  NrClasses.id.label('class_id'),
+                                  NrClasses.name.label('full_name'),
                                   AutonomousInfo.id.label('id'),
                                   ).\
                 join(NrChains,
@@ -61,9 +56,14 @@ class Loader(core.MassLoader):
 
             results = []
             for (handle, version), members in grouped:
+                members = list(members)
+                class_id = members[0].class_id
+                full_name = members[0].full_name
                 results.append({
                     'members': [{'id': member.id} for member in members],
                     'name': {
+                        'class_id': class_id,
+                        'full_name': full_name,
                         'handle': handle,
                         'version': int(version)
                     }
@@ -71,31 +71,41 @@ class Loader(core.MassLoader):
 
         return results
 
-    def data(self, pdbs, **kwargs):
-        grouper = Grouper(self.config, self.session.maker)
-        groups = grouper(pdbs, **kwargs)
-        namer = Namer(self.config, self.session.maker)
+    def known_handles(self):
+        with self.session() as session:
+            query = session.query(NrClasses.handle).distinct()
+            return set(result.handle for result in query)
 
+    def group(self, pdbs, **kwargs):
+        grouper = Grouper(self.config, self.session.maker)
+        return grouper(pdbs, **kwargs)
+
+    def name(self, groups, previous):
+        namer = Namer(self.config, self.session.maker)
+        handles = self.known_handles()
+        return namer(groups, previous, handles)
+
+    def data(self, pdbs, **kwargs):
         helper = Release(self.config, self.session.maker)
         release_id = helper.current('nr')
+        previous_id = helper.previous(release_id)
+        previous = self.load_release(previous_id)
+        groups = self.group(pdbs, **kwargs)
+        named = self.name(groups, previous)
 
         data = []
-        for named in namer(groups):
+        mapping = {}
+        for entry in named:
             for resolution in self.resolution_groups:
-                groups = self.filter_by_resolution(named, resolution)
-                naming = (resolution, named['handle'], named['version'])
-                data.append(NrClasses(name='NR_%s_%s.%i' % naming,
+                parts = (resolution, entry['handle'], entry['version'])
+                name = 'NR_%s_%s.%i' % parts
+                mapping[(name, release_id)] = entry
+                data.append(NrClasses(name=name,
                                       nr_release_id=release_id,
                                       resolution=resolution,
-                                      handle=named['handle'],
-                                      version=named['version'],
-                                      comment=named['comment']))
-        return data
+                                      handle=entry['handle'],
+                                      version=entry['version'],
+                                      comment=entry['comment']))
 
-        # Determine names for each group
-        #   If unchanged reuse an old name
-        #   New means a new handle
-        #   Modified
-        #       Only a little => bump version
-        #       Largely => new handle
-        #   If several parents then new name
+        tmp.store('nr', mapping)
+        return data
