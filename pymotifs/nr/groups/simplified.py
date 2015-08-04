@@ -6,6 +6,7 @@ import networkx as nx
 from pymotifs import core
 from pymotifs.utils import result2dict
 
+from pymotifs.models import PdbInfo
 from pymotifs.models import ChainInfo
 from pymotifs.models import ChainSpecies
 from pymotifs.models import AutonomousInfo
@@ -51,15 +52,22 @@ class Grouper(core.Base):
                                   ChainInfo.pdb_id.label('pdb'),
                                   ChainInfo.chain_length.label('exp_length'),
                                   ChainInfo.sequence,
+                                  ChainInfo.chain_name.label('name'),
+                                  PdbInfo.resolution,
                                   ChainSpecies.species_id.label('source')).\
                 join(AutonomousInfo,
                      AutonomousInfo.id == AutonomousChains.autonomous_id).\
                 join(ChainInfo,
                      ChainInfo.id == AutonomousChains.chain_id).\
+                join(PdbInfo,
+                     PdbInfo.id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.id).\
                 filter(AutonomousInfo.pdb_id == pdb).\
                 order_by(AutonomousChains.autonomous_id)
+
+            if query.count() == 0:
+                raise core.InvalidState("No chains found for %s" % pdb)
 
             grouped = it.groupby(it.imap(result2dict, query),
                                  lambda g: g['id'])
@@ -219,10 +227,7 @@ class Grouper(core.Base):
                     self.logger.debug("Non-equivalent: %s %s",
                                       chain1['id'], chain2['id'])
 
-        # shortest = nx.all_shortest_paths(G, source='2QNH|2', target='2B64|V')
-        # print([p for p in shortest])
         connected = cs.find_connected(graph).values()
-        # conneced = nx.algorithms.clique.find_cliques(G)
 
         groups = []
         for ids in connected:
@@ -231,23 +236,32 @@ class Grouper(core.Base):
 
         return groups
 
-    def representative(self, chains):
-        """Compute the representative for a group of chains.
+    def ranking_key(self, chain):
+        """Compute a key to order members of each group. The ordering produced
+        should place the representative structure as the first one in the
+        ordering.
 
-        :group: A list of chains.
-        :returns: The representative entry from the list.
+        :chain: The chain to produce a key for.
+        :returns: A value that can be used to sort the chains in descending
+        order of quality.
         """
 
-        return chains[0]
+        bp_nt = 0.0
+        if chain['bp']:
+            bp_nt = float(chain['bp']) / float(chain['length'])
+
+        name = sum(ord(c) for c in chain['name'])
+        return (-1 * bp_nt, -1 * chain['length'], name)
 
     def __call__(self, pdbs, **kwargs):
         """Group all chains in the given list of pdbs.
 
         :pdbs: A list of pdb ids to group the chains in.
-        :returns: A list of groups dictonaries. These will contain two entries,
-        'representative' the representative chain of that group and 'members' a
-        list of chains in this group. The chain data structure will be a
-        dictonary as returned by merged_chains.
+        :returns: A list of groups dictionaries. These will contain one entry,
+        'members' a list of chains in this group. These chains will be sorted
+        by quality as defined by ranking_key. The chain data structure will
+        be a dictionary as returned by merged_chains, but with an extra key
+        'rank' which indicates the rank of the chain.
         """
 
         chains = it.imap(self.chains, pdbs)
@@ -258,7 +272,12 @@ class Grouper(core.Base):
         discrepancy = self.discrepancy(chains)
 
         for group in self.group(chains, alignments, discrepancy):
-            members = list(group)
+            members = []
+            sorted_group = sorted(group, key=self.ranking_key)
+            for index, member in enumerate(sorted_group):
+                member['rank'] = index
+                members.append(member)
+
             groups.append({'members': members})
 
         return sorted(groups, key=ordering)
