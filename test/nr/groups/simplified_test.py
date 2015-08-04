@@ -4,48 +4,63 @@ from nose import SkipTest
 from pymotifs.nr.groups.simplified import Grouper
 
 
-# class BestChainsTest(StageTest):
-#     loader_class = Grouper
+class RankingChainsTest(StageTest):
+    loader_class = Grouper
 
-#     def test_selects_based_upon_bp_per_nt_first(self):
-#         chains = [
-#             {'bp': 12, 'length': 4, 'name': 'C'},
-#             {'bp': 13, 'length': 4, 'name': 'A'},
-#         ]
-#         val = self.loader.best(chains)['name']
-#         self.assertEquals('A', val)
+    def sort(self, chains):
+        ordered = sorted(chains, key=self.loader.ranking_key)
+        return [c['name'] for c in ordered]
 
-#     def test_selects_based_upon_length_second(self):
-#         chains = [
-#             {'bp': 0, 'length': 10, 'name': 'C'},
-#             {'bp': 0, 'length': 8, 'name': 'A'},
-#         ]
-#         val = self.loader.best(chains)['name']
-#         self.assertEquals('C', val)
+    def best(self, chains):
+        return self.sort(chains)[0]
 
-#     def test_selects_based_upon_name_last(self):
-#         chains = [
-#             {'bp': 10, 'length': 4, 'name': 'C'},
-#             {'bp': 10, 'length': 4, 'name': 'A'},
-#         ]
-#         val = self.loader.best(chains)['name']
-#         self.assertEquals('A', val)
+    def test_selects_based_upon_bp_per_nt_first(self):
+        chains = [
+            {'bp': 12, 'length': 4, 'name': 'C'},
+            {'bp': 13, 'length': 4, 'name': 'A'},
+        ]
+        val = self.best(chains)
+        self.assertEquals('A', val)
 
-#     def test_works_even_if_there_are_no_bps(self):
-#         chains = [
-#             {'bp': 0, 'length': 4, 'name': 'C'},
-#             {'bp': 0, 'length': 4, 'name': 'A'},
-#         ]
-#         val = self.loader.best(chains)['name']
-#         self.assertEquals('A', val)
+    def test_selects_based_upon_length_second(self):
+        chains = [
+            {'bp': 0, 'length': 10, 'name': 'C'},
+            {'bp': 0, 'length': 8, 'name': 'A'},
+        ]
+        val = self.best(chains)
+        self.assertEquals('C', val)
 
-#     def test_works_with_lists_of_names(self):
-#         chains = [
-#             {'bp': 10, 'length': 4, 'name': ['C', 'D']},
-#             {'bp': 10, 'length': 4, 'name': ['A', 'D']},
-#         ]
-#         val = self.loader.best(chains)['name']
-#         self.assertEquals(['A', 'D'], val)
+    def test_perfers_some_with_bps_over_missing(self):
+        chains = [
+            {'bp': 0, 'length': 10, 'name': 'C'},
+            {'bp': 1, 'length': 8, 'name': 'A'},
+        ]
+        val = self.best(chains)
+        self.assertEquals('A', val)
+
+    def test_selects_based_upon_name_last(self):
+        chains = [
+            {'bp': 10, 'length': 4, 'name': 'C'},
+            {'bp': 10, 'length': 4, 'name': 'A'},
+        ]
+        val = self.best(chains)
+        self.assertEquals('A', val)
+
+    def test_works_even_if_there_are_no_bps(self):
+        chains = [
+            {'bp': 0, 'length': 4, 'name': 'C'},
+            {'bp': 0, 'length': 4, 'name': 'A'},
+        ]
+        val = self.best(chains)
+        self.assertEquals('A', val)
+
+    def test_works_with_lists_of_names(self):
+        chains = [
+            {'bp': 10, 'length': 4, 'name': ['C', 'D']},
+            {'bp': 10, 'length': 4, 'name': ['A', 'D']},
+        ]
+        val = self.best(chains)
+        self.assertEquals(['A', 'D'], val)
 
 
 class AutonomousChainsTest(StageTest):
