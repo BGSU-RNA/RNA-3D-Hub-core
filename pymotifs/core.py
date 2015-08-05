@@ -594,7 +594,7 @@ class MultiStageLoader(Stage):
         deps = set()
         for stage in cls.stages:
             deps.update(stage.dependencies)
-        return deps
+        return deps - set(cls.stages)
 
     def is_missing(self, *args, **kwargs):
         """We always rerun the given input.
@@ -604,7 +604,8 @@ class MultiStageLoader(Stage):
     def process(self, *args, **kwargs):
         """Run each stage with the given input.
         """
-        for stage in self.stages:
+        for klass in self.stages:
+            stage = klass(self.config, self.session.maker)
             stage(*args, **kwargs)
 
 
