@@ -121,9 +121,10 @@ class Namer(core.Base):
                 name = self.many_parents(group, parents, handles)
 
             named_group = dict(group)
-            named_group['parents'] = parents
-            named_group.update(name)
+            named_group['parents'] = [p['group'] for p in parents]
+            named_group['comment'] = name.pop('comment')
+            named_group['name'] = dict(name)
             named.append(named_group)
-            handles.add(named_group['handle'])
+            handles.add(named_group['name']['handle'])
 
         return named

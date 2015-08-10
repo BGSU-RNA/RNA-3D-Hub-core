@@ -101,6 +101,8 @@ class Session(object):
     def __init__(self, session_maker):
         self.logger = logging.getLogger('core.Session')
         self.maker = session_maker
+        if isinstance(session_maker, Session):
+            self.maker = session_maker.maker
 
     @contextmanager
     def __call__(self):
@@ -325,7 +327,7 @@ class Stage(Base):
                              len(entries))
 
             if entry in SKIP:
-                self.logger.warning("Hardcoded skipping of %s" % entry)
+                self.logger.warning("Hardcoded skipping of %s", entry)
                 continue
 
             try:
@@ -336,7 +338,7 @@ class Stage(Base):
 
             except Skip as err:
                 self.logger.warn("Skipping entry %s. Reason %s",
-                                 entry, str(err))
+                                 str(entry), str(err))
                 continue
 
             except Exception as err:
@@ -469,8 +471,8 @@ class Loader(Stage):
 
         if not self.allow_no_data and not data:
             self.logger.error("No data produced")
-            raise InvalidState("Stage %s produced no data processing %s" %
-                               (self.name, entry))
+            raise InvalidState("Stage %s produced no data processing %s",
+                               self.name, entry)
         elif not data:
             if data is not None:
                 self.logger.warning("No data produced")
@@ -518,6 +520,29 @@ class MassLoader(Loader):
 
     __metaclass__ = abc.ABCMeta
 
+    def been_long_enough(self, pdbs, **kwargs):
+        """Determine if it has been long enough to recompute the data for the
+        given pdb. This uses the udpate_gap property which tells how long to
+        wait between updates. If that is False then we never update based upon
+        time.
+        """
+
+        if not self.update_gap:
+            return False
+
+        with self.session() as session:
+            current = session.query(mod.PdbAnalysisStatus).\
+                filter_by(stage=self.name).\
+                first()
+
+            if not current:
+                return True
+            current = current.time
+        # If this has been marked as done in the far future do it anyway. That
+        # is a silly thing to do
+        diff = abs(datetime.datetime.now() - current)
+        return diff > self.update_gap
+
     def to_process(self, pdbs, **kwargs):
         return tuple(super(MassLoader, self).to_process(pdbs))
 
@@ -536,14 +561,15 @@ class MassLoader(Loader):
         return False
 
     def process(self, pdbs, **kwargs):
-        data = self.data(pdbs)
+        data = self.data(pdbs, **kwargs)
 
-        if not self.allow_no_data and not data:
-            self.logger.error("No data produced")
-            raise InvalidState("Missing data")
-        elif not data:
-            self.logger.warning("No data produced")
-            return
+        if not data:
+            if not self.allow_no_data:
+                self.logger.error("No data produced")
+                raise InvalidState("Missing data")
+            else:
+                self.logger.warning("No data produced")
+                return
 
         self.store(data, **kwargs)
 
@@ -565,11 +591,11 @@ class MassLoader(Loader):
                 return
             self.process(entries, **kwargs)
         except Skip as err:
-            self.logger.warn("Skipping processing all entries. %s Reason %s",
+            self.logger.warn("Skipping processing all entries. Reason %s",
                              str(err))
             return
         except Exception as err:
-            self.logger.error("Error raised in process all entries")
+            self.logger.error("Error raised processing all entries")
             self.logger.exception(err)
             if self.stop_on_failure:
                 raise StageFailed(self.name)
@@ -596,12 +622,7 @@ class MultiStageLoader(Stage):
             deps.update(stage.dependencies)
         return deps - set(cls.stages)
 
-    def is_missing(self, *args, **kwargs):
-        """We always rerun the given input.
-        """
-        return True
-
-    def process(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         """Run each stage with the given input.
         """
         for klass in self.stages:

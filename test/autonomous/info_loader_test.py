@@ -115,3 +115,11 @@ class CrossChainInteractionsTest(StageTest):
 
     def test_gets_cross_chain_between_all_chains(self):
         raise SkipTest()
+
+
+class LoadingIssuesTest(StageTest):
+    loader_class = Info
+
+    def test_loads_correct_chains_for_1G59(self):
+        val = self.loader.rna_chains('1G59')
+        self.assertEquals(['B', 'D'], val)

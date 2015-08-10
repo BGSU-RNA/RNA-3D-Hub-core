@@ -37,8 +37,11 @@ WHERE
 class Loader(core.SimpleLoader):
     dependencies = set([InterLoader])
 
+    def has_data(self, pdb, **kwargs):
+        return True
+
     def query(self, session, pdb):
-            return session.query(Summary).filter_by(pdb=pdb)
+        return session.query(Summary).filter_by(pdb=pdb)
 
     def table(self, element):
         if element == 'helix':

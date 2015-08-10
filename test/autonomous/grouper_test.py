@@ -144,3 +144,13 @@ class SplittingGroupsByAutonomous(StageTest):
                         'C': {'A': 10, 'B': 10}}
         val = self.loader.group(chains, interactions)
         self.assertEquals(ans, val)
+
+
+class UsingCorrectChainsTest(StageTest):
+    loader_class = AutonomousGrouper
+
+    def test_uses_correct_chains(self):
+        chains = self.loader('1FEU')
+        val = [c['id'] for c in chains]
+        ans = ['A']
+        self.assertEquals(ans, val)

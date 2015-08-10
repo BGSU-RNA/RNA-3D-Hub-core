@@ -11,7 +11,7 @@ def filename(group):
     :returns: The temporary filename
     """
 
-    return os.path.join(tempfile.gettempdir(), group + '.temp')
+    return os.path.join(tempfile.gettempdir() + '.temp')
 
 
 def cleanup(group):

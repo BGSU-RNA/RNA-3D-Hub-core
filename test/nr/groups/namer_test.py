@@ -304,12 +304,46 @@ class ManyParentTest(StageTest):
         self.assertEquals('New id, > 2 parents', name['comment'])
 
 
+class DataStructureTest(StageTest):
+    loader_class = Namer
+
+    def test_it_produces_the_correct_datastructure(self):
+        groups = [{'members': [{'id': 'A'}, {'id': 'B'}, {'id': 'C'}]}]
+        parents = [
+            {
+                'members': [{'id': 'A'}, {'id': 'C'}],
+                'name': {'handle': '00001', 'version': 1}
+            },
+            {
+                'members': [{'id': 'B'}, {'id': 'D'}, {'id': 'E'}],
+                'name': {'handle': '20000', 'version': 3}
+            }
+        ]
+        handles = set()
+        val = self.loader(groups, parents, handles)
+        ans = [{
+            'comment': 'Updated, 2 parents',
+            'parents': [
+                {'name': {'version': 1, 'handle': '00001'},
+                 'members': [{'id': 'A'}, {'id': 'C'}]},
+                {'name': {'version': 3, 'handle': '20000'},
+                 'members': [{'id': 'B'}, {'id': 'D'}, {'id': 'E'}]}],
+            'members': [{'id': 'A'}, {'id': 'B'}, {'id': 'C'}],
+            'name': {
+                'handle': '00001',
+                'version': 2,
+                'type': 'updated',
+            },
+        }]
+        self.assertEquals(ans, val)
+
+
 class RealisticTest(StageTest):
     loader_class = Namer
 
-    def load_groups(self, release_id, cutoff='4.0', include_names=True):
+    def load_groups(self, release_id, include_names=True):
         loader = ClassLoader(self.loader.config, self.loader.session.maker)
-        loaded = loader.load_release(release_id, cutoff)
+        loaded = loader.load_release(release_id)
         if include_names:
             return loaded
 
@@ -397,5 +431,5 @@ class RealisticTest(StageTest):
 
     def test_updates_handles(self):
         # The handles should be modified to contain entries for each named
-        # group.  It starts empty and then has 334 things added.
+        # group. It starts empty and then has 334 things added.
         self.assertEqual(334, len(self.handles))

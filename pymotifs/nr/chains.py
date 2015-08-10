@@ -1,4 +1,5 @@
 import datetime as dt
+from pprint import pprint
 
 from pymotifs import core
 
@@ -6,6 +7,7 @@ from pymotifs.models import NrChains
 from pymotifs.models import NrClasses
 
 from pymotifs.utils import tmp
+from pymotifs.nr.builder import Builder
 from pymotifs.nr.classes import Loader as ClassLoader
 
 
@@ -13,45 +15,43 @@ class Loader(core.MassLoader):
     dependencies = set([ClassLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
 
-    def ids(self, names, release_id):
+    def has_data(self, *args, **kwargs):
+        grouping = tmp.load('nr')
+        if not grouping:
+            raise core.Skip("No precomputed grouping to store")
+
+        release_id = grouping[0]['release']
         with self.session() as session:
-            query = session.query(NrClasses.id,
-                                  NrClasses.name,
-                                  ).\
-                filter(NrClasses.name.in_(names)).\
+            query = session.query(NrChains).\
+                join(NrClasses, NrClasses.id == NrChains.nr_class_id).\
                 filter(NrClasses.nr_release_id == release_id)
 
-            if query.count() == 0:
-                raise core.InvalidState("Found no clases with given names")
+            return bool(query.count())
 
-            mapping = {}
-            for result in query:
-                mapping[result.name] = result.id
+    def remove(self, *args, **kwargs):
+        tmp.cleanup('nr')
 
-        if len(mapping) != len(names):
-            raise core.InvalidState("Could not find all names")
+    def mapping(self, grouping):
+        helper = Builder(self.config, self.session)
+        release_id = grouping[0]['release']
+        classes = [g['name']['full'] for g in grouping]
+        return helper.class_id_mapping(classes, release_id)
 
-        return mapping
-
-    def chains(self, grouping, mapping):
+    def chains(self, grouping):
         if not grouping:
             raise core.InvalidState("Cannot load chains without classes")
 
-        if not mapping:
-            raise core.InvalidState("Cannot load chains without mapping")
+        mapping = self.mapping(grouping)
+        if not grouping:
+            raise core.InvalidState("Cannot load chains without name mapping")
 
         data = []
-        for (name, release_id), chains in grouping.items():
-
-            if name not in mapping:
-                raise core.InvalidState("Could not map name %s" % name)
-
-            class_id = mapping[name]
-            for chain in chains:
+        for group in grouping:
+            for chain in group['members']:
                 data.append({
                     'autonomous_group_id': chain['id'],
-                    'nr_class_id': class_id,
-                    'nr_release_id': release_id,
+                    'nr_class_id': mapping[group['name']['full']],
+                    'nr_release_id': group['release'],
                     'rank': chain['rank'],
                     'rep': chain['rank'] == 0
                 })
@@ -60,8 +60,4 @@ class Loader(core.MassLoader):
 
     def data(self, *args, **kwargs):
         grouping = tmp.load('nr')
-        names = [key[0] for key in grouping.keys()]
-        release_id = grouping.keys()[0][1]
-        mapping = self.ids(names, release_id)
-
-        return [NrChains(**chain) for chain in self.chains(grouping, mapping)]
+        return [NrChains(**chain) for chain in self.chains(grouping)]

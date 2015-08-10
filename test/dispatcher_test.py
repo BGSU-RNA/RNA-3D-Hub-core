@@ -60,3 +60,20 @@ class LoadingStagesTest(ut.TestCase):
     def test_can_get_with_all_dependecies(self):
         val = sorted(self.dispatcher.stages('units.info'))
         self.assertEquals(sorted([Downloader, PdbLoader, Loader]), val)
+
+
+class RunningMultiStageLoaders(ut.TestCase):
+    def test_it_does_not_run_stages_before_needed(self):
+        """The idea is that in multiloaders (M) like
+
+        M -> (A, B, C, J, K)
+
+        B -> (A)
+
+        C -> (A, B)
+
+        Running the dependencies for M will not run A, B, C beforing trying to
+        run M. It will run J, K (in any order) then run A, B, C as implied by
+        the dependecies (or ordering).
+        """
+        self.fail()

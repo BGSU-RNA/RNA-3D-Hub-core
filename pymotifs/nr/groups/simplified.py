@@ -18,9 +18,27 @@ from pymotifs.utils import correspondence as cr
 from pymotifs.utils.structures import SYNTHEIC
 
 
-def ordering(group):
-    rep = group['representative']['chains'][0]
-    return (rep['exp_length'], rep['sequence'])
+def class_ordering(group):
+    rep = group['members'][0]['chains'][0]
+    return (rep['length'], rep['sequence'])
+
+
+def ranking_key(chain):
+    """Compute a key to order members of each group. The ordering produced
+    should place the representative structure as the first one in the
+    ordering.
+
+    :chain: The chain to produce a key for.
+    :returns: A value that can be used to sort the chains in descending
+    order of quality.
+    """
+
+    bp_nt = 0.0
+    if chain['bp']:
+        bp_nt = float(chain['bp']) / float(chain['length'])
+
+    name = list(ord(c) for c in chain['name'])
+    return (-1 * bp_nt, -1 * chain['length'], name)
 
 
 class Grouper(core.Base):
@@ -45,25 +63,26 @@ class Grouper(core.Base):
         """
 
         with self.session() as session:
-            query = session.query(AutonomousChains.chain_id.label('db_id'),
+            query = session.query(ChainInfo.pdb_id.label('pdb'),
+                                  ChainInfo.chain_length.label('length'),
+                                  ChainInfo.sequence,
+                                  ChainInfo.chain_name.label('name'),
+                                  AutonomousChains.chain_id.label('db_id'),
                                   AutonomousChains.is_reference,
                                   AutonomousChains.is_autonomous,
                                   AutonomousChains.autonomous_id.label('id'),
-                                  ChainInfo.pdb_id.label('pdb'),
-                                  ChainInfo.chain_length.label('exp_length'),
-                                  ChainInfo.sequence,
-                                  ChainInfo.chain_name.label('name'),
+                                  AutonomousInfo.bps.label('bp'),
                                   PdbInfo.resolution,
                                   ChainSpecies.species_id.label('source')).\
                 join(AutonomousInfo,
-                     AutonomousInfo.id == AutonomousChains.autonomous_id).\
-                join(ChainInfo,
-                     ChainInfo.id == AutonomousChains.chain_id).\
+                     AutonomousInfo.pdb_id == ChainInfo.pdb_id).\
+                join(AutonomousChains,
+                     AutonomousChains.autonomous_id == AutonomousInfo.id).\
                 join(PdbInfo,
                      PdbInfo.id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.id).\
-                filter(AutonomousInfo.pdb_id == pdb).\
+                filter(ChainInfo.pdb_id == pdb).\
                 order_by(AutonomousChains.autonomous_id)
 
             if query.count() == 0:
@@ -77,7 +96,11 @@ class Grouper(core.Base):
                 groups.append({
                     'id':  group_id,
                     'pdb': chains[0]['pdb'],
-                    'chains': chains
+                    'bp': chains[0]['bp'],
+                    'name': chains[0]['name'],
+                    'length': chains[0]['length'],
+                    'chains': chains,
+                    'resolution': chains[0]['resolution'],
                 })
 
         return groups
@@ -236,23 +259,6 @@ class Grouper(core.Base):
 
         return groups
 
-    def ranking_key(self, chain):
-        """Compute a key to order members of each group. The ordering produced
-        should place the representative structure as the first one in the
-        ordering.
-
-        :chain: The chain to produce a key for.
-        :returns: A value that can be used to sort the chains in descending
-        order of quality.
-        """
-
-        bp_nt = 0.0
-        if chain['bp']:
-            bp_nt = float(chain['bp']) / float(chain['length'])
-
-        name = sum(ord(c) for c in chain['name'])
-        return (-1 * bp_nt, -1 * chain['length'], name)
-
     def __call__(self, pdbs, **kwargs):
         """Group all chains in the given list of pdbs.
 
@@ -273,11 +279,11 @@ class Grouper(core.Base):
 
         for group in self.group(chains, alignments, discrepancy):
             members = []
-            sorted_group = sorted(group, key=self.ranking_key)
+            sorted_group = sorted(group, key=ranking_key)
             for index, member in enumerate(sorted_group):
                 member['rank'] = index
                 members.append(member)
 
             groups.append({'members': members})
 
-        return sorted(groups, key=ordering)
+        return groups

@@ -1,5 +1,7 @@
 from pymotifs import core
 
+from sqlalchemy import desc
+
 
 CURRENT_QUERY = """
 SELECT id
@@ -37,15 +39,11 @@ class ImpossibleRelease(Exception):
     pass
 
 
-class Release(object):
+class Release(core.Base):
 
-    names = ['major', 'minor']
+    names = ['major', 'minor', 'lookup']
 
-    def __init__(self, config, session):
-        self.session = core.Session(session)
-        self.config = config
-
-    def previous(self, release, mode='minor', bad_id='wrap'):
+    def previous(self, release, mode='minor', bad_id='wrap', table=None):
         if mode not in self.names:
             raise UnknownReleaseMode(mode)
 
@@ -57,8 +55,20 @@ class Release(object):
             current['minor'] -= 1
 
         if mode == 'major':
-            current['minor'] = 0
             current['major'] -= 1
+            current['minor'] = 0
+
+        if mode == 'lookup':
+            with self.session() as session:
+                query = session.query(getattr(table, 'id')).\
+                    order_by(desc(getattr(table, 'date')))
+
+                results = [result.id for result in query]
+                try:
+                    index = results.index(release)
+                    return results[index + 1]
+                except:
+                    return None
 
         if current['major'] < 0:
             if bad_id == 'none':

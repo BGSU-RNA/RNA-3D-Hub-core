@@ -9,6 +9,7 @@ from pymotifs.interactions import Loader as InteractionLoader
 
 class Loader(SimpleLoader):
     dependencies = set([ChainLoader, InteractionLoader])
+    merge_data = True
 
     def query(self, session, pdb_id):
         return session.query(AutonomousInfo).filter_by(pdb_id=pdb_id)
@@ -19,7 +20,8 @@ class Loader(SimpleLoader):
             pdb_id=group['pdb'],
             has_autonomous=group['chains'][0]['autonomous'],
             chain_count=len(group['chains']),
-            length=group['summary']['exp_length']
+            length=group['summary']['exp_length'],
+            bps=group['summary']['bp']
         )
 
     def data(self, pdb_id):

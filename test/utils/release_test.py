@@ -1,10 +1,12 @@
 from test import StageTest
 
+from pymotifs.models import NrReleases
 from pymotifs.utils.releases import Release
 from pymotifs.utils.releases import UnknownReleaseType
 from pymotifs.utils.releases import UnknownReleaseMode
 from pymotifs.utils.releases import BadlyFormattedRelease
 from pymotifs.utils.releases import ImpossibleRelease
+
 
 class GettingReleaseIdTest(StageTest):
     loader_class = Release
@@ -99,3 +101,11 @@ class GettingPreviousReleaseId(StageTest):
     def test_will_raise_if_requested_for_bad_major(self):
         self.assertRaises(ImpossibleRelease, self.loader.previous,
                           '0.0', mode='major', bad_id='raise')
+
+    def test_can_get_previous_from_database(self):
+        self.assertEquals('0.110', self.loader.previous('1.0', mode='lookup',
+                                                        table=NrReleases))
+
+    def test_it_gives_none_if_asked_for_previous_of_unknown(self):
+        self.assertEquals(None, self.loader.previous('3.0', mode='lookup',
+                                                     table=NrReleases))
