@@ -96,7 +96,7 @@ class Grouper(core.Base):
         grouped = []
         groups = cs.find_connected(dict(connections))
         for group in groups.values():
-            group_id = ','.join(group)
+            group_id = '+'.join(group)
             self.logger.debug("Generated group %s from interactions",
                               group_id)
             chains = [mapping[name] for name in group]
