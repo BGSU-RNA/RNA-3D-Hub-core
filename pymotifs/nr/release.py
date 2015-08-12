@@ -19,7 +19,7 @@ class Loader(core.MassLoader):
         """This will always return True because we only want to update if the time
         difference has been large enough.
         """
-        return False
+        return True
 
     def remove(self, *args, **kwargs):
         tmp.cleanup('nr')
