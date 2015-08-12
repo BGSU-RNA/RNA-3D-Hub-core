@@ -18,6 +18,7 @@ from pymotifs import models
 from pymotifs.dispatcher import Dispatcher
 from pymotifs.utils import pdb
 from pymotifs.utils import known
+from pymotifs import email
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,9 @@ def run(name, config, pdbs, opts):
 
     try:
         dispatcher(pdbs, **opts)
-    except:
+        email.send(name, log_file=opts.get('log_file'))
+    except Exception as err:
+        email.send(name, log_file=opts.get('log_file'), error=err)
         sys.exit(1)
 
 

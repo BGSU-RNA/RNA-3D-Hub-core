@@ -1,32 +1,44 @@
-from sender import Mail
-from sender import Message
-from sender import Attachement
+from mailer import Mailer
+from mailer import Message
 
 
-def send(stage, error=None):
+def body(filename):
+    if not filename:
+        return 'No log file produced'
+
+    bad_lines = []
+    with open(filename, 'rb') as raw:
+        for line in raw:
+            if line.startswith('WARNING') or line.startswith('ERROR') or \
+                    line.startswith('CRITICAL'):
+                bad_lines.append(line)
+
+    return '\n'.join(bad_lines)
+
+
+def send(stage, log_file=None, error=None):
+    """Send an email based upon the log file.
+
+    If no log file is provided or it is False then the email's body will not
+    include the log lines to examine, and it will not be attached. If an error
+    object is given this will be used to indicate the stage failed.
+
+    :stage: Name of the stage that was run.
+    :log_file: Filename for the log file
+    :error: Exception object that occurred.
+    """
+
     config = stage.config['email']
 
     status = 'Succeeded'
     if error:
         status = 'Failed'
 
-    bad_lines = []
-    with open(log_file, 'rb') as raw:
-        all_lines = []
-        for line in raw:
-            all_lines.append(line)
-            if line.startswith('WARNING') or line.startswith('ERROR') or \
-                    line.startswith('CRITICAL'):
-                bad_lines.append(line)
+    msg = Message(From=config['from'], To=config['to'])
+    msg.Subject = config['subject'].format(stage=stage, status=status)
+    msg.Body = body(log_file)
+    if log_file:
+        msg.attach(log_file)
 
-        attachement = Attachement("output.log", "text/plain",
-                                  '\n'.join(all_lines))
-
-    msg = Message(config['subject'].format(stage=stage.name, status=status))
-    msg.fromaddr = config['from']
-    msg.body = '\n'.join(bad_lines)
-    msg.to = config['to']
-    msg.attach(attachement)
-
-    mail = Mail(config['server']['name'], **config['server'].get('options'))
+    mail = Mailer(config['server']['name'])
     mail.send(msg)
