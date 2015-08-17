@@ -73,9 +73,11 @@ def run(name, config, pdbs, opts):
 
     try:
         dispatcher(pdbs, **opts)
-        email.send(name, log_file=opts.get('log_file'))
+        if opts.get('no_email', True):
+            email.send(name, log_file=opts.get('log_file'))
     except Exception as err:
-        email.send(name, log_file=opts.get('log_file'), error=err)
+        if opts.get('no_email', True):
+            email.send(name, log_file=opts.get('log_file'), error=err)
         sys.exit(1)
 
 
@@ -99,6 +101,9 @@ if __name__ == '__main__':
                         help="Do a dry run where we store nothing")
     parser.add_argument('--skip-dependencies', action='store_true',
                         help='Skip running any dependencies')
+
+    parser.add_argument('--no-email', action='store_true',
+                        help='Do not send an email')
 
     parser.add_argument('--log-file', dest='log_file', default='',
                         help="Log file to use")
