@@ -96,13 +96,13 @@ class Loader(core.SimpleLoader):
             loop = loops[index].AllLoops_table
             loop_id = self._get_loop_id(loop.loop_name, pdb_id, loop_type,
                                         mapping)
-            mapping[loop.full_id] = loop_id
+            mapping[loop.full_id] = str(loop_id)
             loops[index].Filename = str(loop_id)
 
             data.append(LoopsAll(
                 id=loop_id,
                 type=loop_type,
-                pdb=pdb_id,
+                pdb=str(pdb_id),
                 sequential_id=loop_id.split("_")[-1],
                 length=int(loops[index].NumNT[0][0]),
                 seq=loop.seq,
