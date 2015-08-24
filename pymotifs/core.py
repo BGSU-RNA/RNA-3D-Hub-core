@@ -493,7 +493,7 @@ class SimpleLoader(Loader):
 
     def has_data(self, *args, **kwargs):
         with self.session() as session:
-            return bool(self.query(session, *args).count())
+            return bool(self.query(session, *args).limit(1).count())
 
     def remove(self, *args, **kwargs):
         with self.session() as session:
