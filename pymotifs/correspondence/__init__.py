@@ -9,5 +9,5 @@ from pymotifs.exp_seq import Loader as ExpSeqLoader
 
 
 class Loader(core.MultiStageLoader):
-    dependencies = set([ExpSeqLoader, InfoLoader, PositionLoader,
-                        SummaryLoader, Cleanup])
+    stages = set([ExpSeqLoader, InfoLoader, PositionLoader, SummaryLoader,
+                  Cleanup])

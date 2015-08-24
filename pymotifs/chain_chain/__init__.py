@@ -3,4 +3,4 @@ from pymotifs.chain_chain.comparision import Loader as CompareLoader
 
 
 class Loader(core.MultiStageLoader):
-    dependencies = set([CompareLoader])
+    stages = set([CompareLoader])

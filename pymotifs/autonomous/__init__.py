@@ -5,4 +5,4 @@ from pymotifs.autonomous.chains import Loader as ChainLoader
 
 
 class Loader(core.MultiStageLoader):
-    dependencies = set([InfoLoader, ChainLoader])
+    stages = set([InfoLoader, ChainLoader])

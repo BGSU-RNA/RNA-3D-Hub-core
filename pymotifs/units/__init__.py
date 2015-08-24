@@ -8,5 +8,5 @@ from pymotifs.units. redundant import RedundantNucleotidesLoader
 
 
 class Loader(core.MultiStageLoader):
-    dependencies = set([InfoLoader, QualityLoader, DistancesLoader,
-                        RedundantNucleotidesLoader])
+    stages = set([InfoLoader, QualityLoader, DistancesLoader,
+                  RedundantNucleotidesLoader])

@@ -5,4 +5,4 @@ from pymotifs.pdbs.obsolete import Loader as ObsoleteLoader
 
 
 class Loader(core.MultiStageLoader):
-    dependencies = set([InfoLoader, ObsoleteLoader])
+    stages = set([InfoLoader, ObsoleteLoader])
