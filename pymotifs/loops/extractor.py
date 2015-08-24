@@ -87,7 +87,8 @@ class Loader(core.SimpleLoader):
             raise core.MatlabFailed(err_msg)
 
         if loops == 0:
-            raise core.Skip('No %s in %s' % (loop_type, pdb_id))
+            self.logger.warning('No %s in %s' % loop_type, pdb_id)
+            return []
 
         self.logger.info('Found %i loops', count)
 
@@ -165,5 +166,8 @@ class Loader(core.SimpleLoader):
         for loop_type in self.loop_types:
             mapping = self._mapping(pdb, loop_type)
             data.extend(self._extract_loops(pdb, loop_type, mapping))
+
+        if not data:
+            raise core.Skip("No loops found in %s", pdb)
 
         return data
