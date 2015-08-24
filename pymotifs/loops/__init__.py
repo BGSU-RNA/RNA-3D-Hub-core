@@ -5,4 +5,4 @@ from pymotifs.loops.positions import Loader as PositionLoader
 
 
 class Loader(core.MultiStageLoader):
-    dependencies = set([Extractor, PositionLoader])
+    stages = set([Extractor, PositionLoader])
