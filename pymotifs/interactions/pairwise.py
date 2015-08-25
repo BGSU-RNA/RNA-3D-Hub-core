@@ -11,8 +11,8 @@ import collections as coll
 import pymotifs.core as core
 
 from pymotifs.mat_files import Loader as MatLoader
-from pymotifs.units.info import Loader as InfoLoader
-from pymotifs.pdbs.info import Loader as PdbLoader
+from pymotifs.units import Loader as UnitLoader
+from pymotifs.pdbs import Loader as PdbLoader
 
 from pymotifs.models import UnitPairsInteractions as Interaction
 
@@ -26,7 +26,7 @@ class Loader(core.SimpleLoader):
 
     allow_no_data = True
 
-    dependencies = set([MatLoader, InfoLoader, PdbLoader])
+    dependencies = set([MatLoader, UnitLoader, PdbLoader])
 
     def query(self, session, pdb):
         """Create a query to access interaction data for the given pdb.
