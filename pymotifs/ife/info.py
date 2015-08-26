@@ -1,7 +1,7 @@
 from pymotifs.core import SimpleLoader
-from pymotifs.models import AutonomousInfo
+from pymotifs.models import IfeInfo
 
-from pymotifs.autonomous.grouper import Grouper
+from pymotifs.ife.grouper import Grouper
 
 from pymotifs.chains import Loader as ChainLoader
 from pymotifs.interactions import Loader as InteractionLoader
@@ -12,14 +12,16 @@ class Loader(SimpleLoader):
     merge_data = True
 
     def query(self, session, pdb_id):
-        return session.query(AutonomousInfo).filter_by(pdb_id=pdb_id)
+        return session.query(IfeInfo).filter_by(pdb_id=pdb_id)
 
     def as_group(self, group):
-        return AutonomousInfo(
+        return IfeInfo(
             id=group['id'],
             pdb_id=group['pdb'],
-            has_autonomous=group['chains'][0]['autonomous'],
+            has_structured=group['chains'][0]['autonomous'],
             chain_count=len(group['chains']),
+            integral_count=None,
+            accompanying_count=None,
             length=group['summary']['exp_length'],
             bps=group['summary']['bp']
         )
