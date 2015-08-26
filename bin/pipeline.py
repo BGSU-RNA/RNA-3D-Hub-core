@@ -71,14 +71,15 @@ def run(name, config, pdbs, opts):
     dispatcher = Dispatcher(name, config, Session,
                             skip_dependencies=opts.get('skip_dependencies'))
 
+    emailer = email.Emailer(config, Session)
+    error = None
     try:
         dispatcher(pdbs, **opts)
-        if opts.get('no_email', True):
-            email.send(name, log_file=opts.get('log_file'))
     except Exception as err:
-        if opts.get('no_email', True):
-            email.send(name, log_file=opts.get('log_file'), error=err)
-        sys.exit(1)
+        error = err
+
+    emailer(name, log_file=opts.get('log_file'), error=err)
+    sys.exit(int(error is None))
 
 
 if __name__ == '__main__':
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--skip-dependencies', action='store_true',
                         help='Skip running any dependencies')
 
-    parser.add_argument('--no-email', action='store_true',
+    parser.add_argument('--no-email', action='store_false',
                         help='Do not send an email')
 
     parser.add_argument('--log-file', dest='log_file', default='',
@@ -121,4 +122,5 @@ if __name__ == '__main__':
             opts[arg] = value
 
     config = load_config(args.config)
+    config['email']['send'] = args.no_email
     run(args.name, config, args.pdbs, opts)
