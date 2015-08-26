@@ -19,7 +19,7 @@ from pymotifs import utils as ut
 
 # This is a very large virus file that should be skipped. Add other files as
 # necessary
-SKIP = set(['4V3P'])
+SKIP = set(['4V3P', '4V4G'])
 
 
 class StageFailed(Exception):
