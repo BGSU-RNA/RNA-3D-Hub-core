@@ -2,9 +2,9 @@ from pymotifs import core
 from pymotifs.models import AutonomousChains
 from pymotifs.models import AutonomousInfo
 
-from pymotifs.autonomous.grouper import Grouper
+from pymotifs.ife.grouper import Grouper
 
-from pymotifs.autonomous.info import Loader as InfoLoader
+from pymotifs.ife.info import Loader as InfoLoader
 
 
 class Loader(core.Loader):
