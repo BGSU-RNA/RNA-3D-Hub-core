@@ -8,13 +8,13 @@ class Namer(core.Base):
 
     def overlap(self, group1, group2):
         """Compute the overlap between the two groups. This is done by
-        comparing the number of autonomous unit ids in common between them
+        comparing the number of ife ids in common between them.
         """
 
-        autonomous1 = set(mem['id'] for mem in group1['members'])
-        autonomous2 = set(mem['id'] for mem in group2['members'])
+        members1 = set(mem['id'] for mem in group1['members'])
+        members2 = set(mem['id'] for mem in group2['members'])
 
-        intersection = autonomous1.intersection(autonomous2)
+        intersection = members1.intersection(members2)
         if not intersection:
             return {}
 

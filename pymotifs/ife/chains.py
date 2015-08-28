@@ -14,7 +14,7 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(IfeChains).\
                 join(IfeInfo,
-                     IfeInfo.id == IfeChains.autonomous_id).\
+                     IfeInfo.id == IfeChains.ife_id).\
                 filter(IfeInfo.pdb_id == pdb)
 
             return bool(query.count())
@@ -23,7 +23,7 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(IfeChains.id).\
                 join(IfeInfo,
-                     IfeInfo.id == IfeChains.autonomous_id).\
+                     IfeInfo.id == IfeChains.ife_id).\
                 filter(IfeInfo.pdb_id == pdb)
             ids = [result.id for result in query]
 

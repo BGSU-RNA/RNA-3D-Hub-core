@@ -9,8 +9,8 @@ from pymotifs.utils import result2dict
 from pymotifs.models import PdbInfo
 from pymotifs.models import ChainInfo
 from pymotifs.models import ChainSpecies
-from pymotifs.models import AutonomousInfo
-from pymotifs.models import AutonomousChains
+from pymotifs.models import IfeInfo
+from pymotifs.models import IfeChains
 from pymotifs.models import ChainChainSimilarity
 
 from pymotifs.utils import connectedsets as cs
@@ -54,7 +54,7 @@ class Grouper(core.Base):
     }
 
     def chains(self, pdb):
-        """Load all autonomous chains from a given pdb. This will get the RNA chains as
+        """Load all ife chains from a given pdb. This will get the RNA chains as
         well as load some interaction data about the chains.
 
         :pdb: A pdb to get the chains for.
@@ -67,23 +67,23 @@ class Grouper(core.Base):
                                   ChainInfo.chain_length.label('length'),
                                   ChainInfo.sequence,
                                   ChainInfo.chain_name.label('name'),
-                                  AutonomousChains.chain_id.label('db_id'),
-                                  AutonomousChains.is_reference,
-                                  AutonomousChains.is_autonomous,
-                                  AutonomousChains.autonomous_id.label('id'),
-                                  AutonomousInfo.bps.label('bp'),
+                                  IfeChains.chain_id.label('db_id'),
+                                  IfeChains.is_reference,
+                                  IfeChains.is_ife,
+                                  IfeChains.ife_id.label('id'),
+                                  IfeInfo.bps.label('bp'),
                                   PdbInfo.resolution,
                                   ChainSpecies.species_id.label('source')).\
-                join(AutonomousInfo,
-                     AutonomousInfo.pdb_id == ChainInfo.pdb_id).\
-                join(AutonomousChains,
-                     AutonomousChains.autonomous_id == AutonomousInfo.id).\
+                join(IfeInfo,
+                     IfeInfo.pdb_id == ChainInfo.pdb_id).\
+                join(IfeChains,
+                     IfeChains.ife_id == IfeInfo.id).\
                 join(PdbInfo,
                      PdbInfo.id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.id).\
                 filter(ChainInfo.pdb_id == pdb).\
-                order_by(AutonomousChains.autonomous_id)
+                order_by(IfeChains.ife_id)
 
             if query.count() == 0:
                 raise core.InvalidState("No chains found for %s" % pdb)
