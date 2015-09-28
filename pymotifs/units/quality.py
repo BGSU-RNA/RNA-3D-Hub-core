@@ -1,7 +1,10 @@
 import gzip
 import hashlib
 import cStringIO as sio
+import collections as coll
 import xml.etree.ElementTree as ET
+from elementtree import SimpleXMLTreeBuilder
+ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
 
 import pymotifs.utils as ut
 import pymotifs.core as core
@@ -70,14 +73,14 @@ class Parser(object):
         if insertion_code == '':
             insertion_code = None
 
-        return self.generator({
+        return {
             'pdb': pdb,
             'model': int(attributes['model']),
             'chain': attributes['chain'],
             'component_number': int(attributes['resnum']),
             'component_id': attributes['resname'],
             'insertion_code': insertion_code,
-        })
+        }
 
 
 class Loader(core.SimpleLoader):
@@ -93,6 +96,28 @@ class Loader(core.SimpleLoader):
             join(Unit, Unit.id == Quality.id).\
             filter(Unit.pdb_id == pdb)
 
+    def mapping(self, pdb):
+        mapping = coll.defaultdict(list)
+        with self.session() as session:
+            query = session.query(Unit).\
+                filter_by(pdb_id=pdb)
+
+            for result in query:
+                key = (result.chain, result.number, result.ins_code)
+                mapping[key].append(query.id)
+
+        return mapping
+
+    def as_quality(self, entry, mapping):
+        key = (entry['id']['chain'], entry['id']['component_number'],
+               entry['id']['insertion_code'])
+
+        for unit_id in mapping[key]:
+            yield Quality(id=unit_id,
+                          real_space_r=entry.get('real_space_r'),
+                          density_correlation=entry.get('density_correlation'),
+                          z_score=entry.get('z_score'))
+
     def data(self, pdb, **kwargs):
         filename = self.finder(pdb)
         try:
@@ -102,7 +127,11 @@ class Loader(core.SimpleLoader):
 
         parser = Parser(response)
         if not parser.has_rsr() and not parser.has_dcc():
-            self.logger.info("No RsR found for %s", pdb)
-            return
+            raise core.Skip("No RsR found for %s" % pdb)
 
-        return [Quality(**entry) for entry in parser.nts()]
+        mapping = self.mapping(pdb)
+        data = []
+        for entry in parser.nts():
+            for quality in self.as_quality(entry, mapping):
+                data.append(quality)
+        return data
