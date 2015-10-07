@@ -104,7 +104,7 @@ class Loader(core.SimpleLoader):
 
             for result in query:
                 key = (result.chain, result.number, result.ins_code)
-                mapping[key].append(query.id)
+                mapping[key].append(result.id)
 
         return mapping
 
