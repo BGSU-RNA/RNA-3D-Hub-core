@@ -16,6 +16,7 @@ from fr3d.data import Structure
 
 from pymotifs import models as mod
 from pymotifs import utils as ut
+from pymotifs.utils.toposort import toposort
 
 # This is a very large virus file that should be skipped. Add other files as
 # necessary
@@ -622,10 +623,33 @@ class MultiStageLoader(Stage):
             deps.update(stage.dependencies)
         return deps - set(cls.stages)
 
+    def __sort_stages__(self, stages):
+        """Given a list of stages we sort them to they run in whatever order is
+        implied by their dependencies. This ignores any dependencies on stages
+        outside the given collection. This is useful for ordering the stages in
+        this loader.
+
+        :stages: A list or set of the stages to use.
+        :returns: The stages in sorted order.
+        """
+
+        known = set(stages)
+        stack = list(stages)
+        stage = stages.pop()
+        deps = {stage: stage.dependencies}
+
+        while stack:
+            current = stack.pop()
+            if current not in deps and current in known:
+                deps[current] = current.dependencies
+                stack.extend(current.dependencies)
+
+        return list(toposort(deps))
+
     def __call__(self, *args, **kwargs):
         """Run each stage with the given input.
         """
-        for klass in self.stages:
+        for klass in self.__sort_stages__(self.stages):
             stage = klass(self.config, self.session.maker)
             stage(*args, **kwargs)
 

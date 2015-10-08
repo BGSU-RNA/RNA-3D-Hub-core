@@ -28,7 +28,7 @@ class B(core.Stage):
 
 
 class Multi(core.MultiStageLoader):
-    stages = [A, B]
+    stages = set([A, B])
 
 
 class DependenciesTest(StageTest):
@@ -46,4 +46,4 @@ class DependenciesTest(StageTest):
 
     def test_runs_stages_in_order(self):
         self.loader(['data'])
-        self.assertEqual(RAN, [('A', 'DATA'), ('B', 'DATA')])
+        self.assertEqual(RAN, [('A', ['data']), ('B', ['data'])])
