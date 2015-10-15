@@ -43,7 +43,7 @@ class Loader(core.MassLoader):
         data = []
         for entry in parsed:
             replaced = ','.join(entry['replaced_by'])
-            data.append(PdbObsolete(obsolete_id=entry['id'],
+            data.append(PdbObsolete(pdb_obsolete_id=entry['id'],
                                     date=entry['date'],
                                     replaced_by=replaced))
 

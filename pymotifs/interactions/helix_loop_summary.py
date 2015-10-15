@@ -41,7 +41,7 @@ class Loader(core.SimpleLoader):
         return True
 
     def query(self, session, pdb):
-        return session.query(Summary).filter_by(pdb=pdb)
+        return session.query(Summary).filter_by(pdb_id=pdb)
 
     def table(self, element):
         if element == 'helix':
@@ -88,7 +88,7 @@ class Loader(core.SimpleLoader):
         with self.session() as session:
             query = session.query(UnitInfo.chain).\
                 join(UnitPairsInteractions,
-                     UnitPairsInteractions.unit1_id == UnitInfo.id).\
+                     UnitPairsInteractions.unit_id_1 == UnitInfo.unit_id).\
                 filter(UnitInfo.pdb_id == pdb).\
                 distinct()
             return [result.chain for result in query]
@@ -97,7 +97,7 @@ class Loader(core.SimpleLoader):
         parts = ['helix', 'loop']
         value_names = ['bps', 'stacks', 'bphs']
         for chain in self.chains(pdb):
-            summary = Summary(pdb=pdb, chain=chain)
+            summary = Summary(pdb_id=pdb, chain=chain)
 
             for range_name in ['lr', 'sr']:
                 for part1 in parts:

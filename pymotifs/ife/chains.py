@@ -14,18 +14,18 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(IfeChains).\
                 join(IfeInfo,
-                     IfeInfo.id == IfeChains.ife_id).\
+                     IfeInfo.ife_id == IfeChains.ife_id).\
                 filter(IfeInfo.pdb_id == pdb)
 
             return bool(query.count())
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(IfeChains.id).\
+            query = session.query(IfeChains.ife_chain_id).\
                 join(IfeInfo,
-                     IfeInfo.id == IfeChains.ife_id).\
+                     IfeInfo.ife_id == IfeChains.ife_id).\
                 filter(IfeInfo.pdb_id == pdb)
-            ids = [result.id for result in query]
+            ids = [result.ife_chain_id for result in query]
 
         if not ids:
             self.logger.warning("Nothing to delete for %s", pdb)
@@ -33,7 +33,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(IfeChains).\
-                filter(IfeChains.id.in_(ids)).\
+                filter(IfeChains.ife_chain_id.in_(ids)).\
                 delete(synchronize_session=False)
 
     def data(self, pdb_id, **kwargs):

@@ -23,7 +23,7 @@ class Loader(core.SimpleLoader):
         return units.component_type(unit)
 
     def as_unit(self, nt):
-        return UnitInfo(id=nt.unit_id(),
+        return UnitInfo(unit_id=nt.unit_id(),
                         pdb_id=nt.pdb,
                         model=nt.model,
                         chain=nt.chain,

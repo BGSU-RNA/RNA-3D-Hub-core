@@ -49,7 +49,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(Info).\
-                filter(Info.id == corr_id).\
+                filter(Info.correspondence_id == corr_id).\
                 filter(Info.length != None)
             return bool(query.count())
 
@@ -73,11 +73,12 @@ class Loader(core.Loader):
             e1 = aliased(ExpInfo)
             e2 = aliased(ExpInfo)
 
-            query = session.query(Info.id, e1.length.label('first'),
+            query = session.query(Info.correspondence_id,
+                                  e1.length.label('first'),
                                   e2.length.label('second')).\
-                join(e1, Info.exp_seq_id1 == e1.id).\
-                join(e2, Info.exp_seq_id2 == e2.id).\
-                filter(Info.id == info['id'])
+                join(e1, Info.exp_seq_id_1 == e1.exp_seq_id).\
+                join(e2, Info.exp_seq_id_2 == e2.exp_seq_id).\
+                filter(Info.correspondence_id == info['correspondence_id'])
             result = query.one()
 
             return sorted([result.first, result.second])
@@ -110,12 +111,12 @@ class Loader(core.Loader):
         with self.session() as session:
             p1 = aliased(ExpPosition)
             p2 = aliased(ExpPosition)
-            query = session.query(Position.id,
+            query = session.query(Position.correspondence_position_id,
                                   p1.unit.label('unit1'),
                                   p2.unit.label('unit2')).\
                 filter(Position.correspondence_id == corr_id).\
-                outerjoin(p1, p1.id == Position.exp_seq_position_id1).\
-                outerjoin(p2, p2.id == Position.exp_seq_position_id2).\
+                outerjoin(p1, p1.exp_seq_position_id == Position.exp_seq_position_id_1).\
+                outerjoin(p2, p2.exp_seq_position_id == Position.exp_seq_position_id_2).\
                 order_by(Position.index).\
                 group_by(Position.index)
 

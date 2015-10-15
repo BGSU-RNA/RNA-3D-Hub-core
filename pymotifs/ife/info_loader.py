@@ -69,7 +69,7 @@ class Info(core.Base):
         }
 
         with self.session() as session:
-            query = session.query(mod.ChainInfo.id,
+            query = session.query(mod.ChainInfo.chain_id,
                                   mod.ChainInfo.chain_length,
                                   mod.ChainInfo.entity_name,
                                   mod.ChainInfo.sequence).\
@@ -89,7 +89,7 @@ class Info(core.Base):
             self.logger.warn("Failed to find all taxon ids for %s", data['id'])
 
         with self.session() as session:
-            query = session.query(mod.UnitInfo.id).\
+            query = session.query(mod.UnitInfo.unit_id).\
                 filter_by(pdb_id=pdb, chain=chain, unit_type_id=molecule_type)
             data['length'] = query.count()
 

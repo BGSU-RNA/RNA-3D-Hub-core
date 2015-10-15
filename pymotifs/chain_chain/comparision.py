@@ -40,10 +40,10 @@ class Loader(core.Loader):
     def known(self, pdb):
         with self.session() as session:
             query = session.query(Similarity.correspondence_id,
-                                  Similarity.chain_id1,
-                                  Similarity.chain_id2,
+                                  Similarity.chain_id_1,
+                                  Similarity.chain_id_2,
                                   ChainInfo.pdb_id).\
-                join(ChainInfo, ChainInfo.id == Similarity.chain_id1).\
+                join(ChainInfo, ChainInfo.chain_id == Similarity.chain_id_1).\
                 filter(ChainInfo.pdb_id == pdb)
 
             known = []
@@ -85,7 +85,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(Similarity).\
-                join(ChainInfo, ChainInfo.id == Similarity.chain_id1).\
+                join(ChainInfo, ChainInfo.chain_id == Similarity.chain_id_1).\
                 filter(ChainInfo.pdb_id == pdb)
 
             ids = [result.id for result in query]
@@ -96,7 +96,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             session.query(Similarity).\
-                filter(Similarity.id.in_(ids)).\
+                filter(Similarity.chain_chain_similarity_id.in_(ids)).\
                 delete(synchronize_session=False)
 
     def residues(self, cif, name, ordering):
@@ -175,7 +175,7 @@ class Loader(core.Loader):
     def chain_name(self, chain_id):
         with self.session() as session:
             return session.query(ChainInfo).\
-                filter_by(id=chain_id).\
+                filter_by(chain_id=chain_id).\
                 one().chain_name
 
     def data(self, pdb, **kwargs):
@@ -219,8 +219,8 @@ class Loader(core.Loader):
 
                 try:
                     compare = {
-                        'chain_id1': chain_id1,
-                        'chain_id2': chain_id2,
+                        'chain_id_1': chain_id1,
+                        'chain_id_2': chain_id2,
                         'correspondence_id': corr_id,
                         'discrepancy': self.discrepancy(corr_id, residues1,
                                                         residues2)
@@ -229,8 +229,8 @@ class Loader(core.Loader):
                     continue
 
                 reversed = dict(compare)
-                reversed['chain_id1'] = compare['chain_id2']
-                reversed['chain_id2'] = compare['chain_id1']
+                reversed['chain_id_1'] = compare['chain_id_2']
+                reversed['chain_id_2'] = compare['chain_id_1']
                 data.append(Similarity(**compare))
                 data.append(Similarity(**reversed))
 

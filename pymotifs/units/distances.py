@@ -13,7 +13,7 @@ class Loader(core.SimpleLoader):
 
     def query(self, session, pdb):
         return session.query(UnitPairsDistances).\
-            join(UnitInfo, UnitInfo.id == UnitPairsDistances.unit1_id).\
+            join(UnitInfo, UnitInfo.unit_id == UnitPairsDistances.unit_id_1).\
             filter(UnitInfo.pdb_id == pdb)
 
     def center(self, residue):
@@ -42,6 +42,6 @@ class Loader(core.SimpleLoader):
 
                 distance = self.distance(residue1, residue2)
                 if distance is not None and distance < self.max_distance:
-                    yield UnitPairsDistances(unit1_id=residue1.unit_id(),
-                                             unit2_id=residue2.unit_id(),
+                    yield UnitPairsDistances(unit_id_1=residue1.unit_id(),
+                                             unit_id_2=residue2.unit_id(),
                                              distance=distance)

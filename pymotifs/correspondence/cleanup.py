@@ -29,7 +29,7 @@ class Loader(core.Stage):
 
         with self.session() as session:
             query = session.query(Info)
-            return [result.id for result in query]
+            return [result.correspondence_id for result in query]
 
     def should_process(self, corr_id, **kwargs):
         """Test if we should process some correspondence. This is done by

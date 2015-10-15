@@ -23,7 +23,7 @@ class Loader(core.MassLoader):
         release_id = grouping[0]['release']
         with self.session() as session:
             query = session.query(NrChains).\
-                join(NrClasses, NrClasses.id == NrChains.nr_class_id).\
+                join(NrClasses, NrClasses.nr_class_id == NrChains.nr_class_id).\
                 filter(NrClasses.nr_release_id == release_id)
 
             return bool(query.count())
@@ -49,7 +49,7 @@ class Loader(core.MassLoader):
         for group in grouping:
             for chain in group['members']:
                 data.append({
-                    'ife_group_id': chain['id'],
+                    'ife_id': chain['id'],
                     'nr_class_id': mapping[group['name']['full']],
                     'nr_release_id': group['release'],
                     'rank': chain['rank'],

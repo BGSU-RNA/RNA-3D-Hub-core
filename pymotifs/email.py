@@ -43,7 +43,7 @@ class Emailer(core.Base):
             status = 'Failed'
 
         msg = Message(From=self.config['from'], To=self.config['to'])
-        msg.Subject = self.config['subject'].format(stage=name, status=status)
+        msg.Subject = self.config['email']['subject'].format(stage=name, status=status)
         msg.Body = self.body(log_file)
         if log_file:
             msg.attach(log_file)

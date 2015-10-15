@@ -5,23 +5,24 @@ from pymotifs.utils.structures import Structure
 from pymotifs.utils.structures import UnknownTaxonomyException
 
 from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.species_mapping import Loader as SpeciesLoader
+# from pymotifs.species_mapping import Loader as SpeciesLoader
 
 
 class Loader(core.Loader):
-    dependencies = set([ChainLoader, SpeciesLoader])
+    dependencies = set([ChainLoader])
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(ChainSpecies).\
-                join(ChainInfo, ChainInfo.id == ChainSpecies.chain_id).\
+                join(ChainInfo, ChainInfo.chain_id == ChainSpecies.chain_id).\
                 filter(ChainInfo.pdb_id == pdb)
 
             return bool(query.count())
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(ChainInfo.id).filter(ChainInfo.pdb_id == pdb)
+            query = session.query(ChainInfo.chain_id).\
+                filter(ChainInfo.pdb_id == pdb)
             ids = [result.chain_id for result in query]
 
         with self.session() as session:

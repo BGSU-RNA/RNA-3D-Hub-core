@@ -45,7 +45,7 @@ class Loader(core.MassLoader):
             query = session.query(mod.ChainInfo.taxonomy_id).\
                 outerjoin(mod.SpeciesMapping,
                           mod.SpeciesMapping.id == mod.ChainInfo.taxonomy_id).\
-                filter(mod.SpeciesMapping.id == None)
+                filter(mod.SpeciesMapping.species_mapping_id == None)
 
             ids = []
             for result in query:
@@ -103,7 +103,7 @@ class Loader(core.MassLoader):
                 data.append(self.get_species(record))
 
         if len(data) != context['size']:
-            known = [datum.get('id') for datum in data]
+            known = [datum.get('species_mapping_id') for datum in data]
             missing = set(context['ids']) - set(filter(None, known))
             self.logger.warn("Did not get all ids for context: %s",
                              context['id'])
@@ -136,7 +136,7 @@ class Loader(core.MassLoader):
             species = species[0]
 
         return {
-            'id': tax_id,
+            'species_mapping_id': tax_id,
             'species_id': int(species['TaxId']),
             'species_name': species['ScientificName']
         }

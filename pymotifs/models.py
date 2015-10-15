@@ -42,7 +42,7 @@ def reflect(engine):
 class MlReleases(Base):
     __tablename__ = 'ml_releases'
 
-    id = Column(String(4), primary_key=True)
+    ml_releases_id = Column(String(4), primary_key=True)
     type = Column(String(2), primary_key=True)
     date = Column(DateTime)
     description = Column(Text)
@@ -78,7 +78,7 @@ class MlReleases(Base):
 class MlMotifs(Base):
     __tablename__ = 'ml_motifs'
 
-    id = Column(String(11), primary_key=True)
+    ml_motifs_id = Column(String(11), primary_key=True)
     release_id = Column(String(4), primary_key=True)
     type = Column(String(2))
     handle = Column(String(5))

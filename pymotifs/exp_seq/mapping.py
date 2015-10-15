@@ -28,9 +28,9 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(UnitInfo.chain).\
-                join(UnitMapping, UnitMapping.unit_id == UnitInfo.id).\
+                join(UnitMapping, UnitMapping.unit_id == UnitInfo.unit_id).\
                 join(ExpPosition,
-                     ExpPosition.id == UnitMapping.exp_seq_position_id).\
+                     ExpPosition.exp_seq_position_id == UnitMapping.exp_seq_position_id).\
                 filter(UnitInfo.pdb_id == pdb).\
                 distinct()
 
@@ -40,7 +40,7 @@ class Loader(core.Loader):
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(UnitInfo.id).filter(UnitInfo.pdb_id == pdb)
+            query = session.query(UnitInfo.unit_id).filter(UnitInfo.pdb_id == pdb)
             units = [result.id for result in query]
 
         with self.session() as session:
@@ -64,10 +64,10 @@ class Loader(core.Loader):
 
     def exp_mapping(self, pdb, chain):
         with self.session() as session:
-            query = session.query(ExpPosition.index, ExpPosition.id).\
+            query = session.query(ExpPosition.index, ExpPosition.exp_seq_position_id).\
                 join(ChainMapping,
                      ChainMapping.exp_seq_id == ExpPosition.exp_seq_id).\
-                join(ChainInfo, ChainInfo.id == ChainMapping.chain_id).\
+                join(ChainInfo, ChainInfo.chain_id == ChainMapping.chain_id).\
                 filter(ChainInfo.pdb_id == pdb).\
                 filter(ChainInfo.chain_name == chain)
 
@@ -79,7 +79,7 @@ class Loader(core.Loader):
     def mapped_chains(self, pdb):
         with self.session() as session:
             query = session.query(ChainInfo.chain_name).\
-                join(ChainMapping, ChainMapping.chain_id == ChainInfo.id).\
+                join(ChainMapping, ChainMapping.chain_id == ChainInfo.chain_id).\
                 filter(ChainInfo.pdb_id == pdb).\
                 filter(ChainInfo.entity_macromolecule_type == 'Polyribonucleotide (RNA)')
             return [result.chain_name for result in query]

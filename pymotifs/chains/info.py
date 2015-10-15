@@ -41,7 +41,7 @@ class Loader(core.MassLoader):
         mapping = {}
         known_pdbs = set()
         with self.session() as session:
-            query = session.query(ChainInfo.id,
+            query = session.query(ChainInfo.chain_id,
                                   ChainInfo.pdb_id,
                                   ChainInfo.chain_name).\
                 filter(ChainInfo.pdb_id.in_(pdbs)).\

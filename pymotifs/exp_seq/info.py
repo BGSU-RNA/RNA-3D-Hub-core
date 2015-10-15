@@ -21,7 +21,7 @@ class Loader(core.Loader):
             chain_ids = set(p[1] for p in chain_ids)
             with self.session() as session:
                 query = session.query(ChainInfo.sequence).\
-                    filter(ChainInfo.id.in_(chain_ids)).\
+                    filter(ChainInfo.chain_id.in_(chain_ids)).\
                     distinct()
 
                 for result in query:

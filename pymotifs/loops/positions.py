@@ -18,7 +18,7 @@ class Loader(core.Loader):
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(LoopsAll).filter_by(pdb=pdb)
+            query = session.query(LoopsAll).filter_by(pdb_id=pdb)
             ids = [result.id for result in query]
 
         if not ids:
@@ -34,8 +34,8 @@ class Loader(core.Loader):
     def has_data(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(LoopPositions).\
-                join(LoopsAll, LoopsAll.id == LoopPositions.loop_id).\
-                filter(LoopsAll.pdb == pdb)
+                join(LoopsAll, LoopsAll.loop_id == LoopPositions.loop_id).\
+                filter(LoopsAll.pdb_id == pdb)
             return bool(query.count())
 
     def parse(self, filename):
@@ -56,8 +56,8 @@ class Loader(core.Loader):
         mapping = {}
         with self.session() as session:
             query = session.query(LoopPositions).\
-                join(LoopsAll, LoopsAll.id == LoopPositions.loop_id).\
-                filter(LoopsAll.pdb == pdb)
+                join(LoopsAll, LoopsAll.loop_id == LoopPositions.loop_id).\
+                filter(LoopsAll.pdb_id == pdb)
 
             for result in query:
                 data = utils.row2dict(result)

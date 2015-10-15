@@ -49,8 +49,8 @@ class InteractionExporter(core.Stage):
             query = session.query(UnitPairsInteractions).filter_by(pdb_id=pdb)
             for result in query:
                 data.append({
-                    'unit_id1': result.unit1_id,
-                    'unit_id2': result.unit2_id,
+                    'unit_id1': result.unit_id_1,
+                    'unit_id2': result.unit_id_2,
                     'FR3D basepair (f_lwbp)': result.f_lwbp,
                     'FR3D stacking (f_stacks)': result.f_stacks,
                     'FR3D base phosphate (f_bphs)': result.f_bphs

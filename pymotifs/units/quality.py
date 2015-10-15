@@ -93,7 +93,7 @@ class Loader(core.SimpleLoader):
 
     def query(self, session, pdb):
         return session.query(Quality).\
-            join(Unit, Unit.id == Quality.id).\
+            join(Unit, Unit.unit_id == Quality.unit_id).\
             filter(Unit.pdb_id == pdb)
 
     def mapping(self, pdb):
@@ -104,7 +104,7 @@ class Loader(core.SimpleLoader):
 
             for result in query:
                 key = (result.chain, result.number, result.ins_code)
-                mapping[key].append(result.id)
+                mapping[key].append(result.unit_id)
 
         return mapping
 
@@ -113,7 +113,7 @@ class Loader(core.SimpleLoader):
                entry['id']['insertion_code'])
 
         for unit_id in mapping[key]:
-            yield Quality(id=unit_id,
+            yield Quality(unit_id=unit_id,
                           real_space_r=entry.get('real_space_r'),
                           density_correlation=entry.get('density_correlation'),
                           z_score=entry.get('z_score'))

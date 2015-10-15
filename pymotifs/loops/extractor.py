@@ -26,7 +26,7 @@ class Loader(core.SimpleLoader):
             self.config['recalculate'].get(entry[1])
 
     def query(self, session, pdb):
-        return session.query(LoopsAll).filter_by(pdb=pdb)
+        return session.query(LoopsAll).filter_by(pdb_id=pdb)
 
     def _next_loop_number_string(self, current):
         """Compute the next loop number string. This will pad to either 3 or 6
@@ -101,7 +101,7 @@ class Loader(core.SimpleLoader):
             loops[index].Filename = str(loop_id)
 
             data.append(LoopsAll(
-                id=loop_id,
+                loop_id=loop_id,
                 type=loop_type,
                 pdb=str(pdb_id),
                 sequential_id=loop_id.split("_")[-1],
@@ -110,7 +110,7 @@ class Loader(core.SimpleLoader):
                 r_seq=loop.r_seq,
                 nwc_seq=loop.nwc,
                 r_nwc_seq=loop.r_nwc,
-                nt_ids=loop.full_id,
+                unit_ids=loop.full_id,
                 loop_name=loop.loop_name))
         try:
             [status, err_msg] = mlab.aSaveLoops(loops, str(location), nout=2)

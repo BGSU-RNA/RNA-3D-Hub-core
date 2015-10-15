@@ -35,4 +35,4 @@ class Loader(core.MassLoader):
         current = helper.current('nr')
         next = helper.next(current, mode=self.config['release_mode']['nrlist'])
         self.build(pdbs, current, next, **kwargs)
-        return NrReleases(id=next, date=now)
+        return NrReleases(nr_release_id=next, date=now)

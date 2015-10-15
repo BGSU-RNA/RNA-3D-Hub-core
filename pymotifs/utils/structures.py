@@ -2,7 +2,6 @@
 """
 
 import itertools as it
-import collections as coll
 
 from sqlalchemy.orm import aliased
 
@@ -83,7 +82,7 @@ class Structure(Base):
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name,
-                                  mod.ChainInfo.id).\
+                                  mod.ChainInfo.chain_id).\
                 filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)')
 
             if isinstance(pdb, basestring):
@@ -120,8 +119,8 @@ class Structure(Base):
         interactions = []
         with self.session() as session:
             query = session.query(mod.UnitPairsInteractions).\
-                join(c1, c1.id == mod.UnitPairsInteractions.iPdbSig).\
-                join(c2, c2.id == mod.UnitPairsInteractions.jPdbSig).\
+                join(c1, c1.id == mod.UnitPairsInteractions.unit_id_1).\
+                join(c2, c2.id == mod.UnitPairsInteractions.unit_id_2).\
                 filter(mod.UnitPairsInteractions.pdb_id == pdb).\
                 filter(c1.chain == c2.chain, c1.chain == chain)
 
@@ -145,9 +144,9 @@ class Structure(Base):
         loops = []
         with self.session() as session:
             query = session.query(mod.LoopPositions).\
-                join(mod.LoopsAll, mod.LoopPositions.loop_id == mod.LoopsAll.id).\
-                filter(mod.LoopsAll.pdb == pdb).\
-                order_by(mod.LoopsAll.id, mod.LoopPositions.position)
+                join(mod.LoopsAll, mod.LoopPositions.loop_id == mod.LoopsAll.loop_id).\
+                filter(mod.LoopsAll.pdb_id == pdb).\
+                order_by(mod.LoopsAll.loop_id, mod.LoopPositions.position)
 
             grouped = it.groupby(it.imap(ut.row2dict, query),
                                  lambda a: a['loop_id'])
@@ -193,7 +192,7 @@ class Structure(Base):
 
         with self.session() as session:
             query = session.query(mod.SpeciesMapping.species_id).\
-                filter(mod.SpeciesMapping.id.in_(tax_ids))
+                filter(mod.SpeciesMapping.species_mapping_id.in_(tax_ids))
             species_ids = [result.species_id for result in query]
 
             if len(species_ids) != len(tax_ids):
@@ -318,10 +317,10 @@ class BasePairQueries(Base):
         bp = mod.BpFamilyInfo
         inter = mod.UnitPairsInteractions
 
-        query = session.query(inter.unit1_id, inter.unit2_id, inter.f_lwbp).\
-            join(u1, u1.id == inter.unit1_id).\
-            join(u2, u2.id == inter.unit2_id).\
-            join(bp, bp.id == inter.f_lwbp).\
+        query = session.query(inter.unit_id_1, inter.unit_id_2, inter.f_lwbp).\
+            join(u1, u1.unit_id == inter.unit_id_1).\
+            join(u2, u2.unit_id == inter.unit_id_2).\
+            join(bp, bp.bp_family_id == inter.f_lwbp).\
             filter(bp.is_forward == True).\
             filter(u1.model == u2.model).\
             filter(inter.pdb_id == pdb)
@@ -368,8 +367,8 @@ class Correspondence(Base):
                 filter(mod.CorrespondenceInfo.pdb1 == ref).\
                 filter(mod.CorrespondenceInfo.pdb2 == pdb)
             for result in query:
-                mapping[result.unit1_id] = result.unit2_id
-                mapping[result.unit2_id] = result.unit1_id
+                mapping[result.unit_id_1] = result.unit_id_2
+                mapping[result.unit_id_2] = result.unit_id_1
 
         return mapping
 

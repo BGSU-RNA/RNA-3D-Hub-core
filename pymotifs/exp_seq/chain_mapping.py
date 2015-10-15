@@ -15,7 +15,7 @@ class Loader(core.Loader):
     def known(self, pdb):
         with self.session() as session:
             query = session.query(Mapping.chain_id).\
-                join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
+                join(ChainInfo, ChainInfo.chain_id == Mapping.chain_id).\
                 filter(ChainInfo.pdb_id == pdb)
 
             return [result.chain_id for result in query]
@@ -41,9 +41,9 @@ class Loader(core.Loader):
 
     def exp_id(self, chain_id):
         with self.session() as session:
-            query = session.query(Exp.id).\
+            query = session.query(Exp.exp_seq_id).\
                 join(ChainInfo, ChainInfo.sequence == Exp.sequence).\
-                filter(ChainInfo.id == chain_id)
+                filter(ChainInfo.chain_id == chain_id)
             return [result.id for result in query]
 
     def data(self, pdb, **kwargs):

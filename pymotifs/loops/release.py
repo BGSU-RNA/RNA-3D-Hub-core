@@ -15,4 +15,4 @@ class Loader(core.MassLoader):
         helper = Release(self.config, self.session.maker)
         current = helper.current('loop')
         next = helper.next(current, mode=self.config['release_mode']['loops'])
-        return LoopReleases(id=next, date=now)
+        return LoopReleases(loop_releases_id=next, date=now)

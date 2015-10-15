@@ -94,8 +94,8 @@ class Loader(core.SimpleLoader):
         with open(filename, 'rb') as raw:
             for row in csv.reader(raw, delimiter=',', quotechar='"'):
                 interaction = data[(row[0], row[1])]
-                interaction['unit1_id'] = row[0]
-                interaction['unit2_id'] = row[1]
+                interaction['unit_id_2'] = row[0]
+                interaction['unit_id_2'] = row[1]
                 interaction['f_crossing'] = int(row[3])
                 interaction['pdb_id'] = pdb
 

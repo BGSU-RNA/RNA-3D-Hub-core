@@ -18,8 +18,8 @@ class RedundantNucleotidesLoader(core.SimpleLoader):
         reader = csv.reader(raw, delimiter=',', quotechar='"')
         for row in reader:
             data.append({
-                'unit_id1': row[0],
-                'unit_id2': row[1],
+                'unit_id_1': row[0],
+                'unit_id_2': row[1],
                 'pdb_id': pdb_file
             })
         return data

@@ -77,11 +77,11 @@ class Grouper(core.Base):
                 join(IfeInfo,
                      IfeInfo.pdb_id == ChainInfo.pdb_id).\
                 join(IfeChains,
-                     IfeChains.ife_id == IfeInfo.id).\
+                     IfeChains.ife_id == IfeInfo.ife_id).\
                 join(PdbInfo,
                      PdbInfo.pdb_id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
-                     ChainSpecies.chain_id == ChainInfo.id).\
+                     ChainSpecies.chain_id == ChainInfo.chain_id).\
                 filter(ChainInfo.pdb_id == pdb).\
                 order_by(IfeChains.ife_id)
 
@@ -112,13 +112,13 @@ class Grouper(core.Base):
 
         with self.session() as session:
             query = session.query(ChainChainSimilarity).\
-                filter(ChainChainSimilarity.chain_id1.in_(chain_ids)).\
-                filter(ChainChainSimilarity.chain_id2.in_(chain_ids))
+                filter(ChainChainSimilarity.chain_id_1.in_(chain_ids)).\
+                filter(ChainChainSimilarity.chain_id_2.in_(chain_ids))
 
             discrepancy = coll.defaultdict(dict)
             for result in query:
-                id1 = result.chain_id1
-                id2 = result.chain_id2
+                id1 = result.chain_id_1
+                id2 = result.chain_id_2
                 discrepancy[id1][id2] = result.discrepancy
                 discrepancy[id2][id1] = result.discrepancy
 

@@ -39,7 +39,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(Info)
-            return [result.id for result in query]
+            return [result.correspondence_id for result in query]
 
     def has_data(self, corr_id, **kwargs):
         """This is an unusual check for data. We do not first look up to see if
@@ -61,7 +61,7 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(Info).\
                 filter(Info.length != None).\
-                filter(Info.id == corr_id)
+                filter(Info.correspondence_id == corr_id)
             return bool(query.count())
 
     def remove(self, corr_id, **kwargs):
@@ -127,8 +127,8 @@ class Loader(core.Loader):
         data = []
         for index, result in enumerate(results):
             data.append({
-                'exp_seq_position_id1': result[0],
-                'exp_seq_position_id2': result[1],
+                'exp_seq_position_id_1': result[0],
+                'exp_seq_position_id_2': result[1],
                 'correspondence_id': corr_id,
                 'index': index
             })
@@ -136,7 +136,7 @@ class Loader(core.Loader):
 
     def info(self, corr_id):
         with self.session() as session:
-            query = session.query(Info).filter_by(id=corr_id)
+            query = session.query(Info).filter_by(correspondence_id=corr_id)
             result = query.one()
             return (result.exp_seq_id1, result.exp_seq_id2)
 
@@ -159,12 +159,12 @@ class Loader(core.Loader):
         for position in self.correlate(corr_id, sequence1, sequence2):
             yield Position(**position)
 
-            pos1 = position['exp_seq_position_id1']
-            pos2 = position['exp_seq_position_id2']
+            pos1 = position['exp_seq_position_id_1']
+            pos2 = position['exp_seq_position_id_2']
             if pos1 != pos2:
                 rev = dict(position)
-                rev['exp_seq_position_id1'] = pos2
-                rev['exp_seq_position_id2'] = pos1
+                rev['exp_seq_position_id_1'] = pos2
+                rev['exp_seq_position_id_2'] = pos1
 
                 yield Position(**rev)
 

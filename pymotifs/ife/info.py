@@ -16,7 +16,7 @@ class Loader(SimpleLoader):
 
     def as_group(self, group):
         return IfeInfo(
-            id=group['id'],
+            ife_id=group['id'],
             pdb_id=group['pdb'],
             has_structured=group['chains'][0]['autonomous'],
             chain_count=len(group['chains']),

@@ -13,22 +13,22 @@ class Loader(core.Loader):
 
     def interactions(self, pdb):
         with self.session() as session:
-            query = session.query(Ints.id, Ints.unit1_id, Ints.unit2_id).\
+            query = session.query(Ints.unit_pairs_interactions_id, Ints.unit_id_1, Ints.unit_id_2).\
                 filter(Ints.pdb_id == pdb)
 
             data = []
             for result in query:
                 data.append({
                     'id': result.id,
-                    'unit1': result.unit1_id,
-                    'unit2': result.unit2_id
+                    'unit1': result.unit_id_1,
+                    'unit2': result.unit_id_2
                 })
             return data
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(CorrInts).\
-                join(Ints, Ints.id == CorrInts.interaction_id1).\
+                join(Ints, Ints.id == CorrInts.interaction_id_1).\
                 filter(Ints.pdb_id == pdb)
 
             return bool(query.count())
@@ -41,7 +41,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             session.query(CorrInts).\
-                filter(CorrInts.id.in_(ids)).\
+                filter(CorrInts.correspondence_interactions_id.in_(ids)).\
                 delete(synchronize_session=False)
 
     def compare(self, corr_id, first, second, mapping):
@@ -55,13 +55,13 @@ class Loader(core.Loader):
         for interaction in first:
             data = {
                 'correspondence_id': corr_id,
-                'interaction_id1': interaction['id'],
-                'interaction_id2': None
+                'interaction_id_1': interaction['id'],
+                'interaction_id_2': None
             }
 
             key = (interaction['unit1'], interaction['unit2'])
             if key in known:
-                data['interaction_id2'] = known[key]['id']
+                data['interaction_id_2'] = known[key]['id']
 
             yield data
 

@@ -15,26 +15,11 @@ class Loader(core.Loader):
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
             query = session.query(Mapping.exp_seq_id).\
-                join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
+                join(ChainInfo, ChainInfo.chain_id == Mapping.chain_id).\
                 filter(ChainInfo.pdb_id.in_(pdbs)).\
                 distinct()
 
             return [result.exp_seq_id for result in query]
-
-    # def known(self, pdb):
-    #     with self.session() as session:
-    #         query = session.query(Position.exp_seq_id).\
-    #             join(Mapping, Position.exp_seq_id == Mapping.exp_seq_id).\
-    #             join(ChainInfo, ChainInfo.id == Mapping.chain_id).\
-    #             filter(ChainInfo.pdb_id == pdb).\
-    #             distinct()
-
-    #     return set(result.exp_seq_id for result in query)
-
-#     def missing(self, pdb):
-#         helper = Structure(self.session.maker)
-#         possible = set(p[1] for p in helper.rna_chains(pdb, return_id=True))
-#         return possible - set(self.known(pdb))
 
     def has_data(self, exp_seq_id, **kwargs):
         with self.session() as session:

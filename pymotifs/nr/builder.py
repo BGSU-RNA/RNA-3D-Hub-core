@@ -30,7 +30,7 @@ class Builder(core.Base):
             raise core.InvalidState("Must give names and release id")
 
         with self.session() as session:
-            query = session.query(NrClasses.id,
+            query = session.query(NrClasses.nr_class_id,
                                   NrClasses.name,
                                   ).\
                 filter(NrClasses.name.in_(names)).\
@@ -110,16 +110,16 @@ class Builder(core.Base):
         """
 
         with self.session() as session:
-            query = session.query(NrChains.ife_group_id.label('id'),
+            query = session.query(NrChains.ife_id.label('id'),
                                   NrClasses.handle.label('handle'),
                                   NrClasses.version.label('version'),
-                                  NrClasses.id.label('class_id'),
+                                  NrClasses.nr_class_id.label('class_id'),
                                   NrClasses.name.label('full_name'),
                                   ).\
-                join(NrClasses, NrChains.nr_class_id == NrClasses.id).\
+                join(NrClasses, NrChains.nr_class_id == NrClasses.nr_class_id).\
                 filter(NrClasses.nr_release_id == release_id).\
                 filter(NrClasses.resolution == cutoff).\
-                order_by(NrClasses.id)
+                order_by(NrClasses.nr_class_id)
 
             grouped = it.groupby(query, lambda v: (v.handle, v.version))
 

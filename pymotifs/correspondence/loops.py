@@ -183,16 +183,16 @@ class Loader(core.Loader):
     def remove(self, pdb):
         with self.session() as session:
             session.query(Loops).\
-                join(Info, Info.id == Loops.correspondence_id).\
-                filter(Info.pdb1 == pdb).\
+                join(Info, Info.correspondence_id == Loops.correspondence_id).\
+                filter(Info.pdb_id_1 == pdb).\
                 delete()
 
     def transform(self, pdb):
         cif = self.cif(pdb)
         with self.session() as session:
             query = session.query(Info).\
-                join(ExpSeq, ExpSeq.id == Info.exp_seq_id1).\
-                filter(ExpSeq.pdb == pdb)
+                join(ExpSeq, ExpSeq.exp_seq_id == Info.exp_seq_id_1).\
+                filter(ExpSeq.pdb_id == pdb)
             return [(cif, result.id) for result in query]
 
     def data(self, entry, **kwargs):

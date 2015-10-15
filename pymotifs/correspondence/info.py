@@ -111,7 +111,7 @@ class Loader(core.SimpleLoader):
 
     def query(self, session, pair, **kwargs):
         return session.query(Info).\
-            filter_by(exp_seq_id1=pair[0], exp_seq_id2=pair[1])
+            filter_by(exp_seq_id_1=pair[0], exp_seq_id_2=pair[1])
 
     def data(self, pair, **kwargs):
-        return Info(exp_seq_id1=pair[0], exp_seq_id2=pair[1])
+        return Info(exp_seq_id_1=pair[0], exp_seq_id_2=pair[1])

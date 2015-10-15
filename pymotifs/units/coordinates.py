@@ -13,7 +13,7 @@ class Loader(core.SimpleLoader):
 
     def query(self, session, pdb):
         return session.query(UnitCoordinates).\
-            join(UnitInfo, UnitInfo.id == UnitCoordinates.id).\
+            join(UnitInfo, UnitInfo.unit_id == UnitCoordinates.unit_id).\
             filter(UnitInfo.pdb_id == pdb)
 
     def parse(self, filename):
