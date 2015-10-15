@@ -18,7 +18,7 @@ class Loader(core.MassLoader):
     dependencies = set()
 
     names = {
-        'structureId': 'id',
+        'structureId': 'pdb_id',
         'structureTitle': 'title',
         'experimentalTechnique': 'experimental_techinque',
         'depositionDate': 'deposition_date',

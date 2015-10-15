@@ -79,7 +79,7 @@ class Grouper(core.Base):
                 join(IfeChains,
                      IfeChains.ife_id == IfeInfo.id).\
                 join(PdbInfo,
-                     PdbInfo.id == ChainInfo.pdb_id).\
+                     PdbInfo.pdb_id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.id).\
                 filter(ChainInfo.pdb_id == pdb).\
