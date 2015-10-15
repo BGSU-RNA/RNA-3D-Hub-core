@@ -16,7 +16,7 @@ from pymotifs.models import ChainChainSimilarity as Similarity
 from pymotifs.correspondence import Loader as CorrespondenceLoader
 from pymotifs.download import Downloader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
-from pymotifs.autonomous import Loader as AutonomousLoader
+from pymotifs.ife import Loader as IfeLoader
 
 from fr3d.geometry.discrepancy import discrepancy
 
@@ -35,7 +35,7 @@ class Loader(core.Loader):
 
     allow_no_data = True
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
-                        Downloader, AutonomousLoader])
+                        Downloader, IfeLoader])
 
     def known(self, pdb):
         with self.session() as session:

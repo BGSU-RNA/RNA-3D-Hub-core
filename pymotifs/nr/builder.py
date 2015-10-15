@@ -110,7 +110,7 @@ class Builder(core.Base):
         """
 
         with self.session() as session:
-            query = session.query(NrChains.autonomous_group_id.label('id'),
+            query = session.query(NrChains.ife_group_id.label('id'),
                                   NrClasses.handle.label('handle'),
                                   NrClasses.version.label('version'),
                                   NrClasses.id.label('class_id'),

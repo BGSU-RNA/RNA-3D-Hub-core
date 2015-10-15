@@ -1,10 +1,10 @@
 from pymotifs import core
-from pymotifs.models import AutonomousChains
-from pymotifs.models import AutonomousInfo
+from pymotifs.models import IfeChains
+from pymotifs.models import IfeInfo
 
-from pymotifs.autonomous.grouper import Grouper
+from pymotifs.ife.grouper import Grouper
 
-from pymotifs.autonomous.info import Loader as InfoLoader
+from pymotifs.ife.info import Loader as InfoLoader
 
 
 class Loader(core.Loader):
@@ -12,19 +12,19 @@ class Loader(core.Loader):
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(AutonomousChains).\
-                join(AutonomousInfo,
-                     AutonomousInfo.id == AutonomousChains.autonomous_id).\
-                filter(AutonomousInfo.pdb_id == pdb)
+            query = session.query(IfeChains).\
+                join(IfeInfo,
+                     IfeInfo.id == IfeChains.ife_id).\
+                filter(IfeInfo.pdb_id == pdb)
 
             return bool(query.count())
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(AutonomousChains.id).\
-                join(AutonomousInfo,
-                     AutonomousInfo.id == AutonomousChains.autonomous_id).\
-                filter(AutonomousInfo.pdb_id == pdb)
+            query = session.query(IfeChains.id).\
+                join(IfeInfo,
+                     IfeInfo.id == IfeChains.ife_id).\
+                filter(IfeInfo.pdb_id == pdb)
             ids = [result.id for result in query]
 
         if not ids:
@@ -32,8 +32,8 @@ class Loader(core.Loader):
             return None
 
         with self.session() as session:
-            query = session.query(AutonomousChains).\
-                filter(AutonomousChains.id.in_(ids)).\
+            query = session.query(IfeChains).\
+                filter(IfeChains.id.in_(ids)).\
                 delete(synchronize_session=False)
 
     def data(self, pdb_id, **kwargs):
@@ -43,11 +43,11 @@ class Loader(core.Loader):
             for index, chain in enumerate(group['chains']):
                 reference = index == 0
                 accompanying = not reference and len(group['chains']) > 1
-                data.append(AutonomousChains(
+                data.append(IfeChains(
                     chain_id=chain['db_id'],
-                    autonomous_id=group['id'],
-                    is_autonomous=chain['autonomous'],
-                    is_reference=reference,
+                    ife_id=group['id'],
+                    is_integral=chain['autonomous'],
+                    is_structure=chain['structured'],
                     is_accompanying=accompanying
                 ))
         return data

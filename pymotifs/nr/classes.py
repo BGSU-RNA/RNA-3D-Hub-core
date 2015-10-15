@@ -9,12 +9,12 @@ from pymotifs.utils import tmp
 
 from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.interactions import Loader as InteractionLoader
-from pymotifs.autonomous import Loader as AutonomousLoader
+from pymotifs.ife import Loader as IfeLoader
 
 
 class Loader(core.MassLoader):
     dependencies = set([ReleaseLoader, ChainLoader, InteractionLoader,
-                        AutonomousLoader])
+                        IfeLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
 
     def remove(self, *args, **kwargs):

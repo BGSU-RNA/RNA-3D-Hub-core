@@ -49,7 +49,7 @@ class Loader(core.MassLoader):
         for group in grouping:
             for chain in group['members']:
                 data.append({
-                    'autonomous_group_id': chain['id'],
+                    'ife_group_id': chain['id'],
                     'nr_class_id': mapping[group['name']['full']],
                     'nr_release_id': group['release'],
                     'rank': chain['rank'],

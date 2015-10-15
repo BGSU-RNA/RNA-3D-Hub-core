@@ -31,14 +31,14 @@ join chain_info as C1
 on
     C1.pdb_id = P.pdb_id1
     and C1.chain_name = P.chain_name1
-join autonomous_chains as A1
+join ife_chains as A1
 on
     A1.chain_id = C1.id
 join chain_info as C2
 on
     C2.pdb_id = P.pdb_id2
     and C2.chain_name = P.chain_name2
-join autonomous_chains as A2
+join ife_chains as A2
 on
     A2.chain_id = C2.id
 where
@@ -126,7 +126,7 @@ class Helper(core.Base):
         will return a list of 3 element tuples. The first will be the
         correspondence id, the second is a dict for chain1 and a second is a
         dict for chain2. Each chain dict will contain the name, the id, and the
-        pdb. It will only load the reference chains from autonomous groups
+        pdb. It will only load the reference chains from ife groups
         between the two structures.
 
         :params string pdb1: The first pdb.

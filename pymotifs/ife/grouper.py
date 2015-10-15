@@ -1,12 +1,13 @@
-"""This module contains a class which groups chains into autonomous units.
-These units are the building blocks of non redudant entires and thus nr sets.
+"""This module contains a class which groups chains into integrated functional
+elements. These elements  are the building blocks of non redudant entires and
+thus nr sets.
 """
 
 import collections as coll
 
 from pymotifs import core
 from pymotifs.utils import connectedsets as cs
-from pymotifs.autonomous.info_loader import Info
+from pymotifs.ife.info_loader import Info
 
 
 class Grouper(core.Base):
