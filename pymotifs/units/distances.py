@@ -7,22 +7,39 @@ from pymotifs.models import UnitPairsDistances
 from pymotifs.units.info import Loader as InfoLoader
 
 
-class Loader(core.SimpleLoader):
+class Loader(core.Loader):
     max_distance = 10.0
     dependencies = set([InfoLoader])
 
-    def query(self, session, pdb):
-        return session.query(UnitPairsDistances).\
-            join(UnitInfo, UnitInfo.unit_id == UnitPairsDistances.unit_id_1).\
-            filter(UnitInfo.pdb_id == pdb)
+    def remove(self, pdb, **kwargs):
+        with self.session() as session:
+            query = session.query(UnitPairsDistances.unit_id).\
+                join(UnitInfo, UnitInfo.unit_id == UnitPairsDistances.unit_id_1).\
+                filter(UnitInfo.pdb_id == pdb)
+            ids = [result.unit_id for result in query]
+
+        with self.session() as session:
+            query = session.query(UnitPairsDistances).\
+                filter(UnitPairsDistances.unit_id_1.in_(ids)).\
+                delete(synchronize_session=True)
+
+    def has_data(self, pdb, **kwargs):
+        with self.session() as session:
+            query = session.query(UnitPairsDistances).\
+                join(UnitInfo, UnitInfo.unit_id == UnitPairsDistances.unit_id_1).\
+                filter(UnitInfo.pdb_id == pdb)
+
+            return bool(query.count())
 
     def center(self, residue):
-        if 'base' in residue.centers:
-            return residue.centers['base']
-        if 'aa_backbone' in residue.centers:
-            return residue.centers['backbone']
         if residue.sequence == 'HOH':
             return None
+
+        names = ['base', 'aa_backbone']
+        for name in names:
+            if name in residue.centers:
+                return residue.centers[name]
+
         return np.mean(residue.coordinates(), axis=0)
 
     def distance(self, residue1, residue2):
@@ -37,7 +54,7 @@ class Loader(core.SimpleLoader):
         structure = self.structure(pdb)
         for residue1 in structure.residues():
             for residue2 in structure.residues():
-                if residue1 == residue2:
+                if residue1.unit_id() == residue2.unit_id():
                     next
 
                 distance = self.distance(residue1, residue2)

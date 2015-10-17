@@ -33,7 +33,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(Info)
-            return [result.id for result in query]
+            return [result.correspondence_id for result in query]
 
     def remove(self, corr_id, **kwargs):
         """We do not remove anything when summarizing as we aren't actually
@@ -111,7 +111,7 @@ class Loader(core.Loader):
         with self.session() as session:
             p1 = aliased(ExpPosition)
             p2 = aliased(ExpPosition)
-            query = session.query(Position.correspondence_position_id,
+            query = session.query(Position.correspondence_positions_id,
                                   p1.unit.label('unit1'),
                                   p2.unit.label('unit2')).\
                 filter(Position.correspondence_id == corr_id).\

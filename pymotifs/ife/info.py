@@ -15,15 +15,21 @@ class Loader(SimpleLoader):
         return session.query(IfeInfo).filter_by(pdb_id=pdb_id)
 
     def as_group(self, group):
+        integral_count = None
+        accompanying_chain_count = None
+
         return IfeInfo(
             ife_id=group['id'],
             pdb_id=group['pdb'],
+            has_integral=bool(integral_count),
+            has_accompanying=bool(accompanying_chain_count),
             has_structured=group['chains'][0]['autonomous'],
             chain_count=len(group['chains']),
-            integral_count=None,
-            accompanying_count=None,
+            integral_chain_count=None,
+            accompanying_chain_count=None,
+            structured_chain_count=None,
             length=group['summary']['exp_length'],
-            bps=group['summary']['bp']
+            bp_count=group['summary']['bp']
         )
 
     def data(self, pdb_id):

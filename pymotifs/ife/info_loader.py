@@ -8,7 +8,8 @@ from pymotifs.utils import structures as st
 def autonomous_sorter(chain):
     # When autonomous is set to None, this will default to False
     autonomous = chain.get('autonomous') or False
-    return (int(autonomous), chain['length'], -ord(chain['name']))
+    name = [-ord(c) for c in chain['name']]
+    return (int(autonomous), chain['length'], name)
 
 
 class Info(core.Base):
@@ -76,7 +77,7 @@ class Info(core.Base):
                 filter_by(pdb_id=pdb, chain_name=chain)
 
             result = query.one()
-            data['db_id'] = result.id
+            data['db_id'] = result.chain_id
             data['exp_length'] = result.chain_length
             data['entity'] = result.entity_name
             data['sequence'] = result.sequence

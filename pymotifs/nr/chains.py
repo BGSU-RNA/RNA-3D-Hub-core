@@ -1,5 +1,4 @@
 import datetime as dt
-from pprint import pprint
 
 from pymotifs import core
 

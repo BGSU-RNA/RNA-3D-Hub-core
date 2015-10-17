@@ -13,8 +13,8 @@ from sqlalchemy.sql.expression import text
 # are relatively few unique rna sequences.
 QUERY = """
 select distinct
-    E1.id,
-    E2.id,
+    E1.exp_seq_id,
+    E2.exp_seq_id,
     E1.sequence,
     E1.length,
     E2.sequence,
@@ -25,10 +25,10 @@ from exp_seq_info as E1
 join exp_seq_info as E2
 join exp_seq_chain_mapping as M1
 on
-    M1.exp_seq_id = E1.id
+    M1.exp_seq_id = E1.exp_seq_id
 join exp_seq_chain_mapping as M2
 on
-    M2.exp_seq_id = E2.id
+    M2.exp_seq_id = E2.exp_seq_id
 join chain_species as S1
 on
     S1.chain_id = M1.chain_id
@@ -37,16 +37,16 @@ on
     S2.chain_id = M2.chain_id
 join chain_info as I1
 on
-    I1.id = M1.chain_id
+    I1.chain_id = M1.chain_id
 join chain_info as I2
 on
-    I2.id = M2.chain_id
+    I2.chain_id = M2.chain_id
 where
     E1.length >= E2.length
     and (
         E1.length > E2.length
-        or E1.id = E2.id
-        or (E1.length = E2.length and E1.id < E2.id)
+        or E1.exp_seq_id = E2.exp_seq_id
+        or (E1.length = E2.length and E1.exp_seq_id < E2.exp_seq_id)
     )
     and (
     (
@@ -63,8 +63,8 @@ where
     )
     )
     and (
-        S1.id is NULL
-        or S2.id is NULL
+        S1.chain_species_id is NULL
+        or S2.chain_species_id is NULL
         or S1.species_id is NULL
         or S2.species_id is NULL
         or S1.species_id = 32360

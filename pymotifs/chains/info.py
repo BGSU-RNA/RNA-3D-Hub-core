@@ -23,15 +23,11 @@ class Loader(core.MassLoader):
         'compound': 'compound'
     }
 
-    def __init__(self, *args, **kwargs):
-        super(Loader, self).__init__(*args, **kwargs)
-        self.helper = CustomReportHelper(fields=self.names)
-
     def rename(self, report):
         renamed = {}
         for key, name in self.names.items():
             renamed[name] = report.get(key)
-        renamed['id'] = report.get('id')
+        renamed['chain_id'] = report.get('chain_id')
         return renamed
 
     def get_ids(self, reports):
@@ -48,7 +44,7 @@ class Loader(core.MassLoader):
                 filter(ChainInfo.chain_name.in_(chains))
 
             for result in query:
-                mapping[(result.pdb_id, result.chain_name)] = result.id
+                mapping[(result.pdb_id, result.chain_name)] = result.chain_id
                 known_pdbs.add(result.pdb_id)
 
         for report in reports:
@@ -56,13 +52,15 @@ class Loader(core.MassLoader):
             if not db_id and report['structureId'] in known_pdbs:
                 self.logger.error("It seems a new chain %s was added to %s",
                                   report['chainId'], report['structureId'])
+
             if db_id:
-                report['id'] = db_id
+                report['chain_id'] = db_id
 
         return reports
 
     def data(self, pdbs, **kwargs):
-        reports = self.helper(pdbs)
+        helper = CustomReportHelper(fields=self.names)
+        reports = helper(pdbs)
         data = []
         for report in self.get_ids(reports):
             renamed = self.rename(report)

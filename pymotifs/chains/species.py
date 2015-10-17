@@ -5,11 +5,11 @@ from pymotifs.utils.structures import Structure
 from pymotifs.utils.structures import UnknownTaxonomyException
 
 from pymotifs.chains.info import Loader as ChainLoader
-# from pymotifs.species_mapping import Loader as SpeciesLoader
+from pymotifs.species_mapping import Loader as SpeciesLoader
 
 
 class Loader(core.Loader):
-    dependencies = set([ChainLoader])
+    dependencies = set([ChainLoader, SpeciesLoader])
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:

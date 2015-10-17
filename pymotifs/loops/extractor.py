@@ -5,7 +5,7 @@ loops and then will save them in the correct location as specificed by
 """
 import os
 
-from pymotifs.models import LoopsAll
+from pymotifs.models import LoopInfo
 from pymotifs import core
 from pymotifs.utils.units import Translator
 from pymotifs.loops.release import Loader as ReleaseLoader
@@ -26,7 +26,7 @@ class Loader(core.SimpleLoader):
             self.config['recalculate'].get(entry[1])
 
     def query(self, session, pdb):
-        return session.query(LoopsAll).filter_by(pdb_id=pdb)
+        return session.query(LoopInfo).filter_by(pdb_id=pdb)
 
     def _next_loop_number_string(self, current):
         """Compute the next loop number string. This will pad to either 3 or 6
@@ -100,7 +100,7 @@ class Loader(core.SimpleLoader):
             mapping[loop.full_id] = str(loop_id)
             loops[index].Filename = str(loop_id)
 
-            data.append(LoopsAll(
+            data.append(LoopInfo(
                 loop_id=loop_id,
                 type=loop_type,
                 pdb=str(pdb_id),

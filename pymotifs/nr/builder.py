@@ -1,6 +1,5 @@
 import copy
 import itertools as it
-from pprint import pprint
 
 from pymotifs import core
 
@@ -175,6 +174,4 @@ class Builder(core.Base):
                 filtered['name']['cutoff'] = resolution
                 data.append(filtered)
 
-        print('builder')
-        pprint(data[0])
         return data

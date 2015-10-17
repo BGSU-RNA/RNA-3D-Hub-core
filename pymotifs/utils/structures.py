@@ -98,14 +98,14 @@ class Structure(Base):
             for result in query:
                 entry = result.chain_name
                 if return_id:
-                    entry = (result.chain_name, result.id)
+                    entry = (result.chain_name, result.chain_id)
                 data.append(entry)
             return data
 
     def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
-                filter_by(pdb=pdb, model=model).\
+                filter_by(pdb_id=pdb, model=model).\
                 filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U'])).\
                 order_by(mod.UnitInfo.chain)
 
@@ -126,7 +126,7 @@ class Structure(Base):
 
             for result in query:
                 data = ut.row2dict(result)
-                data['id'] = int(data['id'])
+                data['id'] = int(data['unit_pairs_interactions_id'])
                 interactions.append(data)
 
         return interactions
@@ -156,11 +156,11 @@ class Structure(Base):
                 endpoints = []
                 for pos in positions:
                     if pos.border:
-                        endpoints.append(pos['nt_id'])
+                        endpoints.append(pos['unit_id'])
 
                 loops.append({
                     'id': loop_id,
-                    'nts': [pos['nt_id'] for pos in positions],
+                    'nts': [pos['unit_id'] for pos in positions],
                     'endpoints': list(ut.grouper(2, endpoints))
                 })
 
@@ -327,7 +327,7 @@ class BasePairQueries(Base):
 
         if symmetry:
             query = query.filter((bp.is_symmetric == False) |
-                                 ((bp.is_symmetric == True) & (u1.id < u2.id)))
+                                 ((bp.is_symmetric == True) & (u1.unit_id < u2.unit_id)))
 
         if not near:
             query = query.filter(bp.is_near == False)

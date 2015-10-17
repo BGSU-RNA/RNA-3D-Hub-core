@@ -44,7 +44,7 @@ class Loader(core.MassLoader):
         with self.session() as session:
             query = session.query(mod.ChainInfo.taxonomy_id).\
                 outerjoin(mod.SpeciesMapping,
-                          mod.SpeciesMapping.id == mod.ChainInfo.taxonomy_id).\
+                          mod.SpeciesMapping.species_mapping_id == mod.ChainInfo.taxonomy_id).\
                 filter(mod.SpeciesMapping.species_mapping_id == None)
 
             ids = []
@@ -160,7 +160,8 @@ class Loader(core.MassLoader):
 
         data = set(data)
         if len(data) < len(contexts['ids']):
-            missing = set(context['ids']) - set([datum.id for datum in data])
+            known = set([datum.species_mapping_id for datum in data])
+            missing = set(context['ids']) - known
             self.logger.warn("Could not download all requested taxon ids")
             self.logger.warn("Missing: %s", ','.join(missing))
 

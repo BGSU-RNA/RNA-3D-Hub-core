@@ -1,7 +1,7 @@
 from Bio.Alphabet import ThreeLetterProtein
 
 from pymotifs import core
-from pymotifs.models import PdbUnitIdCorrespondence
+from pymotifs.models import _PdbUnitIdCorrespondence as PdbUnitIdCorrespondence
 
 AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 

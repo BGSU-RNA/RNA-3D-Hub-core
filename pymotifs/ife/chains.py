@@ -21,11 +21,11 @@ class Loader(core.Loader):
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(IfeChains.ife_chain_id).\
+            query = session.query(IfeChains.ife_chains_id).\
                 join(IfeInfo,
                      IfeInfo.ife_id == IfeChains.ife_id).\
                 filter(IfeInfo.pdb_id == pdb)
-            ids = [result.ife_chain_id for result in query]
+            ids = [result.ife_chains_id for result in query]
 
         if not ids:
             self.logger.warning("Nothing to delete for %s", pdb)
@@ -33,7 +33,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(IfeChains).\
-                filter(IfeChains.ife_chain_id.in_(ids)).\
+                filter(IfeChains.ife_chains_id.in_(ids)).\
                 delete(synchronize_session=False)
 
     def data(self, pdb_id, **kwargs):
@@ -47,7 +47,7 @@ class Loader(core.Loader):
                     chain_id=chain['db_id'],
                     ife_id=group['id'],
                     is_integral=chain['autonomous'],
-                    is_structure=chain['structured'],
+                    is_structured=chain.get('structured', False),
                     is_accompanying=accompanying
                 ))
         return data

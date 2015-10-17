@@ -44,7 +44,7 @@ class Loader(core.Loader):
             query = session.query(Exp.exp_seq_id).\
                 join(ChainInfo, ChainInfo.sequence == Exp.sequence).\
                 filter(ChainInfo.chain_id == chain_id)
-            return [result.id for result in query]
+            return [result.exp_seq_id for result in query]
 
     def data(self, pdb, **kwargs):
         data = []

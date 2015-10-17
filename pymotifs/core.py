@@ -246,7 +246,7 @@ class Stage(Base):
 
         with self.session() as session:
             current = session.query(mod.PdbAnalysisStatus).\
-                filter_by(pdb=pdb, stage=self.name).\
+                filter_by(pdb_id=pdb, stage=self.name).\
                 first()
             if not current:
                 return True
@@ -301,7 +301,7 @@ class Stage(Base):
             self.logger.debug("Marking %s as done", pdb)
         else:
             with self.session() as session:
-                status = mod.PdbAnalysisStatus(pdb=pdb, stage=self.name,
+                status = mod.PdbAnalysisStatus(pdb_id=pdb, stage=self.name,
                                                time=datetime.datetime.now())
                 session.merge(status)
         self.logger.info('Updated %s status for pdb %s', self.name, pdb)
@@ -472,8 +472,8 @@ class Loader(Stage):
 
         if not self.allow_no_data and not data:
             self.logger.error("No data produced")
-            raise InvalidState("Stage %s produced no data processing %s",
-                               self.name, entry)
+            raise InvalidState("Stage %s produced no data processing %s" %
+                               (self.name, entry))
         elif not data:
             if data is not None:
                 self.logger.warning("No data produced")
@@ -632,6 +632,9 @@ class MultiStageLoader(Stage):
         :stages: A list or set of the stages to use.
         :returns: The stages in sorted order.
         """
+
+        if not stages:
+            return []
 
         known = set(stages)
         stack = list(stages)

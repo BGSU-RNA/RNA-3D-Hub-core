@@ -8,6 +8,8 @@ from pymotifs.models import ExpSeqPosition
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
 from pymotifs.models import RnaUnitModifiedCorrespondencies
+
+from pymotifs.correspondence.info import Loader as CorrLoader
 from pymotifs.exp_seq.info import Loader as InfoLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 
@@ -20,7 +22,7 @@ class Loader(core.Loader):
     """
     mark = False
 
-    dependencies = set([InfoLoader, PositionLoader])
+    dependencies = set([CorrLoader, InfoLoader, PositionLoader])
 
     def __init__(self, config, maker):
         super(Loader, self).__init__(config, maker)
@@ -88,7 +90,7 @@ class Loader(core.Loader):
 
             size = int(query.count()) - 1
             for index, result in enumerate(query):
-                seq_id = result.id
+                seq_id = result.exp_seq_position_id
                 seq = self.translation.get(result.unit, result.unit)
 
                 # X is really N, but old PDB data doesn't respect that.
@@ -138,7 +140,7 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(Info).filter_by(correspondence_id=corr_id)
             result = query.one()
-            return (result.exp_seq_id1, result.exp_seq_id2)
+            return (result.exp_seq_id_1, result.exp_seq_id_2)
 
     def data(self, corr_id, **kwargs):
         exp_id1, exp_id2 = self.info(corr_id)

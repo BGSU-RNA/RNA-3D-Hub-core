@@ -40,8 +40,8 @@ class Loader(core.Loader):
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(UnitInfo.unit_id).filter(UnitInfo.pdb_id == pdb)
-            units = [result.id for result in query]
+            query = session.query(UnitInfo.unit_id).filter_by(pdb_id=pdb)
+            units = [result.unit_id for result in query]
 
         with self.session() as session:
             session.query(UnitMapping).\
@@ -73,7 +73,7 @@ class Loader(core.Loader):
 
             mapping = {}
             for result in query:
-                mapping[result.index] = result.id
+                mapping[result.index] = result.exp_seq_position_id
             return mapping
 
     def mapped_chains(self, pdb):
