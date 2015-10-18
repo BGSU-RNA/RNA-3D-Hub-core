@@ -1,11 +1,14 @@
 from pymotifs import core
+from pymotifs.models import MlReleases
+from pymotifs.models import LoopReleases
+from pymotifs.models import NrReleases
 
 from sqlalchemy import desc
 
 
 CURRENT_QUERY = """
-SELECT id
-FROM %s
+SELECT {column}
+FROM {table}
 LIMIT 1;
 """
 
@@ -43,7 +46,19 @@ class Release(core.Base):
 
     names = ['major', 'minor', 'lookup']
 
-    def previous(self, release, mode='minor', bad_id='wrap', table=None):
+    column_mapping = {
+        'motif': 'ml_releases_id',
+        'loop': 'loop_releases_id',
+        'nr': 'nr_release_id'
+    }
+
+    table_mapping = {
+        'motif': MlReleases,
+        'loop': LoopReleases,
+        'nr': NrReleases
+    }
+
+    def previous(self, release, mode='minor', bad_id='wrap', name=None):
         if mode not in self.names:
             raise UnknownReleaseMode(mode)
 
@@ -59,11 +74,15 @@ class Release(core.Base):
             current['minor'] = 0
 
         if mode == 'lookup':
+            column_name = self.column_mapping[name]
+            table = self.table_mapping[name]
+            column = getattr(table, column_name)
             with self.session() as session:
-                query = session.query(getattr(table, 'id')).\
-                    order_by(desc(getattr(table, 'date')))
+                query = session.query(column).\
+                    order_by(desc(table.date)).\
+                    limit(2)
 
-                results = [result.id for result in query]
+                results = [getattr(result, column_name) for result in query]
                 try:
                     index = results.index(release)
                     return results[index + 1]
@@ -100,13 +119,18 @@ class Release(core.Base):
         if name not in ['nr', 'loop', 'motif']:
             raise UnknownReleaseType(name)
 
-        tablename = 'current_%s_release' % name
+        column_name = self.column_mapping[name]
+        table = self.table_mapping[name]
+        column = getattr(table, column_name)
         with self.session() as session:
-            result = session.execute(CURRENT_QUERY % tablename)
-            result = result.fetchall()
-            if len(result) == 0:
+            query = session.query(column).\
+                order_by(desc(table.date)).\
+                limit(1)
+
+            if query.count() == 0:
                 return '0.0'
-            return result[0].id
+
+            return getattr(query.one(), column_name)
 
     def next(self, current, mode='minor'):
         if mode == 'none' or mode is None:

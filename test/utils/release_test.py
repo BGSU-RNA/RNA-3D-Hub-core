@@ -1,5 +1,8 @@
 from test import StageTest
 
+from datetime import date
+from datetime import timedelta
+
 from pymotifs.models import NrReleases
 from pymotifs.utils.releases import Release
 from pymotifs.utils.releases import UnknownReleaseType
@@ -11,14 +14,27 @@ from pymotifs.utils.releases import ImpossibleRelease
 class GettingReleaseIdTest(StageTest):
     loader_class = Release
 
+    def tearDown(self):
+        with self.loader.session() as session:
+            session.query(NrReleases).delete()
+
     def test_can_get_current_loop_release(self):
-        self.assertEquals('1.72', self.loader.current('loop'))
+        self.assertEquals('0.0', self.loader.current('loop'))
 
     def test_can_get_current_motif_release(self):
-        self.assertEquals('1.15', self.loader.current('motif'))
+        self.assertEquals('0.0', self.loader.current('motif'))
 
     def test_can_get_current_nr_release(self):
-        self.assertEquals('1.70', self.loader.current('nr'))
+        self.assertEquals('0.0', self.loader.current('nr'))
+
+    def test_can_get_current_nr_release_with_existing_one(self):
+        today = date.today()
+        yesterday = today - timedelta(1)
+        with self.loader.session() as session:
+            session.add(NrReleases(nr_release_id='0.1', date=yesterday))
+            session.add(NrReleases(nr_release_id='1.1', date=today))
+
+        self.assertEquals('1.1', self.loader.current('nr'))
 
     def test_complains_for_unknown_release_type(self):
         self.assertRaises(UnknownReleaseType, self.loader.current, 'bob')
@@ -102,10 +118,10 @@ class GettingPreviousReleaseId(StageTest):
         self.assertRaises(ImpossibleRelease, self.loader.previous,
                           '0.0', mode='major', bad_id='raise')
 
-    def test_can_get_previous_from_database(self):
-        self.assertEquals('0.110', self.loader.previous('1.0', mode='lookup',
-                                                        table=NrReleases))
+    # def test_can_get_previous_from_database(self):
+    #     self.assertEquals('0.110', self.loader.previous('1.0', mode='lookup',
+    #                                                     name='nr'))
 
     def test_it_gives_none_if_asked_for_previous_of_unknown(self):
         self.assertEquals(None, self.loader.previous('3.0', mode='lookup',
-                                                     table=NrReleases))
+                                                     name='nr'))
