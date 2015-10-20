@@ -323,6 +323,7 @@ class Stage(Base):
             self.logger.critical("Nothing to process")
             raise InvalidState("Nothing to process")
 
+        processed = []
         for index, entry in enumerate(entries):
             self.logger.info("Processing %s: %s/%s", entry, index + 1,
                              len(entries))
@@ -352,6 +353,9 @@ class Stage(Base):
 
             if self.mark:
                 self.mark_processed(entry, **kwargs)
+            processed.append(entry)
+
+        return processed
 
 
 class Loader(Stage):
@@ -603,6 +607,7 @@ class MassLoader(Loader):
             return
 
         self.mark_processed(entries, **kwargs)
+        return given
 
 
 class MultiStageLoader(Stage):
