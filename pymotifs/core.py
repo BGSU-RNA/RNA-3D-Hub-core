@@ -610,51 +610,13 @@ class MultiStageLoader(Stage):
     stage. It is really useful sometimes to simply run say all unit loaders
     without having to do each one individually or know which ones depend on
     each other. The loader itself does nothing but provide a way to run all
-    other loaders this depends on.
+    other loaders this depends on. All stages which inherit from this will do
+    nothing by themselves other than to run other stages. Do not try to add
+    behavior to these loaders.
     """
 
     """The list of stages that are children of this loader"""
     stages = []
-
-    @ut.classproperty
-    def dependencies(cls):
-        deps = set()
-        for stage in cls.stages:
-            deps.update(stage.dependencies)
-        return deps - set(cls.stages)
-
-    def __sort_stages__(self, stages):
-        """Given a list of stages we sort them to they run in whatever order is
-        implied by their dependencies. This ignores any dependencies on stages
-        outside the given collection. This is useful for ordering the stages in
-        this loader.
-
-        :stages: A list or set of the stages to use.
-        :returns: The stages in sorted order.
-        """
-
-        if not stages:
-            return []
-
-        known = set(stages)
-        stack = list(stages)
-        stage = stages.pop()
-        deps = {stage: stage.dependencies}
-
-        while stack:
-            current = stack.pop()
-            if current not in deps and current in known:
-                deps[current] = current.dependencies
-                stack.extend(current.dependencies)
-
-        return list(toposort(deps))
-
-    def __call__(self, *args, **kwargs):
-        """Run each stage with the given input.
-        """
-        for klass in self.__sort_stages__(self.stages):
-            stage = klass(self.config, self.session.maker)
-            stage(*args, **kwargs)
 
 
 class Exporter(Stage):

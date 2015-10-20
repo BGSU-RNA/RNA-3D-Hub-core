@@ -1,11 +1,11 @@
 import unittest as ut
 
 from pymotifs.dispatcher import Dispatcher
-from pymotifs.units.info import Loader
-from pymotifs.units.quality import Loader as Quality
-from pymotifs.units import Loader as UnitLoader
-from pymotifs.download import Downloader
-from pymotifs.pdbs.info import Loader as PdbLoader
+from pymotifs import units
+from pymotifs import pdbs
+from pymotifs import download as down
+from pymotifs import export
+from pymotifs import mat_files as mat
 
 
 class DispatcherTest(ut.TestCase):
@@ -14,15 +14,15 @@ class DispatcherTest(ut.TestCase):
 
     def test_it_can_load_a_stage_by_name(self):
         val = self.dispatcher.get_stage('units.info')
-        self.assertEquals(val, Loader)
+        self.assertEquals(val, units.InfoLoader)
 
     def test_it_can_load_an_aggregate_by_name(self):
         val = self.dispatcher.get_stage('units')
-        self.assertEquals(val, UnitLoader)
+        self.assertEquals(val, units.Loader)
 
     def test_it_can_load_a_unit_stage(self):
         val = self.dispatcher.get_stage('units.quality')
-        self.assertEquals(val, Quality)
+        self.assertEquals(val, units.QualityLoader)
 
     def test_it_fails_if_given_unknown_module(self):
         self.assertRaises(ImportError, self.dispatcher.get_stage, 'bob')
@@ -34,17 +34,17 @@ class LoadingTest(ut.TestCase):
 
     def test_it_knows_if_something_is_a_loader(self):
         loader = self.dispatcher.is_loader('pymotifs.units.info')
-        val = loader(Loader)
+        val = loader(units.InfoLoader)
         self.assertTrue(val)
 
     def test_it_can_load_a_single_loader_from_many_imported(self):
         loader = self.dispatcher.is_loader('pymotifs.units')
-        val = loader(UnitLoader)
+        val = loader(units.Loader)
         self.assertTrue(val)
 
     def test_it_will_skip_those_with_mismatched_name(self):
         loader = self.dispatcher.is_loader('pymotifs.units.info')
-        val = loader(UnitLoader)
+        val = loader(units.Loader)
         self.assertFalse(val)
 
 
@@ -55,25 +55,26 @@ class LoadingStagesTest(ut.TestCase):
     def test_can_give_only_selected_stage(self):
         self.dispatcher.skip_dependencies = True
         val = self.dispatcher.stages('units.info')
-        self.assertEquals([Loader], val)
+        self.assertEquals([units.InfoLoader], val)
 
     def test_can_get_with_all_dependecies(self):
-        val = sorted(self.dispatcher.stages('units.info'))
-        self.assertEquals(sorted([Downloader, PdbLoader, Loader]), val)
+        val = self.dispatcher.stages('units.info')
+        ans = [down.Downloader, pdbs.InfoLoader, units.InfoLoader]
+        self.assertEquals(ans, val)
 
+    def test_can_get_all_dependencies_of_multistage(self):
+        val = self.dispatcher.stages('units')
+        ans = [down.Downloader, pdbs.InfoLoader,
+               units.InfoLoader, export.CifAtom,
+               units.DistancesLoader, units.QualityLoader,
+               mat.Loader, units.RedundantNucleotidesLoader]
+        self.assertEquals(ans, val)
 
-class RunningMultiStageLoaders(ut.TestCase):
-    def test_it_does_not_run_stages_before_needed(self):
-        """The idea is that in multiloaders (M) like
-
-        M -> (A, B, C, J, K)
-
-        B -> (A)
-
-        C -> (A, B)
-
-        Running the dependencies for M will not run A, B, C beforing trying to
-        run M. It will run J, K (in any order) then run A, B, C as implied by
-        the dependecies (or ordering).
-        """
-        self.fail()
+    def test_can_exclude_specific_stages(self):
+        self.dispatcher.exclude = set(['units.distances'])
+        val = self.dispatcher.stages('units')
+        ans = [down.Downloader, pdbs.InfoLoader,
+               units.InfoLoader, export.CifAtom,
+               units.QualityLoader, mat.Loader,
+               units.RedundantNucleotidesLoader]
+        self.assertEquals(ans, val)

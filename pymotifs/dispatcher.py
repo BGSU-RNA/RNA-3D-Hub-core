@@ -2,6 +2,7 @@ import logging
 import inspect
 
 from pymotifs.core import Stage
+from pymotifs.core import MulitStageLoader
 
 from pymotifs.utils.toposort import toposort
 
@@ -13,9 +14,22 @@ class Dispatcher(object):
     """
 
     def __init__(self, name, *args, **kwargs):
+        """Create a new dispatcher.
+
+        :name: String name of the stage to run. Should be like 'update', which
+        will load pymotifs.update.
+        :*args: Arguments to build the stage with
+        :skip_dependencies: Flag to indicate if all dependencies should be
+        skipped.
+        :exclude: A list, set or tuple of stage names to exclude. This will
+        also exclude all dependencies of the stage if they are only used for
+        the stage.
+        """
+
         self.name = name
         self._args = args
         self.skip_dependencies = kwargs.get('skip_dependencies')
+        self.exclude = set(kwargs.get('exclude', []))
         self.logger = logging.getLogger(__name__)
 
     def get_stage(self, name):
@@ -44,18 +58,32 @@ class Dispatcher(object):
         if self.skip_dependencies:
             return [stage]
 
+        exclude = set(self.get_stage(name) for name in self.exclude)
         deps = {stage: stage.dependencies}
         stack = list(stage.dependencies)
+
+        if issubclass(stage, MulitStageLoader):
+            deps = {}
+            exclude.add(stage)
+            stack = list(stage.stages)
+
         while stack:
             current = stack.pop()
-            if current not in deps:
+            if current in exclude or current in deps:
+                next
+
+            if issubclass(current, MulitStageLoader):
+                stack.extend(current.stages)
+                exclude.add(current)
+            else:
                 deps[current] = current.dependencies
                 stack.extend(current.dependencies)
 
-        stages = list(toposort(deps))
-        if stage not in stages:
+        stages = [s for s in toposort(deps) if s not in exclude]
+        if stage not in stages and stage not in exclude:
             self.logger.warning("Likely there is an issue in toposort")
             stages.append(stage)
+
         return stages
 
     def is_loader(self, name):
