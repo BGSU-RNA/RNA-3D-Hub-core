@@ -16,7 +16,9 @@ def toposort(graph):
         if name in levels_by_name:
             return levels_by_name[name]
         children = graph.get(name, None)
-        level = 0 if not children else (1 + max(walk_depth_first(lname) for lname in children))
+        level = 0
+        if children:
+            level = (1 + max(walk_depth_first(lname) for lname in children))
         levels_by_name[name] = level
         if level not in names_by_level:
             names_by_level[level] = set()
@@ -25,6 +27,9 @@ def toposort(graph):
 
     for name in graph:
         walk_depth_first(name)
+
+    for level, stages in names_by_level.items():
+        names_by_level[level] = sorted(stages)
 
     ordered_levels = (names_by_level.get(i, None) for i in it.count())
     ordered_sets = it.takewhile(lambda x: x is not None, ordered_levels)
