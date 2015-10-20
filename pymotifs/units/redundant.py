@@ -12,6 +12,7 @@ from pymotifs.mat_files import Loader as MatLoader
 
 class RedundantNucleotidesLoader(core.SimpleLoader):
     dependencies = set([MatLoader])
+    allow_no_data = True
 
     def _parse(self, raw, pdb_file):
         data = []
