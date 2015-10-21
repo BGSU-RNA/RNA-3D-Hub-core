@@ -12,8 +12,8 @@ class GetIdsTest(StageTest):
             {'structureId': '1DUH', 'chainId': 'A'}
         ]
         reports = self.loader.get_ids(reports)
-        val = sorted([report['id'] for report in reports])
-        self.assertEquals([209, 227], val)
+        val = sorted([report['chain_id'] for report in reports])
+        self.assertEquals([5, 6], val)
 
     def test_will_not_set_missing_ids(self):
         reports = [{'structureId': '0E4P', 'chainId': 'A'}]
@@ -25,20 +25,20 @@ class GettingDataTest(StageTest):
     loader_class = Loader
 
     def test_can_get_a_known_pdb(self):
-        val = self.loader.data('2AW7')
-        self.assertEquals(21, len(val))
+        val = self.loader.data('4V4G')
+        self.assertEquals(265, len(val))
 
     def test_can_process_several_pdbs(self):
-        val = self.loader.data(['2AW7', '1S72'])
-        self.assertEquals(52, len(val))
+        val = self.loader.data(['4V4G', '1S72'])
+        self.assertEquals(265 + 31, len(val))
 
 
 class RenameTest(StageTest):
     loader_class = Loader
 
     def test_propagates_the_id(self):
-        val = self.loader.rename({'id': 'bob', 'pdb_id': 'CX'})
-        self.assertEquals('bob', val['id'])
+        val = self.loader.rename({'chain_id': 'bob', 'pdb_id': 'CX'})
+        self.assertEquals('bob', val['chain_id'])
 
     def test_updates_the_names(self):
         val = self.loader.rename({'pdb_id': 'bob', 'chainId': 'CX'})
