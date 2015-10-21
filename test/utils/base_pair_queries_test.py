@@ -1,10 +1,12 @@
 from nose import SkipTest
 
 from test import QueryUtilTest
+from test import skip_without_matlab
 
 from pymotifs.utils import structures as st
 
 
+@skip_without_matlab
 class RepresentativeBpTest(QueryUtilTest):
     query_class = st.BasePairQueries
 
@@ -44,6 +46,7 @@ class RepresentativeBpTest(QueryUtilTest):
         raise SkipTest()
 
 
+@skip_without_matlab
 class CrossChainTest(QueryUtilTest):
     query_class = st.BasePairQueries
 
@@ -93,6 +96,7 @@ class CrossChainTest(QueryUtilTest):
         raise SkipTest()
 
 
+@skip_without_matlab
 class BetweenChainTest(QueryUtilTest):
     query_class = st.BasePairQueries
 
