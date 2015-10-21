@@ -26,7 +26,7 @@ class RenameTest(StageTest):
 
     def test_an_work_if_missing_key(self):
         data = self.loader.rename({'structureId': 'A'})
-        self.assertEquals('A', data['id'])
+        self.assertEquals('A', data['pdb_id'])
 
     def test_fills_in_none_for_missing_keys(self):
         data = self.loader.rename({'structureId': 'A'})

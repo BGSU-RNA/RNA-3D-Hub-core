@@ -42,7 +42,7 @@ class Loader(core.MassLoader):
             except:
                 renamed['resolution'] = None
                 self.logger.error("Resoultion entry %s for %s is not a number",
-                                  renamed['resolution'], renamed['id'])
+                                  renamed['resolution'], renamed.get('pdb_id'))
 
         return renamed
 
