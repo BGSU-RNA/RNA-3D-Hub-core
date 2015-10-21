@@ -34,7 +34,14 @@ class CoreRsrParserTest(unittest.TestCase):
             'icode': ' '
         }
         val = self.parser._unit_id('1J5E', data)
-        ans = '1J5E|1|A|C|10'
+        ans = {
+            'component_id': 'C',
+            'chain': 'A',
+            'insertion_code': None,
+            'component_number': 10,
+            'model': 1,
+            'pdb': '1J5E'
+        }
         self.assertEqual(ans, val)
 
 
@@ -69,7 +76,14 @@ class HasRsRParserTest(unittest.TestCase):
     def test_can_generate_nt_level_data(self):
         val = list(self.parser.nts())[0]
         ans = {
-            'id': '4V7W|1|AA|U|5',
+            'id': {
+                'component_id': 'U',
+                'chain': 'AA',
+                'insertion_code': None,
+                'component_number': 5,
+                'model': 1,
+                'pdb': '4V7W'
+            },
             'real_space_r': 0.218
         }
         self.assertEquals(ans, val)
@@ -83,3 +97,15 @@ class QueryingTest(StageTest):
 
     def test_knows_if_data_exists(self):
         raise SkipTest("No good data")
+
+
+class MappingTest(StageTest):
+    loader_class = ntq.Loader
+
+    def test_can_create_complete_mapping(self):
+        mapping = self.loader.mapping('1GID')
+        self.assertEquals(len(mapping), 350)
+
+    def test_can_map_to_unit_id(self):
+        mapping = self.loader.mapping('1GID')
+        self.assertEquals(mapping[('A', 146, None)], ['1GID|1|A|A|146'])
