@@ -31,7 +31,8 @@ to run, a optional list of pdb and then options.
 def setup_logging(opts):
     log_args = {
         'level': getattr(logging, opts.pop('log_level').upper()),
-        'filemode': opts.pop('log_mode')
+        'filemode': opts.pop('log_mode'),
+        'format': '%(levelname)s:%(asctime)s:%(message)s',
     }
     if opts['log_file']:
         log_args['filename'] = opts.pop('log_file')
