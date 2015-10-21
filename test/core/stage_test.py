@@ -10,25 +10,14 @@ class SomeStage(Stage):
     def is_missing(self, data, **kwargs):
         return data
 
+    def store(self, data, **kwargs):
+        pass
 
-class StageNameTest(Base):
-    def test_it_can_generate_a_name(self):
-        val = SomeStage(config, None).name
-        ans = 'test.core.stage_test'
-        self.assertEqual(ans, val)
-
-
-class LoggerTest(Base):
-    def test_it_creates_a_logger(self):
-        val = SomeStage(config, None)
-        self.assertTrue(val.logger)
-
-    def test_it_assigns_the_loggers_name(self):
-        val = SomeStage(config, None)
-        self.assertEqual('test.core.stage_test', val.logger.name)
+    def mark_processed(self, data, **kwargs):
+        pass
 
 
-class MustRecomputeTest(Base):
+class RecomputingTest(Base):
     def test_must_recompute_detects_if_given_recompute(self):
         conf = dict(config)
         conf.update({'test.core.stage_test': {'recompute': False}})
@@ -92,3 +81,8 @@ class ProcessingTests(Base):
         val = stage.to_process(['abc'])
         ans = ['ABC']
         self.assertEqual(val, ans)
+
+    def test_will_return_processed_input(self):
+        stage = SomeStage(config, None)
+        val = stage(['A', '', 'B'])
+        self.assertEqual(val, ['A', 'B'])

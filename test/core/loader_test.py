@@ -91,7 +91,7 @@ class StoringTest(StageTest):
         self.loader.store(PdbInfo(pdb_id='0000', resolution=10))
         with self.loader.session() as session:
                 result = session.query(PdbInfo.resolution).\
-                    filter_by(id='0000').one()
+                    filter_by(pdb_id='0000').one()
                 self.assertEquals(10, result.resolution)
 
         self.loader.merge_data = True
@@ -99,7 +99,7 @@ class StoringTest(StageTest):
 
         with self.loader.session() as session:
                 result = session.query(PdbInfo.resolution).\
-                    filter_by(id='0000').one()
+                    filter_by(pdb_id='0000').one()
                 self.assertEquals(1, result.resolution)
 
     def test_merge_works_with_new_data(self):
@@ -107,7 +107,7 @@ class StoringTest(StageTest):
         self.loader.store(PdbInfo(pdb_id='000X', resolution=10))
         with self.loader.session() as session:
                 result = session.query(PdbInfo.resolution).\
-                    filter_by(id='000X').one()
+                    filter_by(pdb_id='000X').one()
                 self.assertEquals(10, result.resolution)
 
 
