@@ -1,6 +1,8 @@
 import unittest
 from nose import SkipTest
 
+from pprint import pprint
+
 from test import StageTest
 
 import pymotifs.units.quality as ntq
@@ -109,3 +111,30 @@ class MappingTest(StageTest):
     def test_can_map_to_unit_id(self):
         mapping = self.loader.mapping('1GID')
         self.assertEquals(mapping[('A', 146, None)], ['1GID|1|A|A|146'])
+
+
+class MissingDataTest(StageTest):
+    loader_class = ntq.Loader
+
+    @classmethod
+    def setUpClass(cls):
+        with open('test/files/validation/1fjg_validation.xml.gz', 'rb') as raw:
+            cls.parser = ntq.Parser(raw.read())
+            cls.nts = list(cls.parser.nts())
+
+    def setUp(self):
+        self.parser = self.__class__.parser
+        self.nts = list(self.__class__.nts)
+        super(MissingDataTest, self).setUp()
+
+    def test_parses_all_rna_data(self):
+        val = [nt for nt in self.nts if nt['id'].get('chain') == 'A']
+        self.assertEquals(len(val), 1603)
+
+    def test_can_map_all_rna_data(self):
+        mapping = self.loader.mapping('1JFG')
+        val = []
+        for nt in self.nts:
+            if nt['id']['chain'] == 'A':
+                val.append(self.loader.as_quality(nt, mapping))
+        self.assertEquals(len(val), 1603)
