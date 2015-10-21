@@ -42,3 +42,5 @@ GPATH
 GRTAGS
 conf/*.json
 data/
+logs/
+tags
