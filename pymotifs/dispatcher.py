@@ -2,7 +2,7 @@ import logging
 import inspect
 
 from pymotifs.core import Stage
-from pymotifs.core import MulitStageLoader
+from pymotifs.core import MultiStageLoader
 
 from pymotifs.utils.toposort import toposort
 
@@ -62,7 +62,7 @@ class Dispatcher(object):
         deps = {stage: stage.dependencies}
         stack = list(stage.dependencies)
 
-        if issubclass(stage, MulitStageLoader):
+        if issubclass(stage, MultiStageLoader):
             deps = {}
             exclude.add(stage)
             stack = list(stage.stages)
@@ -72,7 +72,7 @@ class Dispatcher(object):
             if current in exclude or current in deps:
                 next
 
-            if issubclass(current, MulitStageLoader):
+            if issubclass(current, MultiStageLoader):
                 stack.extend(current.stages)
                 exclude.add(current)
             else:
