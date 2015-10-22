@@ -70,7 +70,8 @@ def run(name, config, pdbs, opts):
     Session = sessionmaker(bind=engine)
 
     dispatcher = Dispatcher(name, config, Session,
-                            skip_dependencies=opts.get('skip_dependencies'))
+                            skip_dependencies=opts.get('skip_dependencies'),
+                            exclude=opts['exclude'])
 
     emailer = email.Emailer(config, Session)
     error = None
@@ -103,6 +104,8 @@ if __name__ == '__main__':
                         help="Do a dry run where we store nothing")
     parser.add_argument('--skip-dependencies', action='store_true',
                         help='Skip running any dependencies')
+    parser.add_argument('--skip-stage', action='append', dest='exclude',
+                        help='Name of stage to skip')
 
     parser.add_argument('--no-email', action='store_false',
                         help='Do not send an email')
@@ -121,6 +124,7 @@ if __name__ == '__main__':
     for arg, value in vars(args).items():
         if arg != 'pdbs' and arg != 'name' and arg != 'config':
             opts[arg] = value
+    opts['exclude'] = set(opts['exclude'] or [])
 
     config = load_config(args.config)
     config['email']['send'] = args.no_email
