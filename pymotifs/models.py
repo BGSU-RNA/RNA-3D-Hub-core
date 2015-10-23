@@ -5,6 +5,7 @@ import datetime
 
 from sqlalchemy import desc
 from sqlalchemy import Text
+from sqlalchemy import Table
 from sqlalchemy import Column
 from sqlalchemy import String
 from sqlalchemy import Integer
@@ -12,31 +13,60 @@ from sqlalchemy import DateTime
 from sqlalchemy import MetaData
 from sqlalchemy.dialects.mysql import LONGTEXT
 
-from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.ext.declarative import declarative_base
 
 
 logger = logging.getLogger(__name__)
 
 metadata = MetaData()
-Base = automap_base(metadata=metadata)
+Base = declarative_base(metadata=metadata)
+
+PRIMARY_KEYS = {
+    'correspondence_units': set(['unit_id_1', 'unit_id_2',
+                                 'correspondence_id']),
+    'exp_seq_pdb': set(['exp_seq_id', 'pdb_id', 'chain_id'])
+}
 
 
-def camelize_classname(base, tablename, table):
+def camelize_classname(tablename):
     return str(tablename[0].upper() +
                re.sub(r'_(\w)', lambda m: m.group(1).upper(), tablename[1:]))
 
 
 def should_reflect(tablename, *args):
-    name = camelize_classname(None, tablename, None)
+    name = camelize_classname(tablename)
     return name not in globals()
 
 
+
 def reflect(engine):
+    """Reflect all tables/views from the database into python. This cannot
+    reflect any table/view that does not have a primary key as this is a
+    limitation of sqlalchemy.
+
+    Modified from
+    https://charleslavery.com/notes/sqlalchemy-reflect-tables-to-declarative.html
+    """
+
     metadata.bind = engine
+
     metadata.reflect(only=should_reflect, views=True)
-    Base.prepare(classname_for_table=camelize_classname)
-    for klass in Base.classes:
-        globals()[klass.__name__] = klass
+
+    # We have to define what columns are PK for views
+    Table('exp_seq_pdb', metadata,
+          Column('exp_seq_id', String, primary_key=True),
+          Column('pdb_id', String, primary_key=True),
+          Column('chain_id', Integer, primary_key=True),
+          extend_existing=True)
+
+    glo = globals()
+    for name, obj in metadata.tables.items():
+        classname = camelize_classname(name)
+
+        try:
+            glo[classname] = type(classname, (Base,), {'__table__': obj})
+        except:
+            logger.warning("Could not reflect table %s", name)
 
 
 class MlReleases(Base):
