@@ -19,18 +19,19 @@ from sqlalchemy.orm import sessionmaker
 import pipeline as pipe
 
 from pymotifs import models
+from pymoitfs import config
 from pymotifs.dispatcher import Dispatcher
 
 
-def main(config, opts):
+def main(conf, opts):
     pipe.setup_logging(opts)
 
-    engine = create_engine(config['db']['uri'])
+    engine = create_engine(conf['db']['uri'])
     models.reflect(engine)
     Session = sessionmaker(bind=engine)
 
-    dispatcher = Dispatcher("update", config, Session)
-    dispatcher(config['pdbs'], **opts)
+    dispatcher = Dispatcher("update", conf, Session)
+    dispatcher(conf['pdbs'], **opts)
 
 
 if __name__ == '__main__':
@@ -53,5 +54,5 @@ if __name__ == '__main__':
         if arg != 'config':
             opts[arg] = value
 
-    config = pipe.load_config(args.config)
-    main(config, opts)
+    conf = config.load(args.config)
+    main(conf, opts)

@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
+"""The main script to run BGSU's update pipeline. This takes the name of a
+stage to run, options, and then optional list of pdbs. In order for this to run
+the configuration file in `conf/motifatlas.json` must exist and be filled out.
+There is an example file in `conf/motifatlas.josn.txt`. Notably, a database uri
+must be configured. Locations
+"""
+
 import os
 import sys
-import json
 import logging
 import argparse
-import collections
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -14,6 +19,7 @@ here = os.path.dirname(__file__)
 pymotifs = os.path.abspath(os.path.join(here, '..'))
 sys.path.append(pymotifs)
 
+from pymotifs import config
 from pymotifs import models
 from pymotifs.dispatcher import Dispatcher
 from pymotifs.utils import pdb
@@ -21,11 +27,6 @@ from pymotifs.utils import known
 from pymotifs import email
 
 logger = logging.getLogger(__name__)
-
-DESCRIPTION = """
-The main script to run BGSU's update pipeline. This takes the name of a stage
-to run, a optional list of pdb and then options.
-"""
 
 
 def setup_logging(opts):
@@ -46,14 +47,7 @@ def setup_logging(opts):
         pool_logger.addHandler(handler)
 
 
-def load_config(filename):
-    config = collections.defaultdict(dict)
-    with open(filename, 'rb') as raw:
-        config.update(json.load(raw))
-        return config
-
-
-def run(name, config, pdbs, opts):
+def run(name, conf, pdbs, opts):
     setup_logging(opts)
 
     if opts['all']:
@@ -65,15 +59,15 @@ def run(name, config, pdbs, opts):
     if not pdbs:
         logger.warning("Running with no pdb files")
 
-    engine = create_engine(config['db']['uri'])
+    engine = create_engine(conf['db']['uri'])
     models.reflect(engine)
     Session = sessionmaker(bind=engine)
 
-    dispatcher = Dispatcher(name, config, Session,
+    dispatcher = Dispatcher(name, conf, Session,
                             skip_dependencies=opts.get('skip_dependencies'),
                             exclude=opts['exclude'])
 
-    emailer = email.Emailer(config, Session)
+    emailer = email.Emailer(conf, Session)
     error = None
     try:
         dispatcher(pdbs, **opts)
@@ -85,7 +79,7 @@ def run(name, config, pdbs, opts):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument('name', metavar='N', help='Name of stage to run')
     parser.add_argument('pdbs', metavar='P', nargs='*', help="PDBs to use")
@@ -126,6 +120,6 @@ if __name__ == '__main__':
             opts[arg] = value
     opts['exclude'] = set(opts['exclude'] or [])
 
-    config = load_config(args.config)
-    config['email']['send'] = args.no_email
-    run(args.name, config, args.pdbs, opts)
+    conf = config.load(args.config)
+    conf['email']['send'] = args.no_email
+    run(args.name, conf, args.pdbs, opts)
