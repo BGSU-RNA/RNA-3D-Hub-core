@@ -11,7 +11,7 @@ class QueryingTest(StageTest):
         self.assertFalse(self.loader.has_data('0GID'))
 
     def test_knows_has_data(self):
-        raise SkipTest()
+        self.assertTrue(self.loader.has_data('124D'))
 
     def test_can_remove_data(self):
         raise SkipTest()
@@ -22,30 +22,26 @@ class GettingDataTest(StageTest):
 
     def test_can_get_data_for_pdb(self):
         data = self.loader.data('1GID')
-        val = sorted([(entry.chain_id, entry.species_id) for entry in data],
-                     key=lambda e: e[0])
-        ans = [(492, 32630), (493, 32630)]
+        val = [d.species_id for d in data]
+        ans = [32630, 32630]
         self.assertEquals(ans, val)
 
     def test_assigns_synethic_when_unknown(self):
         data = self.loader.data('1ET4')
-        val = sorted([(entry.chain_id, entry.species_id) for entry in data],
-                     key=lambda e: e[0])
-        ans = [(301, 32630), (302, 32630), (303, 32630), (304, 32630),
-               (305, 32630)]
+        val = [d.species_id for d in data]
+        ans = [32630] * 5
         self.assertEquals(ans, val)
 
     def test_assigns_synthetic_when_multi(self):
         data = self.loader.data('3T4B')
-        val = [(entry.chain_id, entry.species_id) for entry in data]
-        ans = [(18248, 32630)]
+        val = [entry.species_id for entry in data]
+        ans = [32630]
         self.assertEquals(ans, val)
 
     def test_assigns_to_species(self):
-        data = self.loader.data('3J01')
-        val = sorted([(entry.chain_id, entry.species_id) for entry in data],
-                     key=lambda e: e[0])
-        ans = [(14398, 562), (14399, 562)]
+        data = self.loader.data('4V6M')
+        val = [e.species_id for e in data]
+        ans = [562] * 5
         self.assertEquals(ans, val)
 
     def test_can_find_species_when_name_and_id_differ(self):
