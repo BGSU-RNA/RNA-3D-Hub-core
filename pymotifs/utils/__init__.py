@@ -63,8 +63,12 @@ def grouper(n, iterable):
 
 def row2dict(row):
     d = {}
-    for column in row.__table__.columns:
-        d[column.name] = str(getattr(row, column.name))
+    if hasattr(row, '__table__'):
+        for column in row.__table__.columns:
+            d[column.name] = str(getattr(row, column.name))
+    elif hasattr(row, '_fields'):
+        for column in row._fields:
+            d[column] = getattr(row, column)
     return d
 
 
