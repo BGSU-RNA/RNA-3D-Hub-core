@@ -2,7 +2,7 @@ from test import Session
 
 import unittest as ut
 
-from pymotifs.core import Session as SessionWrapper
+from pymotifs.core.db import Session as SessionWrapper
 from pymotifs.models import PdbInfo
 
 

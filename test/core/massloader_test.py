@@ -1,7 +1,7 @@
 from test import StageTest
 from nose import SkipTest
 
-from pymotifs.core import MassLoader
+from pymotifs.core.stages import MassLoader
 
 
 class Mass(MassLoader):
