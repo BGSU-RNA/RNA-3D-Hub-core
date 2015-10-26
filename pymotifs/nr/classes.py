@@ -7,9 +7,9 @@ from pymotifs.nr.release import Loader as ReleaseLoader
 from pymotifs.utils.releases import Release
 from pymotifs.utils import tmp
 
-from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.interactions import Loader as InteractionLoader
-from pymotifs.ife import Loader as IfeLoader
+from pymotifs.chains.loader import Loader as ChainLoader
+from pymotifs.interactions.loader import Loader as InteractionLoader
+from pymotifs.ife.loader import Loader as IfeLoader
 
 
 class Loader(core.MassLoader):

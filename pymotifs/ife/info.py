@@ -3,8 +3,8 @@ from pymotifs.models import IfeInfo
 
 from pymotifs.ife.grouper import Grouper
 
-from pymotifs.chains import Loader as ChainLoader
-from pymotifs.interactions import Loader as InteractionLoader
+from pymotifs.chains.loader import Loader as ChainLoader
+from pymotifs.interactions.loader import Loader as InteractionLoader
 
 
 class Loader(SimpleLoader):

@@ -27,7 +27,7 @@ from pymotifs.ife.info import Loader as InfoLoader
 from pymotifs.ife.chains import Loader as ChainLoader
 
 
-class Loader(core.MultiStageLoader):
+class Loader(core.StageContainer):
     """This loader will load all ife related data into the database. It is a
     mass loader so it will load the information and then load the chain
     specific information. For details on what each step does look at

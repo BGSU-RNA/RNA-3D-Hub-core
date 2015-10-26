@@ -5,5 +5,5 @@ from pymotifs.chains.best import BestChainsAndModelsLoader
 from pymotifs.chains.species import Loader as SpeciesLoader
 
 
-class Loader(core.MultiStageLoader):
+class Loader(core.StageContainer):
     stages = set([InfoLoader, BestChainsAndModelsLoader, SpeciesLoader])

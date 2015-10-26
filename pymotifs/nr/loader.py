@@ -6,5 +6,5 @@ from pymotifs.nr.chains import Loader as ChainLoader
 from pymotifs.nr.parents import Loader as ParentLoader
 
 
-class Loader(core.MultiStageLoader):
+class Loader(core.StageContainer):
     stages = [ReleaseLoader, ClassLoader, ChainLoader, ParentLoader]
