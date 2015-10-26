@@ -1,6 +1,6 @@
 from test import StageTest
 
-from pymotifs.autonomous.grouper import Grouper as AutonomousGrouper
+from pymotifs.ife.grouper import Grouper as AutonomousGrouper
 
 
 class AutonomousCheckTest(StageTest):

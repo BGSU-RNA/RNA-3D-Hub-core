@@ -1,7 +1,7 @@
 from test import StageTest
 from nose import SkipTest
 
-from pymotifs.autonomous.info_loader import Info
+from pymotifs.ife.info_loader import Info
 
 
 class InfoLoadingTest(StageTest):
