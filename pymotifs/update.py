@@ -1,23 +1,22 @@
-"""
-This is the main module for running updates. Running this package will run an
-update for all parts of the pipeline.
+"""This is the main module for running updates. Running this package will run
+an update for all parts of the pipeline.
 """
 
 from pymotifs import core
 from pymotifs import download
-from pymotifs import units
-from pymotifs import pdbs
-from pymotifs import loops
-from pymotifs import chains
-from pymotifs import interactions
-from pymotifs import exp_seq
-from pymotifs import correspondence
 from pymotifs import species_mapping
-from pymotifs import ife
-from pymotifs import export
+from pymotifs.units import loader as units
+from pymotifs.pdbs import loader as pdbs
+from pymotifs.loops import loader as loops
+from pymotifs.chains import loader as chains
+from pymotifs.interactions import loader as interactions
+from pymotifs.exp_seq import loader as exp_seq
+from pymotifs.correspondence import loader as correspondence
+from pymotifs.ife import loader as ife
+from pymotifs.export import loader as export
 
 
-class Loader(core.MultiStageLoader):
+class Loader(core.StageContainer):
     stages = set([
         download.Downloader,
         pdbs.Loader,
@@ -29,5 +28,5 @@ class Loader(core.MultiStageLoader):
         exp_seq.Loader,
         correspondence.Loader,
         ife.Loader,
-        export.InteractionExporter
+        export.Loader
     ])

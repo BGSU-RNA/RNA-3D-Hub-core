@@ -8,27 +8,13 @@ from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.species_mapping import Loader as SpeciesLoader
 
 
-class Loader(core.Loader):
+class Loader(core.SimpleLoader):
     dependencies = set([ChainLoader, SpeciesLoader])
 
-    def has_data(self, pdb, **kwargs):
-        with self.session() as session:
-            query = session.query(ChainSpecies).\
-                join(ChainInfo, ChainInfo.chain_id == ChainSpecies.chain_id).\
-                filter(ChainInfo.pdb_id == pdb)
-
-            return bool(query.count())
-
-    def remove(self, pdb, **kwargs):
-        with self.session() as session:
-            query = session.query(ChainInfo.chain_id).\
-                filter(ChainInfo.pdb_id == pdb)
-            ids = [result.chain_id for result in query]
-
-        with self.session() as session:
-            session.query(ChainSpecies).\
-                filter(ChainSpecies.chain_id.in_(ids)).\
-                delete(synchronize_session=False)
+    def query(self, session, pdb):
+        return session.query(ChainSpecies).\
+            join(ChainInfo, ChainInfo.chain_id == ChainSpecies.chain_id).\
+            filter(ChainInfo.pdb_id == pdb)
 
     def data(self, pdb, **kwargs):
         helper = Structure(self.session.maker)
@@ -39,5 +25,7 @@ class Loader(core.Loader):
                 species = helper.source(pdb, chain_name, simplify=True)
             except UnknownTaxonomyException as err:
                 self.logger.warning(str(err))
+
+            species = species or 32630
             data.append(ChainSpecies(chain_id=chain_id, species_id=species))
         return data

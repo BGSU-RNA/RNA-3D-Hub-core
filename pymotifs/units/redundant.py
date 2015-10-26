@@ -6,13 +6,14 @@ import os
 import csv
 
 from pymotifs import core
-from pymotifs.models import UnitRedundancies
+from pymotifs import models as mod
 from pymotifs.mat_files import Loader as MatLoader
 
 
 class RedundantNucleotidesLoader(core.SimpleLoader):
     dependencies = set([MatLoader])
     allow_no_data = True
+    table = mod.UnitRedundancies
 
     def _parse(self, raw, pdb_file):
         data = []
@@ -26,7 +27,10 @@ class RedundantNucleotidesLoader(core.SimpleLoader):
         return data
 
     def query(self, session, pdb):
-        return session.query(UnitRedundancies).filter_by(pdb_id=pdb)
+        query = session.query(mod.UnitRedundancies).filter_by(pdb_id=pdb)
+        print(query)
+        print(pdb)
+        return query
 
     def data(self, pdb, **kwargs):
         matlab = core.Matlab(self.config['locations']['fr3d_root'])
@@ -35,6 +39,6 @@ class RedundantNucleotidesLoader(core.SimpleLoader):
             raise core.MatlabFailed(err_msg)
 
         with open(ifn, 'rb') as raw:
-            data = [UnitRedundancies(**unit) for unit in self._parse(raw, pdb)]
+            data = self._parse(raw, pdb)
         os.remove(ifn)
         return data

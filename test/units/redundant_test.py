@@ -15,8 +15,8 @@ class ParsingTest(StageTest):
         with open('test/files/redundant-nts.csv', 'rb') as raw:
             data = self.loader._parse(raw, '1GID')
         ans = {
-            'unit_id1': "1GID|1|B|G|103",
-            'unit_id2': "1GID|1|A|G|103",
+            'unit_id_1': "1GID|1|B|G|103",
+            'unit_id_2': "1GID|1|A|G|103",
             'pdb_id': '1GID'
         }
         self.assertEquals(ans, data[0])
@@ -26,7 +26,7 @@ class QueryingTest(StageTest):
     loader_class = Loader
 
     def test_detects_known_structures(self):
-        self.assertTrue(self.loader.has_data('1GID'))
+        self.assertTrue(self.loader.has_data('157D'))
 
     def test_knows_it_has_no_data(self):
         self.assertFalse(self.loader.has_data('0GID'))

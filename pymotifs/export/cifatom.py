@@ -6,7 +6,6 @@ import os
 from contextlib import contextmanager
 
 from pymotifs import core
-from pymotifs import savers
 
 from pymotifs.download import Downloader
 
@@ -22,7 +21,7 @@ class CifAtomExportFailed(Exception):
     pass
 
 
-class CifAtomSaver(savers.FileHandleSaver):
+class CifAtomSaver(core.FileHandleSaver):
     """A Saver to write Cifatom files. This will write a Structure into a
     cifatom file.
     """

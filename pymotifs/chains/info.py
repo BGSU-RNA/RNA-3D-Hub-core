@@ -1,8 +1,8 @@
 from pymotifs import core
+from pymotifs import models as mod
 from pymotifs.utils.pdb import CustomReportHelper
-from pymotifs.models import ChainInfo
 
-from pymotifs.pdbs import Loader as PdbLoader
+from pymotifs.pdbs.loader import Loader as PdbLoader
 
 
 class Loader(core.MassLoader):
@@ -37,11 +37,11 @@ class Loader(core.MassLoader):
         mapping = {}
         known_pdbs = set()
         with self.session() as session:
-            query = session.query(ChainInfo.chain_id,
-                                  ChainInfo.pdb_id,
-                                  ChainInfo.chain_name).\
-                filter(ChainInfo.pdb_id.in_(pdbs)).\
-                filter(ChainInfo.chain_name.in_(chains))
+            query = session.query(mod.ChainInfo.chain_id,
+                                  mod.ChainInfo.pdb_id,
+                                  mod.ChainInfo.chain_name).\
+                filter(mod.ChainInfo.pdb_id.in_(pdbs)).\
+                filter(mod.ChainInfo.chain_name.in_(chains))
 
             for result in query:
                 mapping[(result.pdb_id, result.chain_name)] = result.chain_id
@@ -64,10 +64,10 @@ class Loader(core.MassLoader):
         data = []
         for report in self.get_ids(reports):
             renamed = self.rename(report)
-            data.append(ChainInfo(**renamed))
+            data.append(renamed)
 
         known = set(pdbs)
-        seen = set(entry.pdb_id for entry in data)
+        seen = set(entry['pdb_id'] for entry in data)
 
         if len(seen) != len(known):
             missing = known - seen

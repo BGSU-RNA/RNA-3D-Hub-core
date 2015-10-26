@@ -52,7 +52,7 @@ class CreatingUnitsTest(StageTest):
         self.data = self.loader.as_unit(self.residues[0])
 
     def test_sets_the_id(self):
-        val = self.data.id
+        val = self.data.unit_id
         ans = '1GID|1|A|G|103'
         self.assertEqual(ans, val)
 
