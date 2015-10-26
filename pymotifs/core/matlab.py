@@ -1,7 +1,12 @@
+import os
+import logging
+
 try:
     from mlabwrap import mlab
 except:
     pass
+
+from pymotifs.core.exceptions import Skip
 
 
 class MatlabFailed(Exception):
@@ -52,5 +57,3 @@ class Matlab(object):
             return attr(*corrected, **kwargs)
 
         return func
-
-
