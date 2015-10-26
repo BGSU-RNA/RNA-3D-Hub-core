@@ -7,11 +7,15 @@ class AutonomousCheckTest(StageTest):
     loader_class = AutonomousGrouper
 
     def test_requires_majority_internal_bp(self):
-        chain = {'internal': 3, 'external': 3}
+        chain = {'internal': 30, 'external': 30}
         self.assertTrue(self.loader.is_autonomous(chain))
 
+    def test_is_not_autonomous_if_few_interactions(self):
+        chain = {'internal': 3, 'external': 3}
+        self.assertFalse(self.loader.is_autonomous(chain))
+
     def test_knows_if_not_autonomous(self):
-        chain = {'internal': 3, 'external': 10}
+        chain = {'internal': 30, 'external': 100}
         self.assertFalse(self.loader.is_autonomous(chain))
 
     def test_allows_no_internal_bp(self):
@@ -152,5 +156,5 @@ class UsingCorrectChainsTest(StageTest):
     def test_uses_correct_chains(self):
         chains = self.loader('1FEU')
         val = [c['id'] for c in chains]
-        ans = ['A']
+        ans = ['1FEU|B', '1FEU|C', '1FEU|E', '1FEU|F']
         self.assertEquals(ans, val)

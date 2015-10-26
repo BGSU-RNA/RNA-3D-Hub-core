@@ -1,4 +1,5 @@
 from test import StageTest
+from test import skip_without_matlab
 from nose import SkipTest
 
 from pymotifs.ife.info_loader import Info
@@ -9,23 +10,27 @@ class InfoLoadingTest(StageTest):
 
     def setUp(self):
         super(InfoLoadingTest, self).setUp()
-        self.info = self.loader.load("2AW7", "A")
+        self.info = self.loader.load("4V4Q", "AA")
 
     def test_loads_the_entity_id(self):
         self.assertEquals(1, self.info['entity'])
 
     def test_loads_database_id(self):
-        self.assertEquals(4977, self.info['db_id'])
+        self.assertTrue(self.info['db_id'])
 
+    @skip_without_matlab
     def test_load_base_pairs(self):
         self.assertEquals(688, self.info['bp'])
 
+    @skip_without_matlab
     def test_loads_long_range(self):
         self.assertEquals(77, self.info['lr'])
 
+    @skip_without_matlab
     def test_loads_internal_cww(self):
         self.assertEquals(472, self.info['internal'])
 
+    @skip_without_matlab
     def test_loads_external_cww(self):
         self.assertEquals(0, self.info['external'])
 
@@ -45,7 +50,7 @@ class InfoLoadingTest(StageTest):
         self.assertEquals(562, self.info['source'])
 
     def test_can_load_source_when_mapping_to_species(self):
-        self.assertEquals(562, self.loader.load('3J01', 'A')['source'])
+        self.assertEquals(562, self.loader.load('4V6M', 'AA')['source'])
 
     def test_can_load_source_when_there_are_several(self):
         info = self.loader.load('3T4B', 'A')
@@ -71,12 +76,15 @@ class MergeChainsTest(StageTest):
     def test_can_keep_the_pdb(self):
         self.assertEquals('1ET4', self.chains['pdb'])
 
+    @skip_without_matlab
     def test_can_sum_all_internal_bps(self):
         self.assertEquals(18, self.chains['summary']['internal'])
 
+    @skip_without_matlab
     def test_can_sum_all_bps(self):
         self.assertEquals(28, self.chains['summary']['bp'])
 
+    @skip_without_matlab
     def test_can_compute_external(self):
         self.assertEquals(0, self.chains['summary']['external'])
 
@@ -97,17 +105,17 @@ class MergingAutonomousChainsTest(StageTest):
     def setUp(self):
         super(MergingAutonomousChainsTest, self).setUp()
         self.chains = self.loader.merge([
-            self.loader.load('3J10', 'B'),
-            self.loader.load('3J10', 'C'),
-            self.loader.load('3J10', 'D')
+            self.loader.load('4V6R', 'AB'),
+            self.loader.load('4V6R', 'AC'),
+            self.loader.load('4V6R', 'AD')
         ])
 
     def test_it_sorts_the_name(self):
-        self.assertEquals('3J10|D,3J10|B,3J10|C', self.chains['id'])
+        self.assertEquals('4V6R|AD,4V6R|AB,4V6R|AC', self.chains['id'])
 
     def test_it_sorts_by_autonomy(self):
         val = [chain['name'] for chain in self.chains['chains']]
-        self.assertEquals(['D', 'B', 'C'], val)
+        self.assertEquals(['AD', 'AB', 'AC'], val)
 
 
 class CrossChainInteractionsTest(StageTest):
