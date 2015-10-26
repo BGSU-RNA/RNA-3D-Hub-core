@@ -1,5 +1,4 @@
 import os
-import json
 import unittest as ut
 from functools import wraps
 
@@ -10,17 +9,20 @@ from sqlalchemy.orm import sessionmaker
 from fr3d.cif.reader import Cif
 
 import pymotifs.models as models
+from pymotifs.config import load as config_loader
 
-
-with open('conf/test.json', 'rb') as raw:
-    config = json.load(raw)
-
-engine = create_engine(config['db']['uri'])
+CONFIG = config_loader('conf/test.json', )
+engine = create_engine(CONFIG['db']['uri'])
 models.reflect(engine)
 Session = sessionmaker(bind=engine)
 
 
 def which(program):
+    """A utility function to check if we have an executable.
+
+    :program: The program name to search for.
+    :return: Path of the executable or None if it does not exist.
+    """
 
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -40,6 +42,9 @@ def which(program):
 
 
 def skip_without_matlab(func):
+    """A wrapper around a test method to make it raise a SkipTest if we do not
+    have a matlab executable.
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not which('matlab'):
@@ -53,7 +58,7 @@ class StageTest(ut.TestCase):
 
     def setUp(self):
         if self.loader_class:
-            self.loader = self.loader_class(config, Session)
+            self.loader = self.loader_class(CONFIG, Session)
 
 
 class QueryUtilTest(ut.TestCase):
