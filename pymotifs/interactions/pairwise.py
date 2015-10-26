@@ -1,6 +1,5 @@
-"""
-Classes for loading pairwise interactions produced by FR3D into the RNA 3D Hub
-database.
+"""Classes for loading pairwise interactions produced by FR3D into the RNA 3D
+Hub database.
 """
 
 import re
@@ -8,15 +7,14 @@ import os
 import csv
 import collections as coll
 
-import pymotifs.core as core
+from pymotifs import core
+from pymotifs import models as mod
 
 from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.units import Loader as UnitLoader
 from pymotifs.pdbs import Loader as PdbLoader
 
-from pymotifs.models import UnitPairsInteractions as Interaction
-
-IGNORE = ['perp', 'nbif', 'bif']
+IGNORE = set(['perp', 'nbif', 'bif', 'rib', 'nRib'])
 
 
 class Loader(core.SimpleLoader):
@@ -35,28 +33,7 @@ class Loader(core.SimpleLoader):
         :pdb: The pdb id
         :returns: A query to get interaction data.
         """
-        return session.query(Interaction).filter_by(pdb_id=pdb)
-
-    def data(self, pdb, **kwargs):
-        """Compute the interaction annotations for a pdb file.
-
-        :pdb: The pdb id to process.
-        :kwargs: Keyword arguments.
-        :returns: The interaction annotations.
-        """
-        matlab = core.Matlab(str(self.config['locations']['fr3d_root']))
-
-        self.logger.info('Running matlab on %s', pdb)
-        ifn, status, err_msg = matlab.loadInteractions(pdb, nout=3)
-        status = status[0][0]
-        if status == 0:
-            data = self.parse(ifn, pdb)
-            os.remove(ifn)
-            return [Interaction(**d) for d in data]
-        elif status == 2:
-            raise core.Skip('Pdb file %s has no nucleotides' % pdb)
-        raise core.InvalidState('Matlab error code %i when analyzing %s' %
-                                status, pdb)
+        return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb)
 
     def interaction_type(self, family):
         """Determine the interaction type of the given interaction. This will
@@ -77,9 +54,9 @@ class Loader(core.SimpleLoader):
             return 'f_lwbp'
         elif family in IGNORE:
             return None
-        else:
-            self.logger.warning("Unknown interaction: %s", family)
-            return None
+
+        self.logger.warning("Unknown interaction: %s", family)
+        return None
 
     def parse(self, filename, pdb):
         """Reads the csv file, imports all interactions, deletes the file when
@@ -105,3 +82,24 @@ class Loader(core.SimpleLoader):
                     interaction[inter_type] = family
 
         return data.values()
+
+    def data(self, pdb, **kwargs):
+        """Compute the interaction annotations for a pdb file.
+
+        :pdb: The pdb id to process.
+        :kwargs: Keyword arguments.
+        :returns: The interaction annotations.
+        """
+        matlab = core.Matlab(str(self.config['locations']['fr3d_root']))
+
+        self.logger.info('Running matlab on %s', pdb)
+        ifn, status, err_msg = matlab.loadInteractions(pdb, nout=3)
+        status = status[0][0]
+        if status == 0:
+            data = self.parse(ifn, pdb)
+            os.remove(ifn)
+            return data
+        elif status == 2:
+            raise core.Skip('Pdb file %s has no nucleotides' % pdb)
+        raise core.InvalidState('Matlab error code %i when analyzing %s' %
+                                status, pdb)
