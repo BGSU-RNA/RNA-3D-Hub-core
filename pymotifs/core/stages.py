@@ -371,10 +371,10 @@ class SimpleLoader(Loader):
             query = self.query(session, *args)
             if not query.count():
                 self.logger.info("Nothing to delete for %s", str(args))
-                return
+                return True
 
             for row in query:
-                session.delete()
+                session.delete(row)
 
     @abc.abstractmethod
     def query(self, session, *args):
