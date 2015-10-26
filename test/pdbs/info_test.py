@@ -3,7 +3,7 @@ from test import StageTest
 from pymotifs.pdbs.info import Loader
 
 
-class InfoTest(StageTest):
+class DataTest(StageTest):
     loader_class = Loader
 
     def test_it_can_create_data(self):
