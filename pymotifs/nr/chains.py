@@ -36,17 +36,19 @@ class Loader(core.MassLoader):
         classes = [g['name']['full'] for g in grouping]
         return helper.class_id_mapping(classes, release_id)
 
-    def chains(self, grouping):
+    def chains(self, grouping, mapping):
         if not grouping:
             raise core.InvalidState("Cannot load chains without classes")
 
-        mapping = self.mapping(grouping)
-        if not grouping:
+        if not mapping:
             raise core.InvalidState("Cannot load chains without name mapping")
 
         data = []
         for group in grouping:
             for chain in group['members']:
+                if group['name']['full'] not in mapping:
+                    raise core.InvalidState("Group %s not in mapping" % group)
+
                 data.append({
                     'ife_id': chain['id'],
                     'nr_class_id': mapping[group['name']['full']],
@@ -59,4 +61,5 @@ class Loader(core.MassLoader):
 
     def data(self, *args, **kwargs):
         grouping = tmp.load('nr')
-        return [NrChains(**chain) for chain in self.chains(grouping)]
+        mapping = self.mapping(grouping)
+        return [NrChains(**chain) for chain in self.chains(grouping, mapping)]
