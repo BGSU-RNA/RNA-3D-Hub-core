@@ -68,16 +68,16 @@ class Grouper(core.Base):
                                   ChainInfo.sequence,
                                   ChainInfo.chain_name.label('name'),
                                   IfeChains.chain_id.label('db_id'),
-                                  IfeChains.is_reference,
-                                  IfeChains.is_ife,
+                                  IfeChains.is_integral,
                                   IfeChains.ife_id.label('id'),
-                                  IfeInfo.bps.label('bp'),
+                                  IfeInfo.bp_count.label('bp'),
                                   PdbInfo.resolution,
                                   ChainSpecies.species_id.label('source')).\
                 join(IfeInfo,
                      IfeInfo.pdb_id == ChainInfo.pdb_id).\
                 join(IfeChains,
-                     IfeChains.ife_id == IfeInfo.ife_id).\
+                     (IfeChains.ife_id == IfeInfo.ife_id) &
+                     (IfeChains.chain_id == ChainInfo.chain_id)).\
                 join(PdbInfo,
                      PdbInfo.pdb_id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
@@ -92,7 +92,7 @@ class Grouper(core.Base):
                                  lambda g: g['id'])
             groups = []
             for group_id, chains in grouped:
-                chains = sorted(chains, key=lambda c: c['is_reference'])
+                chains = sorted(chains, key=lambda c: c['is_integral'])
                 groups.append({
                     'id':  group_id,
                     'pdb': chains[0]['pdb'],

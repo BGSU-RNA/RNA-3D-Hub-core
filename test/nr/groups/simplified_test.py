@@ -2,13 +2,14 @@ from test import StageTest
 from nose import SkipTest
 
 from pymotifs.nr.groups.simplified import Grouper
+from pymotifs.nr.groups.simplified import ranking_key
 
 
 class RankingChainsTest(StageTest):
     loader_class = Grouper
 
     def sort(self, chains):
-        ordered = sorted(chains, key=self.loader.ranking_key)
+        ordered = sorted(chains, key=ranking_key)
         return [c['name'] for c in ordered]
 
     def best(self, chains):
@@ -73,7 +74,7 @@ class AutonomousChainsTest(StageTest):
         return names
 
     def test_can_find_simple_groups(self):
-        val = self.loader.chains("2AW7")
+        val = self.loader.chains("124D")
         self.assertEquals(1, len(val))
 
     def test_can_group_several_chains(self):
@@ -140,7 +141,7 @@ class AutonomousChainsTest(StageTest):
         self.assertEquals(ans, val)
 
     def test_can_select_nr_chains_with_one_chain(self):
-        val = self.loader.chains("2AW7")
+        val = self.loader.chains("124D")
         self.assertEquals(1, len(val))
 
     def test_can_select_nr_chains_with_duplicates(self):
@@ -163,8 +164,8 @@ class AutonomousChainsTest(StageTest):
         self.assertEquals(ans, val)
 
     def test_it_can_process_a_triplet(self):
-        val = self.grouped_names('1GIX')
-        ans = [['1', 'B', 'C'], ['A'], ['D']]
+        val = self.grouped_names('4V42')
+        ans = [['A1', 'AB', 'AC'], ['BA'], ['BD']]
         self.assertEquals(ans, val)
 
 
