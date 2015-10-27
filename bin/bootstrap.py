@@ -11,6 +11,7 @@ already be created with the correct schema. This can be achieved by using the
 migration scripts in our database-migrations repo.
 """
 
+import random
 import argparse
 
 from sqlalchemy import create_engine
@@ -24,6 +25,7 @@ from pymotifs.dispatcher import Dispatcher
 
 
 def main(conf, opts):
+    random.seed(1)
     pipe.setup_logging(opts)
 
     engine = create_engine(conf['db']['uri'])
