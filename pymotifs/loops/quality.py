@@ -9,42 +9,22 @@ import os
 import csv
 
 from pymotifs import core
+from pymotifs import models as mod
 from pymotifs.utils.releases import Release
-from pymotifs.models import LoopQa
-from pymotifs.models import LoopsAll
+
 from pymotifs.loops.extractor import Loader as InfoLoader
 
 
-class LoopQualityLoader(core.Loader):
+class LoopQualityLoader(core.SimpleLoader):
     dependencies = set([InfoLoader])
 
-    def has_data(self, pdb, **kwargs):
+    def query(self, session, pdb):
         helper = Release(self.config, self.session.maker)
         release_id = helper.current('loop')
-
-        with self.session() as session:
-            query = session.query(LoopQa.id).\
-                join(LoopsAll, LoopsAll.id == LoopQa.id).\
-                filter(LoopsAll.pdb == pdb).\
-                filter(LoopQa.release_id == release_id)
-
-            return bool(query.count())
-
-    def remove(self, pdb, **kwargs):
-        helper = Release(self.config, self.session.maker)
-        release_id = helper.current('loop')
-        with self.session() as session:
-            query = session.query(LoopsAll.id).\
-                filter_by(pdb=pdb, release_id=release_id)
-            loop_ids = [result.id for result in query]
-
-        if not loop_ids:
-            return
-
-        with self.session() as session:
-            session.query(LoopQa).\
-                filter(LoopQa.id.in_(loop_ids)).\
-                delete(synchronize_session=False)
+        return session.query(mod.LoopQa).\
+            join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
+            filter(mod.LoopInfo.pdb_id == pdb).\
+            filter(mod.LoopQa.release_id == release_id)
 
     def parse(self, raw, release_id):
         """Reads the csv file, imports all distances, deletes the file when done
@@ -64,7 +44,7 @@ class LoopQualityLoader(core.Loader):
                 compl = None
 
             data.append({
-                'id': row[0],
+                'loop_id': row[0],
                 'status': row[1],
                 'modifications': modres,
                 'nt_signature': row[3],
@@ -86,7 +66,7 @@ class LoopQualityLoader(core.Loader):
             raise core.MatlabFailed('Error %s in pdb %s' % (err_msg, pdb))
 
         with open(ifn, 'rb') as raw:
-            data = [LoopQa(**loop) for loop in self.parse(raw, release_id)]
+            data = [mod.LoopQa(**loop) for loop in self.parse(raw, release_id)]
 
         os.remove(ifn)
         return data
