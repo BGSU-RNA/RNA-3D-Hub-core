@@ -161,7 +161,7 @@ class Stage(base.Base):
             return True
 
         if self.is_missing(entry, **kwargs):
-            self.logger.debug("Missing data from %s. Will recompute", entry)
+            self.logger.debug("Missing data from %s. Will compute", entry)
             return True
         return False
 
