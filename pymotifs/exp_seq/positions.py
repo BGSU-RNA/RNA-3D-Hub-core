@@ -9,7 +9,7 @@ from pymotifs.exp_seq.info import Loader as InfoLoader
 from pymotifs.exp_seq.chain_mapping import Loader as ExpMappingLoader
 
 
-class Loader(core.Loader):
+class Loader(core.SimpleLoader):
     dependencies = set([ExpMappingLoader, InfoLoader])
 
     def to_process(self, pdbs, **kwargs):
@@ -21,18 +21,9 @@ class Loader(core.Loader):
 
             return [result.exp_seq_id for result in query]
 
-    def has_data(self, exp_seq_id, **kwargs):
-        with self.session() as session:
-            query = session.query(Position).\
-                filter(Position.exp_seq_id == exp_seq_id)
-
-            return bool(query.count())
-
-    def remove(self, exp_seq_id, **kwargs):
-        with self.session() as session:
-            session.query(Position).\
-                filter(Position.exp_seq_id == exp_seq_id).\
-                delete(synchronize_session=False)
+    def query(self, session, exp_seq_id):
+        return session.query(Position).\
+            filter(Position.exp_seq_id == exp_seq_id)
 
     def sequence(self, exp_seq_id):
         with self.session() as session:

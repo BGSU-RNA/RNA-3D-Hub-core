@@ -27,9 +27,7 @@ class GettingSequencesTest(StageTest):
 
     def setUp(self):
         super(GettingSequencesTest, self).setUp()
-        self.data = sorted(self.loader.sequences('1S72'))
+        self.data = sorted(self.loader.to_process(['1S72']))
 
     def test_finds_all_sequences(self):
         self.assertEquals(2, len(self.data))
-
-# class BuildingDataTest(Stag
