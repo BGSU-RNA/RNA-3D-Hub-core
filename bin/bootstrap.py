@@ -20,7 +20,7 @@ from sqlalchemy.orm import sessionmaker
 import pipeline as pipe
 
 from pymotifs import models
-from pymoitfs import config
+from pymotifs import config
 from pymotifs.dispatcher import Dispatcher
 
 
