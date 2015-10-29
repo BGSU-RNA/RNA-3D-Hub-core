@@ -174,7 +174,6 @@ class Loader(core.Loader):
 
     def is_known(self, pair):
         with self.session() as session:
-            print(dir(Info))
             query = session.query(Info).\
                 filter_by(exp_seq_id_1=pair['exp_seq_id1'],
                           exp_seq_id_2=pair['exp_seq_id2'])
