@@ -43,7 +43,7 @@ class Saver(Base):
         super(Saver, self).__init__(config, session)
         self.stage = stage or object()
         self.allow_no_data = getattr(stage, 'allow_no_data', False)
-        self.merge = getattr(stage, 'merge', False)
+        self.merge = getattr(stage, 'merge_data', False)
         self.insert_max = getattr(stage, 'insert_max', 1000)
 
     @abc.abstractmethod
@@ -122,7 +122,7 @@ class DatabaseSaver(Saver):
             yield lambda data: fn(self.to_savable(data))
 
 
-class FileHandleSaver(object):
+class FileHandleSaver(Saver):
     """A saver that produces a file handle as a writer. This is intended to be
     inherited from for creating new savers. This can't be used directly. It
     also has the ability to compress files after writing if needed. This will
