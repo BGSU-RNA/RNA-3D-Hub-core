@@ -13,74 +13,6 @@ from pymotifs.chains.info import Loader as ChainInfoLoader
 from pymotifs.chains.species import Loader as ChainSpeciesLoader
 
 
-# This uses a cross join which is very expensive but should be ok here as there
-# are relatively few unique rna sequences.
-QUERY = """
-select distinct
-    E1.exp_seq_id,
-    E2.exp_seq_id,
-    E1.sequence,
-    E1.length,
-    E2.sequence,
-    E2.length,
-    S1.species_id,
-    S2.species_id
-from exp_seq_info as E1
-join exp_seq_info as E2
-join exp_seq_chain_mapping as M1
-on
-    M1.exp_seq_id = E1.exp_seq_id
-join exp_seq_chain_mapping as M2
-on
-    M2.exp_seq_id = E2.exp_seq_id
-join chain_species as S1
-on
-    S1.chain_id = M1.chain_id
-join chain_species as S2
-on
-    S2.chain_id = M2.chain_id
-join chain_info as I1
-on
-    I1.chain_id = M1.chain_id
-join chain_info as I2
-on
-    I2.chain_id = M2.chain_id
-where
-    E1.length >= E2.length
-    and (
-        E1.length > E2.length
-        or E1.exp_seq_id = E2.exp_seq_id
-        or (E1.length = E2.length and E1.exp_seq_id < E2.exp_seq_id)
-    )
-    and (
-    (
-        E1.length < 36
-        and E2.length = E1.length
-    )
-    or (
-        (E1.length * 0.5) <= E2.length
-        and E2.length <= (2 * E1.length)
-        and (
-            (E1.length < 2000 and E2.length < 2000)
-            or (E1.length > 2000 and E2.length > 2000)
-        )
-    )
-    )
-    and (
-        S1.chain_species_id is NULL
-        or S2.chain_species_id is NULL
-        or S1.species_id is NULL
-        or S2.species_id is NULL
-        or S1.species_id = 32360
-        or S2.species_id = 32360
-        or S1.species_id = S2.species_id
-    )
-    and I1.pdb_id in ({items})
-    and I2.pdb_id in ({items})
-;
-"""
-
-
 class Loader(core.Loader):
     """A class to load up all pairs of experimental sequences that should have
     an alignment attempted. This does not work per structure as many other
@@ -98,7 +30,7 @@ class Loader(core.Loader):
         return False
 
     def remove(self, pdb, **kwargs):
-        self.logger.info("We never automatically remove correspondence info stuff")
+        self.logger.info("We never automatically remove correspondence info")
         pass
 
     def lookup_sequences(self, pdb):
