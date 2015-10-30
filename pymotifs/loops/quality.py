@@ -15,7 +15,7 @@ from pymotifs.utils.releases import Release
 from pymotifs.loops.extractor import Loader as InfoLoader
 
 
-class LoopQualityLoader(core.SimpleLoader):
+class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader])
 
     def query(self, session, pdb):
