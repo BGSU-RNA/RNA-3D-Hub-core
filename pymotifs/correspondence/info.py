@@ -50,6 +50,44 @@ class Loader(core.Loader):
 
             return [ut.row2dict(result) for result in query]
 
+    def add_length_constraint(self, query, length):
+        """We treat large and small sequences differently, for small
+        sequences (< 36 nts) we have to have an exact match. For large
+        sequences we require that the sequences be of similar length,
+        which is from 0.5 to two times the first. This is a broad enough
+        range to cover all good alignments.
+        """
+
+        if length < 36:
+            return query.filter(ExpSeqInfo.length == length)
+
+        shortest = max(0.5 * length, 36)
+        length_terms = ((ExpSeqInfo.length >= shortest) &
+                        (ExpSeqInfo.length <= 2 * length))
+
+        if length >= 2000:
+            length_terms &= (ExpSeqInfo.length >= 2000)
+        else:
+            length_terms &= (ExpSeqInfo.length < 2000)
+        return query.filter(length_terms)
+
+    def add_species_constraint(self, query, species):
+        """
+        We also only get pairs between things that have
+        32360 is the taxon id for synthetic
+        """
+
+        if species is None or species == 32360:
+            return query
+
+        return query.\
+            join(ExpSeqChainMapping,
+                 ExpSeqChainMapping.exp_seq_id == ExpSeqInfo.exp_seq_id).\
+            join(ChainSpecies,
+                 ChainSpecies.chain_id == ExpSeqChainMapping.chain_id).\
+            filter((ChainSpecies.species_id.in_([32360, species])) |
+                   (ChainSpecies.species_id == None))
+
     def pairs(self, exp_seq):
         """Compute the pairs of sequence ids which should be aligned. This does
         not check if those pairs have already been aligned, it just computes
@@ -66,34 +104,8 @@ class Loader(core.Loader):
             query = session.query(ExpSeqInfo).\
                 filter(ExpSeqInfo.exp_seq_id != id1)
 
-            # We treat large and small sequences differently, for small
-            # sequences (< 36 nts) we have to have an exact match. For large
-            # sequences we require that the sequences be of similar length,
-            # which is from 0.5 to two times the first. This is a broad enough
-            # range to cover all good alignments.
-            if length < 36:
-                query = query.filter(ExpSeqInfo.length == length)
-            else:
-                shortest = max(0.5 * length, 36)
-                length_terms = ((ExpSeqInfo.length >= shortest) &
-                                (ExpSeqInfo.length <= 2 * length))
-
-                if length >= 2000:
-                    length_terms &= (ExpSeqInfo.length >= 2000)
-                else:
-                    length_terms &= (ExpSeqInfo.length < 2000)
-                query = query.filter(length_terms)
-
-            # We also only get pairs between things that have
-            # 32360 is the taxon id for synthetic
-            if species is not None and species != 32360:
-                query = query.\
-                    join(ExpSeqChainMapping,
-                         ExpSeqChainMapping.exp_seq_id == ExpSeqInfo.exp_seq_id).\
-                    join(ChainSpecies,
-                         ChainSpecies.chain_id == ExpSeqChainMapping.chain_id).\
-                    filter((ChainSpecies.species_id.in_([32360, species])) |
-                           (ChainSpecies.species_id == None))
+            query = self.add_length_constraint(query, length)
+            query = self.add_species_constraint(query, species)
 
             pairs = [(id1, id1)]
             for result in query.distinct():
