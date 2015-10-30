@@ -4,9 +4,18 @@ A program for downloading .cif files for all RNA-containing
 """
 
 import os
+from contextlib import contextmanager
 
 from pymotifs import core
 from pymotifs import utils
+
+
+class Writer(core.FileHandleSaver):
+    @contextmanager
+    def writer(self, pdb, **kwargs):
+        with super(Writer, self).writer(pdb, **kwargs) as raw:
+            yield raw.write
+            self.logger.info('Downloaded %s' % pdb)
 
 
 class Downloader(core.Loader):
@@ -14,6 +23,7 @@ class Downloader(core.Loader):
     name = 'downloader'
     update_gap = False
     dependencies = set()
+    saver = Writer
 
     def __init__(self, *args, **kwargs):
         super(Downloader, self).__init__(*args, **kwargs)
@@ -34,15 +44,7 @@ class Downloader(core.Loader):
     def has_data(self, entry, **kwargs):
         return os.path.exists(self.filename(entry))
 
-    def store(self, data, **kwargs):
-        filename, text = data
-        with open(filename, 'w') as out:
-            out.write(text)
-        self.logger.info('Downloaded %s' % filename)
-
     def data(self, name, **kwargs):
-        destination = self.filename(name)
-
         try:
             content = self.gzip(self.url(name))
         except:
@@ -52,4 +54,4 @@ class Downloader(core.Loader):
         if not content:
             core.Skip("Downloaded empty file %s" % name)
 
-        return destination, content
+        return content
