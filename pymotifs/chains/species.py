@@ -19,7 +19,12 @@ class Loader(core.SimpleLoader):
     def data(self, pdb, **kwargs):
         helper = Structure(self.session.maker)
         data = []
-        for chain_name, chain_id in helper.rna_chains(pdb, return_id=True):
+        rna_chains = helper.rna_chains(pdb, return_id=True)
+
+        if not rna_chains:
+            raise core.Skip("Structure %s contains no rna" % pdb)
+
+        for chain_name, chain_id in rna_chains:
             species = None
             try:
                 species = helper.source(pdb, chain_name, simplify=True)
