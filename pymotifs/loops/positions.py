@@ -72,7 +72,7 @@ class Loader(core.Loader):
             if not os.path.exists(path):
                 os.mkdir(path)
         except:
-            raise core.InvalidState("Could not create directory for matlab")
+            raise core.InvalidState("Could not create %s for matlab" % path)
 
         [output_file, err_msg] = matlab.loadLoopPositions(path, nout=2)
         if err_msg != '':
