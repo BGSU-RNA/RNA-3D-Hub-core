@@ -93,13 +93,14 @@ class Dispatcher(object):
         return checker
 
     def __call__(self, entries, **kwargs):
-        try:
             for stage in self.stages(self.name):
-                self.logger.info("Running stage: %s", stage)
-                obj = stage(*self._args)
-                obj(entries, **kwargs)
-        except Exception as err:
-            self.logger.error("Uncaught exception with stage: %s", self.name)
-            self.logger.error("Message: %s" % str(err))
-            self.logger.exception(err)
-            raise err
+                try:
+                    self.logger.info("Running stage: %s", stage)
+                    obj = stage(*self._args)
+                    obj(entries, **kwargs)
+                except Exception as err:
+                    self.logger.error("Uncaught exception with stage: %s",
+                                      self.name)
+                    self.logger.error("Message: %s" % str(err))
+                    self.logger.exception(err)
+                    raise err
