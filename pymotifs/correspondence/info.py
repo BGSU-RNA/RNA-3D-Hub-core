@@ -44,7 +44,8 @@ class Loader(core.Loader):
                      ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
                 outerjoin(ChainSpecies,
                           ChainSpecies.chain_id == ExpSeqPdb.chain_id).\
-                filter(ExpSeqPdb.pdb_id == pdb)
+                filter(ExpSeqPdb.pdb_id == pdb).\
+                distinct()
 
             return [ut.row2dict(result) for result in query]
 
