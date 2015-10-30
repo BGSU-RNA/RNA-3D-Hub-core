@@ -13,7 +13,7 @@ class Loader(core.Loader):
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(UnitPairsDistances.unit_id).\
+            query = session.query(UnitPairsDistances.unit_id_1.label('unit_id')).\
                 join(UnitInfo, UnitInfo.unit_id == UnitPairsDistances.unit_id_1).\
                 filter(UnitInfo.pdb_id == pdb)
             ids = [result.unit_id for result in query]
