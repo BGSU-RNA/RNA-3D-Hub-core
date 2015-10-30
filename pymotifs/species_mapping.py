@@ -50,7 +50,8 @@ class Loader(core.MassLoader):
             ids = []
             for result in query:
                 if result[0]:
-                    ids.extend(result[0].split(','))
+                    for part in result[0].split(','):
+                        ids.extend(part.split('#'))
             return set(ids)
 
     def contexts(self, ids):
