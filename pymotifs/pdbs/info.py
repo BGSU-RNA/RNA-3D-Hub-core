@@ -7,15 +7,16 @@ custom reports.
 from pymotifs import core
 from pymotifs.utils.pdb import CustomReportHelper
 
-from pymotifs.models import PdbInfo
+from pymotifs import models as mod
 
 
 class Loader(core.MassLoader):
     """This loads information about entire files into our database.
     """
-    merge_data = True
 
+    merge_data = True
     dependencies = set()
+    table = mod.PdbInfo
 
     names = {
         'structureId': 'pdb_id',
@@ -56,4 +57,4 @@ class Loader(core.MassLoader):
         if len(data) != len(pdbs):
             self.logger.error("Could not get all data for all pdbs")
 
-        return [PdbInfo(**self.rename(report)) for report in data]
+        return [self.rename(report) for report in data]
