@@ -311,7 +311,7 @@ class Loader(Stage):
         :dry_run: A flag to indicate if this should perform a dry run.
         :kwargs: Keyword arguments.
         """
-        saver = self.saver(self)
+        saver = self.saver(self.config, self.session, stage=self)
         saver(pdb, data, **kwargs)
 
     def process(self, entry, **kwargs):
@@ -422,7 +422,7 @@ class MassLoader(Loader):
         return diff > self.update_gap
 
     def to_process(self, pdbs, **kwargs):
-        return tuple(list(super(MassLoader, self).to_process(pdbs)))
+        return [tuple(super(MassLoader, self).to_process(pdbs))]
 
     def has_data(self, pdbs, **kwargs):
         """This means we never have the data for a mass loader. Generally this
@@ -490,12 +490,12 @@ class Exporter(Loader):
 
         with self.session() as session:
             query = session.query(mod.PdbInfo.pdb_id).distinct()
-            return list([result.pdb_id for result in query])
+            return [tuple([result.pdb_id for result in query])]
 
-    def is_missing(self, *args, **kwargs):
+    def has_data(self, *args, **kwargs):
         """We always recompute when exporting.
         """
-        return True
+        return False
 
     def remove(self, *args, **kwargs):
         """We never remove exported files automatically.
