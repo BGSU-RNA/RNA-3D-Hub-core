@@ -174,10 +174,11 @@ class Loader(core.Loader):
 
     def is_known(self, pair):
         with self.session() as session:
+            ids = [pair['exp_seq_id1'], pair['exp_seq_id2']]
             query = session.query(Info).\
-                filter_by(exp_seq_id_1=pair['exp_seq_id1'],
-                          exp_seq_id_2=pair['exp_seq_id2'])
-            return bool(query.count())
+                filter(Info.exp_seq_id_1.in_(ids)).\
+                filter(Info.exp_seq_id_2.in_(ids))
+            return bool(query.limit(1).count())
 
     def to_info(self, pair):
         return Info(exp_seq_id_1=pair['exp_seq_id1'],
