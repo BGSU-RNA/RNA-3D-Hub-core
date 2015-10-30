@@ -28,5 +28,5 @@ class Loader(core.StageContainer):
         exp_seq.Loader,
         correspondence.Loader,
         ife.Loader,
-        export.Loader
+        export.Exporter
     ])
