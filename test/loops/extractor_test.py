@@ -26,18 +26,6 @@ class MappingTests(StageTest):
         val = self.loader._mapping('0000', 'IL')
         self.assertEquals({}, val)
 
-    def test_translates_old_nt_ids_to_new_ones(self):
-        nts = (
-            '1GID|1|A|G|149,'
-            '1GID|1|A|G|150,'
-            '1GID|1|A|A|151,'
-            '1GID|1|A|A|152,'
-            '1GID|1|A|A|153,'
-            '1GID|1|A|C|154'
-        )
-        mapping = self.loader._mapping('1GID', 'HL')
-        self.assertTrue(nts in mapping)
-
     def test_has_no_old_style_ids(self):
         mapping = self.loader._mapping('1GID', 'HL')
         seperators = [key[4] for key in mapping.keys()]
