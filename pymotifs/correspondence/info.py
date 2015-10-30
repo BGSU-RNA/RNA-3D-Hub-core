@@ -25,6 +25,7 @@ class Loader(core.Loader):
 
     allow_no_data = True
     mark = False
+    table = Info
 
     def has_data(self, pdb, **kwargs):
         return False
@@ -94,35 +95,28 @@ class Loader(core.Loader):
                     filter((ChainSpecies.species_id.in_([32360, species])) |
                            (ChainSpecies.species_id == None))
 
-            pairs = [{'exp_seq_id1': id1, 'exp_seq_id2': id1}]
+            pairs = [(id1, id1)]
             for result in query.distinct():
                 id2 = result.exp_seq_id
-                pairs.append({
-                    'exp_seq_id1': min(id1, id2),
-                    'exp_seq_id2': max(id1, id2)
-                })
+                pairs.append((min(id1, id2), max(id1, id2)))
 
             return sorted(pairs,
                           key=lambda e: (e['exp_seq_id1'], e['exp_seq_id2']))
 
     def is_known(self, pair):
         with self.session() as session:
-            ids = [pair['exp_seq_id1'], pair['exp_seq_id2']]
+            ids = [pair[0], pair[1]]
             query = session.query(Info).\
                 filter(Info.exp_seq_id_1.in_(ids)).\
                 filter(Info.exp_seq_id_2.in_(ids))
             return bool(query.limit(1).count())
 
-    def to_info(self, pair):
-        return Info(exp_seq_id_1=pair['exp_seq_id1'],
-                    exp_seq_id_2=pair['exp_seq_id2'])
-
     def data(self, pdb, **kwargs):
         exp_seqs = self.lookup_sequences(pdb)
-        data = []
+        data = set()
         for exp_seq in exp_seqs:
             pairs = self.pairs(exp_seq)
-            data.extend(self.to_info(p) for p in pairs if not self.is_known(p))
+            data.extend(p for p in pairs if not self.is_known(p))
 
         if not data:
             raise core.Skip("No possible pairings found for %s" % pdb)
