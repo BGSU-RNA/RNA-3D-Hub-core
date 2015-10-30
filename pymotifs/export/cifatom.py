@@ -30,7 +30,7 @@ class CifAtomSaver(core.FileHandleSaver):
 
     @contextmanager
     def writer(self, pdb, **kwargs):
-        with super(self, CifAtomSaver).writer(pdb, **kwargs) as handle:
+        with super(CifAtomSaver, self).writer(pdb, **kwargs) as handle:
             writer = CifAtom(handle)
             try:
                 yield writer
@@ -38,7 +38,7 @@ class CifAtomSaver(core.FileHandleSaver):
                 self.logger.warning("Cannot export %s to cifatom", pdb)
 
 
-class Exporter(core.Loader):
+class Exporter(core.Exporter):
     """Will export files from the mmCIF format to a cifatom format readable by
     matlab programs.
     """
@@ -50,12 +50,12 @@ class Exporter(core.Loader):
         return os.path.join(self.config['locations']['fr3d_root'], "PDBFiles",
                             pdb + ".cifatoms")
 
-    def is_missing(self, entry, **kwargs):
+    def has_data(self, entry, **kwargs):
         """Will check if the file produce by filename() exists.
         """
         filename = self.filename(entry)
         try:
-            return not os.path.isfile(filename) and \
+            return os.path.isfile(filename) and \
                 os.path.getsize(filename) > 0
         except:
             return False
