@@ -112,8 +112,7 @@ class Loader(core.Loader):
                 id2 = result.exp_seq_id
                 pairs.append((min(id1, id2), max(id1, id2)))
 
-            return sorted(pairs,
-                          key=lambda e: (e['exp_seq_id1'], e['exp_seq_id2']))
+            return sorted(pairs, key=lambda e: (e[0], e[1]))
 
     def is_known(self, pair):
         with self.session() as session:
