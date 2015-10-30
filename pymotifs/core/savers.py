@@ -132,7 +132,7 @@ class FileHandleSaver(Saver):
 
     def __init__(self, *args, **kwargs):
         super(FileHandleSaver, self).__init__(*args, **kwargs)
-        self.compressed = getattr(self.stage, 'compressed')
+        self.compressed = getattr(self.stage, 'compressed', False)
 
     def filename(self, pdb, **kwargs):
         """This will use the stage's filename method for computing the filename
@@ -179,7 +179,7 @@ class FileHandleSaver(Saver):
         shutil.move(temp_output_file, filename)
 
     def __call__(self, *args, **kwargs):
-        super(self, FileHandleSaver).__call__(*args, **kwargs)
+        super(FileHandleSaver, self).__call__(*args, **kwargs)
         if self.compressed:
             self.compress(*args, **kwargs)
 
