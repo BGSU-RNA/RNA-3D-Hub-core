@@ -66,16 +66,7 @@ def run(name, conf, pdbs, opts):
     dispatcher = Dispatcher(name, conf, Session,
                             skip_dependencies=opts.get('skip_dependencies'),
                             exclude=opts['exclude'])
-
-    emailer = email.Emailer(conf, Session)
-    error = None
-    try:
-        dispatcher(pdbs, **opts)
-    except Exception as err:
-        error = err
-
-    emailer(name, log_file=opts.get('log_file'), error=err)
-    sys.exit(int(error is None))
+    dispatcher(pdbs, **opts)
 
 
 if __name__ == '__main__':
