@@ -43,4 +43,3 @@ conf/*.json
 data/
 logs/
 tags
-.opengrok/
