@@ -1,8 +1,6 @@
 import itertools as it
 import collections as coll
 
-import networkx as nx
-
 from pymotifs import core
 from pymotifs.utils import result2dict
 
@@ -230,8 +228,6 @@ class Grouper(core.Base):
         """
 
         graph = coll.defaultdict(set)
-        G = nx.Graph()
-        G.add_nodes_from(c['id'] for c in chains)
         mapping = {}
         for chain1 in chains:
             mapping[chain1['id']] = chain1
@@ -245,7 +241,6 @@ class Grouper(core.Base):
 
                     graph[chain1['id']].add(chain2['id'])
                     graph[chain2['id']].add(chain1['id'])
-                    G.add_edge(chain1['id'], chain2['id'])
                 else:
                     self.logger.debug("Non-equivalent: %s %s",
                                       chain1['id'], chain2['id'])
