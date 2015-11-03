@@ -272,6 +272,8 @@ class Grouper(core.Base):
         if not chains:
             raise core.InvalidState("No chains found in given pdbs")
 
+        self.logger.info("Found %i chains to cluster", len(chains))
+
         groups = []
         alignments = self.alignments(chains)
         discrepancy = self.discrepancy(chains)
@@ -284,5 +286,7 @@ class Grouper(core.Base):
                 members.append(member)
 
             groups.append({'members': members})
+
+        self.logger.info("Created %i groups", len(groups))
 
         return groups
