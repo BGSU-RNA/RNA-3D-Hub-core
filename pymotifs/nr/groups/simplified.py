@@ -84,7 +84,8 @@ class Grouper(core.Base):
                 order_by(IfeChains.ife_id)
 
             if query.count() == 0:
-                raise core.InvalidState("No chains found for %s" % pdb)
+                self.logger.warn("No chains found for %s" % pdb)
+                return []
 
             grouped = it.groupby(it.imap(result2dict, query),
                                  lambda g: g['id'])
@@ -267,6 +268,9 @@ class Grouper(core.Base):
 
         chains = it.imap(self.chains, pdbs)
         chains = list(it.chain.from_iterable(chains))
+
+        if not chains:
+            raise core.InvalidState("No chains found in given pdbs")
 
         groups = []
         alignments = self.alignments(chains)
