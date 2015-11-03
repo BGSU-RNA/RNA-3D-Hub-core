@@ -28,7 +28,7 @@ class Loader(core.MassLoader):
             return bool(query.count())
 
     def remove(self, *args, **kwargs):
-        tmp.cleanup('nr')
+        self.logger.info("No automatic removal of chains or cached data")
 
     def mapping(self, grouping):
         helper = Builder(self.config, self.session)

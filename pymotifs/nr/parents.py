@@ -25,7 +25,7 @@ class Loader(core.MassLoader):
             return bool(query.count())
 
     def remove(self, *args, **kwargs):
-        tmp.cleanup('nr')
+        self.logger.info("No automatic removal of parents or cached data")
 
     def parents(self, grouping):
         if not grouping:
@@ -44,6 +44,6 @@ class Loader(core.MassLoader):
 
     def data(self, pdbs, **kwargs):
         grouping = tmp.load('nr')
-        parents = self.parents(grouping)
+        for parent in self.parents(grouping):
+            yield NrClassParents(**parent)
         tmp.cleanup('nr')
-        return [NrClassParents(**parent) for parent in parents]

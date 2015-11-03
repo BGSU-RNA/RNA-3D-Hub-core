@@ -18,7 +18,7 @@ class Loader(core.MassLoader):
     update_gap = dt.timedelta(7)  # Only update every 7 days
 
     def remove(self, *args, **kwargs):
-        tmp.cleanup('nr')
+        self.logger.info("No automatic removal of classes or cached data")
 
     def has_data(self, pdbs, **kwargs):
         if not tmp.load('nr'):

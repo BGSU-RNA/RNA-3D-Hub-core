@@ -22,8 +22,8 @@ class Loader(core.MassLoader):
         return True
 
     def remove(self, *args, **kwargs):
-        tmp.cleanup('nr')
-        self.logger.info("Will never automatically delete nr releases")
+        self.logger.info("Will never automatically delete nr releases"
+                         " or cached data")
 
     def build(self, pdbs, current_release, next_release, **kwargs):
         builder = Builder(self.config, self.session)
