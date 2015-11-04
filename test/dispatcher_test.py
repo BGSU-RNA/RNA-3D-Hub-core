@@ -1,11 +1,14 @@
 import unittest as ut
 
 from pymotifs.dispatcher import Dispatcher
-from pymotifs import units
-from pymotifs import pdbs
+from pymotifs.units import loader as units
+from pymotifs.pdbs import loader as pdbs
 from pymotifs import download as down
-from pymotifs import export
+from pymotifs.export import loader as export
 from pymotifs import mat_files as mat
+
+from pymotifs.ife.info import Loader as IfeLoader
+from pymotifs.interactions.pairwise import Loader as InteractionLoader
 
 
 class DispatcherTest(ut.TestCase):
@@ -17,7 +20,7 @@ class DispatcherTest(ut.TestCase):
         self.assertEquals(val, units.InfoLoader)
 
     def test_it_can_load_an_aggregate_by_name(self):
-        val = self.dispatcher.get_stage('units')
+        val = self.dispatcher.get_stage('units.loader')
         self.assertEquals(val, units.Loader)
 
     def test_it_can_load_a_unit_stage(self):
@@ -38,7 +41,7 @@ class LoadingTest(ut.TestCase):
         self.assertTrue(val)
 
     def test_it_can_load_a_single_loader_from_many_imported(self):
-        loader = self.dispatcher.is_loader('pymotifs.units')
+        loader = self.dispatcher.is_loader('pymotifs.units.loader')
         val = loader(units.Loader)
         self.assertTrue(val)
 
@@ -63,7 +66,7 @@ class LoadingStagesTest(ut.TestCase):
         self.assertEquals(ans, val)
 
     def test_can_get_all_dependencies_of_multistage(self):
-        val = self.dispatcher.stages('units')
+        val = self.dispatcher.stages('units.loader')
         ans = [down.Downloader, pdbs.InfoLoader,
                units.InfoLoader, export.CifAtom,
                units.DistancesLoader, units.QualityLoader,
@@ -72,9 +75,15 @@ class LoadingStagesTest(ut.TestCase):
 
     def test_can_exclude_specific_stages(self):
         self.dispatcher.exclude = set(['units.distances'])
-        val = self.dispatcher.stages('units')
+        val = self.dispatcher.stages('units.loader')
         ans = [down.Downloader, pdbs.InfoLoader,
                units.InfoLoader, export.CifAtom,
                units.QualityLoader, mat.Loader,
                units.RedundantNucleotidesLoader]
         self.assertEquals(ans, val)
+
+    def test_it_respects_ordering(self):
+        stages = self.dispatcher.stages('update')
+        index1 = stages.index(InteractionLoader)
+        index2 = stages.index(IfeLoader)
+        self.assertTrue(index1 < index2)

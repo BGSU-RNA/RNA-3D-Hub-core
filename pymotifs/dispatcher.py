@@ -72,12 +72,13 @@ class Dispatcher(object):
             if current in exclude or current in deps:
                 next
 
+            to_add = getattr(current, 'dependencies', [])
             if issubclass(current, StageContainer):
-                stack.extend(current.stages)
                 exclude.add(current)
-            else:
-                deps[current] = current.dependencies
-                stack.extend(current.dependencies)
+                to_add = getattr(current, 'stages')
+
+            deps[current] = to_add
+            stack.extend(to_add)
 
         stages = [s for s in toposort(deps) if s not in exclude]
         if stage not in stages and stage not in exclude:
