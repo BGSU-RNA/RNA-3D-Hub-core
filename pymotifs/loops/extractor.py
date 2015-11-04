@@ -87,7 +87,7 @@ class Loader(core.SimpleLoader):
             raise core.MatlabFailed(err_msg)
 
         if loops == 0:
-            self.logger.warning('No %s in %s' % loop_type, pdb_id)
+            self.logger.warning('No %s in %s', loop_type, pdb_id)
             return []
 
         self.logger.info('Found %i loops', count)
