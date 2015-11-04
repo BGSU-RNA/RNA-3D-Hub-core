@@ -21,11 +21,11 @@ class Loader(core.Loader):
         return os.path.exists(self.filename(pdb))
 
     def remove(self, pdb, **kwargs):
-        os.remove(self.filename(pdb))
+        filename = self.filename(pdb)
+        if os.path.exists(filename):
+            os.remove(filename)
 
     def data(self, pdb, **kwargs):
-        if not hasattr(core, 'mlab'):
-            raise core.Skip("Skipping %s due to no matlab" % pdb)
         matlab = core.Matlab(self.config['locations']['fr3d_root'])
         matlab.zAddNTData(pdb)
         return None
