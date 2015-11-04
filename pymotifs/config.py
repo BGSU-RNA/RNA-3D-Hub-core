@@ -40,6 +40,8 @@ def defaults():
 
     return {
         "locations": {
+            "base": base,
+            "cache": os.path.join(base, "cache"),
             "loops_mat_files": os.path.join(base, "MotifAtlas",
                                             "PrecomputedData"),
             "loops_search_dir": os.path.join(base, "MotifAtlas", "aAa"),

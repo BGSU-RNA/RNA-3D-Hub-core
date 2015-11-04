@@ -16,6 +16,11 @@ class ConfigTest(TestCase):
         ans = os.path.join(os.getcwd(), "MotifAtlas", "logs")
         self.assertEquals(ans, val)
 
+    def test_adds_base_directory(self):
+        val = self.conf['locations']['base']
+        ans = os.getcwd()
+        self.assertEquals(ans, val)
+
     def test_does_not_override_nested_values(self):
         val = self.conf['locations']['loops_mat_files']
         ans = "/home/pipeline/hub-core/MotifAtlas/PrecomputedData"
