@@ -2,6 +2,7 @@ import logging
 import inspect
 
 from pymotifs.core import Stage
+from pymotifs.core import InvalidState
 from pymotifs.core import StageContainer
 
 from pymotifs.utils.toposort import toposort
@@ -84,6 +85,9 @@ class Dispatcher(object):
         if stage not in stages and stage not in exclude:
             self.logger.warning("Likely there is an issue in toposort")
             stages.append(stage)
+
+        if not stages:
+            raise InvalidState("No stages to run")
 
         return stages
 
