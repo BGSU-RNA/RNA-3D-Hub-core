@@ -28,8 +28,6 @@ class RedundantNucleotidesLoader(core.SimpleLoader):
 
     def query(self, session, pdb):
         query = session.query(mod.UnitRedundancies).filter_by(pdb_id=pdb)
-        print(query)
-        print(pdb)
         return query
 
     def data(self, pdb, **kwargs):
