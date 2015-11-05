@@ -14,16 +14,20 @@ class Parser(object):
             if 'OBSLTE' in line.split():
                 parts = line.split()
                 obsolete_date = datetime.strptime(parts[1], '%d-%b-%y')
+                replaced = ",".join(parts[3:])
+                if not replaced:
+                    replaced = None
                 data.append({
-                    'id': parts[2],
+                    'pdb_obsolete_id': parts[2],
                     'date': obsolete_date,
-                    'replaced_by': parts[3:]
+                    'replaced_by': replaced
                 })
         return data
 
 
 class Loader(core.MassLoader):
     merge_data = True
+    table = PdbObsolete
 
     def data(self, *args, **kwargs):
         """
@@ -34,20 +38,8 @@ class Loader(core.MassLoader):
 
         try:
             ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
-            parsed = ftp('/pub/pdb/data/status/obsolete.dat')
+            return ftp('/pub/pdb/data/status/obsolete.dat')
         except Exception as err:
             self.logger.critical("Could not get obsolete ids")
             self.logger.exception(err)
             raise core.StageFailed("Could not get obsolete ids")
-
-        data = []
-        for entry in parsed:
-            replaced = ','.join(entry['replaced_by'])
-            data.append(PdbObsolete(pdb_obsolete_id=entry['id'],
-                                    date=entry['date'],
-                                    replaced_by=replaced))
-
-        if not data:
-            self.logger.error("Found no obsolete ids.")
-
-        return data
