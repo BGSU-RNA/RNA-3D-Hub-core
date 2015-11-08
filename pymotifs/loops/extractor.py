@@ -103,7 +103,7 @@ class Loader(core.SimpleLoader):
             data.append(LoopInfo(
                 loop_id=loop_id,
                 type=loop_type,
-                pdb=str(pdb_id),
+                pdb_id=str(pdb_id),
                 sequential_id=loop_id.split("_")[-1],
                 length=int(loops[index].NumNT[0][0]),
                 seq=loop.seq,
