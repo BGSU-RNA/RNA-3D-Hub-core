@@ -13,7 +13,7 @@ class Exporter(core.Exporter):
     def filename(self, pdb, **kwargs):
         return self.config['locations']['loops_gz']
 
-    def loop(self, pdb):
+    def loops(self, pdb):
         with self.session() as session:
             query = session.query(LoopInfo.id,
                                   LoopInfo.pdb_id.label('pdb'),
