@@ -1,10 +1,16 @@
 import os
 import logging
 
+logger = logging.getLogger(__name__)
+
 try:
     from mlabwrap import mlab
-except:
-    pass
+except ImportError as err:
+    logger.warning("No mlabwrap present, matlab will be skipped")
+    logger.exception(err)
+except Exception as err:
+    logger.error("Could not import matlab")
+    logger.exception(err)
 
 from pymotifs.core.exceptions import Skip
 
