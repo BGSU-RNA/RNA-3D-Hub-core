@@ -42,7 +42,7 @@ class Dispatcher(object):
             raise ImportError("Could not find a class to use from: %s" % name)
         return pairs[0][1]
 
-    def stages(self, name):
+    def stages(self, name, build=False):
         """Determine all stages to run and in what order for the given stage
         name. If dependencies is set to True then this will go through all
         dependecies of the given stage and place them in a tree, as well as all
@@ -82,9 +82,13 @@ class Dispatcher(object):
             stack.extend(to_add)
 
         stages = [s for s in toposort(deps) if s not in exclude]
+        fn = lambda s: s
+        if build:
+            fn = lambda s: s(*self._args)
+
         if stage not in stages and stage not in exclude:
             self.logger.warning("Likely there is an issue in toposort")
-            stages.append(stage)
+            stages.append(fn(stage))
 
         if not stages:
             raise InvalidState("No stages to run")
@@ -98,11 +102,10 @@ class Dispatcher(object):
         return checker
 
     def __call__(self, entries, **kwargs):
-            for stage in self.stages(self.name):
+            for stage in self.stages(self.name, build=True):
                 try:
                     self.logger.info("Running stage: %s", stage)
-                    obj = stage(*self._args)
-                    obj(entries, **kwargs)
+                    stage(entries, **kwargs)
                 except Exception as err:
                     self.logger.error("Uncaught exception with stage: %s",
                                       self.name)
