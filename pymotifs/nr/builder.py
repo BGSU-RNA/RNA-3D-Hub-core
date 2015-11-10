@@ -83,10 +83,11 @@ class Builder(core.Base):
         updated = copy.deepcopy(group)
         chains = updated['members']
 
-        if cutoff == 'all':
-            filtered = [c for c in chains]
-        else:
-            filtered = [c for c in chains if c['resolution'] <= float(cutoff)]
+        filtered = chains
+        if cutoff != 'all':
+            filtered = it.ifilter(lambda c: c['resolution'] is not None)
+            filtered = it.ifilter(lambda c: c['resolution'] <= float(cutoff))
+        filtered = list(filtered)
 
         if not filtered:
             return {}
