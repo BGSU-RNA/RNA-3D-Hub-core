@@ -1,3 +1,4 @@
+import os
 from nose import SkipTest
 
 from pymotifs.core.stages import Stage
@@ -86,3 +87,26 @@ class ProcessingTests(Base):
         stage = SomeStage(CONFIG, None)
         val = stage(['A', '', 'B'])
         self.assertEqual(val, ['A', 'B'])
+
+
+class CachingTest(Base):
+    loader_class = SomeStage
+
+    def tearDown(self):
+        filename = self.loader.cache_filename('example')
+        if os.path.exists(filename):
+            os.remove(filename)
+
+    def test_it_can_cache_data(self):
+        ans = [1]
+        self.loader.cache('example', ans)
+        self.assertEquals(ans, self.loader.cached('example'))
+
+    def test_it_gives_none_for_no_cached_data(self):
+        self.assertEquals(None, self.loader.cached('bob'))
+
+    def test_it_can_remove_cached_data(self):
+        ans = [1]
+        self.loader.cache('example', ans)
+        self.assertEquals(ans, self.loader.cached('example', remove=True))
+        self.assertEquals(None, self.loader.cached('example', remove=True))

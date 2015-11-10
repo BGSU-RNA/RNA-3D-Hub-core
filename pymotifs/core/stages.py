@@ -1,7 +1,9 @@
 """This modules contains the classes for building stages of the pipeline.
 """
 
+import os
 import abc
+import pickle
 import datetime
 
 from fr3d.data import Structure
@@ -111,6 +113,46 @@ class Stage(base.Base):
             return pdb
 
         return self.cif(pdb).structure()
+
+    def cache_filename(self, name):
+        cache_dir = self.config['locations']['cache']
+        if not os.path.isdir(cache_dir):
+            os.mkdir(cache_dir)
+
+        return os.path.join(cache_dir, name + '.pickle')
+
+    def cache(self, name, data):
+        """Cache some data under a name.
+
+        :name: The name to cache under.
+        :data: The data to cache.
+        """
+
+        filename = self.cache_filename(name)
+        with open(filename, 'wb') as raw:
+            pickle.dump(data, raw)
+
+    def cached(self, name, remove=False):
+        """Load some cached data.
+
+        :name: Name of the cached data.
+        :returns: The data or None if no cached data of that name exists
+        """
+
+        filename = self.cache_filename(name)
+        data = None
+        if os.path.exists(filename):
+            with open(filename, 'rb') as raw:
+                data = pickle.load(raw)
+
+        if remove:
+            if not os.path.exists(filename):
+                self.logger.warning("Attempt to remove nonexisting cache %s",
+                                    name)
+            else:
+                os.remove(filename)
+
+        return data
 
     def must_recompute(self, pdb, recalculate=False, **kwargs):
         """Detect if we have been told to recompute this stage for this pdb.
