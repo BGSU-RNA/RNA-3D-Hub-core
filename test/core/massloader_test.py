@@ -13,10 +13,10 @@ class ToProecssTest(StageTest):
     loader_class = Mass
 
     def test_creates_a_tuple_of_all(self):
-        self.assertEquals(('A', 'B'), self.loader.to_process(['A', 'B']))
+        self.assertEquals([('A', 'B')], self.loader.to_process(['A', 'B']))
 
     def test_up_cases_all_entries(self):
-        self.assertEquals(('A', 'B'), self.loader.to_process(['a', 'b']))
+        self.assertEquals([('A', 'B')], self.loader.to_process(['a', 'b']))
 
 
 class BasicTests(StageTest):
@@ -36,7 +36,7 @@ class GeneratingDataTest(StageTest):
 
     def test_to_process_creates_a_tuple(self):
         val = ['A', 'C', 'c', 'D']
-        self.assertEquals(tuple(['A', 'C', 'C', 'D']),
+        self.assertEquals([tuple(['A', 'C', 'C', 'D'])],
                           self.loader.to_process(val))
 
     def test_data_gets_all_at_once(self):
