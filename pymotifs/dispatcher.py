@@ -81,10 +81,10 @@ class Dispatcher(object):
             deps[current] = to_add
             stack.extend(to_add)
 
-        stages = [s for s in toposort(deps) if s not in exclude]
         fn = lambda s: s
         if build:
             fn = lambda s: s(*self._args)
+        stages = [fn(s) for s in toposort(deps) if s not in exclude]
 
         if stage not in stages and stage not in exclude:
             self.logger.warning("Likely there is an issue in toposort")
