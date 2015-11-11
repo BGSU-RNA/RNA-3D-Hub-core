@@ -25,6 +25,7 @@ class Loader(core.SimpleLoader):
     allow_no_data = True
 
     dependencies = set([MatLoader, UnitLoader, PdbLoader])
+    table = mod.UnitPairsInteractions
 
     def query(self, session, pdb):
         """Create a query to access interaction data for the given pdb.
