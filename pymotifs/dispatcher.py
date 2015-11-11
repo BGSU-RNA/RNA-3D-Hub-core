@@ -42,6 +42,19 @@ class Dispatcher(object):
             raise ImportError("Could not find a class to use from: %s" % name)
         return pairs[0][1]
 
+    def to_exclude(self):
+        """Compute a set of stages to exclude. This will load all stages in the
+        exclude property to do so. If one entry there is a StageContainer then
+        all stages in it will be excluded.
+        """
+        exclude = set()
+        for name in self.exclude:
+            stage = self.get_stage(name)
+            exclude.add(stage)
+            if issubclass(stage, StageContainer):
+                exclude.update(stage.stages)
+        return exclude
+
     def stages(self, name, build=False):
         """Determine all stages to run and in what order for the given stage
         name. If dependencies is set to True then this will go through all
@@ -59,7 +72,7 @@ class Dispatcher(object):
         if self.skip_dependencies:
             return [stage]
 
-        exclude = set(self.get_stage(name) for name in self.exclude)
+        exclude = self.to_exclude()
         deps = {stage: stage.dependencies}
         stack = list(stage.dependencies)
 

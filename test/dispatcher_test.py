@@ -87,3 +87,12 @@ class LoadingStagesTest(ut.TestCase):
         index1 = stages.index(InteractionLoader)
         index2 = stages.index(IfeLoader)
         self.assertTrue(index1 < index2)
+
+    def test_can_exclude_a_stage_collection(self):
+        self.dispatcher.exclude = set(['pdbs.loader', 'units.distances'])
+        val = self.dispatcher.stages('units.loader')
+        ans = [down.Downloader,
+               units.InfoLoader, export.CifAtom,
+               units.QualityLoader, mat.Loader,
+               units.RedundantNucleotidesLoader]
+        self.assertEquals(ans, val)
