@@ -1,11 +1,8 @@
+import itertools as it
+
 from pymotifs import core
 from pymotifs import utils as ut
-
-from pymotifs.models import ExpSeqInfo
-from pymotifs.models import ExpSeqPdb
-from pymotifs.models import ChainSpecies
-from pymotifs.models import CorrespondenceInfo as Info
-from pymotifs.models import ExpSeqChainMapping
+from pymotifs import models as mod
 
 from pymotifs.exp_seq.info import Loader as ExpSeqInfoLoader
 from pymotifs.exp_seq.chain_mapping import Loader as ExpSeqChainMappingLoader
@@ -13,7 +10,7 @@ from pymotifs.chains.info import Loader as ChainInfoLoader
 from pymotifs.chains.species import Loader as ChainSpeciesLoader
 
 
-class Loader(core.Loader):
+class Loader(core.SimpleLoader):
     """A class to load up all pairs of experimental sequences that should have
     an alignment attempted. This does not work per structure as many other
     things do, but instead will compute all possible pairs and then work per
@@ -23,34 +20,13 @@ class Loader(core.Loader):
     dependencies = set([ChainSpeciesLoader, ExpSeqInfoLoader,
                         ExpSeqChainMappingLoader, ChainInfoLoader])
 
-    allow_no_data = True
     mark = False
-    table = Info
+    table = mod.CorrespondenceInfo
 
-    def has_data(self, pdb, **kwargs):
-        return False
+    small_cutoff = 36
+    huge_cutoff = 2000
 
-    def remove(self, pdb, **kwargs):
-        self.logger.info("We never automatically remove correspondence info")
-        pass
-
-    def lookup_sequences(self, pdb):
-        """Return all exp_seq_ids for the given pdb.
-        """
-        with self.session() as session:
-            query = session.query(ExpSeqPdb.exp_seq_id,
-                                  ExpSeqInfo.length,
-                                  ChainSpecies.species_id).\
-                join(ExpSeqInfo,
-                     ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
-                outerjoin(ChainSpecies,
-                          ChainSpecies.chain_id == ExpSeqPdb.chain_id).\
-                filter(ExpSeqPdb.pdb_id == pdb).\
-                distinct()
-
-            return [ut.row2dict(result) for result in query]
-
-    def add_length_constraint(self, query, length):
+    def valid_length(self, pair):
         """We treat large and small sequences differently, for small
         sequences (< 36 nts) we have to have an exact match. For large
         sequences we require that the sequences be of similar length,
@@ -58,77 +34,90 @@ class Loader(core.Loader):
         range to cover all good alignments.
         """
 
-        if length < 36:
-            return query.filter(ExpSeqInfo.length == length)
+        length1 = min(pair[0]['length'], pair[1]['length'])
+        length2 = max(pair[0]['length'], pair[1]['length'])
+        if length1 < self.small_cutoff:
+            return length1 == length2
 
-        shortest = max(0.5 * length, 36)
-        length_terms = ((ExpSeqInfo.length >= shortest) &
-                        (ExpSeqInfo.length <= 2 * length))
+        lower_limit = max(int(0.5 * length2), self.small_cutoff)
+        if length2 > self.huge_cutoff or length1 > self.huge_cutoff:
+            lower_limit = self.huge_cutoff
 
-        if length >= 2000:
-            length_terms &= (ExpSeqInfo.length >= 2000)
-        else:
-            length_terms &= (ExpSeqInfo.length < 2000)
-        return query.filter(length_terms)
+        upper_limit = 2 * length1
+        if length1 < self.huge_cutoff or length2 < self.huge_cutoff:
+            upper_limit = 2000
 
-    def add_species_constraint(self, query, species):
+        return lower_limit <= length1 <= length2 <= upper_limit
+
+    def valid_species(self, pair):
+        """Check weather a pair has valid sequences. A pair has valid sequences
+        if the species match or the species do not conflict. This happens when
+        the species is either None or 32360, the species id for synthetic
+        constructs.
         """
-        We also only get pairs between things that have
-        32360 is the taxon id for synthetic
-        """
+        species = it.imap(lambda p: p['species'], pair)
+        species = set(it.chain.from_iterable(species))
+        return None in species or 32360 in species or len(species) == 1
 
-        if species is None or species == 32360:
-            return query
-
-        return query.\
-            join(ExpSeqChainMapping,
-                 ExpSeqChainMapping.exp_seq_id == ExpSeqInfo.exp_seq_id).\
-            join(ChainSpecies,
-                 ChainSpecies.chain_id == ExpSeqChainMapping.chain_id).\
-            filter((ChainSpecies.species_id.in_([32360, species])) |
-                   (ChainSpecies.species_id == None))
-
-    def pairs(self, exp_seq):
-        """Compute the pairs of sequence ids which should be aligned. This does
-        not check if those pairs have already been aligned, it just computes
-        ones to align. This will find pairs of sequences which have similar
-        length and are from organisms which do not conflict. That means it will
-        align things which have no known species or are synthetic.
+    def pairs(self, entries):
+        """Produce all possible pairs of sequences from the given entries. This
+        will create unique pairs where the species do not conflict and the
+        length's are close enough to produce a good alignment. The result will
+        be sorted by the ids so the order will always be the same.
         """
 
-        id1 = exp_seq['exp_seq_id']
-        length = exp_seq['length']
-        species = exp_seq['species_id']
+        pairs = it.product(entries, repeat=2)
+        pairs = it.ifilter(lambda p: p[0]['id'] <= p[1]['id'], pairs)
+        pairs = it.ifilter(self.valid_length, pairs)
+        pairs = it.ifilter(self.valid_species, pairs)
+        return sorted(pairs, key=lambda p: (p[0]['id'], p[1]['id']))
 
+    def exp_seqs(self, pdbs):
+        """Look up all experimental sequences for
+        """
         with self.session() as session:
-            query = session.query(ExpSeqInfo).\
-                filter(ExpSeqInfo.exp_seq_id != id1)
+            query = session.query(mod.ExpSeqPdb.exp_seq_id.label('id'),
+                                  mod.ExpSeqInfo.length,
+                                  mod.ChainSpecies.species_id.label('species')).\
+                join(mod.ExpSeqInfo,
+                     mod.ExpSeqInfo.exp_seq_id == mod.ExpSeqPdb.exp_seq_id).\
+                join(mod.ExpSeqChainMapping,
+                     mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqPdb.exp_seq_id).\
+                join(mod.ChainSpecies,
+                     mod.ChainSpecies.chain_id == mod.ExpSeqChainMapping.chain_id).\
+                filter(mod.ExpSeqPdb.pdb_id.in_(pdbs)).\
+                distinct().\
+                order_by(mod.ExpSeqInfo.exp_seq_id)
 
-            query = self.add_length_constraint(query, length)
-            query = self.add_species_constraint(query, species)
+            return [ut.row2dict(result) for result in query]
 
-            pairs = [(id1, id1)]
-            for result in query.distinct():
-                id2 = result.exp_seq_id
-                pairs.append((min(id1, id2), max(id1, id2)))
+    def merge(self, exps):
+        merged = []
+        key = lambda d: d['id']
+        for exp_id, entries in it.groupby(sorted(exps, key=key), key):
+            entries = list(entries)
+            merged.append({
+                'id': exp_id,
+                'length': entries[0]['length'],
+                'species': set(e['species'] for e in entries)
+            })
+        return merged
 
-            return sorted(pairs, key=lambda e: (e[0], e[1]))
+    def to_process(self, pdbs, **kwargs):
+        """Compute the pairs of experimental sequences to process. This will
+        look up all possible pairs in the given list of pdbs and then filter
+        them to only those which match our length and species cutoffs.
+        """
+        exps = self.exp_seqs(pdbs)
+        merged = self.merge(exps)
+        return self.pairs(merged)
 
-    def is_known(self, pair):
-        with self.session() as session:
-            ids = [pair[0], pair[1]]
-            query = session.query(Info).\
-                filter(Info.exp_seq_id_1.in_(ids)).\
-                filter(Info.exp_seq_id_2.in_(ids))
-            return bool(query.limit(1).count())
+    def query(self, session, pair):
+        return session.query(self.table).\
+            filter_by(exp_seq_id_1=pair[0]['id'], exp_seq_id_2=pair[1]['id'])
 
-    def data(self, pdb, **kwargs):
-        exp_seqs = self.lookup_sequences(pdb)
-        data = set()
-        for exp_seq in exp_seqs:
-            pairs = self.pairs(exp_seq)
-            data.extend(p for p in pairs if not self.is_known(p))
-
-        if not data:
-            raise core.Skip("No possible pairings found for %s" % pdb)
-        return data
+    def data(self, pair, **kwargs):
+        return {
+            'exp_seq_id_1': pair[0]['id'],
+            'exp_seq_id_0': pair[1]['id'],
+        }
