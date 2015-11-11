@@ -48,7 +48,7 @@ class ProcessResultsTest(StageTest):
     def test_can_process_a_record(self):
         val = self.loader.get_species(self.record[0])
         ans = {
-            'id': 32630,
+            'species_mapping_id': 32630,
             'species_id': 32630,
             'species_name': 'synthetic construct'
         }
@@ -57,7 +57,7 @@ class ProcessResultsTest(StageTest):
     def test_can_determine_species(self):
         val = self.loader.get_species(self.record[1])
         ans = {
-            'id': 356418,
+            'species_mapping_id': 356418,
             'species_id': 11103,
             'species_name': 'Hepatitis C virus'
         }
@@ -70,10 +70,10 @@ class SpeciesMappingTest(StageTest):
     def test_downloads_a_context(self):
         context = self.loader.context([32630, 356418])
         val = self.loader.taxon_entries(context)
-        val.sort(key=lambda v: v['id'])
+        val.sort(key=lambda v: v['species_mapping_id'])
         ans = [
-            {'id': 32630, 'species_id': 32630, 'species_name': 'synthetic construct'},
-            {'id': 356418, 'species_id': 11103, 'species_name': 'Hepatitis C virus'}
+            {'species_mapping_id': 32630, 'species_id': 32630, 'species_name': 'synthetic construct'},
+            {'species_mapping_id': 356418, 'species_id': 11103, 'species_name': 'Hepatitis C virus'}
         ]
         self.assertEquals(ans, val)
 
