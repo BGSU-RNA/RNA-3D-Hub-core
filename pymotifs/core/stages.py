@@ -47,7 +47,7 @@ class Stage(base.Base):
     """Collection of ids to skip"""
     skip = []
 
-    """Object to save with"""
+    """Class to save with"""
     saver = None
 
     def __init__(self, *args, **kwargs):
@@ -335,7 +335,7 @@ class Loader(Stage):
     def is_missing(self, entry, **kwargs):
         """Determine if the data is missing by using the has_data method.
 
-        :entry: The transformed entry to check for.
+        :entry: The entry to check for.
         :kwargs: Keyword arguments
         :returns: A boolean if the requested data is missing or not.
         """
