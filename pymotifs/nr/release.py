@@ -3,7 +3,6 @@ import datetime as dt
 from pymotifs import core
 from pymotifs.models import NrReleases
 
-from pymotifs.utils import tmp
 from pymotifs.utils.releases import Release
 from pymotifs.nr.builder import Builder
 
@@ -27,7 +26,7 @@ class Loader(core.MassLoader):
 
     def build(self, pdbs, current_release, next_release, **kwargs):
         builder = Builder(self.config, self.session)
-        tmp.store('nr', builder(pdbs, current_release, next_release))
+        self.cache('nr', builder(pdbs, current_release, next_release))
 
     def data(self, pdbs, **kwargs):
         now = dt.datetime.now()

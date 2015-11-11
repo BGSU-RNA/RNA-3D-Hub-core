@@ -5,7 +5,6 @@ from pymotifs import core
 from pymotifs.models import NrChains
 from pymotifs.models import NrClasses
 
-from pymotifs.utils import tmp
 from pymotifs.nr.builder import Builder
 from pymotifs.nr.classes import Loader as ClassLoader
 
@@ -15,7 +14,7 @@ class Loader(core.MassLoader):
     update_gap = dt.timedelta(7)  # Only update every 7 days
 
     def has_data(self, *args, **kwargs):
-        grouping = tmp.load('nr')
+        grouping = self.cached('nr')
         if not grouping:
             raise core.Skip("No precomputed grouping to store")
 
@@ -60,6 +59,6 @@ class Loader(core.MassLoader):
         return data
 
     def data(self, *args, **kwargs):
-        grouping = tmp.load('nr')
+        grouping = self.cached('nr')
         mapping = self.mapping(grouping)
         return [NrChains(**chain) for chain in self.chains(grouping, mapping)]

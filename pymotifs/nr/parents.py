@@ -4,7 +4,7 @@ from pymotifs import core
 
 from pymotifs.models import NrClassParents
 
-from pymotifs.utils import tmp
+from pymotifs.nr.builder import Builder
 from pymotifs.nr.classes import Loader as ClassLoader
 
 
@@ -14,7 +14,7 @@ class Loader(core.MassLoader):
     allow_no_data = True
 
     def has_data(self, *args, **kwargs):
-        grouping = tmp.load('nr')
+        grouping = self.cached('nr')
         if not grouping:
             raise core.Skip("No precomputed grouping to store")
 
@@ -26,6 +26,12 @@ class Loader(core.MassLoader):
 
     def remove(self, *args, **kwargs):
         self.logger.info("No automatic removal of parents or cached data")
+
+    def mapping(self, grouping):
+        helper = Builder(self.config, self.session)
+        release_id = grouping[0]['release']
+        classes = [g['name']['full'] for g in grouping]
+        return helper.class_id_mapping(classes, release_id)
 
     def parents(self, grouping):
         if not grouping:
@@ -43,7 +49,7 @@ class Loader(core.MassLoader):
         return data
 
     def data(self, pdbs, **kwargs):
-        grouping = tmp.load('nr')
+        grouping = self.cached('nr')
         for parent in self.parents(grouping):
             yield NrClassParents(**parent)
-        tmp.cleanup('nr')
+        self.cached('nr', remove=True)

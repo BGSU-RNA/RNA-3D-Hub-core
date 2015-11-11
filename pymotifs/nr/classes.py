@@ -5,7 +5,6 @@ from pymotifs.models import NrClasses
 
 from pymotifs.nr.release import Loader as ReleaseLoader
 from pymotifs.utils.releases import Release
-from pymotifs.utils import tmp
 
 from pymotifs.chains.loader import Loader as ChainLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
@@ -21,7 +20,7 @@ class Loader(core.MassLoader):
         self.logger.info("No automatic removal of classes or cached data")
 
     def has_data(self, pdbs, **kwargs):
-        if not tmp.load('nr'):
+        if not self.cached('nr'):
             raise core.Skip("No cached data")
 
         helper = Release(self.config, self.session.maker)
@@ -34,13 +33,10 @@ class Loader(core.MassLoader):
             return bool(query.count())
 
     def data(self, pdbs, **kwargs):
-        data = []
-        classes = tmp.load('nr')
-        for klass in classes:
-            data.append(NrClasses(name=klass['name']['full'],
-                                  nr_release_id=klass['release'],
-                                  handle=klass['name']['handle'],
-                                  version=klass['name']['version'],
-                                  comment=klass['comment'],
-                                  resolution=klass['name']['cutoff']))
-        return data
+        for klass in self.cached('nr'):
+            yield NrClasses(name=klass['name']['full'],
+                            nr_release_id=klass['release'],
+                            handle=klass['name']['handle'],
+                            version=klass['name']['version'],
+                            comment=klass['comment'],
+                            resolution=klass['name']['cutoff'])
