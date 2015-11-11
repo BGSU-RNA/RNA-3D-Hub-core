@@ -14,6 +14,8 @@ except Exception as err:
 
 from pymotifs.core.exceptions import Skip
 
+BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 
 class MatlabFailed(Exception):
     """An exception meant to be used if matlab commands fail for some reason.
@@ -40,6 +42,7 @@ class Matlab(object):
         if 'mlab' not in globals():
             raise Skip("No matlab around, skipping")
         self.mlab = mlab
+        os.chdir(BASE)
         # self.mlab._autosync_dirs = False
         self.mlab.setup()
         os.chdir(self._root)
