@@ -10,7 +10,7 @@ class Base(object):
     handler, config, etc. This provides such a base class.
     """
 
-    def __init__(self, config, session_maker):
+    def __init__(self, config, session_maker, **kwargs):
         """Build a new Base object.
 
         :config: The config object to build with.
