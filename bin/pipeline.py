@@ -9,9 +9,11 @@ must be configured. Locations
 
 import os
 import sys
+import random
 import logging
 import argparse
 from datetime import datetime as dt
+from copy import deepcopy
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -20,21 +22,15 @@ here = os.path.dirname(__file__)
 pymotifs = os.path.abspath(os.path.join(here, '..'))
 sys.path.append(pymotifs)
 
-from pymotifs import config
-from pymotifs import models
-from pymotifs.dispatcher import Dispatcher
-from pymotifs.utils import pdb
-from pymotifs.utils import known
-from pymotifs import email
-
-logger = logging.getLogger(__name__)
+import pymotifs as pym
 
 
-def setup_logging(opts):
+def setup_logging(options):
+    opts = deepcopy(options)
     log_args = {
         'level': getattr(logging, opts.pop('log_level').upper()),
         'filemode': opts.pop('log_mode'),
-        'format': '%(levelname)s:%(asctime)s:%(name)s:%(message)s',
+        'format': '%(levelname)s:%(name)s:%(asctime)s:%(message)s',
     }
 
     filename = opts.pop('log_file')
@@ -49,91 +45,135 @@ def setup_logging(opts):
     for handler in base.handlers:
         pool_logger.addHandler(handler)
 
+    return opts
 
-def run(name, conf, pdbs, opts):
-    setup_logging(opts)
 
-    if opts['before'] or opts['after']:
-        pdbs = pdb.RnaPdbsHelper()(dates=(opts['after'], opts['before']))
+def setup(args):
+    options = {
+        'exclude': set()
+    }
 
-    if opts.pop('known'):
-        pdbs = list(known(config, pdb=False))
+    stage = args.name
+    ids = args.ids
+    config = pym.config.load(args.config)
+    arguments = set(['ids', 'stage', 'config'])
+    for arg, value in vars(args).items():
+        if arg not in arguments:
+            options[arg] = value
 
-    if opts['all']:
-        pdbs = pdb.RnaPdbsHelper()()
-
-    if not pdbs:
-        logger.warning("Running with no pdb files")
-
-    engine = create_engine(conf['db']['uri'])
-    models.reflect(engine)
+    opts = setup_logging(options)
+    engine = create_engine(config['db']['uri'])
+    pym.models.reflect(engine)
     Session = sessionmaker(bind=engine)
+    opts['dispatcher'] = pym.dispatcher.Dispatcher(stage, config, Session,
+                                                   **options)
 
-    dispatcher = Dispatcher(name, conf, Session,
-                            skip_dependencies=opts.get('skip_dependencies'),
-                            exclude=opts['exclude'])
-    dispatcher(pdbs, **opts)
+    if not ids:
+        if options['before'] or options['after']:
+            dates = (options['after'], options['before'])
+            ids = pym.utils.pdb.RnaPdbsHelper()(dates=dates)
+
+        if options.pop('known'):
+            ids = list(pym.utils.known(config, pdb=False))
+
+        if options['all']:
+            ids = pym.utils.pdb.RnaPdbsHelper()()
+
+    if 'seed' in options:
+        random.seed(options.pop('seed'))
+
+    return ids, opts
 
 
-if __name__ == '__main__':
+def run(ids, options):
+    dispatcher = options.pop('dispatcher')
+    dispatcher(ids, **options)
+
+
+def inspect(ids, options):
+    dispatcher = options.pop('dispatcher')
+    for stage in dispatcher.stages(ids, build=True):
+        print(stage.name)
+
+
+def stages(*args):
+    pass
+
+
+def parser():
     date = lambda r: dt.strptime(r, '%Y-%m-%d').date()
-
     parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(title='subcommands',
+                                       description='known subcommands',
+                                       help='select a command to run')
 
-    parser.add_argument('name', metavar='N', help='Name of stage to run')
-    parser.add_argument('pdbs', metavar='P', nargs='*', help="PDBs to use")
-
-    parser.add_argument('--config', dest='config',
-                        default='conf/motifatlas.json',
-                        help="Config file to use")
-
-    # Options about which PDB files to use
-    parser.add_argument('--all', dest='all', default=False,
-                        action='store_true',
-                        help="Use all RNA containing PDBS")
-    parser.add_argument('--after-date', dest='after', default=None,
-                        type=date, help='Get Pdbs from after the date')
-    parser.add_argument('--before-date', dest='before', default=None,
-                        type=date, help='Get PDBs from before the date')
-    parser.add_argument('--known', action='store_true',
-                        help="Use only downloaded pdbs")
-
-    # Options about the type of run
-    parser.add_argument('--recalculate', action='store_true',
-                        help="Force all data to be recalculated")
-    parser.add_argument('--dry-run', action='store_true',
-                        help="Do a dry run where we store nothing")
-    parser.add_argument('--ignore-time', action='store_true',
-                        help='Do not use time for rerunning')
-
-    # Skip options
-    parser.add_argument('--skip-dependencies', action='store_true',
-                        help='Skip running any dependencies')
-    parser.add_argument('--skip-stage', action='append', dest='exclude',
-                        help='Name of stage to skip')
-    parser.add_argument('--exclude', action='append', dest='skip_pdbs',
-                        help='PDB ids to skip')
-
-    parser.add_argument('--no-email', action='store_false',
-                        help='Do not send an email')
-
-    # Logging options
+    # Add all common options
     parser.add_argument('--log-file', dest='log_file', default='',
                         help="Log file to use")
-    parser.add_argument('--log-level', dest='log_level', default='debug',
+    parser.add_argument('--log-level', dest='log_level',
+                        default='debug',
                         choices=['debug', 'info', 'warning', 'error'],
                         help="Logging level to use")
     parser.add_argument('--log-mode', dest='log_mode', default='a',
                         choices=['w', 'a'],
                         help='Mode to open the  logging file')
 
-    args = parser.parse_args()
-    opts = {}
-    for arg, value in vars(args).items():
-        if arg != 'pdbs' and arg != 'name' and arg != 'config':
-            opts[arg] = value
-    opts['exclude'] = set(opts['exclude'] or [])
+    # Setup the common parts of the run and inspect commands
+    runner = subparsers.add_parser('run', help='Run a stage')
+    runner.set_defaults(target=run)
 
-    conf = config.load(args.config)
-    conf['email']['send'] = args.no_email
-    run(args.name, conf, args.pdbs, opts)
+    inspecter = subparsers.add_parser('inspect', help='Inspect run')
+    inspecter.set_defaults(target=inspect)
+
+    for instance in (runner, inspecter):
+        instance.add_argument('name', metavar='N', nargs=1,
+                              help='Name of stage to run')
+
+        instance.add_argument('--skip-dependencies', action='store_true',
+                              help='Skip running any dependencies')
+        instance.add_argument('--skip-stage', action='append',
+                              dest='exclude',
+                              help='Name of the stage(s) to skip')
+        instance.add_argument('--recalculate', action='store_true',
+                              help="Recalculate data for the given stage(s)")
+        instance.add_argument('--all', dest='all', default=False,
+                              action='store_true',
+                              help="Use all RNA containing PDBS")
+        instance.add_argument('--known', action='store_true',
+                              help="Use only downloaded cif files")
+        instance.add_argument('--after-date', dest='after', default=None,
+                              type=date, help='Get Pdbs from after the date')
+        instance.add_argument('--before-date', dest='before', default=None,
+                              type=date, help='Get PDBs from before the date')
+        instance.add_argument('--exclude', action='append', dest='skip_pdbs',
+                              help='PDB id(s) to skip')
+        instance.add_argument('--ignore-time', action='store_true',
+                              help='Do not use time for rerunning')
+
+    # Setup the run parser
+    runner.add_argument('ids', metavar='P', nargs='*', help="PDBs to use")
+    runner.add_argument('--dry-run', action='store_true',
+                        help="Do a dry run where we alter nothing")
+
+    bootstraper = subparsers.add_parser('bootstrap', help='fill a database')
+    bootstraper.set_defaults(target=run, stage="update", seed=1,
+                             exclude=["units.distances"],
+                             config='conf/bootstrap.json')
+
+    lister = subparsers.add_parser('stages', help='List known stages')
+    lister.add_argument('pattern', metavar='P', nargs='?',
+                        help='Name pattern to use')
+    lister.set_defaults(target=stages)
+
+    return parser
+
+
+def main():
+    cli = parser()
+    args = cli.parse_args()
+    ids, options = setup(args)
+    args.target(ids, options)
+
+
+if __name__ == '__main__':
+    main()

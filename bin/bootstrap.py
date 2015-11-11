@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-"""
-This is a script to bootstrap up a testing database. This script runs stages of
-the pipeline on a specific subset of structures. This reads the config file in
-`conf/bootstrap.json` for the database and pdb files to bootstrap. For an
+"""This is a script to bootstrap up a testing database. This script runs stages
+of the pipeline on a specific subset of structures. This reads the config file
+in `conf/bootstrap.json` for the database and pdb files to bootstrap. For an
 example file see `conf/bootstrap.json.txt`. Note that the bootstrapping process
 is not perfect, if matlab is not available then several stages, such as
 importing interactions, will be skipped. Also, this requires that a database
@@ -42,7 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', dest='config',
                         default='conf/bootstrap.json',
                         help="Config file to use")
-    parser.add_argument('--log-file', dest='log_file', default='',
+    parser.add_argument('--log-file', dest='log_file', default='bootstrap.log',
                         help="Log file to use")
     parser.add_argument('--log-level', dest='log_level', default='debug',
                         choices=['debug', 'info', 'warning', 'error'],
