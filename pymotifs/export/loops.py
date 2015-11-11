@@ -15,7 +15,7 @@ class Exporter(core.Exporter):
 
     def loops(self, pdb):
         with self.session() as session:
-            query = session.query(LoopInfo.id,
+            query = session.query(LoopInfo.loop_id.label('id'),
                                   LoopInfo.pdb_id.label('pdb'),
                                   LoopInfo.info.unit_ids.label('nts')
                                   ).\
