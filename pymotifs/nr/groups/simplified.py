@@ -1,3 +1,4 @@
+import functools as ft
 import itertools as it
 import collections as coll
 
@@ -228,28 +229,20 @@ class Grouper(core.Base):
         :returns: A list of lists of the connected components.
         """
 
-        graph = coll.defaultdict(set)
+        equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
+        pairs = it.product(chains, chains)
+        pairs = it.ifilter(lambda (c1, c2): c1 == c2 or equiv(c1, c2), pairs)
+
         mapping = {}
-        for chain1 in chains:
+        graph = coll.defaultdict(set)
+        for chain1, chain2 in pairs:
+            self.logger.debug("Equivalent: %s %s", chain1['id'], chain2['id'])
             mapping[chain1['id']] = chain1
-
-            for chain2 in chains:
-                if chain1 == chain2 or \
-                        self.are_equivalent(alignments, discrepancies, chain1,
-                                            chain2):
-                    self.logger.debug("Equivalent: %s %s",
-                                      chain1['id'], chain2['id'])
-
-                    graph[chain1['id']].add(chain2['id'])
-                    graph[chain2['id']].add(chain1['id'])
-                else:
-                    self.logger.debug("Non-equivalent: %s %s",
-                                      chain1['id'], chain2['id'])
-
-        connected = cs.find_connected(graph).values()
+            graph[chain1['id']].add(chain2['id'])
+            graph[chain2['id']].add(chain1['id'])
 
         groups = []
-        for ids in connected:
+        for ids in cs.find_connected(graph).values():
             self.validate(graph, list(ids))
             groups.append(mapping[id] for id in ids)
 
