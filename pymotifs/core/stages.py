@@ -395,13 +395,13 @@ class SimpleLoader(Loader):
 
     __metaclass__ = abc.ABCMeta
 
-    def has_data(self, *args, **kwargs):
+    def has_data(self, args, **kwargs):
         """Check if we already have data.
         """
         with self.session() as session:
-            return bool(self.query(session, *args).limit(1).count())
+            return bool(self.query(session, args).limit(1).count())
 
-    def remove(self, *args, **kwargs):
+    def remove(self, args, **kwargs):
         """This will delete all entries for the given arguments
         """
 
@@ -410,7 +410,7 @@ class SimpleLoader(Loader):
             return True
 
         with self.session() as session:
-            query = self.query(session, *args)
+            query = self.query(session, args)
             if not query.count():
                 self.logger.info("Nothing to delete for %s", str(args))
                 return True
@@ -419,7 +419,7 @@ class SimpleLoader(Loader):
                 session.delete(row)
 
     @abc.abstractmethod
-    def query(self, session, *args):
+    def query(self, session, args):
         """
         A method to generate the query that can be used to access data for this
         loader. The resutling query is used in remove and has_data.
