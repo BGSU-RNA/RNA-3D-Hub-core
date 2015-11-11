@@ -17,6 +17,8 @@ class Grouper(core.Base):
     autonomous groupings.
     """
 
+    chain_seperator = '+'
+
     cutoffs = {
         'internal': 0.5,
         'internal_count': 5
@@ -97,7 +99,7 @@ class Grouper(core.Base):
         grouped = []
         groups = cs.find_connected(dict(connections))
         for group in groups.values():
-            group_id = '+'.join(group)
+            group_id = self.chain_seperator.join(group)
             self.logger.debug("Generated group %s from interactions",
                               group_id)
             chains = [mapping[name] for name in group]

@@ -168,7 +168,7 @@ class Info(core.Base):
             merged['exp_length'] += chain['exp_length']
             merged['lr'] += chain['lr']
 
-        merged['id'] = ','.join(merged['id'])
+        merged['id'] = '+'.join(merged['id'])
         names = [chain['name'] for chain in chains]
         merged['external'] = helper.cross_chain(merged['pdb'], names,
                                                 count=True, family='cWW')
