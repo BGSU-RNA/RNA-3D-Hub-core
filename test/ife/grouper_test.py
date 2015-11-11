@@ -156,5 +156,5 @@ class UsingCorrectChainsTest(StageTest):
     def test_uses_correct_chains(self):
         chains = self.loader('1FEU')
         val = [c['id'] for c in chains]
-        ans = ['1FEU|B', '1FEU|C', '1FEU|E', '1FEU|F']
+        ans = ['1FEU|C+1FEU|B', '1FEU|F+1FEU|E']
         self.assertEquals(ans, val)

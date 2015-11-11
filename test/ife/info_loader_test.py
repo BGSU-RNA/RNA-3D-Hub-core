@@ -71,7 +71,7 @@ class MergeChainsTest(StageTest):
         ])
 
     def test_can_merge_all_ids(self):
-        self.assertEquals('1ET4|A,1ET4|B', self.chains['id'])
+        self.assertEquals('1ET4|A+1ET4|B', self.chains['id'])
 
     def test_can_keep_the_pdb(self):
         self.assertEquals('1ET4', self.chains['pdb'])
@@ -111,7 +111,7 @@ class MergingAutonomousChainsTest(StageTest):
         ])
 
     def test_it_sorts_the_name(self):
-        self.assertEquals('4V6R|AD,4V6R|AB,4V6R|AC', self.chains['id'])
+        self.assertEquals('4V6R|AD+4V6R|AB+4V6R|AC', self.chains['id'])
 
     def test_it_sorts_by_autonomy(self):
         val = [chain['name'] for chain in self.chains['chains']]
