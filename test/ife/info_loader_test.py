@@ -20,11 +20,11 @@ class InfoLoadingTest(StageTest):
 
     @skip_without_matlab
     def test_load_base_pairs(self):
-        self.assertEquals(688, self.info['bp'])
+        self.assertEquals(680, self.info['bp'])
 
     @skip_without_matlab
     def test_loads_long_range(self):
-        self.assertEquals(77, self.info['lr'])
+        self.assertEquals(71, self.info['lr'])
 
     @skip_without_matlab
     def test_loads_internal_cww(self):
