@@ -217,7 +217,7 @@ class Stage(base.Base):
         :kwargs: Generic keyword arguments.
         :returns: The stuff to process.
         """
-        return [pdb.upper() for pdb in pdbs]
+        return [str(pdb).upper() for pdb in pdbs]
 
     def mark_processed(self, pdb, dry_run=False, **kwargs):
         """Mark that we have finished computing the results for the given pdb.

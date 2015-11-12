@@ -83,6 +83,12 @@ class ProcessingTests(Base):
         ans = ['ABC']
         self.assertEqual(val, ans)
 
+    def test_it_will_convert_to_str(self):
+        stage = SomeStage(CONFIG, None)
+        val = stage.to_process([u'abc'])
+        self.assertEqual(['ABC'], val)
+        self.assertTrue(isinstance(val[0], str))
+
     def test_will_return_processed_input(self):
         stage = SomeStage(CONFIG, None)
         val = stage(['A', '', 'B'])
