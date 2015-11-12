@@ -1,5 +1,4 @@
 import os
-import cStringIO as sio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,8 +50,7 @@ class Matlab(object):
         self.logger.debug('Matlab started')
 
     def __handle_out__(self, output):
-        self.last_stdout = sio.StringIO()
-        self.last_stdout.write(output)
+        self.last_stdout = output
         if self.log_output:
             self.logger.debug(output)
 
