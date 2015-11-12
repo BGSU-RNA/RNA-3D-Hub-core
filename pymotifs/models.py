@@ -38,6 +38,21 @@ def should_reflect(tablename, *args):
     return name not in globals()
 
 
+def define_missing_views(metadata):
+
+    # We have to define what columns are PK for views
+    Table('exp_seq_pdb', metadata,
+          Column('exp_seq_id', String, primary_key=True),
+          Column('pdb_id', String, primary_key=True),
+          Column('chain_id', Integer, primary_key=True),
+          extend_existing=True)
+
+    Table('correspondence_pdbs', metadata,
+          Column('correspondence_id', String, primary_key=True),
+          Column('chain_id_1', Integer, primary_key=True),
+          Column('chain_id_2', Integer, primary_key=True),
+          extend_existing=True)
+
 
 def reflect(engine):
     """Reflect all tables/views from the database into python. This cannot
@@ -52,12 +67,7 @@ def reflect(engine):
 
     metadata.reflect(only=should_reflect, views=True)
 
-    # We have to define what columns are PK for views
-    Table('exp_seq_pdb', metadata,
-          Column('exp_seq_id', String, primary_key=True),
-          Column('pdb_id', String, primary_key=True),
-          Column('chain_id', Integer, primary_key=True),
-          extend_existing=True)
+    define_missing_views(metadata)
 
     glo = globals()
     for name, obj in metadata.tables.items():

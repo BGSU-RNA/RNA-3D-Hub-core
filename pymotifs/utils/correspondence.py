@@ -1,6 +1,8 @@
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import text
 
 from pymotifs import core
+from pymotifs import models as mod
 
 
 ALL_PDBS_QUERY = """
@@ -84,23 +86,23 @@ where
 
 ALIGNED_CHAINS = """
 select distinct
-    C1.id as 'chain_id1',
-    C2.id as 'chain_id2',
+    C1.chain_id as 'chain_id1',
+    C2.chain_id as 'chain_id2',
     I.good_alignment as 'good_alignment'
 from correspondence_pdbs as P
 join correspondence_info as I
 on
-    I.id = P.id
+    I.corresponence_id = P.corresponence_id
 join chain_info as C1
 on
-    C1.id = P.chain_id1
+    C1.chain_id = P.chain_id1
 join chain_info as C2
 on
-    C2.id = P.chain_id2
+    C2.chain_id = P.chain_id2
 where
-    P.pdb_id1 in ({pdbs})
-    and P.pdb_id2 in ({pdbs})
-    and C1.id != C2.id
+    P.pdb_id_1 in ({pdbs})
+    and P.pdb_id_2 in ({pdbs})
+    and C1.chain_id != C2.chain_id
 ;
 """
 
@@ -203,21 +205,39 @@ class Helper(core.Base):
             mapping[result.unit_id2] = result.unit_id1
         return mapping
 
-    def aligned_chains(self, pdbs):
-        ids = ','.join('"%s"' % pdb for pdb in pdbs)
+    def aligned_chains(self, ids):
+        """Determine which chains a good alignment between them. This will
+        produce a dictionary of dictionaries where the final values are a
+        boolean indicating a good alignment or not.
+
+        :ids: A list of pdb ids to use.
+        :returns: A dictionary of dictionaries indicating a good alignment or
+        not.
+        """
 
         mapping = {}
         with self.session() as session:
-            raw = text(ALIGNED_CHAINS.format(pdbs=ids))
-            results = session.execute(raw)
+            c1 = aliased(mod.ChainInfo)
+            c2 = aliased(mod.ChainInfo)
+            info = mod.CorrespondenceInfo
+            pdbs = mod.CorrespondencePdbs
+            query = session.query(info.good_alignment,
+                                  c1.chain_id.label('chain_id1'),
+                                  c2.chain_id.label('chain_id2')).\
+                join(pdbs, pdbs.correspondence_id == info.correspondence_id).\
+                join(c1, c1.chain_id == pdbs.chain_id_1).\
+                join(c2, c2.chain_id == pdbs.chain_id_2).\
+                filter(pdbs.pdb_id_1.in_(ids)).\
+                filter(pdbs.pdb_id_2.in_(ids)).\
+                filter(c1.chain_id != c2.chain_id)
 
-            for result in results:
+            for result in query:
                 if result.chain_id1 not in mapping:
                     mapping[result.chain_id1] = {}
                 if result.chain_id2 not in mapping:
                     mapping[result.chain_id2] = {}
 
-                status = result.good_alignment == 1
+                status = bool(result.good_alignment)
                 mapping[result.chain_id1][result.chain_id2] = status
                 mapping[result.chain_id2][result.chain_id1] = status
             return mapping
