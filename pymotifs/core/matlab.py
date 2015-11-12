@@ -1,4 +1,5 @@
 import os
+import cStringIO as sio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,10 +29,11 @@ class Matlab(object):
     well as calling the setup function before running matlab.
     """
 
-    def __init__(self, root):
+    def __init__(self, root, log_output=False, **kwargs):
         self.logger = logging.getLogger('core.Matlab')
         self.mlab = None
         self._root = root
+        self.log_output = log_output
 
     def __del__(self):
         if self.mlab:
@@ -48,6 +50,12 @@ class Matlab(object):
         os.chdir(self._root)
         self.logger.debug('Matlab started')
 
+    def __handle_out__(self, output):
+        self.last_stdout = sio.StringIO()
+        self.last_stdout.write(output)
+        if self.log_output:
+            self.logger.debug(output)
+
     def __getattr__(self, key):
         if self.mlab is None:
             os.chdir(self._root)
@@ -57,12 +65,12 @@ class Matlab(object):
         attr = getattr(self.mlab, key)
 
         def func(*args, **kwargs):
+            if 'handle_out' not in kwargs:
+                kwargs['handle_out'] = self.__handle_out__
             corrected = []
             for arg in args:
-                if isinstance(arg, basestring):
-                    corrected.append(str(arg))
-                else:
-                    corrected.append(arg)
+                value = str(arg) if isinstance(arg, basestring) else arg
+                corrected.append(value)
             return attr(*corrected, **kwargs)
 
         return func
