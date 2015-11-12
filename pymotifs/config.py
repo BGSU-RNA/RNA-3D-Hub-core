@@ -25,7 +25,10 @@ def merge(a, b):
         if k in result and isinstance(result[k], dict):
             result[k] = merge(result[k], v)
         else:
-            result[k] = deepcopy(v)
+            new_v = deepcopy(v)
+            if isinstance(new_v, basestring):
+                new_v = str(new_v)
+            result[k] = new_v
 
     return result
 

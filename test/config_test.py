@@ -41,3 +41,9 @@ class MergingTest(TestCase):
         val = config.merge(a, b)
         ans = {'a': {'a': 1, 'b': 2}, 'c': 3, 'd': [1, 2, 3]}
         self.assertEquals(ans, val)
+
+    def test_converts_value_to_str(self):
+        a = {'a': {'a': u'1'}}
+        b = {'a': {'b': u'2'}}
+        val = config.merge(a, b)
+        self.assertTrue(isinstance(val['a']['b'], str))
