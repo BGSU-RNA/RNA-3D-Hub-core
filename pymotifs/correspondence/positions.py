@@ -173,7 +173,11 @@ class Loader(core.Loader):
     def __translation__(self):
         mapping = {}
         with self.session() as session:
-            query = session.query(RnaUnitModifiedCorrespondencies)
+            query = session.query(
+                RnaUnitModifiedCorrespondencies.rna_unit_modified_correspondencies_id,
+                RnaUnitModifiedCorrespondencies.standard_unit
+
+            )
             for result in query:
-                mapping[result.id] = result.standard_unit
+                mapping[result[0]] = result[1]
         return mapping
