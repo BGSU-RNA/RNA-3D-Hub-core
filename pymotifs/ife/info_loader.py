@@ -115,6 +115,9 @@ class Info(core.Base):
         """
 
         helper = st.BasePairQueries(self.session.maker)
+        if not chains:
+            return coll.defaultdict(dict)
+
         pdb = chains[0]['pdb']
         interactions = coll.defaultdict(dict)
 
