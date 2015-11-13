@@ -452,7 +452,7 @@ class MassLoader(Loader):
         with self.session() as session:
             current = session.query(mod.PdbAnalysisStatus).\
                 filter_by(stage=self.name).\
-                order_by(mod.PdbAnalysisStatus.time).\
+                order_by(mod.PdbAnalysisStatus.date).\
                 first()
 
             if not current:
