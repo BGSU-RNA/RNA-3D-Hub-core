@@ -85,6 +85,7 @@ class Parser(object):
 
 class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader])
+    allow_no_data = True
 
     def __init__(self, *args):
         super(Loader, self).__init__(*args)
