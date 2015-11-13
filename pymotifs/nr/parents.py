@@ -2,7 +2,7 @@ import datetime as dt
 
 from pymotifs import core
 
-from pymotifs.models import NrClassParents
+from pymotifs import models as mod
 
 from pymotifs.nr.builder import Builder
 from pymotifs.nr.classes import Loader as ClassLoader
@@ -12,6 +12,7 @@ class Loader(core.MassLoader):
     dependencies = set([ClassLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
     allow_no_data = True
+    table = mod.NrClassParents
 
     def has_data(self, *args, **kwargs):
         grouping = self.cached('nr')
@@ -20,7 +21,7 @@ class Loader(core.MassLoader):
 
         release_id = grouping[0]['release']
         with self.session() as session:
-            query = session.query(NrClassParents).\
+            query = session.query(mod.NrClassParents).\
                 filter_by(nr_release_id=release_id)
             return bool(query.count())
 
@@ -33,15 +34,22 @@ class Loader(core.MassLoader):
         classes = [g['name']['full'] for g in grouping]
         return helper.class_id_mapping(classes, release_id)
 
-    def parents(self, grouping):
+    def parents(self, grouping, mapping):
         if not grouping:
             raise core.InvalidState("Must give grouping")
 
+        if not mapping:
+            raise core.InvalidState("Must give mapping")
+
         data = []
         for group in grouping:
+            if group['name']['full'] not in mapping:
+                raise core.InvalidState("Group %s not in mapping" % group)
+            nr_class_id = mapping[group['name']['full']]
+
             for parent in group['parents']:
                 data.append({
-                    'nr_class_id': group['class_id'],
+                    'nr_class_id': nr_class_id,
                     'release_id': group['release'],
                     'nr_class_parent_id': parent['name']['class_id']
                 })
@@ -50,6 +58,13 @@ class Loader(core.MassLoader):
 
     def data(self, pdbs, **kwargs):
         grouping = self.cached('nr')
-        for parent in self.parents(grouping):
-            yield NrClassParents(**parent)
+        if not grouping:
+            raise core.InvalidState("No grouping loaded")
+
+        mapping = self.mapping(grouping)
+        if not mapping:
+            raise core.InvalidState("No mapping loaded")
+
+        for parent in self.parents(grouping, mapping):
+            yield parent
         self.cached('nr', remove=True)
