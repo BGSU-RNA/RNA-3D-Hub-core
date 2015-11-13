@@ -2,8 +2,7 @@ import datetime as dt
 
 from pymotifs import core
 
-from pymotifs.models import NrChains
-from pymotifs.models import NrClasses
+from pymotifs import models as mod
 
 from pymotifs.nr.builder import Builder
 from pymotifs.nr.classes import Loader as ClassLoader
@@ -12,6 +11,7 @@ from pymotifs.nr.classes import Loader as ClassLoader
 class Loader(core.MassLoader):
     dependencies = set([ClassLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
+    table = mod.NrChains
 
     def has_data(self, *args, **kwargs):
         grouping = self.cached('nr')
@@ -20,9 +20,9 @@ class Loader(core.MassLoader):
 
         release_id = grouping[0]['release']
         with self.session() as session:
-            query = session.query(NrChains).\
-                join(NrClasses, NrClasses.nr_class_id == NrChains.nr_class_id).\
-                filter(NrClasses.nr_release_id == release_id)
+            query = session.query(mod.NrChains).\
+                join(mod.NrClasses, mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
+                filter(mod.NrClasses.nr_release_id == release_id)
 
             return bool(query.count())
 
@@ -60,5 +60,8 @@ class Loader(core.MassLoader):
 
     def data(self, *args, **kwargs):
         grouping = self.cached('nr')
+        if not grouping:
+            raise core.InvalidState("No grouping loaded")
+
         mapping = self.mapping(grouping)
-        return [NrChains(**chain) for chain in self.chains(grouping, mapping)]
+        return self.chains(grouping, mapping)
