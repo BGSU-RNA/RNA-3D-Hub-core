@@ -1,7 +1,7 @@
 import itertools as it
 
 
-def toposort(graph):
+def toposort(graph, by=None):
     """Dependencies are expressed as a dictionary whose keys are items
     and whose values are a set of dependent items. Output is a list of
     sets in topological order. The first set consists of items with no
@@ -28,8 +28,9 @@ def toposort(graph):
     for name in graph:
         walk_depth_first(name)
 
-    for level, stages in names_by_level.items():
-        names_by_level[level] = sorted(stages)
+    if by:
+        for level, stages in names_by_level.items():
+            names_by_level[level] = sorted(stages, key=by)
 
     ordered_levels = (names_by_level.get(i, None) for i in it.count())
     ordered_sets = it.takewhile(lambda x: x is not None, ordered_levels)
