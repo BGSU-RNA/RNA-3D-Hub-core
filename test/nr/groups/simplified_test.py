@@ -128,7 +128,7 @@ class AutonomousChainsTest(StageTest):
 
     def test_it_can_select_the_correct_chains_of_1FEU(self):
         val = self.grouped_names('1FEU')
-        ans = [['B', 'C'], ['E', 'F']]
+        ans = [['C', 'B'], ['F', 'E']]
         self.assertEquals(ans, val)
 
     def test_can_process_a_messy_nmr(self):
@@ -152,11 +152,11 @@ class AutonomousChainsTest(StageTest):
         val = self.loader.chains('1ET4')
         self.assertEquals(5, len(val))
 
-#     def test_it_selects_correct_chains(self):
-#         grouping = self.loader.chains('1ET4')
-#         val = sorted([group['name'] for group in grouping])
-#         ans = [['A', 'B'], ['E']]
-        # self.assertEquals(ans, val)
+    def test_does_not_join_by_non_cww(self):
+        grouping = self.loader.chains('1ET4')
+        val = sorted([group['name'] for group in grouping])
+        ans = ['A', 'B', 'C', 'D', 'E']
+        self.assertEquals(ans, val)
 
     def test_can_process_simple_structure(self):
         val = self.grouped_names('1G59')
@@ -165,7 +165,7 @@ class AutonomousChainsTest(StageTest):
 
     def test_it_can_process_a_triplet(self):
         val = self.grouped_names('4V42')
-        ans = [['A1', 'AB', 'AC'], ['BA'], ['BD']]
+        ans = [['AA'], ['A1', 'AB'], ['A1', 'AC'], ['AD'], ['BA'], ['BB']]
         self.assertEquals(ans, val)
 
 

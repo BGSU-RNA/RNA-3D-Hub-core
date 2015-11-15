@@ -14,7 +14,10 @@ class ParentInfoTest(StageTest):
         }
 
     def test_it_fails_without_a_grouping(self):
-        self.assertRaises(core.InvalidState, self.loader.parents, {})
+        self.assertRaises(core.InvalidState, self.loader.parents, {}, {'a': 1})
+
+    def test_it_fails_without_a_mapping(self):
+        self.assertRaises(core.InvalidState, self.loader.parents, {'a': 1}, {})
 
     def test_it_gets_previous_release(self):
         raise SkipTest()
