@@ -1,5 +1,6 @@
 import os
 import logging
+import functools as ft
 
 logger = logging.getLogger(__name__)
 
@@ -62,13 +63,18 @@ class Matlab(object):
 
         attr = getattr(self.mlab, key)
 
+        @ft.wraps(attr)
         def func(*args, **kwargs):
             if 'handle_out' not in kwargs:
                 kwargs['handle_out'] = self.__handle_out__
+
             corrected = []
             for arg in args:
                 value = str(arg) if isinstance(arg, basestring) else arg
                 corrected.append(value)
-            return attr(*corrected, **kwargs)
+
+            result = attr(*corrected, **kwargs)
+            os.chdir(BASE)
+            return result
 
         return func
