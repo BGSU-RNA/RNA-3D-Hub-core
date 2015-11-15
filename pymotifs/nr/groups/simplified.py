@@ -68,7 +68,7 @@ class Grouper(core.Base):
                                   ChainInfo.chain_name.label('name'),
                                   IfeChains.chain_id.label('db_id'),
                                   IfeChains.is_integral,
-                                  IfeChains.ife_id.label('id'),
+                                  IfeInfo.ife_id.label('id'),
                                   IfeInfo.bp_count.label('bp'),
                                   PdbInfo.resolution,
                                   ChainSpecies.species_id.label('source')).\
@@ -82,6 +82,7 @@ class Grouper(core.Base):
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.chain_id).\
                 filter(ChainInfo.pdb_id == pdb).\
+                filter(IfeInfo.length != None).\
                 order_by(IfeChains.ife_id)
 
             if query.count() == 0:
