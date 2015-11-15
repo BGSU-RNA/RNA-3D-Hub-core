@@ -57,6 +57,7 @@ class StageTest(ut.TestCase):
     loader_class = None
 
     def setUp(self):
+        os.chdir(CONFIG['locations']['base'])
         if self.loader_class:
             self.loader = self.loader_class(CONFIG, Session)
 
