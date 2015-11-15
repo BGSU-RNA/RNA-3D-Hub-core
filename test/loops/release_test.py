@@ -9,9 +9,9 @@ class ReleaseTest(StageTest):
     def test_gets_next_release_id(self):
         self.loader.config['release_mode']['loops'] = 'minor'
         data = self.loader.data()
-        self.assertEquals('1.73', data.id)
+        self.assertEquals('1.73', data.loop_releases_id)
 
     def test_gets_next_release_using_config(self):
         self.loader.config['release_mode']['loops'] = 'major'
         data = self.loader.data()
-        self.assertEquals('2.0', data.id)
+        self.assertEquals('1.0', data.loop_releases_id)
