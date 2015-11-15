@@ -41,7 +41,7 @@ class Builder(core.Base):
 
             mapping = {}
             for result in query:
-                mapping[result.name] = result.id
+                mapping[result.name] = result.nr_class_id
 
         if len(mapping) != len(names):
             raise core.InvalidState("Could not map all names")
@@ -85,8 +85,10 @@ class Builder(core.Base):
 
         filtered = chains
         if cutoff != 'all':
-            filtered = it.ifilter(lambda c: c['resolution'] is not None)
-            filtered = it.ifilter(lambda c: c['resolution'] <= float(cutoff))
+            filtered = it.ifilter(lambda c: c['resolution'] is not None,
+                                  filtered)
+            filtered = it.ifilter(lambda c: c['resolution'] <= float(cutoff),
+                                  filtered)
         filtered = list(filtered)
 
         if not filtered:
