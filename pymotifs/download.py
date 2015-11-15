@@ -15,7 +15,6 @@ class Writer(core.FileHandleSaver):
     def writer(self, pdb, **kwargs):
         with super(Writer, self).writer(pdb, **kwargs) as raw:
             yield raw.write
-            self.logger.info('Downloaded %s' % pdb)
 
 
 class Downloader(core.Loader):
