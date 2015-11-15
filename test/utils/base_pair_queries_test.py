@@ -27,8 +27,8 @@ class RepresentativeBpTest(QueryUtilTest):
 
     @skip_without_matlab
     def test_gets_count_for_several_chains(self):
-        val = self.db_obj.representative('3U5H', ['5', '8'], count=True)
-        ans = 1321
+        val = self.db_obj.representative('1GID', ['A', 'B'], count=True)
+        ans = 149
         self.assertEquals(ans, val)
 
     @skip_without_matlab
