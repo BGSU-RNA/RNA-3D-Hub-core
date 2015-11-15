@@ -1,9 +1,11 @@
 import datetime as dt
 
-from pymotifs import core
-from pymotifs.models import NrReleases
+from sqlalchemy import desc
 
-from pymotifs.utils.releases import Release
+from pymotifs import core
+from pymotifs import models as mod
+
+from pymotifs.utils import releases as rel
 from pymotifs.nr.builder import Builder
 
 from pymotifs.chains.info import Loader as ChainLoader
@@ -28,10 +30,23 @@ class Loader(core.MassLoader):
         builder = Builder(self.config, self.session)
         self.cache('nr', builder(pdbs, current_release, next_release))
 
+    def next_id(self, current):
+        return rel.next_id(current, mode=self.config['release_mode']['nrlist'])
+
+    def current_id(self):
+        with self.session() as session:
+            query = session.query(mod.NrReleases.nr_release_id).\
+                order_by(desc(mod.NrReleases.date)).\
+                limit(1)
+
+            if query.count() == 0:
+                return '0.0'
+
+            return query.one().nr_release_id
+
     def data(self, pdbs, **kwargs):
         now = dt.datetime.now()
-        helper = Release(self.config, self.session)
-        current = helper.current('nr')
-        next = helper.next(current, mode=self.config['release_mode']['nrlist'])
+        current = self.current_id()
+        next = self.next_id(current)
         self.build(pdbs, current, next, **kwargs)
-        return NrReleases(nr_release_id=next, date=now)
+        return mod.NrReleases(nr_release_id=next, date=now)

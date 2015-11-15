@@ -4,7 +4,6 @@ from pymotifs import core
 from pymotifs.models import NrClasses
 
 from pymotifs.nr.release import Loader as ReleaseLoader
-from pymotifs.utils.releases import Release
 
 from pymotifs.chains.loader import Loader as ChainLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
@@ -23,8 +22,8 @@ class Loader(core.MassLoader):
         if not self.cached('nr'):
             raise core.Skip("No cached data")
 
-        helper = Release(self.config, self.session.maker)
-        release_id = helper.current('nr')
+        helper = ReleaseLoader(self.config, self.session.maker)
+        release_id = helper.current_id()
 
         with self.session() as session:
             query = session.query(NrClasses).\

@@ -67,4 +67,5 @@ class Loader(core.MassLoader):
 
         for parent in self.parents(grouping, mapping):
             yield parent
+
         self.cached('nr', remove=True)
