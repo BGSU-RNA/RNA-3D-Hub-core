@@ -97,7 +97,9 @@ class Dispatcher(object):
         fn = lambda s: s
         if build:
             fn = lambda s: s(*self._args)
-        stages = [fn(s) for s in toposort(deps) if s not in exclude]
+
+        by = lambda s: s.__name__
+        stages = [fn(s) for s in toposort(deps, by=by) if s not in exclude]
 
         if stage not in stages and stage not in exclude:
             self.logger.warning("Likely there is an issue in toposort")

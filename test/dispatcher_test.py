@@ -68,17 +68,17 @@ class LoadingStagesTest(ut.TestCase):
     def test_can_get_all_dependencies_of_multistage(self):
         val = self.dispatcher.stages('units.loader')
         ans = [down.Downloader, pdbs.InfoLoader,
-               units.InfoLoader, export.CifAtom,
-               units.DistancesLoader, units.QualityLoader,
-               mat.Loader, units.RedundantNucleotidesLoader]
+               export.CifAtom, units.InfoLoader,
+               mat.Loader, units.DistancesLoader,
+               units.QualityLoader, units.RedundantNucleotidesLoader]
         self.assertEquals(ans, val)
 
     def test_can_exclude_specific_stages(self):
         self.dispatcher.exclude = set(['units.distances'])
         val = self.dispatcher.stages('units.loader')
         ans = [down.Downloader, pdbs.InfoLoader,
-               units.InfoLoader, export.CifAtom,
-               units.QualityLoader, mat.Loader,
+               export.CifAtom, units.InfoLoader,
+               mat.Loader, units.QualityLoader,
                units.RedundantNucleotidesLoader]
         self.assertEquals(ans, val)
 
@@ -91,8 +91,8 @@ class LoadingStagesTest(ut.TestCase):
     def test_can_exclude_a_stage_collection(self):
         self.dispatcher.exclude = set(['pdbs.loader', 'units.distances'])
         val = self.dispatcher.stages('units.loader')
-        ans = [down.Downloader,
-               units.InfoLoader, export.CifAtom,
-               units.QualityLoader, mat.Loader,
+        ans = [down.Downloader, export.CifAtom,
+               units.InfoLoader,
+               mat.Loader, units.QualityLoader,
                units.RedundantNucleotidesLoader]
         self.assertEquals(ans, val)
