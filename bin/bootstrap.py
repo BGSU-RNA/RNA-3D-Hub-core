@@ -32,7 +32,8 @@ def main(conf, opts):
     models.reflect(engine)
     Session = sessionmaker(bind=engine)
 
-    dispatcher = Dispatcher("update", conf, Session)
+    dispatcher = Dispatcher("update", conf, Session,
+                            exclude=['export.loader'])
     dispatcher(conf['pdbs'], **opts)
 
 
@@ -48,7 +49,7 @@ if __name__ == '__main__':
                         help="Logging level to use")
     parser.add_argument('--log-mode', dest='log_mode', default='a',
                         choices=['w', 'a'],
-                        help='Mode to open the  logging file')
+                        help='Mode to open the logging file')
 
     args = parser.parse_args()
     opts = {}
