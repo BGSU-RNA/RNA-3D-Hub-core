@@ -11,6 +11,7 @@ import os
 import sys
 import logging
 import argparse
+from datetime import datetime as dt
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -50,11 +51,14 @@ def setup_logging(opts):
 def run(name, conf, pdbs, opts):
     setup_logging(opts)
 
-    if opts['all']:
-        pdbs = pdb.RnaPdbsHelper()()
+    if opts['before'] or opts['after']:
+        pdbs = pdb.RnaPdbsHelper()(dates=(opts['after'], opts['before']))
 
     if opts.pop('known'):
         pdbs = list(known(config, pdb=False))
+
+    if opts['all']:
+        pdbs = pdb.RnaPdbsHelper()()
 
     if not pdbs:
         logger.warning("Running with no pdb files")
@@ -70,23 +74,35 @@ def run(name, conf, pdbs, opts):
 
 
 if __name__ == '__main__':
+    date = lambda r: dt.strptime(r, '%Y-%m-%d').date()
+
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument('name', metavar='N', help='Name of stage to run')
     parser.add_argument('pdbs', metavar='P', nargs='*', help="PDBs to use")
 
-    parser.add_argument('--all', dest='all', default=False,
-                        action='store_true',
-                        help="Use all RNA containing PDBS")
     parser.add_argument('--config', dest='config',
                         default='conf/motifatlas.json',
                         help="Config file to use")
-    parser.add_argument('--recalculate', action='store_true',
-                        help="Force all data to be recalculated")
+
+    # Options about which PDB files to use
+    parser.add_argument('--all', dest='all', default=False,
+                        action='store_true',
+                        help="Use all RNA containing PDBS")
+    parser.add_argument('--after-date', dest='after', default=None,
+                        type=date, help='Get Pdbs from after the date')
+    parser.add_argument('--before-date', dest='before', default=None,
+                        type=date, help='Get PDBs from before the date')
     parser.add_argument('--known', action='store_true',
                         help="Use only downloaded pdbs")
+
+    # Options about the type of run
+    parser.add_argument('--recalculate', action='store_true',
+                        help="Force all data to be recalculated")
     parser.add_argument('--dry-run', action='store_true',
                         help="Do a dry run where we store nothing")
+
+    # Skip options
     parser.add_argument('--skip-dependencies', action='store_true',
                         help='Skip running any dependencies')
     parser.add_argument('--skip-stage', action='append', dest='exclude',
@@ -95,6 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-email', action='store_false',
                         help='Do not send an email')
 
+    # Logging options
     parser.add_argument('--log-file', dest='log_file', default='',
                         help="Log file to use")
     parser.add_argument('--log-level', dest='log_level', default='debug',
