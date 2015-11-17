@@ -2,7 +2,7 @@ import re
 import csv
 import logging
 import datetime
-import xml.etree.cElementTree as ET
+import xml.etree.ElementTree as ET
 
 from pymotifs import utils
 
