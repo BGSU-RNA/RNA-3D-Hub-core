@@ -8,8 +8,9 @@ ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
 
 import pymotifs.utils as ut
 import pymotifs.core as core
-from pymotifs.models import UnitInfo as Unit
-from pymotifs.models import UnitQuality as Quality
+from pymotifs import models as mod
+# import UnitInfo as Unit
+# from pymotifs.models import UnitQuality as Quality
 from pymotifs.units.info import Loader as InfoLoader
 
 from fr3d.unit_ids import encode
@@ -73,6 +74,10 @@ class Parser(object):
         if insertion_code == '':
             insertion_code = None
 
+        alt_id = attributes.get('alt_id', '').strip()
+        if alt_id == '':
+            alt_id = None
+
         return {
             'pdb': pdb,
             'model': int(attributes['model']),
@@ -80,12 +85,14 @@ class Parser(object):
             'component_number': int(attributes['resnum']),
             'component_id': attributes['resname'],
             'insertion_code': insertion_code,
+            'alt_id': alt_id,
         }
 
 
 class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader])
     allow_no_data = True
+    table = mod.UnitQuality
 
     def __init__(self, *args):
         super(Loader, self).__init__(*args)
@@ -93,31 +100,34 @@ class Loader(core.SimpleLoader):
         self.finder = FileHelper()
 
     def query(self, session, pdb):
-        return session.query(Quality).\
-            join(Unit, Unit.unit_id == Quality.unit_id).\
-            filter(Unit.pdb_id == pdb)
+        return session.query(mod.UnitQuality).\
+            join(mod.UnitInfo, mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
+            filter(mod.UnitInfo.pdb_id == pdb)
 
     def mapping(self, pdb):
         mapping = coll.defaultdict(list)
         with self.session() as session:
-            query = session.query(Unit).\
+            query = session.query(mod.UnitInfo).\
                 filter_by(pdb_id=pdb)
 
             for result in query:
-                key = (result.chain, result.number, result.ins_code)
+                key = (result.chain, result.number, result.ins_code,
+                       result.alt_id)
                 mapping[key].append(result.unit_id)
 
         return mapping
 
     def as_quality(self, entry, mapping):
         key = (entry['id']['chain'], entry['id']['component_number'],
-               entry['id']['insertion_code'])
+               entry['id']['insertion_code'], entry['id']['alt_id'])
 
         for unit_id in mapping[key]:
-            yield Quality(unit_id=unit_id,
-                          real_space_r=entry.get('real_space_r'),
-                          density_correlation=entry.get('density_correlation'),
-                          z_score=entry.get('z_score'))
+            yield {
+                'unit_id': unit_id,
+                'real_space_r': entry.get('real_space_r'),
+                'density_correlation': entry.get('density_correlation'),
+                'z_score': entry.get('z_score')
+            }
 
     def data(self, pdb, **kwargs):
         filename = self.finder(pdb)
@@ -133,6 +143,5 @@ class Loader(core.SimpleLoader):
         mapping = self.mapping(pdb)
         data = []
         for entry in parser.nts():
-            for quality in self.as_quality(entry, mapping):
-                data.append(quality)
+            data.append(quality for quality in self.as_quality(entry, mapping))
         return data

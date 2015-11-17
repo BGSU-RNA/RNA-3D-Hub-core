@@ -1,8 +1,6 @@
 import unittest
 from nose import SkipTest
 
-from pprint import pprint
-
 from test import StageTest
 
 import pymotifs.units.quality as ntq
@@ -42,7 +40,8 @@ class CoreRsrParserTest(unittest.TestCase):
             'insertion_code': None,
             'component_number': 10,
             'model': 1,
-            'pdb': '1J5E'
+            'pdb': '1J5E',
+            'alt_id': None
         }
         self.assertEqual(ans, val)
 
@@ -84,7 +83,8 @@ class HasRsRParserTest(unittest.TestCase):
                 'insertion_code': None,
                 'component_number': 5,
                 'model': 1,
-                'pdb': '4V7W'
+                'pdb': '4V7W',
+                'alt_id': None,
             },
             'real_space_r': 0.218
         }
@@ -110,7 +110,7 @@ class MappingTest(StageTest):
 
     def test_can_map_to_unit_id(self):
         mapping = self.loader.mapping('1GID')
-        self.assertEquals(mapping[('A', 146, None)], ['1GID|1|A|A|146'])
+        self.assertEquals(mapping[('A', 146, None, None)], ['1GID|1|A|A|146'])
 
 
 class MissingDataTest(StageTest):
@@ -138,3 +138,16 @@ class MissingDataTest(StageTest):
             if nt['id']['chain'] == 'A':
                 val.append(self.loader.as_quality(nt, mapping))
         self.assertEquals(len(val), 1603)
+
+
+class AltIdParsingTest(StageTest):
+    loader_class = ntq.Loader
+
+    @classmethod
+    def setUpClass(cls):
+        with open('test/files/validation/1vy4_validation.xml.gz', 'rb') as raw:
+            cls.parser = ntq.Parser(raw.read())
+            cls.nts = list(cls.parser.nts())
+
+    def test_can_generate_ids_using_alt_ids(self):
+        raise SkipTest()
