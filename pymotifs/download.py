@@ -23,6 +23,7 @@ class Downloader(core.Loader):
     update_gap = False
     dependencies = set()
     saver = Writer
+    merge_data = True
 
     def __init__(self, *args, **kwargs):
         super(Downloader, self).__init__(*args, **kwargs)
@@ -30,7 +31,7 @@ class Downloader(core.Loader):
         self.location = os.path.join(self.config['locations']['fr3d_root'],
                                      'PDBFiles')
 
-    def filename(self, name):
+    def filename(self, name, **kwargs):
         return os.path.join(self.location, name + '.cif')
 
     def url(self, name):
