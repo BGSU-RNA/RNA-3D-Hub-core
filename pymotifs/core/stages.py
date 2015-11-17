@@ -60,6 +60,7 @@ class Stage(base.Base):
         self._cif = ut.CifFileFinder(self.config)
         self.skip = set(SKIP)
         self.skip.update(self.__class__.skip)
+        self.skip.update(kwargs.get('skip_pdbs', []))
 
     @abc.abstractmethod
     def is_missing(self, entry, **kwargs):
@@ -159,13 +160,13 @@ class Stage(base.Base):
         """
         return bool(recalculate or self.config[self.name].get('recompute'))
 
-    def been_long_enough(self, pdb):
+    def been_long_enough(self, pdb, ignore_time=False, **kwargs):
         """Determine if it has been long enough to recompute the data for the
         given pdb. This uses the udpate_gap property which tells how long to
         wait between updates. If that is False then we never update based upon
         time.
         """
-        if not self.update_gap:
+        if not self.update_gap or ignore_time:
             return False
 
         with self.session() as session:
@@ -190,15 +191,13 @@ class Stage(base.Base):
         :returns: True or False
         """
         if entry in self.skip:
-            self.logger.debug("Forced skip")
-            return False
+            raise Skip("Forced skip of %s", entry)
 
         if self.must_recompute(entry, **kwargs):
             self.logger.debug("Performing a forced recompute")
             return True
 
-        too_long = self.been_long_enough(entry)
-        if too_long:
+        if self.been_long_enough(entry, **kwargs):
             self.logger.debug("Time gap for %s too large, recomputing", entry)
             return True
 
