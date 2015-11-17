@@ -68,9 +68,13 @@ class Dispatcher(object):
         :param str name: The name of the stage to run.
         """
 
+        fn = lambda s: s
+        if build:
+            fn = lambda s: s(*self._args)
+
         stage = self.get_stage(name)
         if self.skip_dependencies:
-            return [stage]
+            return [fn(stage)]
 
         exclude = self.to_exclude()
         deps = {stage: stage.dependencies}
@@ -93,10 +97,6 @@ class Dispatcher(object):
 
             deps[current] = to_add
             stack.extend(to_add)
-
-        fn = lambda s: s
-        if build:
-            fn = lambda s: s(*self._args)
 
         by = lambda s: s.__name__
         stages = [fn(s) for s in toposort(deps, by=by) if s not in exclude]

@@ -1,5 +1,8 @@
 import unittest as ut
 
+from test import CONFIG
+from test import Session
+
 from pymotifs.dispatcher import Dispatcher
 from pymotifs.units import loader as units
 from pymotifs.pdbs import loader as pdbs
@@ -53,12 +56,18 @@ class LoadingTest(ut.TestCase):
 
 class LoadingStagesTest(ut.TestCase):
     def setUp(self):
-        self.dispatcher = Dispatcher('units.info')
+        self.dispatcher = Dispatcher('units.info', CONFIG, Session)
 
     def test_can_give_only_selected_stage(self):
         self.dispatcher.skip_dependencies = True
         val = self.dispatcher.stages('units.info')
         self.assertEquals([units.InfoLoader], val)
+
+    def test_can_get_one_stage_built(self):
+        self.dispatcher.skip_dependencies = True
+        val = self.dispatcher.stages('units.info', build=True)
+        self.assertEquals(1, len(val))
+        self.assertTrue(isinstance(val[0], units.InfoLoader))
 
     def test_can_get_with_all_dependecies(self):
         val = self.dispatcher.stages('units.info')
