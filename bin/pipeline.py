@@ -36,8 +36,10 @@ def setup_logging(opts):
         'filemode': opts.pop('log_mode'),
         'format': '%(levelname)s:%(asctime)s:%(name)s:%(message)s',
     }
-    if opts['log_file']:
-        log_args['filename'] = opts.pop('log_file')
+
+    filename = opts.pop('log_file')
+    if filename:
+        log_args['filename'] = filename
 
     logging.basicConfig(**log_args)
     # logging.captureWarnings(True)
