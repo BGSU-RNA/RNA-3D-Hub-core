@@ -205,7 +205,7 @@ class Helper(core.Base):
             mapping[result.unit_id2] = result.unit_id1
         return mapping
 
-    def aligned_chains(self, ids):
+    def aligned_chains(self, ids, good=None):
         """Determine which chains a good alignment between them. This will
         produce a dictionary of dictionaries where the final values are a
         boolean indicating a good alignment or not.
@@ -232,6 +232,9 @@ class Helper(core.Base):
                 filter(c1.pdb_id.in_(ids)).\
                 filter(c2.pdb_id.in_(ids)).\
                 filter(c1.chain_id != c2.chain_id)
+
+            if good is not None:
+                query = query.filter(info.good_alignment == int(good))
 
             for result in query:
                 if result.chain_id1 not in mapping:
