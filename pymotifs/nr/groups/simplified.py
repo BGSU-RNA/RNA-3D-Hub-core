@@ -52,7 +52,7 @@ class Grouper(core.Base):
         'discrepancy': 0.5
     }
 
-    def chains(self, pdb):
+    def ifes(self, pdb):
         """Load all ife chains from a given pdb. This will get the RNA chains as
         well as load some interaction data about the chains.
 
@@ -86,7 +86,7 @@ class Grouper(core.Base):
                 order_by(IfeChains.ife_id)
 
             if query.count() == 0:
-                self.logger.warn("No chains found for %s" % pdb)
+                self.logger.warn("No ifes found for %s" % pdb)
                 return []
 
             grouped = it.groupby(it.imap(result2dict, query),
@@ -100,6 +100,7 @@ class Grouper(core.Base):
                     'bp': chains[0]['bp'],
                     'name': chains[0]['name'],
                     'length': chains[0]['length'],
+                    'species': chains[0]['source'],
                     'chains': chains,
                     'resolution': chains[0]['resolution'],
                 })
@@ -165,8 +166,8 @@ class Grouper(core.Base):
         """Check if the longest chains of the two groups agree.
         """
 
-        source1 = group1['chains'][0]['source']
-        source2 = group2['chains'][0]['source']
+        source1 = group1['species']
+        source2 = group2['species']
         if source1 != SYNTHEIC[0] and source2 != SYNTHEIC[0] and \
                 source1 is not None and source2 is not None \
                 and source1 != source2:
@@ -223,6 +224,31 @@ class Grouper(core.Base):
             self.logger.debug("Pair %s, %s not connected", *pair)
         self.logger.debug("%i pairs are not connected", len(pairs))
 
+    def pairs(self, chains, alignments, discrepancies):
+        """Generate an iterator of all equivalent pairs of chains.
+
+        :chains: The chains to build pairs of.
+        :alignments: Alignments to use for checking validity.
+        :discrepancies: Discrepancies of the chains to use.
+        :returns: An iterable of all valid pairs.
+        """
+
+        mapping = {}
+        for chain in chains:
+            db_id = chain['chains'][0]['db_id']
+            if db_id in mapping:
+                raise core.InvalidState("Cannot build mapping")
+            mapping[db_id] = chain
+
+        equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
+        pairs = alignments.iteritems()
+        pairs = it.imap(lambda (k, v): it.izip(it.repeat(k), v.keys()), pairs)
+        pairs = it.chain.from_iterable(pairs)
+        pairs = it.imap(lambda p: (mapping[p[0]], mapping[p[1]]), pairs)
+        pairs = it.ifilter(lambda p: p[0] == p[1] or equiv(*p), pairs)
+
+        return pairs
+
     def group(self, chains, alignments, discrepancies):
         """Group all chains into connected components.
 
@@ -230,17 +256,15 @@ class Grouper(core.Base):
         :returns: A list of lists of the connected components.
         """
 
-        equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
-        pairs = it.product(chains, chains)
-        pairs = it.ifilter(lambda (c1, c2): c1 == c2 or equiv(c1, c2), pairs)
-
         mapping = {}
+        for chain in chains:
+            mapping[chain['id']] = chain
+
         graph = coll.defaultdict(set)
-        for chain1, chain2 in pairs:
+        for chain1, chain2 in self.pairs(chains, alignments, discrepancies):
             self.logger.debug("Equivalent: %s %s", chain1['id'], chain2['id'])
-            mapping[chain1['id']] = chain1
-            graph[chain1['id']].add(chain2['id'])
-            graph[chain2['id']].add(chain1['id'])
+            graph[chain1].add(chain2)
+            graph[chain2].add(chain1)
 
         groups = []
         for ids in cs.find_connected(graph).values():
@@ -260,19 +284,22 @@ class Grouper(core.Base):
         'rank' which indicates the rank of the chain.
         """
 
-        chains = it.imap(self.chains, pdbs)
-        chains = list(it.chain.from_iterable(chains))
+        ifes = it.imap(self.ifes, pdbs)
+        ifes = list(it.chain.from_iterable(ifes))
+        if not ifes:
+            raise core.InvalidState("No ifes found in given pdbs")
+        self.logger.info("Found %i ifes to cluster", len(ifes))
 
-        if not chains:
-            raise core.InvalidState("No chains found in given pdbs")
+        alignments = self.alignments(ifes)
+        if not alignments:
+            raise core.IncalidState("No alignments loaded")
 
-        self.logger.info("Found %i chains to cluster", len(chains))
+        discrepancy = self.discrepancy(ifes)
+        if not discrepancy:
+            self.logger.warning("No discrepancy data to cluster with")
 
         groups = []
-        alignments = self.alignments(chains)
-        discrepancy = self.discrepancy(chains)
-
-        for group in self.group(chains, alignments, discrepancy):
+        for group in self.group(ifes, alignments, discrepancy):
             members = []
             sorted_group = sorted(group, key=ranking_key)
             for index, member in enumerate(sorted_group):
