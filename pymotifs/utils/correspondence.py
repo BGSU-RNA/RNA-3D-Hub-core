@@ -219,16 +219,18 @@ class Helper(core.Base):
         with self.session() as session:
             c1 = aliased(mod.ChainInfo)
             c2 = aliased(mod.ChainInfo)
+            m1 = aliased(mod.ExpSeqChainMapping)
+            m2 = aliased(mod.ExpSeqChainMapping)
             info = mod.CorrespondenceInfo
-            pdbs = mod.CorrespondencePdbs
             query = session.query(info.good_alignment,
                                   c1.chain_id.label('chain_id1'),
                                   c2.chain_id.label('chain_id2')).\
-                join(pdbs, pdbs.correspondence_id == info.correspondence_id).\
-                join(c1, c1.chain_id == pdbs.chain_id_1).\
-                join(c2, c2.chain_id == pdbs.chain_id_2).\
-                filter(pdbs.pdb_id_1.in_(ids)).\
-                filter(pdbs.pdb_id_2.in_(ids)).\
+                join(m1, m1.exp_seq_id == info.exp_seq_id_1).\
+                join(m2, m2.exp_seq_id == info.exp_seq_id_2).\
+                join(c1, c1.chain_id == m1.chain_id).\
+                join(c2, c2.chain_id == m2.chain_id).\
+                filter(c1.pdb_id.in_(ids)).\
+                filter(c2.pdb_id.in_(ids)).\
                 filter(c1.chain_id != c2.chain_id)
 
             for result in query:
