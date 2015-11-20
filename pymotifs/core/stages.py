@@ -190,8 +190,11 @@ class Stage(base.Base):
         :kwargs: Some keyword arguments for determining if we should process
         :returns: True or False
         """
-        if entry in self.skip:
-            raise Skip("Forced skip of %s", entry)
+        try:
+            if entry in self.skip:
+                raise Skip("Forced skip of %s", entry)
+        except:
+            pass
 
         if self.must_recompute(entry, **kwargs):
             self.logger.debug("Performing a forced recompute")
@@ -216,7 +219,7 @@ class Stage(base.Base):
         :kwargs: Generic keyword arguments.
         :returns: The stuff to process.
         """
-        return [str(pdb).upper() for pdb in pdbs]
+        return [pdb.upper() for pdb in pdbs if pdb.upper() not in self.skip]
 
     def mark_processed(self, pdb, dry_run=False, **kwargs):
         """Mark that we have finished computing the results for the given pdb.
@@ -254,10 +257,6 @@ class Stage(base.Base):
         for index, entry in enumerate(entries):
             self.logger.info("Processing %s: %s/%s", entry, index + 1,
                              len(entries))
-
-            if entry in SKIP:
-                self.logger.warning("Hardcoded skipping of %s", entry)
-                continue
 
             try:
                 if not self.should_process(entry, **kwargs):
@@ -440,36 +439,21 @@ class MassLoader(Loader):
 
     def been_long_enough(self, pdbs, **kwargs):
         """Determine if it has been long enough to recompute the data for the
-        given pdb. This uses the udpate_gap property which tells how long to
-        wait between updates. If that is False then we never update based upon
-        time.
+        given pdbs. This requires that it has been long enough for at least 1
+        structure.
         """
-
-        if not self.update_gap:
-            return False
-
-        with self.session() as session:
-            current = session.query(mod.PdbAnalysisStatus).\
-                filter_by(stage=self.name).\
-                order_by(mod.PdbAnalysisStatus.date).\
-                first()
-
-            if not current:
-                return True
-            current = current.time
-        # If this has been marked as done in the far future do it anyway. That
-        # is a silly thing to do
-        diff = abs(datetime.datetime.now() - current)
-        return diff > self.update_gap
+        parent = super(MassLoader, self).been_long_enough
+        return any(parent(pdb, **kwargs) for pdb in pdbs)
 
     def to_process(self, pdbs, **kwargs):
         return [tuple(super(MassLoader, self).to_process(pdbs))]
 
-    def has_data(self, pdbs, **kwargs):
-        """This means we never have the data for a mass loader. Generally this
-        is the case.
+    def should_process(self, pdbs, **kwargs):
+        """We check if we have data for all pdbs. If we are missing 1 then we
+        will recompute.
         """
-        return False
+        parent = super(MassLoader, self).should_process
+        return all(parent(pdb, **kwargs) for pdb in pdbs)
 
     def mark_processed(self, pdbs, **kwargs):
         for pdb in pdbs:
