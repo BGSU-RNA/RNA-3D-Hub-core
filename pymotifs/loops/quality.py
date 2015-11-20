@@ -8,9 +8,10 @@ nucleotides. See matlab code for disqualification codes.
 import os
 import csv
 
+from sqlalchemy import desc
+
 from pymotifs import core
 from pymotifs import models as mod
-from pymotifs.utils.releases import Release
 
 from pymotifs.loops.extractor import Loader as InfoLoader
 
@@ -18,9 +19,19 @@ from pymotifs.loops.extractor import Loader as InfoLoader
 class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader])
 
+    def current_id(self):
+        with self.session() as session:
+            query = session.query(mod.LoopReleases.loop_releases_id).\
+                order_by(desc(mod.LoopReleases.date)).\
+                limit(1)
+
+            if query.count() == 0:
+                return '0.0'
+
+            return query.one().loop_releases_id
+
     def query(self, session, pdb):
-        helper = Release(self.config, self.session.maker)
-        release_id = helper.current('loop')
+        release_id = self.current_id()
         return session.query(mod.LoopQa).\
             join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
             filter(mod.LoopInfo.pdb_id == pdb).\
@@ -56,8 +67,7 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb, **kwargs):
 
-        helper = Release(self.config, self.session.maker)
-        release_id = helper.current('loop')
+        release_id = self.current_id()
 
         mlab = core.Matlab(self.config['locations']['fr3d_root'])
         [ifn, err_msg] = mlab.aLoopQualityAssurance(pdb, nout=2)
