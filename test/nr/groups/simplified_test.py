@@ -167,7 +167,7 @@ class AutonomousChainsTest(StageTest):
 
     def test_it_can_process_a_triplet(self):
         val = self.grouped_names('4V42')
-        ans = [['AA'], ['A1', 'AB'], ['A1', 'AC'], ['AD'], ['BA'], ['BB']]
+        ans = [['AA'], ['AB', 'A1'], ['AC', 'A1'], ['AD'], ['BA'], ['BB']]
         self.assertEquals(ans, val)
 
 
@@ -265,17 +265,21 @@ class AreEquivlantTests(StageTest):
 class LoadingIfeTest(StageTest):
     loader_class = Grouper
 
-    def test_assigns_species_by_first_chain(self):
-        raise SkipTest()
+    def setUp(self):
+        super(LoadingIfeTest, self).setUp()
+        self.data = self.loader.ifes('4V9Q')
 
     def test_loads_all_ife_in_pdb(self):
-        raise SkipTest()
+        self.assertEquals(10, len(self.data))
+
+    def test_assigns_species_by_first_chain(self):
+        self.assertEquals(512, self.data[3]['species'])
 
     def test_sets_length_to_first(self):
-        raise SkipTest()
+        self.assertEquals(77, self.data[3]['length'])
 
     def test_sets_resolution_to_first(self):
-        raise SkipTest()
+        self.assertEquals(3.4, self.data[3]['resolution'])
 
     def test_sets_bps(self):
         raise SkipTest()

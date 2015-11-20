@@ -68,6 +68,7 @@ class Grouper(core.Base):
                                   ChainInfo.chain_name.label('name'),
                                   IfeChains.chain_id.label('db_id'),
                                   IfeChains.is_integral,
+                                  IfeChains.is_accompanying,
                                   IfeInfo.ife_id.label('id'),
                                   IfeInfo.bp_count.label('bp'),
                                   PdbInfo.resolution,
@@ -92,8 +93,11 @@ class Grouper(core.Base):
             grouped = it.groupby(it.imap(result2dict, query),
                                  lambda g: g['id'])
             groups = []
+            key = lambda c: (c['is_integral'], -1 * c['is_accompanying'],
+                             c['name'])
             for group_id, chains in grouped:
-                chains = sorted(chains, key=lambda c: c['is_integral'])
+                chains = sorted(chains, key=key)
+                chains = list(reversed(chains))
                 groups.append({
                     'id':  group_id,
                     'pdb': chains[0]['pdb'],
