@@ -5,11 +5,13 @@ from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.nr.builder import Builder
+from pymotifs.nr.release import Loader as ReleaseLoader
+from pymotifs.nr.chains import Loader as ChainLoader
 from pymotifs.nr.classes import Loader as ClassLoader
 
 
 class Loader(core.MassLoader):
-    dependencies = set([ClassLoader])
+    dependencies = set([ReleaseLoader, ChainLoader, ClassLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
     allow_no_data = True
     table = mod.NrClassParents
