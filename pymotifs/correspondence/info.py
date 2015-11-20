@@ -119,5 +119,5 @@ class Loader(core.SimpleLoader):
     def data(self, pair, **kwargs):
         return {
             'exp_seq_id_1': pair[0]['id'],
-            'exp_seq_id_0': pair[1]['id'],
+            'exp_seq_id_2': pair[1]['id'],
         }
