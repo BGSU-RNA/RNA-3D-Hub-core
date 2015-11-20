@@ -52,7 +52,7 @@ class Loader(core.MassLoader):
             for parent in group['parents']:
                 data.append({
                     'nr_class_id': nr_class_id,
-                    'release_id': group['release'],
+                    'nr_release_id': group['release'],
                     'nr_class_parent_id': parent['name']['class_id']
                 })
 
