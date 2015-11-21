@@ -2,6 +2,7 @@ import os
 from nose import SkipTest
 
 from pymotifs.core.stages import Stage
+from pymotifs.core import Skip
 
 from test import StageTest as Base
 from test import CONFIG
@@ -39,6 +40,10 @@ class RecomputingTest(Base):
         stage = SomeStage(conf, None)
         val = stage.must_recompute(None, recalculate=False)
         self.assertFalse(val)
+
+    def test_will_not_recompute_if_in_skip(self):
+        stage = SomeStage(CONFIG, None, skip_pdbs=['0GGG'])
+        self.assertRaises(Skip, stage.should_process, '0GGG')
 
 
 class BeenLongEnoughTest(Base):
