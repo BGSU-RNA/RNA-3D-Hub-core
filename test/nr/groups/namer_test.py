@@ -338,98 +338,98 @@ class DataStructureTest(StageTest):
         self.assertEquals(ans, val)
 
 
-class RealisticTest(StageTest):
-    loader_class = Namer
+# class RealisticTest(StageTest):
+#     loader_class = Namer
 
-    def load_groups(self, release_id, include_names=True):
-        loader = ClassLoader(self.loader.config, self.loader.session.maker)
-        loaded = loader.load_release(release_id)
-        if include_names:
-            return loaded
+#     def load_groups(self, release_id, include_names=True):
+#         loader = ClassLoader(self.loader.config, self.loader.session.maker)
+#         loaded = loader.load_release(release_id)
+#         if include_names:
+#             return loaded
 
-        for group in loaded:
-            group.pop('name')
+#         for group in loaded:
+#             group.pop('name')
 
-        return loaded
+#         return loaded
 
-    def setUp(self):
-        super(RealisticTest, self).setUp()
-        # Load the 0.16 release as it has many differences from 0.15
-        # http://rna.bgsu.edu/rna3dhub/nrlist/release/0.16/4.0A
-        self.target = self.load_groups('0.16', include_names=False)
-        self.parent = self.load_groups('0.15')
-        self.handles = set([])
-        self.named = self.loader(self.target, self.parent, self.handles)
+#     def setUp(self):
+#         super(RealisticTest, self).setUp()
+#         # Load the 0.16 release as it has many differences from 0.15
+#         # http://rna.bgsu.edu/rna3dhub/nrlist/release/0.16/4.0A
+#         self.target = self.load_groups('0.16', include_names=False)
+#         self.parent = self.load_groups('0.15')
+#         self.handles = set([])
+#         self.named = self.loader(self.target, self.parent, self.handles)
 
-    def test_loaded_correct_number_of_groups(self):
-        self.assertEquals(334, len(self.named))
+#     def test_loaded_correct_number_of_groups(self):
+#         self.assertEquals(334, len(self.named))
 
-    def test_it_can_get_all_new_names(self):
-        new_ids = filter(lambda g: g['type'] == 'new', self.named)
-        self.assertEquals(38, len(new_ids))
+#     def test_it_can_get_all_new_names(self):
+#         new_ids = filter(lambda g: g['type'] == 'new', self.named)
+#         self.assertEquals(38, len(new_ids))
 
-    def test_it_can_update_all_groups(self):
-        updated = filter(lambda g: g['type'] == 'updated', self.named)
-        self.assertEquals(19, len(updated))
+#     def test_it_can_update_all_groups(self):
+#         updated = filter(lambda g: g['type'] == 'updated', self.named)
+#         self.assertEquals(19, len(updated))
 
-    def test_it_correctly_updates(self):
-        updated = filter(lambda g: g['type'] == 'updated', self.named)
-        val = set(u['handle'] for u in updated)
-        ans = set(['12866', '33284', '35786', '43978', '18567',
-                   '70780', '30156', '80516', '40846', '32957',
-                   '46550', '91662', '82024', '17595', '89897',
-                   '39765', '37971', '41266', '25307'])
-        self.assertEqual(ans, val)
+#     def test_it_correctly_updates(self):
+#         updated = filter(lambda g: g['type'] == 'updated', self.named)
+#         val = set(u['handle'] for u in updated)
+#         ans = set(['12866', '33284', '35786', '43978', '18567',
+#                    '70780', '30156', '80516', '40846', '32957',
+#                    '46550', '91662', '82024', '17595', '89897',
+#                    '39765', '37971', '41266', '25307'])
+#         self.assertEqual(ans, val)
 
-    def test_it_can_find_all_exact_matches(self):
-        exact = filter(lambda g: g['type'] == 'exact', self.named)
-        self.assertEquals(277, len(exact))
+#     def test_it_can_find_all_exact_matches(self):
+#         exact = filter(lambda g: g['type'] == 'exact', self.named)
+#         self.assertEquals(277, len(exact))
 
-    def test_uses_correct_exact_handles(self):
-        val = sorted([g['handle'] for g in self.named if g['type'] == 'exact'])
-        ans = ['00642', '00834', '01065', '01208', '01504', '02048', '02301',
-               '02604', '02851', '02943', '03298', '03853', '04221', '05220',
-               '05908', '06681', '06778', '06871', '07085', '07210', '07374',
-               '08058', '08178', '08469', '09299', '09336', '09406', '09710',
-               '09744', '09919', '10365', '11098', '11265', '11340', '11464',
-               '11816', '11819', '12122', '12172', '12239', '12452', '13708',
-               '14020', '14197', '14414', '14526', '14913', '15089', '15733',
-               '15800', '16088', '16221', '16392', '16544', '16673', '16901',
-               '17130', '17198', '17384', '17511', '17574', '17591', '18344',
-               '18402', '18585', '18731', '19620', '20505', '20654', '20755',
-               '20846', '21101', '21412', '21817', '22966', '23158', '23257',
-               '23554', '23901', '23960', '24360', '24626', '24770', '25474',
-               '25990', '26024', '26026', '26065', '26351', '26679', '27351',
-               '27759', '28103', '29749', '30015', '30721', '31242', '31353',
-               '31517', '32011', '32214', '32244', '33239', '33913', '34633',
-               '35276', '35740', '36480', '36678', '36851', '38207', '38420',
-               '38700', '38702', '38798', '39310', '39983', '40299', '41576',
-               '42197', '42330', '42433', '42489', '42639', '42711', '42812',
-               '42991', '43323', '43810', '43865', '44042', '45325', '46204',
-               '47124', '47327', '47389', '47609', '48561', '48801', '48812',
-               '49495', '50215', '51873', '51877', '52372', '52511', '52733',
-               '52914', '53175', '53245', '53390', '53783', '53944', '54015',
-               '54441', '55098', '55157', '55160', '55278', '55462', '56140',
-               '56880', '56921', '57338', '58237', '58332', '58986', '59388',
-               '59546', '59580', '60283', '60542', '60620', '60745', '61569',
-               '61954', '62023', '62229', '63108', '63111', '63840', '64216',
-               '64636', '65398', '65411', '65520', '65527', '65782', '66249',
-               '66753', '66920', '67313', '67359', '67414', '67717', '68991',
-               '69460', '70388', '70618', '70729', '71431', '72606', '72617',
-               '72844', '73035', '73659', '73660', '73862', '74146', '74517',
-               '74969', '74973', '75586', '75939', '76076', '76083', '77315',
-               '77548', '78030', '78897', '78955', '79332', '79628', '79726',
-               '79810', '80232', '80517', '80518', '80544', '80869', '81563',
-               '81747', '81883', '82638', '83174', '84248', '84922', '85814',
-               '86147', '86343', '86551', '86592', '86811', '87307', '87602',
-               '87924', '88399', '88472', '88903', '89320', '89582', '89713',
-               '89878', '90154', '90169', '90868', '92609', '92621', '92723',
-               '92841', '92971', '93323', '93634', '93666', '94139', '95538',
-               '95970', '96517', '96825', '96866', '96943', '97609', '97850',
-               '98507', '98558', '98654', '99867']
-        self.assertEquals(ans, val)
+#     def test_uses_correct_exact_handles(self):
+#         val = sorted([g['handle'] for g in self.named if g['type'] == 'exact'])
+#         ans = ['00642', '00834', '01065', '01208', '01504', '02048', '02301',
+#                '02604', '02851', '02943', '03298', '03853', '04221', '05220',
+#                '05908', '06681', '06778', '06871', '07085', '07210', '07374',
+#                '08058', '08178', '08469', '09299', '09336', '09406', '09710',
+#                '09744', '09919', '10365', '11098', '11265', '11340', '11464',
+#                '11816', '11819', '12122', '12172', '12239', '12452', '13708',
+#                '14020', '14197', '14414', '14526', '14913', '15089', '15733',
+#                '15800', '16088', '16221', '16392', '16544', '16673', '16901',
+#                '17130', '17198', '17384', '17511', '17574', '17591', '18344',
+#                '18402', '18585', '18731', '19620', '20505', '20654', '20755',
+#                '20846', '21101', '21412', '21817', '22966', '23158', '23257',
+#                '23554', '23901', '23960', '24360', '24626', '24770', '25474',
+#                '25990', '26024', '26026', '26065', '26351', '26679', '27351',
+#                '27759', '28103', '29749', '30015', '30721', '31242', '31353',
+#                '31517', '32011', '32214', '32244', '33239', '33913', '34633',
+#                '35276', '35740', '36480', '36678', '36851', '38207', '38420',
+#                '38700', '38702', '38798', '39310', '39983', '40299', '41576',
+#                '42197', '42330', '42433', '42489', '42639', '42711', '42812',
+#                '42991', '43323', '43810', '43865', '44042', '45325', '46204',
+#                '47124', '47327', '47389', '47609', '48561', '48801', '48812',
+#                '49495', '50215', '51873', '51877', '52372', '52511', '52733',
+#                '52914', '53175', '53245', '53390', '53783', '53944', '54015',
+#                '54441', '55098', '55157', '55160', '55278', '55462', '56140',
+#                '56880', '56921', '57338', '58237', '58332', '58986', '59388',
+#                '59546', '59580', '60283', '60542', '60620', '60745', '61569',
+#                '61954', '62023', '62229', '63108', '63111', '63840', '64216',
+#                '64636', '65398', '65411', '65520', '65527', '65782', '66249',
+#                '66753', '66920', '67313', '67359', '67414', '67717', '68991',
+#                '69460', '70388', '70618', '70729', '71431', '72606', '72617',
+#                '72844', '73035', '73659', '73660', '73862', '74146', '74517',
+#                '74969', '74973', '75586', '75939', '76076', '76083', '77315',
+#                '77548', '78030', '78897', '78955', '79332', '79628', '79726',
+#                '79810', '80232', '80517', '80518', '80544', '80869', '81563',
+#                '81747', '81883', '82638', '83174', '84248', '84922', '85814',
+#                '86147', '86343', '86551', '86592', '86811', '87307', '87602',
+#                '87924', '88399', '88472', '88903', '89320', '89582', '89713',
+#                '89878', '90154', '90169', '90868', '92609', '92621', '92723',
+#                '92841', '92971', '93323', '93634', '93666', '94139', '95538',
+#                '95970', '96517', '96825', '96866', '96943', '97609', '97850',
+#                '98507', '98558', '98654', '99867']
+#         self.assertEquals(ans, val)
 
-    def test_updates_handles(self):
-        # The handles should be modified to contain entries for each named
-        # group. It starts empty and then has 334 things added.
-        self.assertEqual(334, len(self.handles))
+#     def test_updates_handles(self):
+#         # The handles should be modified to contain entries for each named
+#         # group. It starts empty and then has 334 things added.
+#         self.assertEqual(334, len(self.handles))
