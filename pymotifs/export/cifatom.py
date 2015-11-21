@@ -38,7 +38,7 @@ class CifAtomSaver(core.FileHandleSaver):
                 self.logger.warning("Cannot export %s to cifatom", pdb)
 
 
-class Exporter(core.Exporter):
+class Exporter(core.Loader):
     """Will export files from the mmCIF format to a cifatom format readable by
     matlab programs.
     """
@@ -47,11 +47,14 @@ class Exporter(core.Exporter):
     saver = CifAtomSaver
 
     def filename(self, pdb, **kwargs):
+        """Create the filename for the given pdb file.
+        """
         return os.path.join(self.config['locations']['fr3d_root'], "PDBFiles",
                             pdb + ".cifatoms")
 
     def has_data(self, entry, **kwargs):
-        """Will check if the file produce by filename() exists.
+        """Will check if the file produce by filename() exists and is not
+        empty.
         """
         filename = self.filename(entry)
         try:
@@ -59,6 +62,13 @@ class Exporter(core.Exporter):
                 os.path.getsize(filename) > 0
         except:
             return False
+
+    def remove(self, pdb, **kwargs):
+        """Remove the file for the given pdb.
+        """
+        filename = self.filename(pdb)
+        if os.path.isfile(filename):
+            os.remove(filename)
 
     def data(self, pdb, **kwargs):
         """Will load the structure for the given PDB id.
