@@ -106,6 +106,7 @@ class Grouper(core.Base):
                     'length': chains[0]['length'],
                     'species': chains[0]['source'],
                     'chains': chains,
+                    'db_id': chains[0]['db_id'],
                     'resolution': chains[0]['resolution'],
                 })
 
@@ -114,7 +115,7 @@ class Grouper(core.Base):
     def discrepancy(self, groups):
         chain_ids = []
         for group in groups:
-            chain_ids.extend(chain['db_id'] for chain in group['chains'])
+            chain_ids.append(group['db_id'])
 
         with self.session() as session:
             query = session.query(ChainChainSimilarity).\
@@ -145,8 +146,8 @@ class Grouper(core.Base):
         """Check if the longest chain of the two groups align well.
         """
 
-        db_id1 = group1['chains'][0]['db_id']
-        db_id2 = group2['chains'][0]['db_id']
+        db_id1 = group1['db_id']
+        db_id2 = group2['db_id']
         if db_id1 not in all_alignments:
             self.logger.debug("Splitting %s %s: No alignments for %s",
                               group1['id'], group2['id'], group1['id'])
@@ -183,8 +184,8 @@ class Grouper(core.Base):
         return True
 
     def has_good_discrepancy(self, all_discrepancy, group1, group2):
-        db_id1 = group1['chains'][0]['db_id']
-        db_id2 = group2['chains'][0]['db_id']
+        db_id1 = group1['db_id']
+        db_id2 = group2['db_id']
         if db_id1 not in all_discrepancy:
             self.logger.warning("No computed discrepancy for %s", group1['id'])
             return True
@@ -239,7 +240,7 @@ class Grouper(core.Base):
 
         mapping = {}
         for chain in chains:
-            db_id = chain['chains'][0]['db_id']
+            db_id = chain['db_id']
             if db_id in mapping:
                 raise core.InvalidState("Cannot build mapping")
             mapping[db_id] = chain
