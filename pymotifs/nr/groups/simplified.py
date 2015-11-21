@@ -269,8 +269,8 @@ class Grouper(core.Base):
         graph = coll.defaultdict(set)
         for chain1, chain2 in self.pairs(chains, alignments, discrepancies):
             self.logger.debug("Equivalent: %s %s", chain1['id'], chain2['id'])
-            graph[chain1].add(chain2)
-            graph[chain2].add(chain1)
+            graph[chain1['id']].add(chain2['id'])
+            graph[chain2['id']].add(chain1['id'])
 
         groups = []
         for ids in cs.find_connected(graph).values():
