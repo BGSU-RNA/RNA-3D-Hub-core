@@ -82,6 +82,18 @@ def setup(args):
     if 'seed' in options:
         random.seed(options.pop('seed'))
 
+    if 'recalculate' in options and options['recalcuate']:
+        updated = []
+        for recalc in options['recalculate']:
+            if recalc == '.':
+                updated.append(stage)
+            elif recalc == '*':
+                updated = True
+                break
+            else:
+                updated.append(recalc)
+        options['recalculate'] = updated
+
     return ids, opts
 
 
@@ -134,7 +146,7 @@ def parser():
         instance.add_argument('--skip-stage', action='append',
                               dest='exclude',
                               help='Name of the stage(s) to skip')
-        instance.add_argument('--recalculate', action='store_true',
+        instance.add_argument('--recalculate', action='append',
                               help="Recalculate data for the given stage(s)")
         instance.add_argument('--all', dest='all', default=False,
                               action='store_true',
