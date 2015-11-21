@@ -103,12 +103,16 @@ if __name__ == '__main__':
                         help="Force all data to be recalculated")
     parser.add_argument('--dry-run', action='store_true',
                         help="Do a dry run where we store nothing")
+    parser.add_argument('--ignore-time', action='store_true',
+                        help='Do not use time for rerunning')
 
     # Skip options
     parser.add_argument('--skip-dependencies', action='store_true',
                         help='Skip running any dependencies')
     parser.add_argument('--skip-stage', action='append', dest='exclude',
                         help='Name of stage to skip')
+    parser.add_argument('--exclude', action='append', dest='skip_pdbs',
+                        help='PDB ids to skip')
 
     parser.add_argument('--no-email', action='store_false',
                         help='Do not send an email')
