@@ -248,6 +248,8 @@ class Grouper(core.Base):
         pairs = alignments.iteritems()
         pairs = it.imap(lambda (k, v): it.izip(it.repeat(k), v.keys()), pairs)
         pairs = it.chain.from_iterable(pairs)
+        pairs = it.ifilter(lambda p: p[0] in mapping, pairs)
+        pairs = it.ifilter(lambda p: p[1] in mapping, pairs)
         pairs = it.imap(lambda p: (mapping[p[0]], mapping[p[1]]), pairs)
         pairs = it.ifilter(lambda p: p[0] == p[1] or equiv(*p), pairs)
 
