@@ -158,7 +158,15 @@ class Stage(base.Base):
     def must_recompute(self, pdb, recalculate=False, **kwargs):
         """Detect if we have been told to recompute this stage for this pdb.
         """
-        return bool(recalculate or self.config[self.name].get('recompute'))
+        if recalculate is True:
+            return True
+        if isinstance(recalculate, (set, list, tuple)):
+            try:
+                if self.name in recalculate:
+                    return True
+            except:
+                pass
+        return bool(self.config[self.name].get('recompute'))
 
     def been_long_enough(self, pdb, ignore_time=False, **kwargs):
         """Determine if it has been long enough to recompute the data for the
@@ -193,7 +201,9 @@ class Stage(base.Base):
         try:
             if entry in self.skip:
                 raise Skip("Forced skip of %s", entry)
-        except:
+        except Skip as err:
+            raise err
+        except Exception:
             pass
 
         if self.must_recompute(entry, **kwargs):
@@ -219,7 +229,7 @@ class Stage(base.Base):
         :kwargs: Generic keyword arguments.
         :returns: The stuff to process.
         """
-        return [pdb.upper() for pdb in pdbs if pdb.upper() not in self.skip]
+        return [str(p).upper() for p in pdbs if p.upper() not in self.skip]
 
     def mark_processed(self, pdb, dry_run=False, **kwargs):
         """Mark that we have finished computing the results for the given pdb.

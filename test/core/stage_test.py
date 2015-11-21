@@ -20,12 +20,22 @@ class SomeStage(Stage):
 
 
 class RecomputingTest(Base):
+    def test_defaults_to_not_recomputing(self):
+        stage = SomeStage(CONFIG, None)
+        val = stage.must_recompute(None)
+        self.assertFalse(val)
+
     def test_must_recompute_detects_if_given_recompute(self):
         conf = dict(CONFIG)
         conf.update({'test.core.stage_test': {'recompute': False}})
         stage = SomeStage(conf, None)
         val = stage.must_recompute(None, recalculate=True)
         self.assertTrue(val)
+
+    def test_will_not_recompute_if_given_false(self):
+        stage = SomeStage(CONFIG, None)
+        val = stage.must_recompute(None, recalculate=False)
+        self.assertFalse(val)
 
     def test_must_recompute_detects_config_has_recompute(self):
         conf = dict(CONFIG)
@@ -44,6 +54,47 @@ class RecomputingTest(Base):
     def test_will_not_recompute_if_in_skip(self):
         stage = SomeStage(CONFIG, None, skip_pdbs=['0GGG'])
         self.assertRaises(Skip, stage.should_process, '0GGG')
+
+    def test_will_recompute_if_given_true(self):
+        stage = SomeStage(CONFIG, None)
+        val = stage.must_recompute(None, recalculate=True)
+        self.assertTrue(val)
+
+    def test_will_recompute_if_given_list_with_name(self):
+        stage = SomeStage(CONFIG, None)
+        recalc = ['test.core.stage_test', 'units.info']
+        val = stage.must_recompute(None, recalculate=recalc)
+        self.assertTrue(val)
+
+    def test_will_not_recompute_if_name_not_in_list(self):
+        stage = SomeStage(CONFIG, None)
+        recalc = ['test.core.bob', 'units.info']
+        val = stage.must_recompute(None, recalculate=recalc)
+        self.assertFalse(val)
+
+    def test_will_recompute_if_given_set_with_name(self):
+        stage = SomeStage(CONFIG, None)
+        recalc = set(['test.core.stage_test', 'units.info'])
+        val = stage.must_recompute(None, recalculate=recalc)
+        self.assertTrue(val)
+
+    def test_will_not_recompute_if_name_not_in_set(self):
+        stage = SomeStage(CONFIG, None)
+        recalc = set(['test.core.bob', 'units.info'])
+        val = stage.must_recompute(None, recalculate=recalc)
+        self.assertFalse(val)
+
+    def test_will_recompute_if_given_tuple_with_name(self):
+        stage = SomeStage(CONFIG, None)
+        recalc = ('test.core.stage_test', 'units.info')
+        val = stage.must_recompute(None, recalculate=recalc)
+        self.assertTrue(val)
+
+    def test_will_not_recompute_if_name_not_in_tuple(self):
+        stage = SomeStage(CONFIG, None)
+        recalc = ('test.core.bob', 'units.info')
+        val = stage.must_recompute(None, recalculate=recalc)
+        self.assertFalse(val)
 
 
 class BeenLongEnoughTest(Base):
@@ -92,6 +143,7 @@ class ProcessingTests(Base):
         stage = SomeStage(CONFIG, None)
         val = stage.to_process([u'abc'])
         self.assertEqual(['ABC'], val)
+        print(val)
         self.assertTrue(isinstance(val[0], str))
 
     def test_will_return_processed_input(self):
