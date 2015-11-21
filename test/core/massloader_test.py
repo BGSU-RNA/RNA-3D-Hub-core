@@ -5,8 +5,13 @@ from pymotifs.core.stages import MassLoader
 
 
 class Mass(MassLoader):
-    def data(self, *args, **kwargs):
-        pass
+    skip = ['C']
+
+    def has_data(self, pdb, **kwargs):
+        return pdb in set(['B', 'D'])
+
+    def data(self, pdbs, **kwargs):
+        return {'stage': 'Mass', 'pdbs': pdbs}
 
 
 class ToProecssTest(StageTest):
@@ -18,12 +23,18 @@ class ToProecssTest(StageTest):
     def test_up_cases_all_entries(self):
         self.assertEquals([('A', 'B')], self.loader.to_process(['a', 'b']))
 
+    def test_filters_out_anything_in_skip(self):
+        self.assertEquals([('A')], self.loader.to_process(['a', 'c']))
 
-class BasicTests(StageTest):
+
+class ShouldProcessTests(StageTest):
     loader_class = Mass
 
-    def tests_returns_false_for_has_data(self):
-        self.assertFalse(self.loader.has_data('bob'))
+    def test_true_if_any_should_process(self):
+        self.assertTrue(self.loader.should_process([('A', 'D')]))
+
+    def test_false_if_none_should_process(self):
+        self.assertTrue(self.loader.should_process([('E', 'D')]))
 
 
 class GeneratingDataTest(StageTest):
