@@ -1,3 +1,5 @@
+import itertools as it
+
 from pymotifs import core
 from pymotifs import models as mod
 
@@ -16,10 +18,10 @@ class Loader(core.SimpleLoader):
 
     def as_group(self, group):
         integral_count = None
-        accompanying_count = len(group['chains'] - 1)
+        accompanying_count = len(group['chains']) - 1
         structured_count = sum(g['autonomous'] for g in group['chains'])
 
-        return mod.IfeInfo(
+        yield mod.IfeInfo(
             ife_id=group['id'],
             pdb_id=group['pdb'],
             has_integral=bool(integral_count),
@@ -30,9 +32,21 @@ class Loader(core.SimpleLoader):
             accompanying_chain_count=accompanying_count,
             structured_chain_count=structured_count,
             length=group['summary']['exp_length'],
-            bp_count=group['summary']['bp']
-        )
+            bp_count=group['summary']['bp'])
 
-    def data(self, pdb_id):
+        for index, chain in enumerate(group['chains']):
+            reference = index == 0
+            accompanying = not reference and len(group['chains']) > 1
+            yield mod.IfeChains(
+                chain_id=chain['db_id'],
+                ife_id=group['id'],
+                is_integral=chain['autonomous'],
+                is_structured=chain.get('structured', False),
+                is_accompanying=accompanying)
+
+    def data(self, pdb_id, **kwargs):
         grouper = Grouper(self.config, self.session.maker)
-        return [self.as_group(g) for g in grouper(pdb_id)]
+        groups = grouper(pdb_id)
+        groups = it.imap(self.as_group, groups)
+        groups = it.chain.from_iterable(groups)
+        return list(groups)
