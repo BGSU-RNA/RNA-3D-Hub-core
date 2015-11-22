@@ -143,5 +143,5 @@ class Loader(core.SimpleLoader):
         mapping = self.mapping(pdb)
         data = []
         for entry in parser.nts():
-            data.append(quality for quality in self.as_quality(entry, mapping))
+            data.extend(quality for quality in self.as_quality(entry, mapping))
         return data
