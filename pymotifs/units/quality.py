@@ -74,7 +74,7 @@ class Parser(object):
         if insertion_code == '':
             insertion_code = None
 
-        alt_id = attributes.get('alt_id', '').strip()
+        alt_id = attributes.get('altcode', '').strip()
         if alt_id == '':
             alt_id = None
 

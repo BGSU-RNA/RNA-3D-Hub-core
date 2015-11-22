@@ -150,4 +150,5 @@ class AltIdParsingTest(StageTest):
             cls.nts = list(cls.parser.nts())
 
     def test_can_generate_ids_using_alt_ids(self):
-        raise SkipTest()
+        val = [nt for nt in self.nts if nt['id']['alt_id']]
+        self.assertTrue(2, len(val))
