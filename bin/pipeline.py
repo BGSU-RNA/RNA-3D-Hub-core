@@ -9,101 +9,23 @@ must be configured. Locations
 
 import os
 import sys
-import random
-import logging
 import argparse
 from datetime import datetime as dt
-from copy import deepcopy
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 here = os.path.dirname(__file__)
 pymotifs = os.path.abspath(os.path.join(here, '..'))
 sys.path.append(pymotifs)
 
-import pymotifs as pym
+from pymotifs import setup
 
 
-def setup_logging(options):
-    opts = deepcopy(options)
-    log_args = {
-        'level': getattr(logging, opts.pop('log_level').upper()),
-        'filemode': opts.pop('log_mode'),
-        'format': '%(levelname)s:%(name)s:%(asctime)s:%(message)s',
-    }
-
-    filename = opts.pop('log_file')
-    if filename:
-        log_args['filename'] = filename
-
-    logging.basicConfig(**log_args)
-    # logging.captureWarnings(True)
-    base = logging.getLogger()
-    pool_logger = logging.getLogger('sqlalchemy.pool')
-    pool_logger.setLevel(logging.ERROR)
-    for handler in base.handlers:
-        pool_logger.addHandler(handler)
-
-    return opts
+def run(runnable):
+    runnable.dispatcher(runnable.ids, **runnable.options)
 
 
-def setup(args):
-    options = {
-        'exclude': set()
-    }
-
-    stage = args.name
-    ids = args.ids
-    config = pym.config.load(args.config)
-    arguments = set(['ids', 'stage', 'config'])
-    for arg, value in vars(args).items():
-        if arg not in arguments:
-            options[arg] = value
-
-    opts = setup_logging(options)
-    engine = create_engine(config['db']['uri'])
-    pym.models.reflect(engine)
-    Session = sessionmaker(bind=engine)
-    opts['dispatcher'] = pym.dispatcher.Dispatcher(stage, config, Session,
-                                                   **options)
-
-    if not ids:
-        if options['before'] or options['after']:
-            dates = (options['after'], options['before'])
-            ids = pym.utils.pdb.RnaPdbsHelper()(dates=dates)
-
-        if options.pop('known'):
-            ids = list(pym.utils.known(config, pdb=False))
-
-        if options['all']:
-            ids = pym.utils.pdb.RnaPdbsHelper()()
-
-    if 'seed' in options:
-        random.seed(options.pop('seed'))
-
-    if 'recalculate' in options and options['recalcuate']:
-        updated = []
-        for recalc in options['recalculate']:
-            if recalc == '.':
-                updated.append(stage)
-            elif recalc == '*':
-                updated = True
-                break
-            else:
-                updated.append(recalc)
-        options['recalculate'] = updated
-
-    return ids, opts
-
-
-def run(ids, options):
-    dispatcher = options.pop('dispatcher')
-    dispatcher(ids, **options)
-
-
-def inspect(ids, options):
-    dispatcher = options.pop('dispatcher')
+def inspect(runnable):
+    dispatcher = runnable.dispatcher
+    ids = runnable.pdbs
     for stage in dispatcher.stages(ids, build=True):
         print(stage.name)
 
@@ -120,6 +42,9 @@ def parser():
                                        help='select a command to run')
 
     # Add all common options
+    parser.add_argument('--config', dest='config',
+                        default='conf/motifatlas.json',
+                        help="Configuration file to use")
     parser.add_argument('--log-file', dest='log_file', default='',
                         help="Log file to use")
     parser.add_argument('--log-level', dest='log_level',
@@ -138,15 +63,15 @@ def parser():
     inspecter.set_defaults(target=inspect)
 
     for instance in (runner, inspecter):
-        instance.add_argument('name', metavar='N', nargs=1,
+        instance.add_argument('name', metavar='N',
                               help='Name of stage to run')
 
         instance.add_argument('--skip-dependencies', action='store_true',
                               help='Skip running any dependencies')
         instance.add_argument('--skip-stage', action='append',
-                              dest='exclude',
+                              dest='exclude', default=[],
                               help='Name of the stage(s) to skip')
-        instance.add_argument('--recalculate', action='append',
+        instance.add_argument('--recalculate', action='append', default=[],
                               help="Recalculate data for the given stage(s)")
         instance.add_argument('--all', dest='all', default=False,
                               action='store_true',
@@ -167,11 +92,13 @@ def parser():
     runner.add_argument('--dry-run', action='store_true',
                         help="Do a dry run where we alter nothing")
 
+    # Setup the bootstrapping parser
     bootstraper = subparsers.add_parser('bootstrap', help='fill a database')
     bootstraper.set_defaults(target=run, stage="update", seed=1,
                              exclude=["units.distances"],
                              config='conf/bootstrap.json')
 
+    # Setup the listing parser
     lister = subparsers.add_parser('stages', help='List known stages')
     lister.add_argument('pattern', metavar='P', nargs='?',
                         help='Name pattern to use')
@@ -183,8 +110,8 @@ def parser():
 def main():
     cli = parser()
     args = cli.parse_args()
-    ids, options = setup(args)
-    args.target(ids, options)
+    runnable = setup.setup(vars(args))
+    args.target(runnable)
 
 
 if __name__ == '__main__':
