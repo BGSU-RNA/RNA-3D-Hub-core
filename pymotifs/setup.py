@@ -50,8 +50,8 @@ class Runnable(object):
 
         kwargs = {}
         if 'before' in self.options or 'after' in self.options:
-            kwargs['dates'] = (self.options.pop('after', None),
-                               self.options.pop('before', None))
+            kwargs['dates'] = (self.options.get('after', None),
+                               self.options.get('before', None))
             self.logger.debug("Geting PDBs within dates %s, %s",
                               *kwargs['dates'])
             return helper(**kwargs)
