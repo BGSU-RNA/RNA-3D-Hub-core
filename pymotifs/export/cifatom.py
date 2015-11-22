@@ -66,6 +66,10 @@ class Exporter(core.Loader):
     def remove(self, pdb, **kwargs):
         """Remove the file for the given pdb.
         """
+        if kwargs.get('dry_run'):
+            self.logger.info("Not doing anything, is dry run")
+            return None
+
         filename = self.filename(pdb)
         if os.path.isfile(filename):
             os.remove(filename)
