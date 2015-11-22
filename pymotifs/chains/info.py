@@ -59,6 +59,14 @@ class Loader(core.MassLoader):
 
         return reports
 
+    def has_data(self, pdb, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.ChainInfo).\
+                filter_by(pdb_id=pdb).\
+                limit(1)
+
+            return bool(query.count())
+
     def data(self, pdbs, **kwargs):
         helper = CustomReportHelper(fields=self.names)
         reports = helper(pdbs)
