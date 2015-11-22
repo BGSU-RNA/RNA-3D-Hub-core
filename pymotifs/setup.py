@@ -8,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from pymotifs import models as mod
 from pymotifs import utils as util
 from pymotifs import config as conf
-from pymotifs.dispatcher import Dispatcher
 
 
 class Runnable(object):
@@ -20,7 +19,6 @@ class Runnable(object):
         self.config = conf.load(self.options.pop('config'))
         self._connection = None
         self.__recalculate__()
-        print(self.options)
 
     @property
     def connection(self):
@@ -32,6 +30,7 @@ class Runnable(object):
 
     @property
     def dispatcher(self):
+        from pymotifs.dispatcher import Dispatcher
         return Dispatcher(self.stage, self.config, self.connection,
                           **self.options)
 
