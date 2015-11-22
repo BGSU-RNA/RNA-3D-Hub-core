@@ -49,22 +49,23 @@ class Loader(core.Loader):
                 delete(synchronize_session=False)
 
     def chain_mapping(self, cif, chain, exp_mapping):
-        seq = cif.experimental_sequence_mapping(chain)
-
-        for index, (_, _, unit_id) in enumerate(seq):
+        for (_, seq_id, unit_id) in cif.experimental_sequence_mapping(chain):
             if not unit_id:
                 unit_id = None
 
-            if long(index) not in exp_mapping:
-                raise core.InvalidState("Could not find seq id for index %s" %
-                                        index)
+            parts = seq_id.split("|")
+            index = long(parts[4]) - 1
 
-            seq_id = exp_mapping[long(index)]
-            yield UnitMapping(unit_id=unit_id, exp_seq_position_id=seq_id)
+            if index not in exp_mapping:
+                raise core.InvalidState("No pos id for %s" % seq_id)
+
+            pos_id = exp_mapping[index]
+            yield UnitMapping(unit_id=unit_id, exp_seq_position_id=pos_id)
 
     def exp_mapping(self, pdb, chain):
         with self.session() as session:
-            query = session.query(ExpPosition.index, ExpPosition.exp_seq_position_id).\
+            query = session.query(ExpPosition.index,
+                                  ExpPosition.exp_seq_position_id).\
                 join(ChainMapping,
                      ChainMapping.exp_seq_id == ExpPosition.exp_seq_id).\
                 join(ChainInfo, ChainInfo.chain_id == ChainMapping.chain_id).\
