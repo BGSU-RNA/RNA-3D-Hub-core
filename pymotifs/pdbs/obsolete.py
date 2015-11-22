@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pymotifs import core
 from pymotifs import utils
-from pymotifs.models import PdbObsolete
+from pymotifs import models as mod
 
 
 class Parser(object):
@@ -27,7 +27,10 @@ class Parser(object):
 
 class Loader(core.MassLoader):
     merge_data = True
-    table = PdbObsolete
+    table = mod.PdbObsolete
+
+    def has_data(self, pdb_id, **kwargs):
+        return False
 
     def data(self, *args, **kwargs):
         """
