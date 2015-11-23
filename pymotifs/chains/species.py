@@ -22,7 +22,7 @@ class Loader(core.SimpleLoader):
         rna_chains = helper.rna_chains(pdb, return_id=True)
 
         if not rna_chains:
-            raise core.Skip("Structure %s contains no rna" % pdb)
+            raise core.InvalidState("Structure %s contains no rna" % pdb)
 
         for chain_name, chain_id in rna_chains:
             species = None
