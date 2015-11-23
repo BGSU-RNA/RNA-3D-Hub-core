@@ -1,6 +1,5 @@
 from pymotifs import core
-from pymotifs.models import ChainSpecies
-from pymotifs.models import ChainInfo
+from pymotifs import models as mod
 from pymotifs.utils.structures import Structure
 from pymotifs.utils.structures import UnknownTaxonomyException
 
@@ -10,11 +9,27 @@ from pymotifs.species_mapping import Loader as SpeciesLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([ChainLoader, SpeciesLoader])
+    table = mod.ChainSpecies
 
     def query(self, session, pdb):
-        return session.query(ChainSpecies).\
-            join(ChainInfo, ChainInfo.chain_id == ChainSpecies.chain_id).\
-            filter(ChainInfo.pdb_id == pdb)
+        return session.query(mod.ChainSpecies).\
+            join(mod.ChainInfo, mod.ChainInfo.chain_id == mod.ChainSpecies.chain_id).\
+            filter(mod.ChainInfo.pdb_id == pdb)
+
+    def validated(self, chain_id, assigned):
+        given_name = None
+        species = assigned
+        with self.session() as session:
+            given_name = session.query(mod.ChainInfo).get(chain_id).source
+
+        if assigned in set([None, 512]) and given_name == 'Escherichia coli':
+            self.logger.warning("Chain %s should probably have 562 as species",
+                                chain_id)
+            species = 562
+
+        if species is None:
+            return None
+        return int(species)
 
     def data(self, pdb, **kwargs):
         helper = Structure(self.session.maker)
@@ -31,6 +46,6 @@ class Loader(core.SimpleLoader):
             except UnknownTaxonomyException as err:
                 self.logger.warning(str(err))
 
-            species = species or 32630
-            data.append(ChainSpecies(chain_id=chain_id, species_id=species))
+            species = self.validated(chain_id, species)
+            data.append({'chain_id': chain_id, 'species_id': species})
         return data
