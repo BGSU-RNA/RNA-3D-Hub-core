@@ -262,7 +262,7 @@ class BasePairQueries(Base):
 
         with self.session() as session:
             u1, u2, query = self.__base__(session, pdb, chain, near=near,
-                                          family=family)
+                                          family=family, symmetry=False)
             query = query.filter(u2.chain != u1.chain)
 
             if other_chain is not None:
