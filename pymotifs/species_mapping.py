@@ -142,6 +142,9 @@ class Loader(core.MassLoader):
             'species_name': species['ScientificName']
         }
 
+    def has_data(self, pdb, **kwargs):
+        return False
+
     def data(self, *args, **kwargs):
         """Get the SpeciesMapping for all contexts. If we can't get at least the
         expected number of objects warnings will be raised.
