@@ -145,10 +145,11 @@ class IfeGroup(object):
         return IFE_SEPERATOR.join(c.id for c in self.chains())
 
     def chains(self, structured=None):
-        if structured is None:
-            return sorted(self._chains, reverse=True)
+        fn = lambda c: True
+        if structured is not None:
+            fn = lambda c: c.is_structured == structured
 
-        chains = it.ifilter(lambda c: c.structured == structured, self._chains)
+        chains = it.ifilter(fn, self._chains)
         return sorted(chains, reverse=True)
 
     def add(self, chain):
