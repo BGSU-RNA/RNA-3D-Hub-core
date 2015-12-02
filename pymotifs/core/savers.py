@@ -77,8 +77,9 @@ class Saver(Base):
             to_save = [data]
 
         saved = False
-        for chunk in ut.grouper(self.insert_max, to_save):
+        for index, chunk in enumerate(ut.grouper(self.insert_max, to_save)):
             chunk = list(chunk)
+            kwargs['index'] = index
             with self._writer(pdb, **kwargs) as writer:
                 for entry in chunk:
                     writer(entry)
@@ -140,15 +141,17 @@ class FileHandleSaver(Saver):
         """
         return self.stage.filename(pdb, **kwargs)
 
+    def mode(self, pdb, **kwargs):
+        if not self.merge and kwargs.get('index') == 1:
+            return 'wb'
+        return 'ab'
+
     @contextmanager
     def writer(self, pdb, **kwargs):
         """Creates a new writer to save to.
         """
         filename = self.filename(pdb, **kwargs)
-        mode = 'wb'
-        if self.merge and not kwargs.get('first_chunk'):
-            mode = 'ab'
-
+        mode = self.mode(pdb, **kwargs)
         with open(filename, mode) as raw:
             yield raw
 

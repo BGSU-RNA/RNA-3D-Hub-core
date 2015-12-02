@@ -23,7 +23,6 @@ class Downloader(core.Loader):
     update_gap = False
     dependencies = set()
     saver = Writer
-    merge_data = True
 
     def __init__(self, *args, **kwargs):
         super(Downloader, self).__init__(*args, **kwargs)
