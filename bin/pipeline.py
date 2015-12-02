@@ -20,7 +20,7 @@ from pymotifs import setup
 
 
 def run(runnable):
-    runnable.dispatcher(runnable.ids, **runnable.options)
+    runnable.dispatcher(runnable.pdbs, **runnable.options)
 
 
 def inspect(runnable):

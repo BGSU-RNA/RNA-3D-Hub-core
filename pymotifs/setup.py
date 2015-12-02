@@ -15,7 +15,7 @@ class Runnable(object):
         self.logger = logging.getLogger(__name__)
         self.options = deepcopy(opts)
         self.stage = self.options.pop('name')
-        self.ids = self.options.pop('ids')
+        self._ids = self.options.pop('ids')
         self.config = conf.load(self.options.pop('config'))
         self._connection = None
         self.__recalculate__()
@@ -36,8 +36,8 @@ class Runnable(object):
 
     @property
     def pdbs(self):
-        if self.ids:
-            return self.ids
+        if self._ids:
+            return self._ids
 
         helper = util.pdb.RnaPdbsHelper()
         if self.options.get('all', False):
