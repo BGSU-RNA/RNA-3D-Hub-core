@@ -6,7 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from pymotifs import models as mod
-from pymotifs import utils as util
+from pymotifs.utils import known
+from pymotifs.utils.pdb import RnaPdbsHelper
 from pymotifs import config as conf
 
 
@@ -39,14 +40,14 @@ class Runnable(object):
         if self._ids:
             return self._ids
 
-        helper = util.pdb.RnaPdbsHelper()
+        helper = RnaPdbsHelper()
         if self.options.get('all', False):
             self.logger.debug("Getting all PDBs")
             return helper()
 
         if self.options.pop('known', None):
             self.logger.debug("Using known pdbs only")
-            return list(util.known(self.config, pdb=False))
+            return list(known(self.config, pdb=False))
 
         kwargs = {}
         if 'before' in self.options or 'after' in self.options:
