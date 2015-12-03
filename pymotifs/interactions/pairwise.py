@@ -11,8 +11,8 @@ from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.mat_files import Loader as MatLoader
-from pymotifs.units.loader import Loader as UnitLoader
-from pymotifs.pdbs.loader import Loader as PdbLoader
+from pymotifs.units.info import Loader as UnitLoader
+from pymotifs.pdbs.info import Loader as PdbLoader
 
 IGNORE = set(['perp', 'nbif', 'bif', 'rib', 'nRib'])
 
