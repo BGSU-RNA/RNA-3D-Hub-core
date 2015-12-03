@@ -142,7 +142,7 @@ class FileHandleSaver(Saver):
         return self.stage.filename(pdb, **kwargs)
 
     def mode(self, pdb, **kwargs):
-        if not self.merge and kwargs.get('index') == 1:
+        if not self.merge and not kwargs.get('index'):
             return 'wb'
         return 'ab'
 
