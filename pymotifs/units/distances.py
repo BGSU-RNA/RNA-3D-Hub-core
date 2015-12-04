@@ -1,3 +1,4 @@
+import itertools as it
 import numpy as np
 
 import pymotifs.core as core
@@ -27,38 +28,38 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(UnitPairsDistances).\
                 join(UnitInfo, UnitInfo.unit_id == UnitPairsDistances.unit_id_1).\
-                filter(UnitInfo.pdb_id == pdb)
+                filter(UnitInfo.pdb_id == pdb).\
+                limit(1)
 
             return bool(query.count())
 
     def center(self, residue):
         if residue.sequence == 'HOH':
             return None
-
-        names = ['base', 'aa_backbone']
-        for name in names:
-            if name in residue.centers:
-                return residue.centers[name]
-
+        if residue.type == 'rna':
+            return residue.centers['base']
+        if residue.type == 'aa':
+            return residue.centers['backbone']
         return np.mean(residue.coordinates(), axis=0)
 
     def distance(self, residue1, residue2):
         center1 = self.center(residue1)
         center2 = self.center(residue2)
 
-        if center1 is not None and center2 is not None:
+        if center1.size and center2.size:
             return np.linalg.norm(center1 - center2)
         return None
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
-        for residue1 in structure.residues():
-            for residue2 in structure.residues():
-                if residue1.unit_id() == residue2.unit_id():
-                    next
+        not_water = lambda p: p[0].sequence != 'HOH' and p[1].sequence != 'HOH'
 
-                distance = self.distance(residue1, residue2)
-                if distance is not None and distance < self.max_distance:
-                    yield UnitPairsDistances(unit_id_1=residue1.unit_id(),
-                                             unit_id_2=residue2.unit_id(),
-                                             distance=distance)
+        pairs = structure.pairs()
+        pairs = it.ifilter(not_water, pairs)
+
+        for residue1, residue2 in pairs:
+            distance = self.distance(residue1, residue2)
+            if distance is not None and distance < self.max_distance:
+                yield UnitPairsDistances(unit_id_1=residue1.unit_id(),
+                                         unit_id_2=residue2.unit_id(),
+                                         distance=distance)

@@ -75,6 +75,14 @@ class DistancesLoaderTest(CifStageTest):
     filename = 'test/files/cif/1GID.cif'
 
     def test_can_load_distances(self):
-        raise SkipTest()
-        # val = list(self.loader.data(self.structure))
-        # self.assertEquals(3284, len(val))
+        val = list(self.loader.data(self.structure))
+        self.assertEquals(3284, len(val))
+
+
+class ProblematicStructureTest(CifStageTest):
+    loader_class = Loader
+    filename = 'test/files/cif/1A34.cif'
+
+    def test_can_load_distances(self):
+        distances = list(self.loader.data(self.structure))
+        self.assertTrue(distances)
