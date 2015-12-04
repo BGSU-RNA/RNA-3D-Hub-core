@@ -7,6 +7,9 @@ from sqlalchemy import String
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import Delete
+
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -19,11 +22,6 @@ Base = declarative_base(metadata=metadata)
 def camelize_classname(tablename):
     return str(tablename[0].upper() +
                re.sub(r'_(\w)', lambda m: m.group(1).upper(), tablename[1:]))
-
-
-def should_reflect(tablename, *args):
-    name = camelize_classname(tablename)
-    return name not in globals()
 
 
 def define_missing_views(metadata):
@@ -52,9 +50,7 @@ def reflect(engine):
     """
 
     metadata.bind = engine
-
-    metadata.reflect(only=should_reflect, views=True)
-
+    metadata.reflect(views=True)
     define_missing_views(metadata)
 
     glo = globals()
@@ -65,3 +61,32 @@ def reflect(engine):
             glo[classname] = type(classname, (Base,), {'__table__': obj})
         except:
             logger.warning("Could not reflect table %s", name)
+
+
+@compiles(Delete, 'mysql')
+def compile_delete_with_joins(element, compiler, **kwargs):
+    """This is added to allow sqlalchemly to compile delete's with join
+    statements. This is covered in:
+
+    https://bitbucket.org/zzzeek/sqlalchemy/issues/959/support-mysql-delete-from-join
+
+    when that gets fixed we can remove this code.The idea behind this is to use
+    some mysql specific syntax to allow for delete's with join statements. The
+    normal compilation does not allow for join statements in delete. This
+    should.
+    """
+
+    if element.table._is_join:
+        name = element.table.left.name
+    else:
+        name = element.table.name
+
+    table = compiler.process(element.table, asfrom=True)
+
+    text = 'DELETE FROM %s USING %s'
+    text = text % (name, table)
+
+    if element._whereclause is not None:
+        text += ' WHERE ' + compiler.process(element._whereclause)
+
+    return text

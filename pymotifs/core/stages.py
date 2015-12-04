@@ -374,11 +374,9 @@ class Loader(Stage):
         """
 
         if self.must_recompute(entry, **kwargs):
-            if kwargs.get('dry_run'):
-                self.logger.debug("Skipping removal in dry run")
-            else:
-                self.logger.debug("Removing old data for %s", entry)
-                self.remove(entry)
+            self.logger.debug("Removing old data for %s", entry)
+            if self.has_data(entry, **kwargs):
+                self.remove(entry, **kwargs)
 
         data = self.data(entry, **kwargs)
 
@@ -418,13 +416,7 @@ class SimpleLoader(Loader):
             return True
 
         with self.session() as session:
-            query = self.query(session, args)
-            if not query.count():
-                self.logger.info("Nothing to delete for %s", str(args))
-                return True
-
-            for row in query:
-                session.delete(row)
+            self.query(session, args).delete(synchronize_session=False)
 
     @abc.abstractmethod
     def query(self, session, args):
