@@ -47,7 +47,7 @@ class Loader(core.SimpleLoader):
             return self._translation
 
         # X is really N, but old PDB data doesn't respect that.
-        self._translation = {'X': 'N'}
+        self._translation = {'X': 'N', 'I': 'G'}
         table = mod.RnaUnitModifiedCorrespondencies
         with self.session() as session:
             query = session.query(
@@ -86,5 +86,5 @@ class Loader(core.SimpleLoader):
             'normalized': normalized,
             'length': len(seq),
             'normalized_length': len(normalized) if normalized else 0,
-            'was_normalized': seq is not None
+            'was_normalized': normalized is not None
         }

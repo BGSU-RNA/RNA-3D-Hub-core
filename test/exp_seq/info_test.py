@@ -1,4 +1,5 @@
 from test import StageTest
+import hashlib
 
 from pymotifs.exp_seq.info import Loader
 
@@ -37,8 +38,42 @@ class NormalizationTest(StageTest):
     def test_turns_X_into_N(self):
         self.assertEquals('ACGUNN', self.loader.normalize('ACGUNX'))
 
+    def test_turns_I_into_G(self):
+        self.assertEquals('ACGUNN', self.loader.normalize('ACIUNN'))
+
     def test_returns_none_if_cannot_normalize_all_characters(self):
         self.assertEquals(None, self.loader.normalize('ACGBN'))
 
     def test_will_remove_last_char_if_cannot_normalize(self):
         self.assertEquals('ACGUNN', self.loader.normalize('ACGUNXT'))
+
+
+class DataTest(StageTest):
+    loader_class = Loader
+
+    def test_builds_correctly_normalized_data(self):
+        seq = 'ACIUNXT'
+        norm = 'ACGUNN'
+        val = self.loader.data(seq)
+        ans = {
+            'sequence': seq,
+            'md5': hashlib.md5(seq).hexdigest(),
+            'normalized': norm,
+            'length': len(seq),
+            'normalized_length': len(norm),
+            'was_normalized': True
+        }
+        self.assertEquals(ans, val)
+
+    def test_indicates_not_normalized(self):
+        seq = 'ACI?NXT'
+        val = self.loader.data(seq)
+        ans = {
+            'sequence': seq,
+            'md5': hashlib.md5(seq).hexdigest(),
+            'normalized': None,
+            'length': len(seq),
+            'normalized_length': 0,
+            'was_normalized': False
+        }
+        self.assertEquals(ans, val)
