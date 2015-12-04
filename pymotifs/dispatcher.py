@@ -101,11 +101,6 @@ class Dispatcher(object):
         by = lambda s: s.__name__
         stages = [fn(s) for s in toposort(deps, by=by) if s not in exclude]
 
-        if stage not in stages and stage not in exclude:
-            self.logger.warning("Target %s not in list, likely there is an"
-                                "issue in toposort", stage)
-            stages.append(fn(stage))
-
         if not stages:
             raise InvalidState("No stages to run")
 
