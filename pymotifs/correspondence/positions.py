@@ -7,7 +7,6 @@ from pymotifs import core as core
 from pymotifs.models import ExpSeqPosition
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
-from pymotifs.models import RnaUnitModifiedCorrespondencies
 
 from pymotifs.correspondence.info import Loader as CorrLoader
 from pymotifs.exp_seq.info import Loader as InfoLoader
@@ -16,18 +15,13 @@ from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.utils.alignment import align
 
 
-class Loader(core.Loader):
+class Loader(core.SimpleLoader):
     """A loader for computing the position to position alignment and storing
     it.
     """
+
     mark = False
-
     dependencies = set([CorrLoader, InfoLoader, PositionLoader])
-
-    def __init__(self, config, maker):
-        super(Loader, self).__init__(config, maker)
-        self.translation = self.__translation__()
-        self.valid_sequence = set(['A', 'C', 'G', 'U', 'N'])
 
     def to_process(self, pdbs, **kwargs):
         """We transform all the pdbs into the correspodencies to do. While this
@@ -40,37 +34,12 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(Info)
+            query = session.query(Info).filter(Info.length != None)
             return [result.correspondence_id for result in query]
 
-    def has_data(self, corr_id, **kwargs):
-        """This is an unusual check for data. We do not first look up to see if
-        positions with the given corr_id exist. If that is not the case, we
-        then check to see if in the info table we have summerized the
-        alignment. In that case we do not need to recompute the alignment and
-        store the positions. We later cleanup the alignments to remove any bad
-        ones, so we cannot just check that we need to align by using the
-        positions.
-        """
-
+    def query(self, session, corr_id):
         with self.session() as session:
-            query = session.query(Position).\
-                filter(Position.correspondence_id == corr_id)
-
-            if query.count():
-                return True
-
-        with self.session() as session:
-            query = session.query(Info).\
-                filter(Info.length != None).\
-                filter(Info.correspondence_id == corr_id)
-            return bool(query.count())
-
-    def remove(self, corr_id, **kwargs):
-        with self.session() as session:
-            session.query(Position).\
-                filter(Position.correspondence_id == corr_id).\
-                delete(synchronize_session=False)
+            return session.query(Position).filter_by(correspondence_id=corr_id)
 
     def sequence(self, exp_id):
         """Load all information about the experimental sequence with the given
@@ -86,42 +55,16 @@ class Loader(core.Loader):
                 order_by(ExpSeqPosition.index)
 
             if not query.count():
-                return None
+                self.logger.error("Could not get sequence for %s", exp_id)
+                raise core.Skip("Skipping correspondence")
 
-            size = int(query.count()) - 1
             for index, result in enumerate(query):
                 seq_id = result.exp_seq_position_id
-                seq = self.translation.get(result.unit, result.unit)
-
-                # X is really N, but old PDB data doesn't respect that.
-                if 'X' in seq:
-                    self.logger.debug("For sequence %s, changing X to N",
-                                      exp_id)
-                    seq = seq.replace('X', 'N')
-
-                if seq not in self.valid_sequence:
-                    if index != size:
-                        raise core.Skip("Bad unit %s for %s" % (seq, seq_id))
-
-                    self.logger.warning(("Skipping bad unit %s for %s as"
-                                         "it may be a tRNA/AA"), seq, seq_id)
-                    break
-
+                seq = result.normalized_unit or 'N'
                 ids.append(seq_id)
                 sequence.append(seq)
 
-        sequence = ''.join(sequence)
-
-        if not ids:
-            raise core.InvalidState("Failed to get ids for %s" % exp_id)
-
-        if not(sequence):
-            raise core.InvalidState("Failed to get a sequence for %s" % exp_id)
-
-        if len(ids) != len(sequence):
-            raise core.InvalidState("Did not get as many ids as sequence")
-
-        return {'ids': ids, 'sequence': sequence}
+        return {'ids': ids, 'sequence': ''.join(sequence)}
 
     def correlate(self, corr_id, ref, target):
         results = align([ref, target])
@@ -147,17 +90,6 @@ class Loader(core.Loader):
         sequence1 = self.sequence(exp_id1)
         sequence2 = self.sequence(exp_id2)
 
-        if not sequence1:
-            self.logger.error(("Could not get positions for experimental "
-                               "sequence %s") % exp_id1)
-
-        if not sequence2:
-            self.logger.error(("Could not get positions for experimental "
-                               "sequence %s") % exp_id2)
-
-        if not sequence1 or not sequence2:
-            raise core.Skip("Skipping this correspodence %s" % corr_id)
-
         for position in self.correlate(corr_id, sequence1, sequence2):
             yield Position(**position)
 
@@ -169,15 +101,3 @@ class Loader(core.Loader):
                 rev['exp_seq_position_id_2'] = pos1
 
                 yield Position(**rev)
-
-    def __translation__(self):
-        mapping = {}
-        with self.session() as session:
-            query = session.query(
-                RnaUnitModifiedCorrespondencies.rna_unit_modified_correspondencies_id,
-                RnaUnitModifiedCorrespondencies.standard_unit
-
-            )
-            for result in query:
-                mapping[result[0]] = result[1]
-        return mapping
