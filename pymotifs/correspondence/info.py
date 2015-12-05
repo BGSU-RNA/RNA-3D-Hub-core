@@ -1,16 +1,22 @@
 import itertools as it
+import functools as ft
+from operator import itemgetter
 
 from pymotifs import core
 from pymotifs import utils as ut
-from pymotifs import models as mod
 
-from pymotifs.exp_seq.info import Loader as ExpSeqInfoLoader
-from pymotifs.exp_seq.chain_mapping import Loader as ExpSeqChainMappingLoader
+from pymotifs.models import ExpSeqInfo
+from pymotifs.models import ExpSeqPdb
+from pymotifs.models import ChainSpecies
+from pymotifs.models import CorrespondenceInfo
+
 from pymotifs.chains.info import Loader as ChainInfoLoader
+from pymotifs.exp_seq.info import Loader as ExpSeqInfoLoader
 from pymotifs.chains.species import Loader as ChainSpeciesLoader
+from pymotifs.exp_seq.chain_mapping import Loader as ExpSeqChainMappingLoader
 
 
-class Loader(core.SimpleLoader):
+class Loader(core.MassLoader):
     """A class to load up all pairs of experimental sequences that should have
     an alignment attempted. This does not work per structure as many other
     things do, but instead will compute all possible pairs and then work per
@@ -19,105 +25,86 @@ class Loader(core.SimpleLoader):
 
     dependencies = set([ChainSpeciesLoader, ExpSeqInfoLoader,
                         ExpSeqChainMappingLoader, ChainInfoLoader])
-
-    mark = False
-    table = mod.CorrespondenceInfo
+    allow_no_data = True
+    table = CorrespondenceInfo
 
     small_cutoff = 36
     huge_cutoff = 2000
 
-    def valid_length(self, pair):
-        """We treat large and small sequences differently, for small
-        sequences (< 36 nts) we have to have an exact match. For large
-        sequences we require that the sequences be of similar length,
-        which is from 0.5 to two times the first. This is a broad enough
-        range to cover all good alignments.
+    def has_data(self, pdb, **kwargs):
+        return False
+
+    def lookup_sequences(self, pdb):
+        """Return all exp_seq_ids for the given pdb.
         """
 
-        length1 = min(pair[0]['length'], pair[1]['length'])
-        length2 = max(pair[0]['length'], pair[1]['length'])
-        if length1 < self.small_cutoff:
-            return length1 == length2
-
-        lower_limit = max(int(0.5 * length2), self.small_cutoff)
-        if length2 > self.huge_cutoff or length1 > self.huge_cutoff:
-            lower_limit = self.huge_cutoff
-
-        upper_limit = 2 * length1
-        if length1 < self.huge_cutoff or length2 < self.huge_cutoff:
-            upper_limit = 2000
-
-        return lower_limit <= length1 <= length2 <= upper_limit
-
-    def valid_species(self, pair):
-        """Check weather a pair has valid sequences. A pair has valid sequences
-        if the species match or the species do not conflict. This happens when
-        the species is either None or 32360, the species id for synthetic
-        constructs.
-        """
-        species = it.imap(lambda p: p['species'], pair)
-        species = set(it.chain.from_iterable(species))
-        return None in species or 32360 in species or len(species) == 1
-
-    def pairs(self, entries):
-        """Produce all possible pairs of sequences from the given entries. This
-        will create unique pairs where the species do not conflict and the
-        length's are close enough to produce a good alignment. The result will
-        be sorted by the ids so the order will always be the same.
-        """
-
-        pairs = it.product(entries, repeat=2)
-        pairs = it.ifilter(lambda p: p[0]['id'] <= p[1]['id'], pairs)
-        pairs = it.ifilter(self.valid_length, pairs)
-        pairs = it.ifilter(self.valid_species, pairs)
-        return sorted(pairs, key=lambda p: (p[0]['id'], p[1]['id']))
-
-    def exp_seqs(self, pdbs):
-        """Look up all experimental sequences for
-        """
         with self.session() as session:
-            query = session.query(mod.ExpSeqPdb.exp_seq_id.label('id'),
-                                  mod.ExpSeqInfo.length,
-                                  mod.ChainSpecies.species_id.label('species')).\
-                join(mod.ExpSeqInfo,
-                     mod.ExpSeqInfo.exp_seq_id == mod.ExpSeqPdb.exp_seq_id).\
-                join(mod.ExpSeqChainMapping,
-                     mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqPdb.exp_seq_id).\
-                join(mod.ChainSpecies,
-                     mod.ChainSpecies.chain_id == mod.ExpSeqChainMapping.chain_id).\
-                filter(mod.ExpSeqPdb.pdb_id.in_(pdbs)).\
-                distinct().\
-                order_by(mod.ExpSeqInfo.exp_seq_id)
+            query = session.query(ExpSeqPdb.exp_seq_id.label('id'),
+                                  ExpSeqInfo.normalized_length.label('length'),
+                                  ChainSpecies.species_id.label('species')).\
+                join(ExpSeqInfo,
+                     ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
+                outerjoin(ChainSpecies,
+                          ChainSpecies.chain_id == ExpSeqPdb.chain_id).\
+                filter(ExpSeqPdb.pdb_id == pdb).\
+                filter(ExpSeqInfo.was_normalized).\
+                distinct()
 
             return [ut.row2dict(result) for result in query]
 
-    def merge(self, exps):
-        merged = []
-        key = lambda d: d['id']
-        for exp_id, entries in it.groupby(sorted(exps, key=key), key):
-            entries = list(entries)
-            merged.append({
-                'id': exp_id,
-                'length': entries[0]['length'],
-                'species': set(e['species'] for e in entries)
-            })
-        return merged
+    def length_match(self, pair):
+        smallest = min(p['length'] for p in pair)
+        largest = max(p['length'] for p in pair)
 
-    def to_process(self, pdbs, **kwargs):
-        """Compute the pairs of experimental sequences to process. This will
-        look up all possible pairs in the given list of pdbs and then filter
-        them to only those which match our length and species cutoffs.
-        """
-        exps = self.exp_seqs(pdbs)
-        merged = self.merge(exps)
-        return self.pairs(merged)
+        if smallest < self.small_cutoff:
+            return smallest == largest
 
-    def query(self, session, pair):
-        return session.query(self.table).\
-            filter_by(exp_seq_id_1=pair[0]['id'], exp_seq_id_2=pair[1]['id'])
+        lower = max(0.5 * largest, self.small_cutoff)
+        upper = 2 * smallest
 
-    def data(self, pair, **kwargs):
+        if smallest >= self.huge_cutoff:
+            lower = self.huge_cutoff
+        else:
+            upper = min(upper, self.huge_cutoff)
+
+        return lower <= smallest <= largest <= upper
+
+    def species_matches(self, seqs):
+        species = set(s['species'] for s in seqs)
+        return len(species) <= 1 or None in species or 32630 in species
+
+    def is_known(self, known, pair):
+        return (pair[0]['id'], pair[1]['id']) in known
+
+    def known(self):
+        with self.session() as session:
+            query = session.query(
+                self.table.exp_seq_id_1.label('id'),
+                self.table.exp_seq_id_2.label('id'),
+            ).distinct()
+
+            return set((result.id1, result.id2) for result in query)
+
+    def as_pair(self, pair):
         return {
             'exp_seq_id_1': pair[0]['id'],
-            'exp_seq_id_2': pair[1]['id'],
+            'exp_seq_id_2': pair[1]['id']
         }
+
+    def data(self, pdbs, **kwargs):
+        self.logger.info("Using %i pdbs", len(pdbs))
+        seqs = it.imap(self.lookup_sequences, pdbs)
+        seqs = it.chain.from_iterable(seqs)
+        seqs = sorted(set(seqs), key=itemgetter('id'))
+        self.logger.info("Found %i unique sequences", len(seqs))
+
+        is_known = ft.partial(self.is_known, self.known())
+        pairs = it.combinations(seqs, 2)
+        pairs = it.ifilter(self.length_match, pairs)
+        pairs = it.ifilter(self.species_match, pairs)
+        pairs = it.ifilterfalse(is_known, pairs)
+        pairs = it.imap(self.as_pair, pairs)
+        pairs = list(pairs)
+
+        self.logger.info("Found %i new correspondence pairs", len(pairs))
+        return pairs
