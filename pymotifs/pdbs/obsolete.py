@@ -1,5 +1,6 @@
 from cStringIO import StringIO
 from datetime import datetime
+from datetime import timedelta
 
 from pymotifs import core
 from pymotifs import utils
@@ -28,6 +29,7 @@ class Parser(object):
 class Loader(core.MassLoader):
     merge_data = True
     table = mod.PdbObsolete
+    update_gap = timedelta(1)
 
     def has_data(self, pdb_id, **kwargs):
         return False
