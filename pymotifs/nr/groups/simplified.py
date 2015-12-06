@@ -299,7 +299,7 @@ class Grouper(core.Base):
 
         alignments = self.alignments(ifes)
         if not alignments:
-            raise core.IncalidState("No alignments loaded")
+            raise core.InvalidState("No alignments loaded")
 
         discrepancy = self.discrepancy(ifes)
         if not discrepancy:

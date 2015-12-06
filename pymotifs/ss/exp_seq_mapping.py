@@ -1,4 +1,6 @@
-from sqlalchmey.orm import aliased
+import os
+
+from sqlalchemy.orm import aliased
 
 from pymotifs import core
 from pymotifs import utils as ut
@@ -9,10 +11,11 @@ from pymotifs.nr.chains import Loader as NrChainsLoader
 from pymotifs.exp_seq.chain_mapping import Loader as ExpSeqChainLoader
 from pymotifs.ife.info import Loader as IfeLoader
 
+from pymotifs.ss.helpers import md5
+
 
 class Loader(core.SimpleLoader):
-    dependencies = set([SsInfoLoader, NrChainsLoader, IfeLoader,
-                        ExpSeqChainLoader])
+    dependencies = set([SsInfoLoader, IfeLoader, ExpSeqChainLoader])
     table = mod.SsExpSeqMapping
     mark = False
 
@@ -23,6 +26,10 @@ class Loader(core.SimpleLoader):
                 query = session.query(mod.ExpSeqPdb).\
                     filter(mod.ExpSeqPdb.pdb_id.in_(chunk)).\
                     distinct()
+
+                if kwargs.get('chain'):
+                    query = query.filter_by(chain_name=kwargs.get('chain'))
+
                 seqs.update(result.exp_seq_id for result in query)
         return sorted(seqs)
 
@@ -31,9 +38,10 @@ class Loader(core.SimpleLoader):
             filter_by(exp_seq_id=exp_seq)
 
     def ss_id(self, filename):
+        os.chdir(self.config['locations']['base'])
         with self.session() as session:
             return session.query(mod.SsInfo).\
-                filter_by(md5=self.md5(filename)).\
+                filter_by(md5=md5(filename)).\
                 one().\
                 ss_id
 

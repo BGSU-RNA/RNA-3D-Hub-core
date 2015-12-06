@@ -7,6 +7,7 @@ from pymotifs.utils.alignment import align
 from pymotifs.ss.exp_seq_mapping import Loader as SsMappingLoader
 from pymotifs.ss.positions import Loader as SsPositionLoader
 from pymotifs.exp_seq.positions import Loader as ExpPositionLoader
+from pymotifs.correspondence.positions import Loader as CorrPositionLoader
 
 
 class Loader(core.SimpleLoader):
@@ -38,7 +39,7 @@ class Loader(core.SimpleLoader):
             return (result.exp_seq_id, result.ss_id)
 
     def exp_info(self, exp_id):
-        loader = ExpPositionLoader(self.config, self.session)
+        loader = CorrPositionLoader(self.config, self.session)
         return loader.sequence(exp_id)
 
     def ss_info(self, ss_id):
@@ -51,7 +52,7 @@ class Loader(core.SimpleLoader):
             sequence = []
             for result in query:
                 ids.append(result.ss_position_id)
-                sequence.append(result.unid)
+                sequence.append(result.unit)
         return {'ids': ids, 'sequence': ''.join(sequence)}
 
     def align(self, exp_info, ss_info):

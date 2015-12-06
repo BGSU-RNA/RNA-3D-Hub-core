@@ -35,6 +35,11 @@ def stages(*args):
     pass
 
 
+def ss_align(runnable):
+    runnable._ids = [runnable.options.pop('pdb')]
+    return run(runnable)
+
+
 def parser():
     date = lambda r: dt.strptime(r, '%Y-%m-%d').date()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -115,8 +120,8 @@ def parser():
     ss_aligner = sps.add_parser('ss.align', help='Align a PDB, chain to a 2d')
     ss_aligner.add_argument('pdb', metavar='P', help='Name of pdb to use')
     ss_aligner.add_argument('chain', metavar='C', help='Name of the chain')
-    ss_aligner.add_argument('file', metavar='S', help='2D structure filename')
-    ss_aligner.set_defaults(target=run, name='ss.position_mapping', ids=[])
+    ss_aligner.add_argument('filename', metavar='S', help='2D structure file')
+    ss_aligner.set_defaults(target=ss_align, name='ss.position_mapping', ids=[])
 
     # Add the common options
     for instance in [ss_importer, ss_aligner]:
