@@ -380,7 +380,7 @@ class Loader(Stage):
                 self.logger.debug("Removing old data for %s", entry)
                 self.remove(entry)
 
-        data = self.data(entry)
+        data = self.data(entry, **kwargs)
 
         if not data:
             if not self.allow_no_data:

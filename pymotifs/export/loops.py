@@ -29,7 +29,7 @@ class Exporter(core.Exporter):
 
             return [row2dict(result) for result in query]
 
-    def data(self, pdbs):
+    def data(self, pdbs, **kwargs):
         for pdb in pdbs:
             self.logger.info("Writing out loops for %s", pdb)
             for loop in self.loops(pdb):
