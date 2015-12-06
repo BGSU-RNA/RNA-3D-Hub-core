@@ -20,6 +20,7 @@ from pymotifs import setup
 
 
 def run(runnable):
+    runnable.options.pop('target')
     runnable.dispatcher(runnable.pdbs, **runnable.options)
 
 
@@ -37,9 +38,9 @@ def stages(*args):
 def parser():
     date = lambda r: dt.strptime(r, '%Y-%m-%d').date()
     parser = argparse.ArgumentParser(description=__doc__)
-    subparsers = parser.add_subparsers(title='subcommands',
-                                       description='known subcommands',
-                                       help='select a command to run')
+    sps = parser.add_subparsers(title='subcommands',
+                                description='known subcommands',
+                                help='select a command to run')
 
     # Add all common options
     parser.add_argument('--config', dest='config',
@@ -56,10 +57,10 @@ def parser():
                         help='Mode to open the  logging file')
 
     # Setup the common parts of the run and inspect commands
-    runner = subparsers.add_parser('run', help='Run a stage')
+    runner = sps.add_parser('run', help='Run a stage')
     runner.set_defaults(target=run)
 
-    inspecter = subparsers.add_parser('inspect', help='Inspect run')
+    inspecter = sps.add_parser('inspect', help='Inspect run')
     inspecter.set_defaults(target=inspect)
 
     for instance in (runner, inspecter):
@@ -93,16 +94,36 @@ def parser():
                         help="Do a dry run where we alter nothing")
 
     # Setup the bootstrapping parser
-    bootstraper = subparsers.add_parser('bootstrap', help='fill a database')
+    bootstraper = sps.add_parser('bootstrap', help='Fill up a database')
     bootstraper.set_defaults(target=run, stage="update", seed=1,
                              exclude=["units.distances"],
                              config='conf/bootstrap.json')
 
     # Setup the listing parser
-    lister = subparsers.add_parser('stages', help='List known stages')
+    lister = sps.add_parser('stages', help='List known stages')
     lister.add_argument('pattern', metavar='P', nargs='?',
                         help='Name pattern to use')
     lister.set_defaults(target=stages)
+
+    # Setup the secondary structure import parser
+    ss_importer = sps.add_parser('ss.import', help='Import a 2d structure')
+    ss_importer.add_argument('filename', metavar='F',
+                             help='Secondary structure file to import')
+    ss_importer.set_defaults(target=run, name='ss.positions', ids=[])
+
+    # Setup the secondary structure alignment parser
+    ss_aligner = sps.add_parser('ss.align', help='Align a PDB, chain to a 2d')
+    ss_aligner.add_argument('pdb', metavar='P', help='Name of pdb to use')
+    ss_aligner.add_argument('chain', metavar='C', help='Name of the chain')
+    ss_aligner.add_argument('file', metavar='S', help='2D structure filename')
+    ss_aligner.set_defaults(target=run, name='ss.position_mapping', ids=[])
+
+    # Add the common options
+    for instance in [ss_importer, ss_aligner]:
+        instance.add_argument('--ss-name', default=None, type=str,
+                              help='Name of the 2d diagram')
+        instance.add_argument('--recalculate', action='append', default=[],
+                              help="Recalculate data for the given stage(s)")
 
     return parser
 

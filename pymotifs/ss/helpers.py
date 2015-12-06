@@ -1,6 +1,12 @@
 import re
+import hashlib
 
 from pymotifs import core
+
+
+def md5(filename):
+    with open(filename, 'rb') as raw:
+        return hashlib.md5(raw.read()).hexdigest()
 
 
 class Base(object):
@@ -79,7 +85,7 @@ def type_match(line):
 
 
 class Parser(core.Base):
-    def parse(raw):
+    def parse(self, raw):
         data = []
         transform = Transform()
         shift = Nucleotide(x=100)
@@ -108,15 +114,11 @@ class Parser(core.Base):
 
         return points
 
-    def name(filename):
-        return filename
-
     def __call__(self, filename):
         with open(filename, 'rb') as raw:
             parsed = self.parse(raw)
 
         return {
-            'name': self.name(filename),
             'sequence': ''.join(nt['unit'] for nt in parsed),
             'nts': parsed
         }

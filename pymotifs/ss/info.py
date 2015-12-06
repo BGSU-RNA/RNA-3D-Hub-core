@@ -1,17 +1,12 @@
-import hashlib
-
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.ss.helpers import Parser
+from pymotifs.ss.helpers import md5
 
 
 class Loader(core.SimpleLoader):
     table = mod.SsInfo
     mark = False
-
-    def md5(self, filename):
-        with open(filename, 'rb') as raw:
-            return hashlib.md5(raw.read).hexdigest()
 
     def to_process(self, pdbs, **kwargs):
         if 'filename' not in kwargs:
@@ -19,13 +14,14 @@ class Loader(core.SimpleLoader):
         return [kwargs['filename']]
 
     def query(self, session, filename):
-        return session.query(self.table).filter_by(md5=self.md5(filename))
+        return session.query(self.table).filter_by(md5=md5(filename))
 
-    def data(self, filename, **kwargs):
-        parsed = Parser(filename)
+    def data(self, ss_filename, **kwargs):
+        parser = Parser(self.config, self.session)
+        parsed = parser(ss_filename)
         return {
-            'name': parsed['name'],
-            'filename': filename,
+            'name': kwargs.get('ss_name', None),
+            'filename': ss_filename,
             'sequence': parsed['sequence'],
-            'md5': self.md5(filename)
+            'md5': md5(ss_filename)
         }
