@@ -1,24 +1,52 @@
-import random
 import logging
-from copy import deepcopy
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from pymotifs import models as mod
 from pymotifs.utils import known
-from pymotifs.utils.pdb import RnaPdbsHelper
+from pymotifs import models as mod
 from pymotifs import config as conf
+from pymotifs.dispatcher import Dispatcher
+from pymotifs.utils.pdb import RnaPdbsHelper
+
+
+def log(options):
+    log_args = {
+        'level': getattr(logging, options['log_level'].upper()),
+        'filemode': options['log_mode'],
+        'format': '%(levelname)s:%(name)s:%(asctime)s:%(message)s',
+    }
+
+    if 'log_file' in options:
+        log_args['filename'] = options['log_file']
+
+    logging.basicConfig(**log_args)
+    # logging.captureWarnings(True)
+    base = logging.getLogger()
+    pool_logger = logging.getLogger('sqlalchemy.pool')
+    pool_logger.setLevel(logging.ERROR)
+    for handler in base.handlers:
+        pool_logger.addHandler(handler)
+
+
+def connection(config):
+    engine = create_engine(config['db']['uri'])
+    mod.reflect(engine)
+    return sessionmaker(bind=engine)
+
+
+def config(options):
+    return conf.load(options['config'])
 
 
 class Runnable(object):
     def __init__(self, opts):
         self.logger = logging.getLogger(__name__)
-        self.options = deepcopy(opts)
+        self.options = opts
         self.stage = self.options.pop('name')
         self._ids = self.options.pop('ids')
-        self.config = conf.load(self.options.pop('config'))
-        self._connection = None
+        self.config = self.options.pop('config')
+        self._connection = self.options.pop('connection', None)
         self.__recalculate__()
 
     @property
@@ -31,7 +59,6 @@ class Runnable(object):
 
     @property
     def dispatcher(self):
-        from pymotifs.dispatcher import Dispatcher
         return Dispatcher(self.stage, self.config, self.connection,
                           **self.options)
 
@@ -72,38 +99,3 @@ class Runnable(object):
 
         if updated:
             self.options['recalculate'] = updated
-
-
-def loggers(options):
-    opts = deepcopy(options)
-    log_args = {
-        'level': getattr(logging, opts.pop('log_level', 'info').upper()),
-        'filemode': opts.pop('log_mode'),
-        'format': '%(levelname)s:%(name)s:%(asctime)s:%(message)s',
-    }
-
-    filename = opts.pop('log_file', None)
-    if filename:
-        log_args['filename'] = filename
-
-    logging.basicConfig(**log_args)
-    # logging.captureWarnings(True)
-    base = logging.getLogger()
-    pool_logger = logging.getLogger('sqlalchemy.pool')
-    pool_logger.setLevel(logging.ERROR)
-    for handler in base.handlers:
-        pool_logger.addHandler(handler)
-
-    return opts
-
-
-def seed(options):
-    if 'seed' in options:
-        random.seed(options.pop('seed'))
-    return options
-
-
-def setup(given):
-    opts = loggers(given)
-    opts = seed(opts)
-    return Runnable(opts)
