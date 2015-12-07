@@ -1,0 +1,60 @@
+import logging
+
+from pymotifs.utils import known
+from pymotifs.utils.pdb import RnaPdbsHelper
+
+
+def logs(options):
+    log_args = {
+        'level': getattr(logging, options['log_level'].upper()),
+        'filemode': options['log_mode'],
+        'format': '%(levelname)s:%(name)s:%(asctime)s:%(message)s',
+    }
+
+    if 'log_file' in options:
+        log_args['filename'] = options['log_file']
+
+    logging.basicConfig(**log_args)
+    # logging.captureWarnings(True)
+    base = logging.getLogger()
+    pool_logger = logging.getLogger('sqlalchemy.pool')
+    pool_logger.setLevel(logging.ERROR)
+    for handler in base.handlers:
+        pool_logger.addHandler(handler)
+
+
+def pdbs(config, options):
+    logger = logging.getLogger(__name__)
+    helper = RnaPdbsHelper()
+    if options.get('all', False):
+        logger.debug("Getting all PDBs")
+        return helper()
+
+    if options.pop('known', None):
+        logger.debug("Using known pdbs only")
+        return list(known(config, pdb=False))
+
+    kwargs = {}
+    if 'before_date' in options or 'after_date' in options:
+        kwargs['dates'] = (options.get('after_date', None),
+                           options.get('before_date', None))
+        logger.debug("Geting PDBs within dates %s, %s",
+                     *kwargs['dates'])
+        return helper(**kwargs)
+
+    return []
+
+
+def expand_stage_pattern(stage, key, options):
+    updated = []
+    for value in options[key]:
+        if value == '.':
+            updated.append('pymotifs.' + stage)
+        elif value == '*':
+            updated = True
+            break
+        else:
+            updated.append('pymotifs.' + value)
+
+    if updated:
+        options[key] = updated
