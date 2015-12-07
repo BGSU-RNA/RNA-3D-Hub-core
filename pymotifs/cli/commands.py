@@ -1,4 +1,6 @@
+import os
 import random
+import inspect
 import logging
 
 import click
@@ -13,6 +15,8 @@ from pymotifs.cli.params import PDB
 
 from pymotifs import models as mod
 from pymotifs import config as conf
+from pymotifs.version import __VERSION__
+from pymotifs.core import Stage
 from pymotifs.dispatcher import Dispatcher
 
 
@@ -27,13 +31,12 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     mod.reflect(engine)
 
-    logger = logging.getLogger(__name__)
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
     try:
         dispatcher(ids, **kwargs)
     except Exception as err:
         click.secho("Pipeline failed", fg='red', err=True)
-        logger.exception(err)
+        logging.exception(err)
         ctx.exit(1)
 
 
@@ -49,7 +52,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 @click.option('--log-mode', default='a', type=click.Choice(['w', 'a']),
               help='Mode to open the  logging file')
 @click.option('--email/--no-email', default=False, help='Send email')
-@click.version_option('2.0.0')
+@click.version_option(__VERSION__)
 @click.pass_context
 def cli(ctx, **options):
     """A tool for running parts of the update pipeline.
@@ -95,10 +98,10 @@ def do(ctx, name, ids, **kwargs):
     run(ctx, name, ids, **kwargs)
 
 
-@cli.command(short_help='Populate a database')
+@cli.command(short_help='populate a database')
 @click.pass_context
 def bootstrap(ctx, **kwargs):
-    """Poupluate a testing database.
+    """Poupulate a testing database.
 
     To test this pipeline working copy of the database is needed. This command
     will populate a database with some default data for testing. The config
@@ -114,13 +117,32 @@ def bootstrap(ctx, **kwargs):
     run(ctx, 'update', config.pop('pdbs'), **kwargs)
 
 
+@cli.command(short_help="List stages")
+@click.option('--tree', is_flag=True)
+@click.pass_context
+def list(ctx, **kwargs):
+    """List all known stages.
+    """
+    mod.reflect(ctx.parent.objs['engine'])
+
+    def checker(obj):
+        return inspect.isclass(obj) and issubclass(obj, Stage) and obj != Stage
+
+    base = 'pymotifs'
+    for path in os.listdir(base):
+        if path.endswith('.py'):
+            name = path[0:-3]
+            module = __import__(base + '.' + path[0:-3])
+            if bool(inspect.getmembers(module, checker)):
+                click.echo(name)
+
+
 @cli.group(short_help="Run commands for 2d diagrams")
 @click.pass_context
 def ss(ctx):
     """Commands dealing with importing 2D diagrams
     """
     ctx.objs = ctx.parent.objs
-    return ctx
 
 
 @ss.command('import', short_help='Import a 2D diagram')

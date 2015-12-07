@@ -1,11 +1,11 @@
+import os
 import re
 import inspect
-import pkgutil
 from datetime import datetime
 
 import click
 
-import pymotifs
+from pymotifs.core import Stage
 
 
 class DateParamType(click.ParamType):
@@ -46,23 +46,22 @@ class StageCommand(click.Command):
 
 class StageGroup(click.MultiCommand):
 
-    def get_loaders(self, path):
+    def get_loaders(self, base):
         loaders = []
-        for module in pkgutil.iter_modules(path):
-            if self.has_loader(module):
-                loaders.append(module)
-            else:
-                loaders.extend(self.get_loaders(module.__path__))
+        ignore = set(['utils', 'cli', 'core', '__init__.py', 'dispatcher.py'])
+        for path in os.listdir(base):
+            if path.endswith('.py') and path not in ignore:
+                name = path[0:-3]
+                module = __import__(base + '.' + path[0:-3])
+                if bool(inspect.getmembers(module, self.__stage_checker__)):
+                    loaders.append(name)
         return loaders
 
-    # def has_
+    def __stage_checker__(self, obj):
+        return inspect.isclass(obj) and issubclass(obj, Stage) and obj != Stage
 
     def list_commands(self, ctx):
-        commands = []
-        for module in pkgutil.iter_modules(pymotifs.__path__):
-            if self.has_loader(module):
-                commands.append(self.short_name(module))
-
+        return self.get_loaders('pymotifs')
 
     def get_command(self, ctx, name):
         command = StageCommand(name)
