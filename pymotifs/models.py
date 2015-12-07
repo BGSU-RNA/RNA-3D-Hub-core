@@ -83,7 +83,7 @@ def compile_delete_with_joins(element, compiler, **kwargs):
 
     table = compiler.process(element.table, asfrom=True)
 
-    text = 'DELETE FROM %s USING %s'
+    text = 'DELETE %s FROM %s'
     text = text % (name, table)
 
     if element._whereclause is not None:
