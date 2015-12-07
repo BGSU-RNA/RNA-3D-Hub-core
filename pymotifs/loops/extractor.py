@@ -5,6 +5,7 @@ all loops and then will save them in the correct location as specificed by
 import os
 
 from pymotifs import core
+from pymotifs.utils import matlab
 from pymotifs import models as mod
 from pymotifs.loops.release import Loader as ReleaseLoader
 
@@ -66,7 +67,7 @@ class Loader(core.SimpleLoader):
         """
 
         try:
-            mlab = core.Matlab(self.config['locations']['fr3d_root'])
+            mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
             [loops, count, err_msg] = mlab.extractLoops(pdb, loop_type, nout=3)
         except Exception as err:
             self.logger.exception(err)
@@ -113,14 +114,14 @@ class Loader(core.SimpleLoader):
             os.mkdir(location)
 
         try:
-            mlab = core.Matlab(self.config['locations']['fr3d_root'])
+            mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
             [status, err_msg] = mlab.aSaveLoops(loops, location, nout=2)
         except Exception as err:
             self.logger.exception(err)
             raise err
 
         if status != 0:
-            raise core.MatlabFailed("Could not save all loop mat files")
+            raise matlab.MatlabFailed("Could not save all loop mat files")
 
         self.logger.debug("Saved loop mat files")
 

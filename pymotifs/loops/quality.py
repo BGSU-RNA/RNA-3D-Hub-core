@@ -11,6 +11,7 @@ import csv
 from sqlalchemy import desc
 
 from pymotifs import core
+from pymotifs.utils import matlab
 from pymotifs import models as mod
 
 from pymotifs.loops.extractor import Loader as InfoLoader
@@ -69,11 +70,11 @@ class Loader(core.SimpleLoader):
 
         release_id = self.current_id()
 
-        mlab = core.Matlab(self.config['locations']['fr3d_root'])
+        mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         [ifn, err_msg] = mlab.aLoopQualityAssurance(pdb, nout=2)
 
         if err_msg != '':
-            raise core.MatlabFailed('Error %s in pdb %s' % (err_msg, pdb))
+            raise matlab.MatlabFailed('Error %s in pdb %s' % (err_msg, pdb))
 
         with open(ifn, 'rb') as raw:
             data = [mod.LoopQa(**loop) for loop in self.parse(raw, release_id)]

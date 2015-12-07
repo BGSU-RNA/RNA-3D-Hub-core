@@ -8,6 +8,7 @@ import csv
 import collections as coll
 
 from pymotifs import core
+from pymotifs.utils import matlab
 from pymotifs import models as mod
 
 from pymotifs.mat_files import Loader as MatLoader
@@ -91,10 +92,10 @@ class Loader(core.SimpleLoader):
         :kwargs: Keyword arguments.
         :returns: The interaction annotations.
         """
-        matlab = core.Matlab(str(self.config['locations']['fr3d_root']))
+        mlab = matlab.Matlab(str(self.config['locations']['fr3d_root']))
 
         self.logger.info('Running matlab on %s', pdb)
-        ifn, status, err_msg = matlab.loadInteractions(pdb, nout=3)
+        ifn, status, err_msg = mlab.loadInteractions(pdb, nout=3)
         status = status[0][0]
         if status == 0:
             data = self.parse(ifn, pdb)

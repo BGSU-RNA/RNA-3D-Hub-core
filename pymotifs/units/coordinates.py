@@ -2,6 +2,7 @@ import os
 import csv
 
 import pymotifs.core as core
+from pymotifs.utils import matlab
 
 from pymotifs.models import UnitInfo
 from pymotifs.models import UnitCoordinates
@@ -25,7 +26,7 @@ class Loader(core.SimpleLoader):
         return data
 
     def data(self, pdb, **kwargs):
-        mlab = core.Matlab()
+        mlab = matlab.Matlab()
         ifn, status, err_msg = mlab.loadCoordinates(pdb, nout=3)
         status = status[0][0]
         if status == 0:
@@ -35,5 +36,5 @@ class Loader(core.SimpleLoader):
         elif status == 2:
             self.logger.warning('File %s has no nucleotides', pdb)
         else:
-            raise core.MatlabFailed('Matlab error code %i when analyzing %s' %
-                                    (status, pdb))
+            raise matlab.MatlabFailed('Matlab error %i when analyzing %s' %
+                                      (status, pdb))

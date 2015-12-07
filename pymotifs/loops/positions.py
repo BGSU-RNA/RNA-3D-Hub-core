@@ -3,6 +3,7 @@ import csv
 
 from pymotifs import core
 from pymotifs import utils
+from pymotifs.utils import matlab
 from pymotifs.models import LoopPositions
 from pymotifs.models import LoopInfo
 from pymotifs.loops.extractor import Loader as InfoLoader
@@ -66,7 +67,7 @@ class Loader(core.Loader):
         return mapping
 
     def annotation_file(self, pdb):
-        matlab = core.Matlab(self.config['locations']['fr3d_root'])
+        mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         path = str(os.path.join(self.precomputed, pdb))
         try:
             if not os.path.exists(path):
@@ -74,9 +75,9 @@ class Loader(core.Loader):
         except:
             raise core.InvalidState("Could not create %s for matlab" % path)
 
-        [output_file, err_msg] = matlab.loadLoopPositions(path, nout=2)
+        [output_file, err_msg] = mlab.loadLoopPositions(path, nout=2)
         if err_msg != '':
-            raise core.MatlabFailed(err_msg)
+            raise matlab.MatlabFailed(err_msg)
 
         return output_file
 

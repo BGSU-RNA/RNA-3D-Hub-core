@@ -6,6 +6,7 @@ import os
 import csv
 
 from pymotifs import core
+from pymotifs.utils import matlab
 from pymotifs import models as mod
 from pymotifs.mat_files import Loader as MatLoader
 
@@ -31,10 +32,10 @@ class RedundantNucleotidesLoader(core.SimpleLoader):
         return query
 
     def data(self, pdb, **kwargs):
-        matlab = core.Matlab(self.config['locations']['fr3d_root'])
-        ifn, err_msg = matlab.loadRedundantNucleotides(pdb, nout=2)
+        mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
+        ifn, err_msg = mlab.loadRedundantNucleotides(pdb, nout=2)
         if err_msg != '':
-            raise core.MatlabFailed(err_msg)
+            raise matlab.MatlabFailed(err_msg)
 
         with open(ifn, 'rb') as raw:
             data = self._parse(raw, pdb)

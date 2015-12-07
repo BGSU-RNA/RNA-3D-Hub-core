@@ -6,6 +6,7 @@ matlab should depend on this stage.
 import os
 
 from pymotifs import core
+from pymotifs.utils import matlab
 from pymotifs.export.cifatom import Exporter as CifAtom
 
 
@@ -26,6 +27,6 @@ class Loader(core.Loader):
             os.remove(filename)
 
     def data(self, pdb, **kwargs):
-        matlab = core.Matlab(self.config['locations']['fr3d_root'])
-        matlab.zAddNTData(pdb)
+        mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
+        mlab.zAddNTData(pdb)
         return None

@@ -30,7 +30,6 @@ class Matlab(object):
     """
 
     def __init__(self, root, log_output=False, **kwargs):
-        self.logger = logging.getLogger('core.Matlab')
         self.mlab = None
         self._root = root
         self.log_output = log_output
@@ -40,7 +39,7 @@ class Matlab(object):
             del self.mlab
 
     def __startup__(self):
-        self.logger.debug('Starting up matlab')
+        logger.debug('Starting up matlab')
         if 'mlab' not in globals():
             raise Skip("No matlab around, skipping")
         self.mlab = mlab
@@ -48,18 +47,18 @@ class Matlab(object):
         # self.mlab._autosync_dirs = False
         self.mlab.setup()
         os.chdir(self._root)
-        self.logger.debug('Matlab started')
+        logger.debug('Matlab started')
 
     def __handle_out__(self, output):
         self.last_stdout = output
         if self.log_output:
-            self.logger.debug(output)
+            logger.debug(output)
 
     def __getattr__(self, key):
         if self.mlab is None:
             os.chdir(self._root)
             self.__startup__()
-        self.logger.debug("Running %s", key)
+        logger.debug("Running %s", key)
 
         attr = getattr(self.mlab, key)
 

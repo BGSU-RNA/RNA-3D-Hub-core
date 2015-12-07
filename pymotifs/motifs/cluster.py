@@ -38,6 +38,7 @@ from time import localtime, strftime
 from subprocess import Popen, list2cmdline
 
 from pymotifs import core
+from pymotifs.utils import matlab
 
 
 class ClusterMotifs(object):
@@ -108,7 +109,7 @@ class ClusterMotifs(object):
                         retries_left -= 1
                         if retries_left == 0:
                             self.logger.critical('Parallel task failed')
-                            raise core.MatlabFailed("Clustering failed")
+                            raise matlab.MatlabFailed("Clustering failed")
                         else:
                             self.logger.warning('Restarting Parallel task')
                             task = tasks[p.pid]  # retrieve the failed task
@@ -205,7 +206,7 @@ class ClusterMotifs(object):
                                          output_dir, nout=2)
 
         if err_msg:
-            raise core.MatlabFailed(err_msg)
+            raise matlab.MatlabFailed(err_msg)
 
         self._clean_up()
         self.logger.info('Successful clustering')
