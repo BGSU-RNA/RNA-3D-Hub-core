@@ -10,10 +10,11 @@ from pymotifs.nr.builder import Builder
 
 from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
+from pymotifs.ife.loader import Loader as IfeLoader
 
 
 class Loader(core.MassLoader):
-    dependencies = set([ChainLoader, InteractionLoader])
+    dependencies = set([ChainLoader, InteractionLoader, IfeLoader])
     update_gap = dt.timedelta(7)
 
     def has_data(self, *args, **kwargs):
