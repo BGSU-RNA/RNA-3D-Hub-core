@@ -24,7 +24,6 @@ pymotifs.ife.grouper.
 from pymotifs import core
 
 from pymotifs.ife.info import Loader as InfoLoader
-from pymotifs.ife.chains import Loader as ChainLoader
 
 
 class Loader(core.StageContainer):
@@ -34,4 +33,4 @@ class Loader(core.StageContainer):
     pymotifs.ife.info and pymotifs.ife.chains.
     """
 
-    stages = set([InfoLoader, ChainLoader])
+    stages = set([InfoLoader])
