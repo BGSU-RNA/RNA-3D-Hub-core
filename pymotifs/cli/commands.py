@@ -1,6 +1,4 @@
-import os
 import random
-import inspect
 import logging
 
 import click
@@ -9,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from pymotifs.cli import setup
+from pymotifs.cli import introspect
 from pymotifs.cli.params import FILE
 from pymotifs.cli.params import DATE
 from pymotifs.cli.params import PDB
@@ -16,7 +15,6 @@ from pymotifs.cli.params import PDB
 from pymotifs import models as mod
 from pymotifs import config as conf
 from pymotifs.version import __VERSION__
-from pymotifs.core import Stage
 from pymotifs.dispatcher import Dispatcher
 
 
@@ -104,37 +102,48 @@ def bootstrap(ctx, **kwargs):
     """Poupulate a testing database.
 
     To test this pipeline working copy of the database is needed. This command
-    will populate a database with some default data for testing. The config
-    file used MUST contain a pdbs section, with the list of pdbs to get data
-    for. For an example look at `conf/bootstrap.json.txt`. This will not import
-    and distance data.
+    will populate a database with some default data for testing. This will not
+    import any distance data.
     """
     kwargs['exclude'] = kwargs.get('exclude', [])
     kwargs['exclude'].append('units.distances')
     kwargs['seed'] = 1
-    config = ctx.parent.objs['config']
     kwargs.update(ctx.parent.objs)
-    run(ctx, 'update', config.pop('pdbs'), **kwargs)
+    pdbs = ["124D", "157D", "1DUH", "1E4P", "1EIY", "1EKD", "1ET4", "1F5H",
+            "1F5U", "1FCW", "1FEU", "1FG0", "1FJG", "1G59", "1GID", "1VY4",
+            "4V42", "1J5E", "1KOG", "1S72", "2HOJ", "2HOK", "2HOL", "2HOM",
+            "2HOO", "3CPW", "4V6M", "4V6R", "3T4B", "4V88", "4V8G", "4V8I",
+            "4V9O", "4V9Q", "4V4Q", "4V7W", "4V9K"]
+    run(ctx, 'update', pdbs, **kwargs)
 
 
 @cli.command(short_help="List stages")
-@click.option('--tree', is_flag=True)
 @click.pass_context
 def list(ctx, **kwargs):
     """List all known stages.
     """
     mod.reflect(ctx.parent.objs['engine'])
 
-    def checker(obj):
-        return inspect.isclass(obj) and issubclass(obj, Stage) and obj != Stage
+    formatter = click.HelpFormatter()
+    formatter.write_dl((s[0], s[1]) for s in introspect.stages())
+    click.echo(formatter.getvalue(), nl=False)
 
-    base = 'pymotifs'
-    for path in os.listdir(base):
-        if path.endswith('.py'):
-            name = path[0:-3]
-            module = __import__(base + '.' + path[0:-3])
-            if bool(inspect.getmembers(module, checker)):
-                click.echo(name)
+
+@cli.command(short_help="Get information about a stage")
+@click.argument('name', type=str)
+@click.pass_context
+def about(ctx, name=None, **kwargs):
+    mod.reflect(ctx.parent.objs['engine'])
+
+    info = introspect.get_stage_info(name)
+    if not info:
+        click.echo("Unknown stage %s" % name, err=True, fg='red')
+        ctx.exit(1)
+
+    formatter = click.HelpFormatter()
+    with formatter.section(name=name):
+        formatter.write_text(info[2])
+    click.echo(formatter.getvalue())
 
 
 @cli.group(short_help="Run commands for 2d diagrams")
