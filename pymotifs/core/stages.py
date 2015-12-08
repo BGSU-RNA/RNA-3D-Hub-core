@@ -463,7 +463,7 @@ class MassLoader(Loader):
         will recompute.
         """
         parent = super(MassLoader, self).should_process
-        return all(parent(pdb, **kwargs) for pdb in pdbs)
+        return any(parent(pdb, **kwargs) for pdb in pdbs)
 
     def mark_processed(self, pdbs, **kwargs):
         for pdb in pdbs:
