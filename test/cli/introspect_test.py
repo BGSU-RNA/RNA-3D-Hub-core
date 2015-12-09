@@ -2,7 +2,10 @@ import test  # Used to make sure all models are reflected
 from unittest import TestCase
 
 from pymotifs.cli import introspect as intro
+
 from pymotifs.ife import info
+from pymotifs.units import loader as units
+from pymotifs import update
 
 
 class GettingStageTest(TestCase):
@@ -30,6 +33,18 @@ class GettingStageTest(TestCase):
     def test_can_determine_if_is_not_stage(self):
         self.assertFalse(intro.is_stage('ife.helpers'))
 
+    def test_it_can_load_a_stage_by_name(self):
+        val = intro.get_stage('units.info')
+        self.assertEquals(val, units.InfoLoader)
+
+    def test_it_can_load_an_aggregate_by_name(self):
+        val = intro.get_stage('units.loader')
+        self.assertEquals(val, units.Loader)
+
+    def test_it_can_load_a_unit_stage(self):
+        val = intro.get_stage('units.quality')
+        self.assertEquals(val, units.QualityLoader)
+
 
 class GettingLoadersTest(TestCase):
     def test_can_get_a_loader_by_stage_name(self):
@@ -43,3 +58,6 @@ class GettingLoadersTest(TestCase):
 
     def test_can_detect_if_is_not_stage_loader(self):
         self.assertFalse(intro.is_stage_loader(test, info.Loader))
+
+    def test_can_get_a_mass_loader(self):
+        self.assertEquals(update.Loader, intro.get_loader('update'))

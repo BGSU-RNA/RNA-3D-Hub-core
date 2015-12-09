@@ -4,6 +4,7 @@ import inspect
 from pymotifs.core import Stage
 from pymotifs.core import InvalidState
 from pymotifs.core import StageContainer
+from pymotifs.cli import introspect as intro
 
 from pymotifs.utils.toposort import toposort
 
@@ -33,15 +34,6 @@ class Dispatcher(object):
         self.exclude = set(kwargs.get('exclude', []))
         self.logger = logging.getLogger(__name__)
 
-    def get_stage(self, name):
-        import_name = 'pymotifs.' + name
-        from_list = import_name.split('.')
-        module = __import__(import_name, fromlist=from_list)
-        pairs = inspect.getmembers(module, self.is_loader(import_name))
-        if not pairs:
-            raise ImportError("Could not find a class to use from: %s" % name)
-        return pairs[0][1]
-
     def to_exclude(self):
         """Compute a set of stages to exclude. This will load all stages in the
         exclude property to do so. If one entry there is a StageContainer then
@@ -49,7 +41,7 @@ class Dispatcher(object):
         """
         exclude = set()
         for name in self.exclude:
-            stage = self.get_stage(name)
+            stage = intro.get_loader(name)
             exclude.add(stage)
             if issubclass(stage, StageContainer):
                 exclude.update(stage.stages)
@@ -72,7 +64,7 @@ class Dispatcher(object):
         if build:
             fn = lambda s: s(*self._args)
 
-        stage = self.get_stage(name)
+        stage = intro.get_loader(name)
         if self.skip_dependencies:
             return [fn(stage)]
 
@@ -105,12 +97,6 @@ class Dispatcher(object):
             raise InvalidState("No stages to run")
 
         return stages
-
-    def is_loader(self, name):
-        def checker(obj):
-            return inspect.isclass(obj) and obj.__module__ == name and \
-                issubclass(obj, Stage)
-        return checker
 
     def __call__(self, entries, **kwargs):
             for stage in self.stages(self.name, build=True):
