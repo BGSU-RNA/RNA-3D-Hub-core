@@ -24,7 +24,12 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
     if kwargs.get('seed', None) is not None:
         random.seed(kwargs['seed'])
 
-    setup.expand_stage_pattern(name, 'recalculate', kwargs)
+    try:
+        setup.expand_stage_pattern(name, 'recalculate', kwargs)
+        setup.expand_stage_pattern(name, 'skip_stage', kwargs)
+    except introspect.UnknownStage as err:
+        click.secho("Unknown stage %s" % err.args, err=True, fg='red')
+        ctx.exit(1)
 
     if not ids:
         ids = setup.pdbs(config, kwargs)

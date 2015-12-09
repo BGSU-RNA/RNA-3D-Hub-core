@@ -1,5 +1,6 @@
 import logging
 
+from pymotifs.cli import introspect
 from pymotifs.utils import known
 from pymotifs.utils.pdb import RnaPdbsHelper
 
@@ -47,14 +48,17 @@ def pdbs(config, options):
 
 def expand_stage_pattern(stage, key, options):
     updated = []
-    for value in options[key]:
-        if value == '.':
-            updated.append('pymotifs.' + stage)
-        elif value == '*':
+    for name in options[key]:
+        if name == '.':
+            name = stage
+        elif name == '*':
             updated = True
             break
-        else:
-            updated.append('pymotifs.' + value)
+
+        if not introspect.has_stage(name):
+            raise introspect.UnknownStageError(name)
+
+        updated.append(name)
 
     if updated:
         options[key] = updated

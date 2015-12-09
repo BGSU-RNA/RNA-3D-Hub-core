@@ -6,6 +6,13 @@ from pymotifs.core import Stage
 BASE = 'pymotifs'
 
 
+class UnknownStageError(Exception):
+    """Raised when we have been given a name of stage that does not exist and
+    are asked to use it for something.
+    """
+    pass
+
+
 def get_stages(name, obj):
     return inspect.isclass(obj) and \
         issubclass(obj, Stage) and \
@@ -41,6 +48,10 @@ def get_stage(name):
     fromlist = [BASE]
     fromlist.extend(parts[:-1])
     return __import__(BASE + '.' + name, fromlist=fromlist)
+
+
+def is_stage(name):
+    return bool(get_stage(name))
 
 
 def get_stage_info(name):
