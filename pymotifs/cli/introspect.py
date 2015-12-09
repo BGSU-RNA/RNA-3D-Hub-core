@@ -3,6 +3,8 @@ import functools as ft
 
 from pymotifs.core import Stage
 
+BASE = 'pymotifs'
+
 
 def get_stages(name, obj):
     return inspect.isclass(obj) and \
@@ -13,7 +15,7 @@ def get_stages(name, obj):
 
 def imports(seen, obj):
     return inspect.ismodule(obj) and \
-        'pymotifs' in obj.__name__ and \
+        BASE in obj.__name__ and \
         obj not in seen
 
 
@@ -23,7 +25,7 @@ def has_stages(module):
 
 
 def stage_info(module):
-    name = module.__name__.replace('pymotifs.', '')
+    name = module.__name__.replace(BASE + '.', '')
     full_doc = inspect.getdoc(module) or ''
     short_doc = ''
     if full_doc:
@@ -34,12 +36,23 @@ def stage_info(module):
     return (name, short_doc, full_doc)
 
 
-def get_stage_info(name):
+def get_stage(name):
     parts = name.split('.')
-    fromlist = ['pymotifs']
+    fromlist = [BASE]
     fromlist.extend(parts[:-1])
-    module = __import__('pymotifs.' + name, fromlist=fromlist)
+    return __import__(BASE + '.' + name, fromlist=fromlist)
+
+
+def get_stage_info(name):
+    module = get_stage(name)
     return stage_info(module)
+
+
+def get_loader(name):
+    module = get_stage(name)
+    isstage = ft.partial(get_stages, module.__name__)
+    loaders = inspect.getmembers(module, isstage)
+    return next(loaders)
 
 
 def traverse(module, seen):
@@ -57,5 +70,5 @@ def traverse(module, seen):
 
 
 def stages():
-    update = __import__('pymotifs.update')
+    update = __import__(BASE + '.update')
     return sorted(traverse(update, set()))
