@@ -12,6 +12,7 @@ from pymotifs.cli.params import FILE
 from pymotifs.cli.params import DATE
 from pymotifs.cli.params import PDB
 from pymotifs.constants import BOOTSTRAPPING_PDBS
+from pymotifs.email import Emailer
 
 from pymotifs import models as mod
 from pymotifs import config as conf
@@ -30,13 +31,18 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     mod.reflect(engine)
 
+    error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
+    mailer = Emailer(engine, config)
     try:
         dispatcher(ids, **kwargs)
-    except Exception as err:
+    except Exception as error:
         click.secho("Pipeline failed", fg='red', err=True)
-        logging.exception(err)
+        logging.exception(error)
         ctx.exit(1)
+    finally:
+        if kwargs['email']:
+            mailer(name, ids=ids, error=None, **kwargs)
 
 
 @click.group(short_help="Interface to update pipeline",

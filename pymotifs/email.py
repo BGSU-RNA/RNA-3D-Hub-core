@@ -11,6 +11,9 @@ class Emailer(core.Base):
 
     def body(self, filename):
         """Generate the body of the email.
+
+        :param string filename: Name of the log file to create a body for.
+        :returns: A string to use a body.
         """
 
         if not filename:
@@ -36,14 +39,17 @@ class Emailer(core.Base):
         :stage: Name of the stage that was run.
         :log_file: Filename for the log file
         :error: Exception object that occurred.
+        :returns: A Mailer message to send.
         """
 
         status = 'Succeeded'
         if error:
             status = 'Failed'
 
+        kwargs = {'stage': name, 'status': status}
+        subject = self.config['email']['subject'].format(**kwargs)
         msg = Message(From=self.config['from'], To=self.config['to'])
-        msg.Subject = self.config['email']['subject'].format(stage=name, status=status)
+        msg.Subject = subject
         msg.Body = self.body(log_file)
         if log_file:
             msg.attach(log_file)
@@ -52,8 +58,9 @@ class Emailer(core.Base):
 
     def mailer(self, **kwargs):
         """Create the mailer used to send the email.
-        """
 
+        :returns: The Mailer to use.
+        """
         return Mailer(self.config['server']['name'])
 
     def __call__(self, name, **kwargs):
