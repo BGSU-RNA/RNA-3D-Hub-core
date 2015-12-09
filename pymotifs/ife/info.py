@@ -1,3 +1,7 @@
+"""Load IFE data. This will load all IFE data for a given set of pdbs into the
+database.
+"""
+
 import itertools as it
 
 from pymotifs import core
