@@ -26,7 +26,7 @@ class Emailer(core.Base):
                         line.startswith('CRITICAL'):
                     bad_lines.append(line)
 
-        return '\n'.join(bad_lines)
+        return ''.join(bad_lines)
 
     def message(self, name, log_file=None, error=None, **kwargs):
         """Create an email for the given stage based upon the log file.
@@ -48,9 +48,12 @@ class Emailer(core.Base):
 
         kwargs = {'stage': name, 'status': status}
         subject = self.config['email']['subject'].format(**kwargs)
-        msg = Message(From=self.config['from'], To=self.config['to'])
-        msg.Subject = subject
-        msg.Body = self.body(log_file)
+        msg = Message(
+            From=self.config['email']['from'],
+            To=self.config['email']['to'],
+            Subject=subject,
+            Body=self.body(log_file)
+        )
         if log_file:
             msg.attach(log_file)
 
@@ -61,7 +64,7 @@ class Emailer(core.Base):
 
         :returns: The Mailer to use.
         """
-        return Mailer(self.config['server']['name'])
+        return Mailer(self.config['email']['server'])
 
     def __call__(self, name, **kwargs):
         """Send the email if needed. If this is a dry run no mail is sent and
@@ -72,15 +75,11 @@ class Emailer(core.Base):
         :name: The name of the stage that was run.
         """
 
-        if not self.config['email'].get('send'):
-            self.logger.info("Configured to not send mail")
-            return None
-
+        mailer = self.mailer()
         msg = self.message(name, **kwargs)
 
         if kwargs.get('dry_run'):
             self.logger.info("Dry run so no mail sent")
             return msg
 
-        mailer = self.mailer()
         return mailer.send(msg)
