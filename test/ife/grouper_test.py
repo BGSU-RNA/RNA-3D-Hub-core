@@ -207,3 +207,7 @@ class RealDataTest(StageTest):
             '4V88|A7',          # 5S alone
         ]
         self.assertEquals(ans, self.ids('4V88'))
+
+    def test_many_ustructured_1YZ9(self):
+        ans = ['1YZ9|C+1YZ9|D+1YZ9|E+1YZ9|F']
+        self.assertEquals(ans, self.ids('1YZ9'))

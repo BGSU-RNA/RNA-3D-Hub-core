@@ -108,8 +108,9 @@ class Grouper(core.Base):
         for ife1, ife2 in self.joinable(same, ifes):
             current = groups[ife1.id]
             current.merge(groups[ife2.id])
-            groups[ife1.id] = current
-            groups[ife2.id] = current
+            linked = set(groups[ife1.id].chains() + groups[ife2.id].chains())
+            for ife in linked:
+                groups[ife.id] = current
 
         # Here if we are merging an unstructured into a structured we only
         # should update the structured one, the unstructured chain may be part
