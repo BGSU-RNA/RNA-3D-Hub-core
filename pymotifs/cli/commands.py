@@ -11,6 +11,7 @@ from pymotifs.cli import introspect
 from pymotifs.cli.params import FILE
 from pymotifs.cli.params import DATE
 from pymotifs.cli.params import PDB
+from pymotifs.constants import BOOTSTRAPPING_PDBS
 
 from pymotifs import models as mod
 from pymotifs import config as conf
@@ -109,12 +110,7 @@ def bootstrap(ctx, **kwargs):
     kwargs['exclude'].append('units.distances')
     kwargs['seed'] = 1
     kwargs.update(ctx.parent.objs)
-    pdbs = ["124D", "157D", "1DUH", "1E4P", "1EIY", "1EKD", "1ET4", "1F5H",
-            "1F5U", "1FCW", "1FEU", "1FG0", "1FJG", "1G59", "1GID", "1VY4",
-            "4V42", "1J5E", "1KOG", "1S72", "2HOJ", "2HOK", "2HOL", "2HOM",
-            "2HOO", "3CPW", "4V6M", "4V6R", "3T4B", "4V88", "4V8G", "4V8I",
-            "4V9O", "4V9Q", "4V4Q", "4V7W", "4V9K"]
-    run(ctx, 'update', pdbs, **kwargs)
+    run(ctx, 'update', BOOTSTRAPPING_PDBS, **kwargs)
 
 
 @cli.command(short_help="List stages")
