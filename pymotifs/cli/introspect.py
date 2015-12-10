@@ -126,4 +126,5 @@ def stages():
     :returns: A sorted list of all stages in the update pipeline.
     """
     update = __import__(BASE + '.update')
-    return sorted(traverse(update, set()))
+    stages = sorted(traverse(update, set()))
+    return [stage for stage in stages if 'core' not in stage[0]]
