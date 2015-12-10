@@ -1,3 +1,6 @@
+"""Run all chain loading stages.
+"""
+
 from pymotifs import core
 
 from pymotifs.chains.info import Loader as InfoLoader

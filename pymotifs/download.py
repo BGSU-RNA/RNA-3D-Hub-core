@@ -1,6 +1,7 @@
-"""
-A program for downloading .cif files for all RNA-containing
-3D structures.
+"""Download CIF files.
+
+This will download compressed cif files and place under PDBFiles in the defined
+FR3D directory.
 """
 
 import os
@@ -37,7 +38,7 @@ class Downloader(core.Loader):
         return self.file_url + name + '.cif.gz'
 
     def remove(self, entry, **kwargs):
-        if self.has_data(entry):
+        if self.has_data(entry) and not kwargs.get('dry_run'):
             os.remove(self.filename(entry))
 
     def has_data(self, entry, **kwargs):

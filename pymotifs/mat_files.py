@@ -1,7 +1,7 @@
-"""This is a class to generate the mat files that are required for several
-other stages. We do this so we can force recomputing of matlab files as well as
-make it easier to reason about what things require matlab. All things that use
-matlab should depend on this stage.
+"""Generate requried mat files. This is a stage to generate the mat files that
+are required for several other stages. We do this so we can force recomputing
+of matlab files as well as make it easier to reason about what things require
+matlab. All things that use matlab should depend on this stage.
 """
 import os
 

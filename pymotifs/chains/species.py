@@ -1,3 +1,11 @@
+"""Assign species to each chain.
+
+This will figure out what chain belongs to which species. This will map from
+the assign taxon id to species id. It will also attempt to fix some mistakes
+that authors make, such as labeling e. coli as 512 instead of 562. This can be
+extended to deal with differences between taxon ids and organism names.
+"""
+
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils.structures import Structure

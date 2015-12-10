@@ -1,5 +1,7 @@
-"""Classes for loading pairwise interactions produced by FR3D into the RNA 3D
-Hub database.
+"""Import all pairwise interactions.
+
+Runs fr3d on the given files to determine all interactions and then imports
+them into the database.
 """
 
 import re

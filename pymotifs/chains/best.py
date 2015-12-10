@@ -1,3 +1,10 @@
+"""Determine best and chains and models for structures.
+
+Runs matlab across the given pdbs files to determine which are the best chains
+and models. These are used for the motif atlas to determine which chains and
+models to use for extracting motifs.
+"""
+
 from pymotifs import core
 from pymotifs.utils import matlab
 from pymotifs import models as mod

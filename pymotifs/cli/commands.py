@@ -131,7 +131,7 @@ def list(ctx, **kwargs):
     """
     mod.reflect(ctx.parent.objs['engine'])
 
-    formatter = click.HelpFormatter()
+    formatter = click.HelpFormatter(width=90)
     formatter.write_dl((s[0], s[1]) for s in introspect.stages())
     click.echo(formatter.getvalue(), nl=False)
 

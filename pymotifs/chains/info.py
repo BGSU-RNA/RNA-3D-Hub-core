@@ -1,3 +1,10 @@
+"""Query PDB for chain level information.
+
+This asks PDB for the chain level information like sequence and compound for
+the database. This works across several structures at once. This will merge the
+data into the database if run several times the same data.
+"""
+
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils.pdb import CustomReportHelper

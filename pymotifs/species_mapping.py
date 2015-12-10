@@ -1,3 +1,11 @@
+"""Map from taxon id to species taxon id.
+
+This queries NCBI's taxononmy services to determine the species id for all
+taxon ids assigned to chains. Some chain organisms are species level and some
+are not. This will determine the assigned species. A few chains have
+assignments to the genus level, which this complains about.
+"""
+
 from Bio import Entrez
 
 from pymotifs import core
