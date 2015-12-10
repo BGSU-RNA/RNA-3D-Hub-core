@@ -60,6 +60,9 @@ class Loader(core.SimpleLoader):
         return self._translation
 
     def translate(self, character):
+        """Translate sequences to a standard representation. If no standard
+        representation is known then it will return None.
+        """
         if character in set(['A', 'C', 'G', 'U', 'N']):
             return character
         return self.translation.get(character, None)
