@@ -56,7 +56,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
               help="JOSN configuration file")
 @click.option('--log-file', type=click.Path(dir_okay=False, resolve_path=True),
               help="Logging filename")
-@click.option('--log-level', default='debug',
+@click.option('--log-level', default='info',
               type=click.Choice(['debug', 'info', 'warning', 'error']),
               help="Logging level to use")
 @click.option('--log-mode', default='a', type=click.Choice(['w', 'a']),
