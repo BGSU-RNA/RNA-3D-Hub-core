@@ -36,6 +36,7 @@ publish
 todo.txt
 .tasks
 .envrc
+.direnv/
 
 GTAGS
 GPATH
