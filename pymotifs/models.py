@@ -64,4 +64,4 @@ def reflect(engine):
         try:
             glo[classname] = type(classname, (Base,), {'__table__': obj})
         except:
-            logger.warning("Could not reflect table %s", name)
+            logger.debug("Could not reflect table %s", name)
