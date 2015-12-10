@@ -35,6 +35,7 @@ publish
 .agignore
 todo.txt
 .tasks
+.envrc
 
 GTAGS
 GPATH
