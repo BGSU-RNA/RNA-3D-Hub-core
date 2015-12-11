@@ -101,7 +101,7 @@ class Dispatcher(object):
     def __call__(self, entries, **kwargs):
             for stage in self.stages(self.name, build=True):
                 try:
-                    self.logger.info("Running stage: %s", stage)
+                    self.logger.info("Running stage: %s", stage.name)
                     stage(entries, **kwargs)
                 except Exception as err:
                     self.logger.error("Uncaught exception with stage: %s",
