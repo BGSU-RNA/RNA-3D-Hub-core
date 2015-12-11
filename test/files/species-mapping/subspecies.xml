@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT request="Taxon:656435&amp;display=xml">
+<taxon scientificName="Escherichia coli TA124" taxId="656435" parentTaxId="562" hidden="true" taxonomicDivision="PRO" geneticCode="11">
+        <lineage>
+            <taxon scientificName="Escherichia coli" taxId="562" rank="species" hidden="true"></taxon>
+            <taxon scientificName="Escherichia" taxId="561" rank="genus" hidden="false"></taxon>
+            <taxon scientificName="Enterobacteriaceae" taxId="543" rank="family" hidden="false"></taxon>
+            <taxon scientificName="Enterobacteriales" taxId="91347" rank="order" hidden="false"></taxon>
+            <taxon scientificName="Gammaproteobacteria" taxId="1236" rank="class" hidden="false"></taxon>
+            <taxon scientificName="Proteobacteria" taxId="1224" rank="phylum" hidden="false"></taxon>
+            <taxon scientificName="Bacteria" commonName="eubacteria" taxId="2" rank="superkingdom" hidden="false"></taxon>
+            <taxon scientificName="cellular organisms" taxId="131567" hidden="true"></taxon>
+            <taxon scientificName="root" taxId="1" hidden="true"></taxon>
+        </lineage>
+    </taxon>
+</ROOT>
