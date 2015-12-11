@@ -38,7 +38,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
-    mailer = Emailer(engine, config)
+    mailer = Emailer(config, engine)
     try:
         dispatcher(ids, **kwargs)
     except Exception as error:
