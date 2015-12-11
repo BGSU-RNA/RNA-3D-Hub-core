@@ -62,4 +62,6 @@ class Loader(core.SimpleLoader):
     def data(self, taxonomy_id, **kwargs):
         helper = WebRequestHelper(parser=Parser())
         result = helper(self.url % taxonomy_id)
+        if result.species_id is None:
+            self.logger.warning("No species found for %i", taxonomy_id)
         return mod.SpeciesMapping(**result)
