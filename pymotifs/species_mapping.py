@@ -54,7 +54,14 @@ class Loader(core.SimpleLoader):
                 filter(mod.ChainInfo.taxonomy_id != None).\
                 distinct().\
                 order_by(mod.ChainInfo.taxonomy_id)
-            return [int(result.taxonomy_id) for result in query]
+
+            ids = []
+            for result in query:
+                try:
+                    ids.append(int(result.taxonomy_id))
+                except:
+                    self.logger.info("Bad taxonomy id %s", result.taxonomy_id)
+            return ids
 
     def query(self, session, taxonomy_id):
         return session.query(mod.SpeciesMapping).\
