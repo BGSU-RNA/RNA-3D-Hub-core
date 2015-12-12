@@ -4,6 +4,8 @@ from unittest import TestCase
 from pymotifs.cli import introspect as intro
 
 from pymotifs.ife import info
+from pymotifs.units import info as units_info
+from pymotifs.units import quality as units_quality
 from pymotifs.units import loader as units
 from pymotifs import update
 
@@ -27,6 +29,9 @@ class GettingStageTest(TestCase):
     def test_can_determine_if_stage_has_no_loaders(self):
         self.assertFalse(intro.has_stage_loader(test))
 
+    def test_can_get_interactions(self):
+        self.assertTrue(intro.is_stage('interactions.pairwise'))
+
     def test_can_determine_if_is_stage(self):
         self.assertTrue(intro.is_stage('ife.info'))
 
@@ -35,15 +40,15 @@ class GettingStageTest(TestCase):
 
     def test_it_can_load_a_stage_by_name(self):
         val = intro.get_stage('units.info')
-        self.assertEquals(val, units.InfoLoader)
+        self.assertEquals(val, units_info)
 
     def test_it_can_load_an_aggregate_by_name(self):
         val = intro.get_stage('units.loader')
-        self.assertEquals(val, units.Loader)
+        self.assertEquals(val, units)
 
     def test_it_can_load_a_unit_stage(self):
         val = intro.get_stage('units.quality')
-        self.assertEquals(val, units.QualityLoader)
+        self.assertEquals(val, units_quality)
 
 
 class GettingLoadersTest(TestCase):
