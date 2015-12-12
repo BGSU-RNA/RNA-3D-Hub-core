@@ -45,6 +45,7 @@ class Loader(core.SimpleLoader):
     merge_data = True
     dependencies = set([ChainLoader])
     url = 'https://www.ebi.ac.uk/ena/data/view/Taxon:%s&display=xml'
+    mark = False
 
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
