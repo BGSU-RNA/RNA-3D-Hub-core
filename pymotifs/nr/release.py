@@ -36,18 +36,24 @@ class Loader(core.MassLoader):
 
     def current_id(self):
         with self.session() as session:
-            query = session.query(mod.NrReleases.nr_release_id).\
+            query = session.query(mod.NrReleases.nr_release_id,
+                                  mod.NrReleases.index).\
                 order_by(desc(mod.NrReleases.date)).\
                 limit(1)
 
             if query.count() == 0:
-                return '0.0'
+                return '0.0', 0
 
-            return query.one().nr_release_id
+            current = query.one()
+            return current.nr_release_id, current.index
 
     def data(self, pdbs, **kwargs):
         now = kwargs.get('before', dt.datetime.now())
-        current = self.current_id()
+        current, index = self.current_id()
         next = self.next_id(current)
         self.build(pdbs, current, next, **kwargs)
-        return mod.NrReleases(nr_release_id=next, date=now)
+        return mod.NrReleases(nr_release_id=next,
+                              date=now,
+                              parent_nr_release_id=current,
+                              description=now.strftime("%Y%m%d"),
+                              index=index + 1)
