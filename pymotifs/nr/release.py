@@ -48,7 +48,7 @@ class Loader(core.MassLoader):
             return current.nr_release_id, current.index
 
     def data(self, pdbs, **kwargs):
-        now = kwargs.get('before', dt.datetime.now())
+        now = kwargs.get('before_date', dt.datetime.now())
         current, index = self.current_id()
         next = self.next_id(current)
         self.build(pdbs, current, next, **kwargs)
