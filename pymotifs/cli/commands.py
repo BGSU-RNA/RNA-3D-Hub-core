@@ -27,7 +27,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
     try:
         setup.expand_stage_pattern(name, 'recalculate', kwargs)
         setup.expand_stage_pattern(name, 'skip_stage', kwargs)
-    except introspect.UnknownStage as err:
+    except introspect.UnknownStageError as err:
         click.secho("Unknown stage %s" % err.args, err=True, fg='red')
         ctx.exit(1)
 
