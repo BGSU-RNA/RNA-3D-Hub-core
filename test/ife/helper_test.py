@@ -166,3 +166,10 @@ class CrossChainInteractionsTest(StageTest):
 
     def test_gets_cross_chain_between_all_chains(self):
         raise SkipTest()
+
+    def test_loads_interactions_symmetrically(self):
+        ifes = [IfeChain(pdb='2MKN', chain='C'),
+                IfeChain(pdb='2MKN', chain='B')]
+        val = self.loader.cross_chain_interactions(ifes)
+        ans = {'C': {'C': 0, 'B': 19}, 'B': {'B': 0, 'C': 19}}
+        self.assertEquals(ans, val)

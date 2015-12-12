@@ -76,7 +76,8 @@ class Grouper(core.Base):
             count2 = interactions[ife2.chain][ife1.chain]
             if count != count2:
                 msg = "Reflexive counts not equal: %s (%i), %s (%i)"
-                raise core.InvalidState(msg, ife1, count, ife2, count2)
+                self.logger.warning(msg, ife1, count, ife2, count2)
+            count = max(count, count2)
 
             if self.should_join(ife1, ife2, count):
                 yield ife1, ife2
