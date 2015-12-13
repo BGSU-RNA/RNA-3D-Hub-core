@@ -6,7 +6,6 @@ then in the database.
 
 import itertools as it
 import collections as coll
-from operator import itemgetter
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -30,7 +29,7 @@ class Loader(core.MassLoader):
     def parent_id(self, nr_id):
         with self.session() as session:
             return session.query(mod.NrReleases).\
-                get(nr_id).\
+                filter_by(nr_release_id=nr_id).\
                 one().\
                 parent_nr_release_id
 
@@ -57,24 +56,25 @@ class Loader(core.MassLoader):
                 filter_by(nr_release_id=release_id, resolution=resolution)
             return [(result.handle, result.version) for result in query]
 
-    def count(self, parent_id, nr_classes):
-        grouper = itemgetter('resolution')
+    def counts(self, parent_id, nr_classes):
+        grouper = lambda c: c['name']['cutoff']
         grouped = it.groupby(sorted(nr_classes, key=grouper), grouper)
         release = nr_classes[0]['release']
 
-        counts = []
+        data = []
         for resolution, klasses in grouped:
             counts = coll.defaultdict(int)
             parent_names = set(self.known_names(parent_id, resolution))
             current_names = set()
             for klass in klasses:
                 counts[klass['name']['type']] += 1
-                current_names.add((klass['handle'], klass['version']))
+                current_names.add((klass['name']['handle'],
+                                   klass['name']['version']))
 
             parent_pdbs = set(self.release_pdbs(parent_id, resolution))
             current_pdbs = set(self.release_pdbs(release, resolution))
 
-            counts.append({
+            data.append({
                 'resolution': resolution,
                 'nr_release_id': release,
                 'parent_nr_release_id': parent_id,
@@ -85,14 +85,14 @@ class Loader(core.MassLoader):
                 'pdb_added_count': len(current_pdbs - parent_pdbs),
                 'pdb_removed_count': len(parent_pdbs - current_pdbs)
             })
-        return counts
+        return data
 
     def data(self, *args, **kwargs):
         grouping = self.cached('nr')
         if not grouping:
             raise core.InvalidState("No grouping loaded")
 
-        parent = self.parent_id(grouping)
+        parent = self.parent_id(grouping[0]['release'])
         if not parent:
             raise core.Skip("No parent release")
 
