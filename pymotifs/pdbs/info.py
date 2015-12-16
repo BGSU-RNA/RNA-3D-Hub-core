@@ -21,7 +21,7 @@ class Loader(core.MassLoader):
     names = {
         'structureId': 'pdb_id',
         'structureTitle': 'title',
-        'experimentalTechnique': 'experimental_techinque',
+        'experimentalTechnique': 'experimental_technique',
         'depositionDate': 'deposition_date',
         'releaseDate': 'release_date',
         'revisionDate': 'revision_date',
