@@ -160,6 +160,10 @@ class InfoLoadingTest(StageTest):
         val = self.loader.load("4V4Q", "AA")
         self.assertEquals("4V4Q|AA", val.id)
 
+    def test_marks_yeast_5_8S_structured(self):
+        val = self.loader.load("4V7R", "D1")
+        self.assertTrue(val.is_structured)
+
 
 class CrossChainInteractionsTest(StageTest):
     loader_class = IfeLoader
@@ -172,4 +176,11 @@ class CrossChainInteractionsTest(StageTest):
                 IfeChain(pdb='2MKN', chain='B')]
         val = self.loader.cross_chain_interactions(ifes)
         ans = {'C': {'C': 0, 'B': 19}, 'B': {'B': 0, 'C': 19}}
+        self.assertEquals(ans, val)
+
+    def test_can_load_yeast_ribo_interactions(self):
+        ifes = [IfeChain(pdb='4V7R', chain='D1'),
+                IfeChain(pdb='4V7R', chain='D3')]
+        val = self.loader.cross_chain_interactions(ifes)
+        ans = {'D1': {'D1': 0, 'D3': 16}, 'D3': {'D1': 16, 'D3': 0}}
         self.assertEquals(ans, val)
