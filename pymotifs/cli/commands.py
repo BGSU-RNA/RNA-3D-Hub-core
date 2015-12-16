@@ -24,6 +24,8 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
     if kwargs.get('seed', None) is not None:
         random.seed(kwargs['seed'])
 
+    mod.reflect(engine)
+
     try:
         setup.expand_stage_pattern(name, 'recalculate', kwargs)
         setup.expand_stage_pattern(name, 'skip_stage', kwargs)
@@ -33,8 +35,6 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     if not ids:
         ids = setup.pdbs(config, kwargs)
-
-    mod.reflect(engine)
 
     error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
