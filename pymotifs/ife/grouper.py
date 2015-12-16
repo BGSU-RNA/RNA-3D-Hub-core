@@ -34,6 +34,7 @@ class Grouper(core.Base):
             return False
         if not ife1.is_structured or not ife2.is_structured:
             return True
+        count = float(count)
         return max(count/ife1.internal, count/ife2.internal) >= CUTOFF
 
     def parition_interactions(self, ifes, interactions):
