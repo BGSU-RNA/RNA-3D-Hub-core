@@ -211,3 +211,14 @@ class RealDataTest(StageTest):
     def test_many_ustructured_1YZ9(self):
         ans = ['1YZ9|C+1YZ9|D+1YZ9|E+1YZ9|F']
         self.assertEquals(ans, self.ids('1YZ9'))
+
+    def test_handles_yeast_ribo_4V7R(self):
+        ans = [
+            '4V7R|A1',           # SSU
+            '4V7R|B1+4V7R|B3',   # LSU/5.8S
+            '4V7R|B2',           # 5S
+            '4V7R|C1',           # SSU
+            '4V7R|D1+4V7R|D3',   # LSU/5.8S
+            '4V7R|D2'            # 5S
+        ]
+        self.assertEquals(ans, self.ids('4V7R'))
