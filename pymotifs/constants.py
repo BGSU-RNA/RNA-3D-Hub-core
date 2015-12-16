@@ -1,7 +1,7 @@
 IFE_SEPERATOR = '+'
 STRUCTURED_BP_COUNT = 5
 STRUCTURED_BP_PER_NT = 0.5
-IFE_EXTERNAL_INTERNAL_FRACTION = 1
+IFE_EXTERNAL_INTERNAL_FRACTION = 0.6
 
 """PDBS used when bootstrapping the database"""
 BOOTSTRAPPING_PDBS = (
@@ -41,5 +41,6 @@ BOOTSTRAPPING_PDBS = (
     "4V9Q",
     "4V4Q",
     "4V7W",
-    "4V9K"
+    "4V9K",
+    "4V7R",
 )
