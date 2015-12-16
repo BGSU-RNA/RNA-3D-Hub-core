@@ -48,14 +48,14 @@ def pdbs(config, options):
 
 def expand_stage_pattern(stage, key, options):
     updated = []
-    for name in options[key]:
+    for name in options.get(key, []):
         if name == '.':
             name = stage
         elif name == '*':
             updated = True
             break
 
-        if not introspect.has_stage(name):
+        if not introspect.is_stage(name):
             raise introspect.UnknownStageError(name)
 
         updated.append(name)
