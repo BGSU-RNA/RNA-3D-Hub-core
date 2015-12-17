@@ -19,15 +19,16 @@ class Loader(core.MassLoader):
         self.logger.info("No automatic removal of classes or cached data")
 
     def has_data(self, pdbs, **kwargs):
-        if not self.cached('nr'):
+        cached = self.cached('nr')
+        if not cached:
             raise core.Skip("No cached data")
 
-        helper = ReleaseLoader(self.config, self.session.maker)
-        release_id = helper.current_id()
+        release_id = cached[0]['release']
 
         with self.session() as session:
             query = session.query(NrClasses).\
-                filter_by(nr_release_id=release_id)
+                filter_by(nr_release_id=release_id).\
+                limit(1)
 
             return bool(query.count())
 
