@@ -7,11 +7,13 @@ from pymotifs.utils.alignment import align
 from pymotifs.ss.exp_seq_mapping import Loader as SsMappingLoader
 from pymotifs.ss.positions import Loader as SsPositionLoader
 from pymotifs.exp_seq.positions import Loader as ExpPositionLoader
+from pymotifs.exp_seq.mapping import Loader as ExpSeqMappingLoader
 from pymotifs.correspondence.positions import Loader as CorrPositionLoader
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([SsMappingLoader, SsPositionLoader, ExpPositionLoader])
+    dependencies = set([SsMappingLoader, SsPositionLoader, ExpPositionLoader,
+                        ExpSeqMappingLoader])
     table = mod.SsExpSeqPositionMapping
 
     def to_process(self, pdbs, **kwargs):
