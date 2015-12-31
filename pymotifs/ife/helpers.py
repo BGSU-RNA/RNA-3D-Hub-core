@@ -80,11 +80,12 @@ class IfeLoader(core.Base):
 @total_ordering
 class IfeChain(object):
     def __init__(self, pdb=None, chain=None, internal=None, length=None,
-                 full_length=None, db_id=None):
+                 full_length=None, db_id=None, bps=None):
         self.pdb = pdb
         self.chain = chain
         self.db_id = db_id
         self.internal = internal
+        self.bps = bps
         self.length = length
         self.full_length = full_length
 
@@ -102,27 +103,29 @@ class IfeChain(object):
             return None
         return self.length / self.full_length
 
+    @property
+    def bp_nt(self):
+        return float(self.bps) / float(self.length)
+
     def __comp_attrs__(self):
-        return op.attrgetter('internal', 'length', 'full_length')
+        return op.attrgetter('bps', 'internal', 'length', 'full_length')
 
     def __ne__(self, other):
         return not self == other
-
-    def __gt__(self, other):
-        if other is None:
-            return True
-        fn = self.__comp_attrs__()
-        return fn(self) > fn(other) or self.chain < other.chain
 
     def __lt__(self, other):
         if other is None:
             return False
         fn = self.__comp_attrs__()
-        return fn(self) < fn(other) or self.chain > other.chain
+        if fn(self) < fn(other):
+            return True
+        if fn(self) == fn(other):
+            return self.chain > other.chain
+        return False
 
     def __eq__(self, other):
-        fn = op.attrgetter('internal', 'length', 'full_length', 'chain')
-        return other and fn(self) == fn(other)
+        fn = self.__comp_attrs__()
+        return other and fn(self) == fn(other) and self.chain == other.chain
 
     def __hash__(self):
         return hash(self.id)
@@ -142,7 +145,10 @@ class IfeGroup(object):
 
     @property
     def id(self):
-        return IFE_SEPERATOR.join(c.id for c in self.chains())
+        if self.is_structured:
+            chains = self.chains(structured=True)
+            return IFE_SEPERATOR.join(c.id for c in chains)
+        return self.chains()[0].id
 
     def chains(self, structured=None):
         fn = lambda c: True

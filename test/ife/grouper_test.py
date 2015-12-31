@@ -1,3 +1,5 @@
+import collections as coll
+
 from test import StageTest
 from nose import SkipTest
 
@@ -73,45 +75,54 @@ class PartitingInteractionsTest(StageTest):
 class GroupingTest(StageTest):
     loader_class = IfeGrouper
 
-    def group(self, chains, interactions):
+    def grouping(self, chains, interactions):
         groups = self.loader.group(chains, interactions)
-        return [group.id for group in groups]
+        grouping = coll.defaultdict(list)
+        for group in groups:
+            for chain in group.chains():
+                grouping[chain.id].append(group.id)
+        return dict(grouping)
 
     def test_will_put_non_interacting_chains_seperately(self):
         chains = [IfeChain(internal=10, pdb='1S72', chain='A', length=10),
                   IfeChain(internal=10, pdb='1S72', chain='B', length=10)]
-        self.assertEquals(['1S72|A', '1S72|B'], self.group(chains, {}))
+        ans = {'1S72|A': ['1S72|A'], '1S72|B': ['1S72|B']}
+        self.assertEquals(ans, self.grouping(chains, {}))
 
     def test_puts_non_interactions_unstructured_chains_seperately(self):
         chains = [IfeChain(internal=0, pdb='1S72', chain='A', length=10),
                   IfeChain(internal=0, pdb='1S72', chain='B', length=10)]
-        self.assertEquals(['1S72|A', '1S72|B'], self.group(chains, {}))
+        ans = {'1S72|A': ['1S72|A'], '1S72|B': ['1S72|B']}
+        self.assertEquals(ans, self.grouping(chains, {}))
 
     def test_will_put_structured_but_interacting_chains_seperatly(self):
         chains = [IfeChain(internal=10, pdb='1S72', chain='A', length=50),
                   IfeChain(internal=10, pdb='1S72', chain='B', length=50)]
         interactions = {'A': {'B': 3}, 'B': {'A': 3}}
-        val = self.group(chains, interactions)
-        self.assertEquals(['1S72|A', '1S72|B'], val)
+        val = self.grouping(chains, interactions)
+        ans = {'1S72|A': ['1S72|A'], '1S72|B': ['1S72|B']}
+        self.assertEquals(ans, val)
 
     def test_will_join_structured_chains_if_enough_interactions(self):
         chains = [IfeChain(internal=10, pdb='1S72', chain='A', length=50),
                   IfeChain(internal=10, pdb='1S72', chain='B', length=50)]
         interactions = {'A': {'B': 30}, 'B': {'A': 30}}
-        val = self.group(chains, interactions)
-        self.assertEquals(['1S72|A+1S72|B'], val)
+        val = self.grouping(chains, interactions)
+        ans = {'1S72|A': ['1S72|A+1S72|B'], '1S72|B': ['1S72|A+1S72|B']}
+        self.assertEquals(ans, val)
 
     def test_will_join_unstructured_chains_on_interactions(self):
         chains = [IfeChain(internal=0, pdb='1S72', chain='A', length=10),
                   IfeChain(internal=0, pdb='1S72', chain='B', length=10)]
         interactions = {'A': {'B': 10}, 'B': {'A': 10}}
-        val = self.group(chains, interactions)
-        self.assertEquals(['1S72|A+1S72|B'], val)
+        val = self.grouping(chains, interactions)
+        ans = {'1S72|A': ['1S72|A'], '1S72|B': ['1S72|A']}
+        self.assertEquals(ans, val)
 
     def test_unstructured_single_chains_will_be_alone(self):
         chains = [IfeChain(internal=0, pdb='1S72', chain='A', length=10)]
-        val = self.group(chains, {})
-        self.assertEquals(['1S72|A'], val)
+        val = self.grouping(chains, {})
+        self.assertEquals({'1S72|A': ['1S72|A']}, val)
 
     def test_structured_chains_joined_only_by_unstructured_arent_joined(self):
         chains = [IfeChain(internal=10, pdb='1S72', chain='A', length=50),
@@ -122,8 +133,10 @@ class GroupingTest(StageTest):
             'B': {'A': 1, 'C': 5},
             'C': {'A': 5, 'B': 5}
         }
-        val = self.group(chains, interactions)
-        self.assertEquals(['1S72|A+1S72|C', '1S72|B+1S72|C'], val)
+        val = self.grouping(chains, interactions)
+        ans = {'1S72|A': ['1S72|A'], '1S72|B': ['1S72|B'],
+               '1S72|C': ['1S72|A', '1S72|B']}
+        self.assertEquals(ans, val)
 
     def test_structured_chains_joined_only_by_unstructureds_arent_joined(self):
         chains = [IfeChain(internal=10, pdb='1S72', chain='A', length=50),
@@ -136,8 +149,13 @@ class GroupingTest(StageTest):
             'C': {'A': 5, 'B': 5, 'D': 10},
             'D': {'A': 0, 'B': 0, 'C': 10}
         }
-        val = self.group(chains, interactions)
-        ans = ['1S72|A+1S72|C+1S72|D', '1S72|B+1S72|C+1S72|D']
+        val = self.grouping(chains, interactions)
+        ans = {
+            '1S72|A': ['1S72|A'],
+            '1S72|B': ['1S72|B'],
+            '1S72|C': ['1S72|A', '1S72|B'],
+            '1S72|D': ['1S72|A', '1S72|B'],
+        }
         self.assertEquals(ans, val)
 
     def test_structured_chains_joined_with_unstructured_are_joined(self):
@@ -149,76 +167,115 @@ class GroupingTest(StageTest):
             'B': {'A': 30, 'C': 5},
             'C': {'A': 5, 'B': 5}
         }
-        val = self.group(chains, interactions)
-        self.assertEquals(['1S72|A+1S72|B+1S72|C'], val)
+        ans = {
+            '1S72|A': ['1S72|A+1S72|B'],
+            '1S72|B': ['1S72|A+1S72|B'],
+            '1S72|C': ['1S72|A+1S72|B'],
+        }
+        val = self.grouping(chains, interactions)
+        self.assertEquals(ans, val)
 
 
 class RealDataTest(StageTest):
     loader_class = IfeGrouper
 
-    def ids(self, pdb):
-        return [g.id for g in self.loader(pdb)]
+    def grouping(self, pdb):
+        groups = self.loader(pdb)
+        grouping = coll.defaultdict(list)
+        for group in groups:
+            for chain in group.chains():
+                grouping[chain.id].append(group.id)
+        return dict(grouping)
 
     def test_1EKD_groups(self):
-        self.assertEquals(['1EKD|A+1EKD|B'], self.ids('1EKD'))
+        ans = {
+            '1EKD|A': ['1EKD|A'],
+            '1EKD|B': ['1EKD|A']
+        }
+        self.assertEquals(ans, self.grouping('1EKD'))
 
     def test_1ET4_groups(self):
-        ans = ['1ET4|A', '1ET4|B', '1ET4|C', '1ET4|D', '1ET4|E']
-        self.assertEquals(ans, self.ids('1ET4'))
+        ans = {
+            '1ET4|A': ['1ET4|A'],
+            '1ET4|B': ['1ET4|B'],
+            '1ET4|C': ['1ET4|C'],
+            '1ET4|D': ['1ET4|D'],
+            '1ET4|E': ['1ET4|E']
+        }
+        self.assertEquals(ans, self.grouping('1ET4'))
 
     def test_1FEU_groups(self):
-        ans = ['1FEU|B+1FEU|C', '1FEU|F+1FEU|E']
-        self.assertEquals(ans, self.ids('1FEU'))
+        ans = {
+            '1FEU|B': ['1FEU|C'],
+            '1FEU|C': ['1FEU|C'],
+            '1FEU|F': ['1FEU|F'],
+            '1FEU|E': ['1FEU|F'],
+        }
+        self.assertEquals(ans, self.grouping('1FEU'))
 
     def test_1F5U_groups(self):
-        ans = ['1F5U|A', '1F5U|B']
-        self.assertEquals(ans, self.ids('1F5U'))
+        ans = {
+            '1F5U|A': ['1F5U|A'],
+            '1F5U|B': ['1F5U|B']
+        }
+        self.assertEquals(ans, self.grouping('1F5U'))
 
     def test_bact_with_trna_4V42(self):
-        ans = [
-            '4V42|AA',          # Lone SSU
-            '4V42|AB+4V42|A1',  # tRNA/mRNA
-            '4V42|AC+4V42|A1',  # tRNA/mRNA
-            '4V42|AD',          # E-site tRNA
-            '4V42|BA',          # Lone LSU
-            '4V42|BB',          # Lone 5S
-        ]
-        self.assertEquals(ans, self.ids('4V42'))
+        ans = {
+            '4V42|AA': ['4V42|AA'],             # Lone SSU
+            '4V42|A1': ['4V42|AB', '4V42|AC'],  # mRNA with 2 tRNAs
+            '4V42|AB': ['4V42|AB'],             # tRNA/mRNA
+            '4V42|AC': ['4V42|AC'],             # tRNA/mRNA
+            '4V42|AD': ['4V42|AD'],             # E-site tRNA
+            '4V42|BA': ['4V42|BA'],             # Lone LSU
+            '4V42|BB': ['4V42|BB'],             # Lone 5S
+        }
+        self.assertEquals(ans, self.grouping('4V42'))
 
     def test_bact_with_duplicates_4V4Q(self):
-        ans = [
-            '4V4Q|AA',  # Lone SSU
-            '4V4Q|BA',  # Lone 5S
-            '4V4Q|BB',  # Lone LSU
-            '4V4Q|CA',  # Lone SSU
-            '4V4Q|DA',  # Lone 5S
-            '4V4Q|DB',  # Lone LSU
-        ]
-        self.assertEquals(ans, self.ids('4V4Q'))
+        ans = {
+            '4V4Q|AA': ['4V4Q|AA'],  # Lone SSU
+            '4V4Q|BA': ['4V4Q|BA'],  # Lone 5S
+            '4V4Q|BB': ['4V4Q|BB'],  # Lone LSU
+            '4V4Q|CA': ['4V4Q|CA'],  # Lone SSU
+            '4V4Q|DA': ['4V4Q|DA'],  # Lone 5S
+            '4V4Q|DB': ['4V4Q|DB'],  # Lone LSU
+        }
+
+        self.assertEquals(ans, self.grouping('4V4Q'))
 
     def test_euk_ribo_with_duplicates_4V88(self):
         raise SkipTest()
-        ans = [
-            '4V88|A2',          # SSU alone
-            '4V88|A3',          # 5S alone
-            '4V88|A4+4V88|A1',  # LSU/5.8S
-            '4V88|A8+4V88|A5',  # LSU/5.8S
-            '4V88|A6',          # SSU alone
-            '4V88|A7',          # 5S alone
-        ]
-        self.assertEquals(ans, self.ids('4V88'))
+        ans = {
+            '4V88|A2': ['4V88|A2'],          # SSU alone
+            '4V88|A3': ['4V88|A3'],          # 5S alone
+            '4V88|A1': ['4V88|A4+4V88|A1'],  # LSU/5.8S
+            '4V88|A4': ['4V88|A4+4V88|A1'],  # LSU/5.8S
+            '4V88|A5': ['4V88|A8+4V88|A5'],  # LSU/5.8S
+            '4V88|A8': ['4V88|A8+4V88|A5'],  # LSU/5.8S
+            '4V88|A6': ['4V88|A6'],          # SSU alone
+            '4V88|A7': ['4V88|A7'],          # 5S alone
+        }
+        self.assertEquals(ans, self.grouping('4V88'))
 
     def test_many_ustructured_1YZ9(self):
-        ans = ['1YZ9|C+1YZ9|D+1YZ9|E+1YZ9|F']
-        self.assertEquals(ans, self.ids('1YZ9'))
+        ans = {
+            '1YZ9|C': ['1YZ9|C'],
+            '1YZ9|D': ['1YZ9|C'],
+            '1YZ9|E': ['1YZ9|C'],
+            '1YZ9|F': ['1YZ9|C']
+        }
+        self.assertEquals(ans, self.grouping('1YZ9'))
 
     def test_handles_yeast_ribo_4V7R(self):
-        ans = [
-            '4V7R|A1',           # SSU
-            '4V7R|B1+4V7R|B3',   # LSU/5.8S
-            '4V7R|B2',           # 5S
-            '4V7R|C1',           # SSU
-            '4V7R|D1+4V7R|D3',   # LSU/5.8S
-            '4V7R|D2'            # 5S
-        ]
-        self.assertEquals(ans, self.ids('4V7R'))
+        ans = {
+            '4V7R|A1': ['4V7R|A1'],           # SSU
+            '4V7R|B3': ['4V7R|B1+4V7R|B3'],   # LSU/5.8S
+            '4V7R|B1': ['4V7R|B1+4V7R|B3'],   # LSU/5.8S
+            '4V7R|B2': ['4V7R|B2'],           # 5S
+            '4V7R|C1': ['4V7R|C1'],           # SSU
+            '4V7R|D3': ['4V7R|D1+4V7R|D3'],   # LSU/5.8S
+            '4V7R|D1': ['4V7R|D1+4V7R|D3'],   # LSU/5.8S
+            '4V7R|D2': ['4V7R|D2']            # 5S
+        }
+        self.assertEquals(ans, self.grouping('4V7R'))

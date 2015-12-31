@@ -64,6 +64,15 @@ class IfeChainTest(TestCase):
         self.assertFalse(ife1 == ife2)
         self.assertTrue(ife2 > ife1)
 
+    def test_it_sorts_by_chain_and_internal(self):
+        ife1 = IfeChain(pdb='0111', chain='A', internal=5)
+        ife2 = IfeChain(pdb='0111', chain='D', internal=6)
+        self.assertTrue(ife1 < ife2)
+        self.assertTrue(ife1 <= ife2)
+        self.assertTrue(ife2 > ife1)
+        self.assertTrue(ife2 >= ife1)
+        self.assertTrue(ife2 != ife1)
+
 
 class IfeGroupTest(TestCase):
     def test_knows_if_structured_if_has_structured_chain(self):
@@ -82,15 +91,27 @@ class IfeGroupTest(TestCase):
         self.assertEquals(2, len(val))
 
     def test_has_an_id(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4),
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=5),
                        IfeChain(pdb='0111', chain='C', internal=0))
-        self.assertEquals('0111|A+0111|C', val.id)
+        self.assertEquals('0111|A', val.id)
+
+    def test_uses_structured_only_in_id(self):
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=5),
+                       IfeChain(pdb='0111', chain='C', internal=0),
+                       IfeChain(pdb='0111', chain='D', internal=6))
+        self.assertEquals('0111|D+0111|A', val.id)
+
+    def test_if_no_structured_in_id_uses_first(self):
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=2),
+                       IfeChain(pdb='0111', chain='C', internal=0),
+                       IfeChain(pdb='0111', chain='D', internal=2))
+        self.assertEquals('0111|A', val.id)
 
     def test_duplicate_additions_do_nothing(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4),
                        IfeChain(pdb='0111', chain='C', internal=0))
         val.add(IfeChain(pdb='0111', chain='A', internal=4))
-        self.assertEquals('0111|A+0111|C', val.id)
+        self.assertEquals('0111|A', val.id)
 
     def test_dispatches_length_to_integral(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4, length=5))
