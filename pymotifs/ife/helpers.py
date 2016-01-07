@@ -43,6 +43,7 @@ class IfeLoader(core.Base):
         rep = helper.representative
         data['internal'] = rep(data['pdb'], data['chain'], count=True,
                                family='cWW')
+        data['bps'] = rep(data['pdb'], data['chain'], count=True)
 
         return IfeChain(**data)
 
