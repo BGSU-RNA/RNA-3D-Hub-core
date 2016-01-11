@@ -95,6 +95,7 @@ def cli(ctx, **options):
 @click.option('--exclude', multiple=True, type=PDB,
               help='Excluded PDB(s)')
 @click.option('--ignore-time', is_flag=True, help='Ignore time for rerunning')
+@click.option('--use-pdb', is_flag=True, help='Use PDB files instead of cif')
 @click.argument('name')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context
