@@ -239,8 +239,10 @@ class Grouper(core.Base):
         for chain in chains:
             db_id = chain['db_id']
             if db_id in mapping:
-                raise core.InvalidState("Cannot build mapping, duplicated %i",
-                                        db_id)
+                self.logger.error("db_id of entry already in mapping")
+                self.logger.error("Entry: %s", chain)
+                self.logger.error("Mapping: %s", mapping)
+                raise core.InvalidState("Invalid mapping duplicated %i", db_id)
             mapping[db_id] = chain
 
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
