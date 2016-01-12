@@ -4,6 +4,7 @@ import collections as coll
 
 from pymotifs import core
 from pymotifs.utils import result2dict
+from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 
 from pymotifs.models import PdbInfo
 from pymotifs.models import ChainInfo
@@ -48,10 +49,6 @@ class Grouper(core.Base):
     does make a note about those other chains.
     """
 
-    cutoffs = {
-        'discrepancy': 0.5
-    }
-
     def ifes(self, pdb):
         """Load all ife chains from a given pdb. This will get the RNA chains as
         well as load some interaction data about the chains.
@@ -62,15 +59,15 @@ class Grouper(core.Base):
         """
 
         with self.session() as session:
-            query = session.query(ChainInfo.pdb_id.label('pdb'),
-                                  ChainInfo.chain_length.label('length'),
-                                  ChainInfo.sequence,
+            query = session.query(ChainInfo.sequence,
                                   ChainInfo.chain_name.label('name'),
                                   IfeChains.chain_id.label('db_id'),
                                   IfeChains.is_integral,
                                   IfeChains.is_accompanying,
                                   IfeInfo.ife_id.label('id'),
                                   IfeInfo.bp_count.label('bp'),
+                                  IfeInfo.pdb_id.label('pdb'),
+                                  IfeInfo.length,
                                   PdbInfo.resolution,
                                   ChainSpecies.species_id.label('source')).\
                 join(IfeInfo,
@@ -82,7 +79,7 @@ class Grouper(core.Base):
                      PdbInfo.pdb_id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.chain_id).\
-                filter(ChainInfo.pdb_id == pdb).\
+                filter(IfeInfo.pdb_id == pdb).\
                 filter(IfeInfo.length != None).\
                 order_by(IfeChains.ife_id, IfeChains.index)
 
@@ -193,7 +190,7 @@ class Grouper(core.Base):
                               group1['id'], group2['id'])
             return False
 
-        if discrepancy[db_id2] > self.cutoffs['discrepancy']:
+        if discrepancy[db_id2] > NR_DISCREPANCY_CUTOFF:
             self.logger.debug("Splitting %s %s: Too large discrepancy %f",
                               group1['id'], group2['id'], discrepancy[db_id2])
             return False
