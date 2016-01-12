@@ -84,7 +84,7 @@ class Grouper(core.Base):
                      ChainSpecies.chain_id == ChainInfo.chain_id).\
                 filter(ChainInfo.pdb_id == pdb).\
                 filter(IfeInfo.length != None).\
-                order_by(IfeChains.ife_id)
+                order_by(IfeChains.ife_id, IfeChains.index)
 
             if query.count() == 0:
                 self.logger.warn("No ifes found for %s" % pdb)
@@ -93,13 +93,10 @@ class Grouper(core.Base):
             grouped = it.groupby(it.imap(result2dict, query),
                                  lambda g: g['id'])
             groups = []
-            key = lambda c: (c['is_integral'], -1 * c['is_accompanying'],
-                             c['name'])
-            for group_id, chains in grouped:
-                chains = sorted(chains, key=key)
-                chains = list(reversed(chains))
+            for ife_id, chains in grouped:
+                chains = list(chains)
                 groups.append({
-                    'id':  group_id,
+                    'id':  ife_id,
                     'pdb': chains[0]['pdb'],
                     'bp': chains[0]['bp'],
                     'name': chains[0]['name'],

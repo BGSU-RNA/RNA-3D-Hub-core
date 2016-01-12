@@ -289,6 +289,38 @@ class LoadingIfeTest(StageTest):
         self.assertEquals(val['db_id'], val['chains'][0]['db_id'])
         self.assertEquals(1149, val['db_id'])
 
+    def test_sorts_ife_chains_by_stored_index(self):
+        ife = self.data[3]
+        self.assertEquals(ife['id'], '4V9Q|BV,4V9Q|BX')
+        val = [c['name'] for c in ife['chains']]
+        ans = ['BV', 'BX']
+        self.assertEquals(ans, val)
+
+    def test_builds_correct_ife_to_chain_mappings(self):
+        val = {}
+        for ife in self.data:
+            val[ife['id']] = []
+            for chain in ife['chains']:
+                val[ife['id']].append(chain['name'])
+        ans = {
+            '4V9Q|AA': ['AA'],
+            '4V9Q|AB': ['AB'],
+            '4V9Q|BA': ['BA'],
+            '4V9Q|BV,4V9Q|BX': ['BV', 'BX'],
+            '4V9Q|BW': ['BW'],
+            '4V9Q|CA': ['CA'],
+            '4V9Q|CB': ['CB'],
+            '4V9Q|DA': ['DA'],
+            '4V9Q|DV,4V9Q|DX': ['DV', 'DX'],
+            '4V9Q|DW': ['DW'],
+        }
+        self.assertEquals(ans, val)
+
+    def test_does_not_duplicate_ifes(self):
+        ifes = self.loader.ifes('1A34')
+        val = set(ife['db_id'] for ife in ifes)
+        self.assertEquals(2, len(val))
+
 
 class PairsTest(StageTest):
     loader_class = Grouper
