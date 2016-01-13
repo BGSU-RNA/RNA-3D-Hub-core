@@ -27,7 +27,7 @@ class Loader(core.SimpleLoader):
             chain_count=len(group),
             structured_chain_count=len(group.chains(structured=True)),
             length=group.full_length,
-            bp_count=group.internal)
+            bp_count=group.bps)
 
         for index, chain in enumerate(group.chains()):
             reference = (index == 0)
