@@ -132,6 +132,18 @@ class IfeGroupTest(TestCase):
                                 full_length=5))
         self.assertEquals('0111', val.pdb)
 
+    def test_dispatches_bps_to_integral(self):
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=100,
+                                full_length=5, bps=120),
+                       IfeChain(pdb='0111', chain='B', internal=10,
+                                full_length=5, bps=12))
+        self.assertEquals(120, val.bps)
+
+    def test_getattr_complains_if_missing_key(self):
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4,
+                                full_length=5))
+        self.assertRaises(AttributeError, lambda: val.bob)
+
     def test_uses_most_bp_chain_as_integral(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4),
                        IfeChain(pdb='0111', chain='C', internal=0))

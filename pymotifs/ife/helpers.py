@@ -175,7 +175,7 @@ class IfeGroup(object):
             if self.integral:
                 return getattr(self.integral, key)
             return None
-        super(IfeGroup, self).__getattr__(key)
+        raise AttributeError(key)
 
     def __len__(self):
         return len(self._chains)
