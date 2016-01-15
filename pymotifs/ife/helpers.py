@@ -171,7 +171,7 @@ class IfeGroup(object):
 
     def __getattr__(self, key):
         if key in set(['pdb', 'internal', 'full_length', 'length',
-                       'completeness']):
+                       'completeness', 'bps']):
             if self.integral:
                 return getattr(self.integral, key)
             return None
