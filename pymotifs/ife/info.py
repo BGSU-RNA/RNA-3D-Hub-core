@@ -26,7 +26,7 @@ class Loader(core.SimpleLoader):
             pdb_id=group.pdb,
             chain_count=len(group),
             structured_chain_count=len(group.chains(structured=True)),
-            length=group.full_length,
+            length=group.length,
             bp_count=group.bps)
 
         for index, chain in enumerate(group.chains()):
