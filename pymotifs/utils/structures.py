@@ -306,7 +306,7 @@ class BasePairQueries(Base):
         :session: A database session.
         :pdb: The pdb id.
         :chain: The chain(s) to query.
-        :symmetry: If we should care about symmetric base pairs.
+        :symmetry: If we should try to deduplicate symmetric basepairs.
         :near: If we should allow near interactions.
         :family: The family(ies) to limit the query to.
         :returns: A query.
