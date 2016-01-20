@@ -43,6 +43,10 @@ BOOTSTRAPPING_PDBS = (
     "4V7W",
     "4V9K",
     "4V7R",
+    "2QQP",
+    "1MDG",
+    "4PMI",
+    "1A34",
 )
 
 NR_DISCREPANCY_CUTOFF = 0.5
