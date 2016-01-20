@@ -139,6 +139,13 @@ class IfeGroupTest(TestCase):
                                 full_length=5, bps=12))
         self.assertEquals(120, val.bps)
 
+    def test_dispatches_model_to_integral(self):
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=100,
+                                full_length=5, model=2),
+                       IfeChain(pdb='0111', chain='B', internal=10,
+                                full_length=5, model=10))
+        self.assertEquals(2, val.model)
+
     def test_getattr_complains_if_missing_key(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4,
                                 full_length=5))
@@ -197,12 +204,34 @@ class InfoLoadingTest(StageTest):
         val = self.loader.load("4V7R", "D1")
         self.assertTrue(val.is_structured)
 
+    def test_can_load_correct_counts_with_sym_ops(self):
+        val = self.loader.load('2QQP', 'R')
+        self.assertEquals(val.length, 4)
+
+    def test_can_load_bps_with_sym_ops(self):
+        val = self.loader.load('1MDG', 'A')
+        self.assertEquals(val.bps, 0)
+
+    def test_can_load_correct_cww_with_sym_ops(self):
+        val = self.loader.load('4PMI', 'A')
+        self.assertEquals(val.length, 40)
+        self.assertEquals(val.internal, 15)
+        self.assertEquals(val.bps, 17)
+
+    def test_can_load_chains_with_viral_sym_ops(self):
+        ifes, inters = self.loader('1A34')
+        names = [ife.chain for ife in ifes]
+        bps = [ife.bps for ife in ifes]
+        internal = [ife.internal for ife in ifes]
+        self.assertEquals(['B', 'C'], names)
+        self.assertEquals([0, 0], internal)
+        self.assertEquals([0, 0], bps)
+        ans = {'B': {'B': 0, 'C': 9}, 'C': {'B': 9, 'C': 0}}
+        self.assertEquals(ans, inters)
+
 
 class CrossChainInteractionsTest(StageTest):
     loader_class = IfeLoader
-
-    def test_gets_cross_chain_between_all_chains(self):
-        raise SkipTest()
 
     def test_loads_interactions_symmetrically(self):
         ifes = [IfeChain(pdb='2MKN', chain='C'),
@@ -217,3 +246,34 @@ class CrossChainInteractionsTest(StageTest):
         val = self.loader.cross_chain_interactions(ifes)
         ans = {'D1': {'D1': 0, 'D3': 16}, 'D3': {'D1': 16, 'D3': 0}}
         self.assertEquals(ans, val)
+
+    def test_can_load_correct_with_sym_ops(self):
+        ifes = [IfeChain(pdb='1A34', chain='B'),
+                IfeChain('1A34', chain='C')]
+        val = self.loader.cross_chain_interactions(ifes, sym_op='P_1')
+        ans = {'B': {'B': 0, 'C': 9}, 'C': {'B': 9, 'C': 0}}
+        self.assertEquals(ans, val)
+
+
+class SymOpTest(StageTest):
+    loader_class = IfeLoader
+
+    def test_if_one_picks_first(self):
+        val = self.loader.sym_op("4V4Q")
+        self.assertEquals(val, '1_555')
+
+    def test_picks_a_sym_op(self):
+        val = self.loader.sym_op('4PMI')
+        self.assertEquals(val, '1_555')
+
+
+class BestModelsTest(StageTest):
+    loader_class = IfeLoader
+
+    def test_with_one_model_picks_first(self):
+        val = self.loader.best_model('4PMI', '1_555')
+        self.assertEquals(val, 1)
+
+    def test_it_picks_model_with_most_bps(self):
+        val = self.loader.best_model('1E4P', '1_555')
+        self.assertEquals(val, 8)

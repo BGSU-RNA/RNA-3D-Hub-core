@@ -217,8 +217,9 @@ class BasePairQueries(Base):
     for ease of use.
     """
 
-    def representative(self, pdb, chain, count=False, range_cutoff=None,
-                       near=False, family=None):
+    def representative(self, pdb, chain, model=1, count=False,
+                       range_cutoff=None, near=False, family=None,
+                       sym_op='1_555'):
         """This gets all forward interactions within a chain. This means we get
         only the interactions which are either non-symmetric (tWH) or the
         symmetric ones where unit 1 id < unit 2 id.
@@ -234,7 +235,8 @@ class BasePairQueries(Base):
 
         with self.session() as session:
             u1, u2, query = self.__base__(session, pdb, chain, near=near,
-                                          family=family)
+                                          family=family, model=model,
+                                          sym_op=sym_op)
 
             query = query.filter(u1.chain == u2.chain)
 
@@ -246,7 +248,7 @@ class BasePairQueries(Base):
             return [result for result in query]
 
     def cross_chain(self, pdb, chain, other_chain=None, count=False,
-                    near=False, family=None):
+                    near=False, family=None, model=1, sym_op='1_555'):
         """This method gets all interactions between on chain and another
         chain. If no other chain is specified then we go to any other chain.
         This will get all interactions
@@ -262,7 +264,8 @@ class BasePairQueries(Base):
 
         with self.session() as session:
             u1, u2, query = self.__base__(session, pdb, chain, near=near,
-                                          family=family, symmetry=False)
+                                          family=family, symmetry=False,
+                                          model=model, sym_op=sym_op)
             query = query.filter(u2.chain != u1.chain)
 
             if other_chain is not None:
@@ -275,7 +278,8 @@ class BasePairQueries(Base):
                 return query.count()
             return [result for result in query]
 
-    def between(self, pdb, chains, near=False, count=False, family=None):
+    def between(self, pdb, chains, near=False, count=False, family=None,
+                model=1, sym_op='1_555'):
         """This is a method to get the interactions between a list of chains.
         This is like a cross chain interaction but more general. Cross chain
         can be from A to B or C but not between B and C. This allows for
@@ -290,7 +294,8 @@ class BasePairQueries(Base):
 
         with self.session() as session:
             u1, u2, query = self.__base__(session, pdb, chains, near=near,
-                                          family=family)
+                                          family=family, model=model,
+                                          sym_op=sym_op)
             query = query.\
                 filter(u2.chain != u1.chain).\
                 filter(u2.chain.in_(chains))
@@ -300,7 +305,7 @@ class BasePairQueries(Base):
             return [result for result in query]
 
     def __base__(self, session, pdb, chain, symmetry=True, near=False,
-                 family=None):
+                 family=None, model=1, sym_op='1_555'):
         """A method to build the base queries for this class.
 
         :session: A database session.
@@ -323,7 +328,11 @@ class BasePairQueries(Base):
             join(bp, bp.bp_family_id == inter.f_lwbp).\
             filter(bp.is_forward == True).\
             filter(u1.model == u2.model).\
-            filter(inter.pdb_id == pdb)
+            filter(inter.pdb_id == pdb).\
+            filter(u1.sym_op == u2.sym_op).\
+            filter(u1.model == u2.model).\
+            filter(u1.model == model).\
+            filter(u1.sym_op == sym_op)
 
         if symmetry:
             query = query.filter((bp.is_symmetric == False) |
@@ -340,7 +349,7 @@ class BasePairQueries(Base):
 
         if isinstance(chain, list):
             query = query.filter(u1.chain.in_(chain))
-        else:
+        elif chain:
             query = query.filter(u1.chain == chain)
 
         return u1, u2, query

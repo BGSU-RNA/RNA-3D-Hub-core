@@ -1,6 +1,9 @@
 import itertools as it
+import functools as ft
 import collections as coll
 import operator as op
+
+from sqlalchemy.sql.expression import func
 
 from pymotifs import core
 from pymotifs import utils as ut
@@ -12,7 +15,51 @@ from pymotifs.utils.sorting import total_ordering
 
 
 class IfeLoader(core.Base):
-    def load(self, pdb, chain):
+
+    def best_model(self, pdb, sym_op):
+        """Determine what model to use for ifes. We will use the model with the
+        most basepairs. It tiebreaks on model number, lower is better.
+
+        :pdb: The pdb id to use.
+        :sym_op: The symmetry operator to use.
+        :returns: The model number to use.
+        """
+
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.model).\
+                filter_by(pdb_id=pdb).\
+                distinct()
+            models = [result.model for result in query]
+            if not models:
+                raise core.InvalidState("No models found for %s", pdb)
+            if len(models) == 1:
+                return models[0]
+
+        helper = st.BasePairQueries(self.session)
+        count = ft.partial(helper.representative, pdb, None, count=True,
+                           sym_op=sym_op)
+        models = [(count(model=model), -1 * model) for model in models]
+        return -1 * max(models)[1]
+
+    def sym_op(self, pdb):
+        """Pick a symmetry operator to work with. It doesn't really matter
+        which one we use since they all have the same interactions by
+        definition. So we just get all distinct and take the first. That is
+        good enough.
+
+        :param str pdb: The pdb id to use.
+        :returns: The name of the symmetry operator.
+        """
+
+        with self.session() as session:
+            return session.query(mod.UnitInfo.sym_op).\
+                filter_by(pdb_id=pdb).\
+                distinct().\
+                limit(1).\
+                one().\
+                sym_op
+
+    def load(self, pdb, chain, model=1, sym_op='1_555'):
         """This loads all information about a chain into a dictionary. This
         will load generic information about a chain, such as resolved, length,
         database id, the source and information about basepairing. The
@@ -34,20 +81,26 @@ class IfeLoader(core.Base):
             data = ut.result2dict(query.one())
 
         with self.session() as session:
-            query = session.query(mod.UnitInfo.unit_id).\
+            query = session.query(mod.UnitInfo.sym_op,
+                                  func.count(1).label('count'),
+                                  ).\
                 filter_by(pdb_id=data['pdb'], chain=data['chain'],
-                          unit_type_id='rna')
-            data['length'] = query.count()
+                          model=model, unit_type_id='rna').\
+                group_by(mod.UnitInfo.sym_op).\
+                limit(1)
+            result = query.one()
+            data['length'] = result.count
 
         helper = st.BasePairQueries(self.session)
         rep = helper.representative
         data['internal'] = rep(data['pdb'], data['chain'], count=True,
-                               family='cWW')
-        data['bps'] = rep(data['pdb'], data['chain'], count=True)
+                               family='cWW', sym_op=result.sym_op)
+        data['bps'] = rep(data['pdb'], data['chain'], count=True,
+                          sym_op=sym_op)
 
         return IfeChain(**data)
 
-    def cross_chain_interactions(self, ifes):
+    def cross_chain_interactions(self, ifes, sym_op='1_555'):
         """Create a dictionary of the interactions between the listed chains.
         This will get only the counts.
 
@@ -62,9 +115,10 @@ class IfeLoader(core.Base):
         helper = st.BasePairQueries(self.session)
         interactions = coll.defaultdict(dict)
         pairs = it.product((ife.chain for ife in ifes), repeat=2)
-        counter = helper.cross_chain
+        counter = ft.partial(helper.cross_chain, pdb, count=True, family='cWW',
+                             sym_op=sym_op)
         for name1, name2 in pairs:
-            count = counter(pdb, name1, name2, count=True, family='cWW')
+            count = counter(name1, name2)
             if name1 == name2:
                 count = 0L
             interactions[name1][name2] = count
@@ -74,14 +128,17 @@ class IfeLoader(core.Base):
     def __call__(self, pdb):
         helper = st.Structure(self.session.maker)
         names = helper.rna_chains(pdb)
-        ifes = [self.load(pdb, name) for name in names]
-        return ifes, self.cross_chain_interactions(ifes)
+        sym_op = self.sym_op(pdb)
+        model = self.best_model(pdb, sym_op)
+        load = ft.partial(self.load, pdb, model=model, sym_op=sym_op)
+        ifes = [load(name) for name in names]
+        return ifes, self.cross_chain_interactions(ifes, sym_op=sym_op)
 
 
 @total_ordering
 class IfeChain(object):
     def __init__(self, pdb=None, chain=None, internal=None, length=None,
-                 full_length=None, db_id=None, bps=None):
+                 full_length=None, db_id=None, bps=None, model=None):
         self.pdb = pdb
         self.chain = chain
         self.db_id = db_id
@@ -89,6 +146,7 @@ class IfeChain(object):
         self.bps = bps
         self.length = length
         self.full_length = full_length
+        self.model = model
 
     @property
     def id(self):
@@ -171,7 +229,7 @@ class IfeGroup(object):
 
     def __getattr__(self, key):
         if key in set(['pdb', 'internal', 'full_length', 'length',
-                       'completeness', 'bps']):
+                       'completeness', 'bps', 'model']):
             if self.integral:
                 return getattr(self.integral, key)
             return None

@@ -45,12 +45,25 @@ class RepresentativeBpTest(QueryUtilTest):
         self.assertEquals(ans, val)
 
     @skip_without_matlab
+    def test_can_load_cWW_given_symmetry_ops(self):
+        val = self.db_obj.representative('4PMI', 'A', count=True, family='cWW',
+                                         sym_op='6_445')
+        self.assertEquals(val, 15)
+
+    @skip_without_matlab
+    def test_can_load_all_given_symmetry_ops(self):
+        val = self.db_obj.representative('4PMI', 'A', count=True,
+                                         sym_op='6_445')
+        self.assertEquals(val, 17)
+
+    @skip_without_matlab
     def test_it_counts_only_in_one_model(self):
         raise SkipTest()
 
     @skip_without_matlab
-    def test_it_counts_only_in_one_symmetry_operator(self):
-        raise SkipTest()
+    def test_it_can_count_whole_structure(self):
+        val = self.db_obj.representative('4PMI', None, count=True)
+        self.assertEquals(val, 17)
 
 
 class CrossChainTest(QueryUtilTest):
@@ -63,15 +76,15 @@ class CrossChainTest(QueryUtilTest):
         self.assertEquals(ans, val)
 
     @skip_without_matlab
-    def test_counts_from_a_chosen_loop(self):
+    def test_counts_from_a_chosen_chain(self):
         val = self.db_obj.cross_chain('1ET4', 'A', count=True)
         ans = 3
         self.assertEquals(ans, val)
 
     @skip_without_matlab
-    def test_counts_from_several_chosen_loops(self):
+    def test_counts_from_several_chosen_chains(self):
         val = self.db_obj.cross_chain('1ET4', ['A', 'B'], count=True)
-        ans = 4
+        ans = 6
         self.assertEquals(ans, val)
 
     @skip_without_matlab
@@ -121,9 +134,9 @@ class BetweenChainTest(QueryUtilTest):
         self.assertEquals(ans, val)
 
     @skip_without_matlab
-    def test_counts_from_several_chosen_loops(self):
+    def test_counts_from_several_chosen_chains(self):
         val = self.db_obj.cross_chain('1ET4', ['A', 'B'], count=True)
-        ans = 4
+        ans = 6
         self.assertEquals(ans, val)
 
     @skip_without_matlab
