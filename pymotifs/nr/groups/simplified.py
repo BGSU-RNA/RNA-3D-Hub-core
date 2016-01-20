@@ -80,7 +80,7 @@ class Grouper(core.Base):
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.chain_id).\
                 filter(IfeInfo.pdb_id == pdb).\
-                filter(IfeInfo.length != None).\
+                filter(IfeInfo.new_style == True).\
                 order_by(IfeChains.ife_id, IfeChains.index)
 
             if query.count() == 0:
@@ -104,6 +104,10 @@ class Grouper(core.Base):
                     'resolution': chains[0]['resolution'],
                 })
 
+        if not groups:
+            raise core.InvalidState("No stored ifes for %s", pdb)
+
+        self.logger.info("Found %i ifes for %s", len(groups), pdb)
         return groups
 
     def discrepancy(self, groups):
@@ -180,6 +184,9 @@ class Grouper(core.Base):
     def has_good_discrepancy(self, all_discrepancy, group1, group2):
         db_id1 = group1['db_id']
         db_id2 = group2['db_id']
+        if not all_discrepancy:
+            return True
+
         if db_id1 not in all_discrepancy:
             self.logger.warning("No computed discrepancy for %s", group1['id'])
             return True
@@ -242,12 +249,29 @@ class Grouper(core.Base):
                 raise core.InvalidState("Invalid mapping duplicated %i", db_id)
             mapping[db_id] = chain
 
+        def is_mapped(index):
+            def fn(p):
+                known = p[index] in mapping
+                if not known:
+                    self.logger.warning("Unmapped db_id %i", p[index])
+                return known
+            return fn
+
+        missing = it.imap(lambda c: c['db_id'], chains)
+        missing = it.ifilterfalse(lambda c: c in alignments, missing)
+        missing = it.product(missing, repeat=2)
+        missing = list(missing)
+        self.logger.info("Detected %i chains not in alignments", len(missing))
+
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
-        pairs = alignments.iteritems()
-        pairs = it.imap(lambda (k, v): it.izip(it.repeat(k), v.keys()), pairs)
-        pairs = it.chain.from_iterable(pairs)
-        pairs = it.ifilter(lambda p: p[0] in mapping, pairs)
-        pairs = it.ifilter(lambda p: p[1] in mapping, pairs)
+        # pairs = alignments.iteritems()
+        # pairs = it.imap(lambda (k, v): it.izip(it.repeat(k), v.keys()), pairs)
+        # pairs = it.chain.from_iterable(pairs)
+        # pairs = it.chain(pairs, missing)
+        pairs = it.imap(lambda c: c['db_id'], chains)
+        pairs = it.product(pairs, repeat=2)
+        pairs = it.ifilter(is_mapped(0), pairs)
+        pairs = it.ifilter(is_mapped(1), pairs)
         pairs = it.imap(lambda p: (mapping[p[0]], mapping[p[1]]), pairs)
         pairs = it.ifilter(lambda p: p[0] == p[1] or equiv(*p), pairs)
 
@@ -270,6 +294,7 @@ class Grouper(core.Base):
             graph[chain1['id']].add(chain2['id'])
             graph[chain2['id']].add(chain1['id'])
 
+        self.logger.info("Created %i connections", len(graph))
         groups = []
         for ids in cs.find_connected(graph).values():
             self.validate(graph, list(ids))
@@ -288,6 +313,7 @@ class Grouper(core.Base):
         'rank' which indicates the rank of the chain.
         """
 
+        self.logger.info("Will group %i pdbs", len(pdbs))
         ifes = it.imap(self.ifes, pdbs)
         ifes = list(it.chain.from_iterable(ifes))
         if not ifes:
@@ -312,6 +338,12 @@ class Grouper(core.Base):
 
             groups.append({'members': members})
 
-        self.logger.info("Created %i groups", len(groups))
+
+        grouped_count = it.imap(lambda g: len(g['members']), groups)
+        grouped_count = sum(grouped_count)
+        if grouped_count != len(ifes):
+            raise core.InvalidState("Only %i of %i ifes were grouped" % (grouped_count, len(ifes)))
+
+        self.logger.info("Created %i groups with %i ifes", len(groups), grouped_count)
 
         return groups

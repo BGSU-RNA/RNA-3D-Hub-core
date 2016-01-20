@@ -67,9 +67,21 @@ class Builder(core.Base):
         """Compute the naming and parents of all groups.
         """
 
+        ife_count = it.imap(lambda g: len(g['members']), groups)
+        ife_count = sum(ife_count)
+
+        self.logger.info("Naming %i groups with %i ifes", len(groups), ife_count)
         namer = Namer(self.config, self.session)
         handles = self.known_handles()
-        return namer(groups, parents, handles)
+        named = namer(groups, parents, handles)
+
+        named_count = it.imap(lambda g: len(g['members']), named)
+        named_count = sum(named_count)
+        if named_count != ife_count:
+            raise core.InvalidState("Missing named ifes")
+        self.logger.info("Named %i groups with %i ifes", len(named), named_count)
+
+        return named
 
     def within_cutoff(self, group, cutoff):
         """Filter the group to produce a new one where all members of the group
@@ -90,6 +102,7 @@ class Builder(core.Base):
             filtered = it.ifilter(lambda c: c['resolution'] <= float(cutoff),
                                   filtered)
         filtered = list(filtered)
+        self.logger.info("Filter %s %s %i/%i", group['name']['handle'], cutoff, len(filtered), len(chains))
 
         if not filtered:
             return {}
@@ -160,6 +173,8 @@ class Builder(core.Base):
         :resolutions: Resolution groups to create a class for.
         :returns: A list of nr classes with their memebers and parents.
         """
+
+        self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
         known = self.load_classes_in_release(current)
         groups = self.group(pdbs)

@@ -144,4 +144,5 @@ class Grouper(core.Base):
         groups = self.group(chains, interactions)
         if not groups:
             raise core.InvalidState("No ifes found for %s" % pdb)
+        self.logger.debug("Created %i groups for %s", len(groups), pdb)
         return groups

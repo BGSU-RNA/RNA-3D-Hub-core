@@ -105,6 +105,7 @@ class Namer(core.Base):
         named = []
         for group in groups:
             parents = self.parents(group, parent_groups)
+            self.logger.info("Group with %i members", len(group['members']))
 
             # No overlaps means new group thus new name
             name = {}
@@ -124,7 +125,12 @@ class Namer(core.Base):
             named_group['parents'] = [p['group'] for p in parents]
             named_group['comment'] = name.pop('comment')
             named_group['name'] = dict(name)
+            self.logger.info("Named group with %i members", len(named_group['members']))
+
             named.append(named_group)
             handles.add(named_group['name']['handle'])
+
+        if len(named) != len(groups):
+            raise core.InvalidState("Missing groups in naming")
 
         return named
