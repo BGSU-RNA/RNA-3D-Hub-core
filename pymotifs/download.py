@@ -33,13 +33,13 @@ class Downloader(core.Loader):
 
     def filename(self, name, **kwargs):
         ext = 'cif'
-        if kwargs['use_pdb']:
+        if kwargs.get('use_pdb'):
             ext = 'pdb'
         return os.path.join(self.location, name + '.' + ext)
 
     def url(self, name, **kwargs):
         ext = 'cif'
-        if kwargs['use_pdb']:
+        if kwargs.get('use_pdb'):
             ext = 'pdb'
         return '%s/%s.%s.gz' % (self.file_url, name, ext)
 
