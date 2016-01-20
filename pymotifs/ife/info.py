@@ -25,9 +25,13 @@ class Loader(core.SimpleLoader):
             ife_id=group.id,
             pdb_id=group.pdb,
             chain_count=len(group),
+            has_structured=bool(group.is_structured),
+            has_integral=bool(group.integral),
+            has_accompanying=len(group.chains()) > 1,
             structured_chain_count=len(group.chains(structured=True)),
             length=group.length,
-            bp_count=group.bps)
+            bp_count=group.bps,
+            new_style=True)
 
         for index, chain in enumerate(group.chains()):
             reference = (index == 0)
