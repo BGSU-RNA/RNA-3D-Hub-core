@@ -28,7 +28,13 @@ class Loader(core.Stage):
         """
 
         with self.session() as session:
-            query = session.query(Info)
+            subquery = session.query(Position.correspondence_id).\
+                distinct().\
+                subquery()
+
+            query = session.query(Info).\
+                join(subquery,
+                     subquery.c.correspondence_id == Info.correspondence_id)
             return [result.correspondence_id for result in query]
 
     def should_process(self, corr_id, **kwargs):
