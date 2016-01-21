@@ -54,13 +54,13 @@ class RnaPdbsHelper(object):
         other molecules are present. Given more than 1 of the other options it
         will and them all together.
 
-        :contains: A dictonary containing any of rna, dna, protein and hybrid,
-        where a value of True means the must contain that type of molecule,
-        False meaning it should not and None (or not present) meaning ignore.
-        Also if strings are given as values those will be used directly.
-        :dates: A tuple of the start and end dates to limit the search to. If
-        no start or end date is desired None, or some other falsey value should
-        be used.
+        :param dict contains: A dictonary containing any of rna, dna, protein
+        and hybrid, where a value of True means the must contain that type of
+        molecule, False meaning it should not and None (or not present) meaning
+        ignore. Also if strings are given as values those will be used
+        directly. :dates: A tuple of the start and end dates to limit the
+        search to. If no start or end date is desired None, or some other
+        falsey value should be used.
         :returns: A string of the xml data to send to PDB.
         """
 
