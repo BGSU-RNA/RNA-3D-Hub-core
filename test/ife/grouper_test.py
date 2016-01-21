@@ -194,6 +194,13 @@ class RealDataTest(StageTest):
         }
         self.assertEquals(ans, self.grouping('1EKD'))
 
+    def test_1A34_groups(self):
+        ans = {
+            '1A34|B': ['1A34|B'],
+            '1A34|C': ['1A34|B'],
+        }
+        self.assertEquals(ans, self.grouping('1A34'))
+
     def test_1ET4_groups(self):
         ans = {
             '1ET4|A': ['1ET4|A'],

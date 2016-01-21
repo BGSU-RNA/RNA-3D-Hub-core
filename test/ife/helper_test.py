@@ -229,6 +229,10 @@ class InfoLoadingTest(StageTest):
         ans = {'B': {'B': 0, 'C': 9}, 'C': {'B': 9, 'C': 0}}
         self.assertEquals(ans, inters)
 
+    def test_loads_correct_length_4V9Q_BV(self):
+        ife = self.loader.load('4V9Q', 'BV')
+        self.assertEquals(77, ife.length)
+
 
 class CrossChainInteractionsTest(StageTest):
     loader_class = IfeLoader

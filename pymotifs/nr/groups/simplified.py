@@ -49,6 +49,23 @@ class Grouper(core.Base):
     does make a note about those other chains.
     """
 
+    def valid_ife(self, ife):
+        """Check if the given ife is valid. If not a warning statement will be
+        produced and false returned. Ifes are valid if they have a non zero
+        length. This constraint exists because some structures contain only
+        modified RNA bases. These cannot be grouped (or really processed) by
+        our nr set. So we remove them as to not get a series of 0 length groups
+        in our nr clustering.
+
+        :param dict ife: An ife as loaded by `self.ifes`.
+        :returns: A flag to indicate if the ife is valid.
+        """
+
+        if ife['length']:
+            return True
+        self.logger.warning("Invalid ife %s, 0 length", ife['id'])
+        return False
+
     def ifes(self, pdb):
         """Load all ife chains from a given pdb. This will get the RNA chains as
         well as load some interaction data about the chains.
@@ -83,6 +100,7 @@ class Grouper(core.Base):
                 filter(IfeInfo.new_style == True).\
                 order_by(IfeChains.ife_id, IfeChains.index)
 
+            print(query)
             if query.count() == 0:
                 self.logger.warn("No ifes found for %s" % pdb)
                 return []
@@ -104,6 +122,7 @@ class Grouper(core.Base):
                     'resolution': chains[0]['resolution'],
                 })
 
+        print(groups)
         if not groups:
             raise core.InvalidState("No stored ifes for %s", pdb)
 
@@ -272,6 +291,7 @@ class Grouper(core.Base):
         pairs = it.product(pairs, repeat=2)
         pairs = it.ifilter(is_mapped(0), pairs)
         pairs = it.ifilter(is_mapped(1), pairs)
+        pairs = it.ifilter(lambda p: p[0] != p[1], pairs)
         pairs = it.imap(lambda p: (mapping[p[0]], mapping[p[1]]), pairs)
         pairs = it.ifilter(lambda p: p[0] == p[1] or equiv(*p), pairs)
 
@@ -315,7 +335,9 @@ class Grouper(core.Base):
 
         self.logger.info("Will group %i pdbs", len(pdbs))
         ifes = it.imap(self.ifes, pdbs)
-        ifes = list(it.chain.from_iterable(ifes))
+        ifes = it.chain.from_iterable(ifes)
+        ifes = it.ifilter(self.valid_ife, ifes)
+        ifes = list(ifes)
         if not ifes:
             raise core.InvalidState("No ifes found in given pdbs")
         self.logger.info("Found %i ifes to cluster", len(ifes))
@@ -338,12 +360,13 @@ class Grouper(core.Base):
 
             groups.append({'members': members})
 
-
         grouped_count = it.imap(lambda g: len(g['members']), groups)
         grouped_count = sum(grouped_count)
         if grouped_count != len(ifes):
-            raise core.InvalidState("Only %i of %i ifes were grouped" % (grouped_count, len(ifes)))
+            raise core.InvalidState("Only %i of %i ifes were grouped" %
+                                    (grouped_count, len(ifes)))
 
-        self.logger.info("Created %i groups with %i ifes", len(groups), grouped_count)
+        self.logger.info("Created %i groups with %i ifes",
+                         len(groups), grouped_count)
 
         return groups

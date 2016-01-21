@@ -291,7 +291,7 @@ class LoadingIfeTest(StageTest):
 
     def test_sorts_ife_chains_by_stored_index(self):
         ife = self.data[3]
-        self.assertEquals(ife['id'], '4V9Q|BV,4V9Q|BX')
+        self.assertEquals(ife['id'], '4V9Q|BV')
         val = [c['name'] for c in ife['chains']]
         ans = ['BV', 'BX']
         self.assertEquals(ans, val)
@@ -306,12 +306,12 @@ class LoadingIfeTest(StageTest):
             '4V9Q|AA': ['AA'],
             '4V9Q|AB': ['AB'],
             '4V9Q|BA': ['BA'],
-            '4V9Q|BV,4V9Q|BX': ['BV', 'BX'],
+            '4V9Q|BV': ['BV', 'BX'],
             '4V9Q|BW': ['BW'],
             '4V9Q|CA': ['CA'],
             '4V9Q|CB': ['CB'],
             '4V9Q|DA': ['DA'],
-            '4V9Q|DV,4V9Q|DX': ['DV', 'DX'],
+            '4V9Q|DV': ['DV', 'DX'],
             '4V9Q|DW': ['DW'],
         }
         self.assertEquals(ans, val)
@@ -319,7 +319,7 @@ class LoadingIfeTest(StageTest):
     def test_does_not_duplicate_ifes(self):
         ifes = self.loader.ifes('1A34')
         val = set(ife['db_id'] for ife in ifes)
-        self.assertEquals(2, len(val))
+        self.assertEquals(1, len(val))
 
 
 class PairsTest(StageTest):
@@ -359,3 +359,29 @@ class PairsTest(StageTest):
             (self.chains[0], self.chains[4])
         ]
         self.assertEquals(ans, val)
+
+
+class ValidIfeTest(StageTest):
+    loader_class = Grouper
+
+    def test_it_will_reject_0_length_ife(self):
+        self.assertFalse(self.loader.valid_ife({'id': '1', 'length': 0}))
+
+    def test_it_will_accept_1_length_ife(self):
+        self.assertTrue(self.loader.valid_ife({'id': '1', 'length': 1}))
+
+
+class GroupingTest(StageTest):
+    loader_class = Grouper
+
+    def test_it_will_complain_if_no_ifes_found(self):
+        raise SkipTest()
+
+    def test_will_filter_out_invalid_ifes(self):
+        raise SkipTest()
+
+    def test_will_create_groups(self):
+        raise SkipTest()
+
+    def test_will_assign_rank_to_all_grouped_members(self):
+        raise SkipTest()
