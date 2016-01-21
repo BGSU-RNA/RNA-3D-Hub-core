@@ -36,6 +36,8 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
     if not ids:
         ids = setup.pdbs(config, kwargs)
 
+    kwargs['exclude'] = kwargs.get('skip_stage')
+
     error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
     mailer = Emailer(config, engine)
