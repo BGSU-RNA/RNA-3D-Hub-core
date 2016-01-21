@@ -47,6 +47,27 @@ class Dispatcher(object):
                 exclude.update(stage.stages)
         return exclude
 
+    def __builder__(self, build):
+        """Create a function to build the stages. If build is True it will
+        construct the stages otherwise it will return the given stage. If given
+        a StageContainer it will return a list of all stages in the
+        StageContainer.
+
+        :param bool build: Flag to indicate if the stage should be built.
+        :returns: A function for building stages.
+        """
+
+        def fn(stage):
+            if issubclass(stage, StageContainer):
+                stages = []
+                for s in stage.stages:
+                    stages.extend(fn(s))
+                return stages
+            if build:
+                return [stage(*self._args)]
+            return [stage]
+        return fn
+
     def stages(self, name, build=False):
         """Determine all stages to run and in what order for the given stage
         name. If dependencies is set to True then this will go through all
@@ -58,15 +79,13 @@ class Dispatcher(object):
         stage will be returned.
 
         :param str name: The name of the stage to run.
+        :returns: A list of the stages to run.
         """
 
-        fn = lambda s: s
-        if build:
-            fn = lambda s: s(*self._args)
-
+        fn = self.__builder__(build)
         stage = intro.get_loader(name)
         if self.skip_dependencies:
-            return [fn(stage)]
+            return fn(stage)
 
         exclude = self.to_exclude()
         deps = {stage: stage.dependencies}
@@ -90,8 +109,10 @@ class Dispatcher(object):
             deps[current] = to_add
             stack.extend(to_add)
 
-        by = lambda s: s.__name__
-        stages = [fn(s) for s in toposort(deps, by=by) if s not in exclude]
+        stages = []
+        for s in toposort(deps, by=lambda s: s.__name__):
+            if s not in exclude:
+                stages.extend(fn(s))
 
         if not stages:
             raise InvalidState("No stages to run")
@@ -99,13 +120,13 @@ class Dispatcher(object):
         return stages
 
     def __call__(self, entries, **kwargs):
-            for stage in self.stages(self.name, build=True):
-                try:
-                    self.logger.info("Running stage: %s", stage.name)
-                    stage(entries, **kwargs)
-                except Exception as err:
-                    self.logger.error("Uncaught exception with stage: %s",
-                                      self.name)
-                    self.logger.error("Message: %s" % str(err))
-                    self.logger.exception(err)
-                    raise err
+        for stage in self.stages(self.name, build=True):
+            try:
+                self.logger.info("Running stage: %s", stage.name)
+                stage(entries, **kwargs)
+            except Exception as err:
+                self.logger.error("Uncaught exception with stage: %s",
+                                  self.name)
+                self.logger.error("Message: %s" % str(err))
+                self.logger.exception(err)
+                raise err
