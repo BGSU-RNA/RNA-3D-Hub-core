@@ -100,7 +100,6 @@ class Grouper(core.Base):
                 filter(IfeInfo.new_style == True).\
                 order_by(IfeChains.ife_id, IfeChains.index)
 
-            print(query)
             if query.count() == 0:
                 self.logger.warn("No ifes found for %s" % pdb)
                 return []
@@ -122,7 +121,6 @@ class Grouper(core.Base):
                     'resolution': chains[0]['resolution'],
                 })
 
-        print(groups)
         if not groups:
             raise core.InvalidState("No stored ifes for %s", pdb)
 
