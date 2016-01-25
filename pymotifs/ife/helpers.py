@@ -88,13 +88,15 @@ class IfeLoader(core.Base):
                           model=model, unit_type_id='rna').\
                 group_by(mod.UnitInfo.sym_op).\
                 limit(1)
-            result = query.one()
-            data['length'] = result.count
+            result = query.first()
+            data['length'] = 0
+            if result:
+                data['length'] = result.count
 
         helper = st.BasePairQueries(self.session)
         rep = helper.representative
         data['internal'] = rep(data['pdb'], data['chain'], count=True,
-                               family='cWW', sym_op=result.sym_op)
+                               family='cWW', sym_op=sym_op)
         data['bps'] = rep(data['pdb'], data['chain'], count=True,
                           sym_op=sym_op)
 
