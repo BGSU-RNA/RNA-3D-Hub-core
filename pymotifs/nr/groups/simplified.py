@@ -303,10 +303,11 @@ class Grouper(core.Base):
         """
 
         mapping = {}
+        graph = coll.defaultdict(set)
         for chain in chains:
             mapping[chain['id']] = chain
+            graph[chain['id']].add(chain['id'])
 
-        graph = coll.defaultdict(set)
         for chain1, chain2 in self.pairs(chains, alignments, discrepancies):
             self.logger.debug("Equivalent: %s %s", chain1['id'], chain2['id'])
             graph[chain1['id']].add(chain2['id'])
