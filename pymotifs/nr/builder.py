@@ -9,11 +9,18 @@ from pymotifs.models import NrClasses
 from pymotifs.nr.groups.naming import Namer
 from pymotifs.nr.groups.simplified import Grouper
 
+from pymotifs.constants import NR_BP_PERCENT_INCREASE
+from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
+
 RESOLUTION_GROUPS = ['1.5', '2.0', '2.5', '3.0', '3.5', '4.0', '20.0',
                      'all']
 
 
 class Builder(core.Base):
+    """Class to build a new nr set. This handles the logic of grouping the ifes
+    into groups, filter them by resolutions, name them using the previous
+    release as well as determine the representative.
+    """
 
     def class_id_mapping(self, names, release_id):
         """Create a mapping from nr class names to id in the database. This
@@ -70,7 +77,9 @@ class Builder(core.Base):
         ife_count = it.imap(lambda g: len(g['members']), groups)
         ife_count = sum(ife_count)
 
-        self.logger.info("Naming %i groups with %i ifes", len(groups), ife_count)
+        self.logger.info("Naming %i groups with %i ifes",
+                         len(groups), ife_count)
+
         namer = Namer(self.config, self.session)
         handles = self.known_handles()
         named = namer(groups, parents, handles)
@@ -79,7 +88,9 @@ class Builder(core.Base):
         named_count = sum(named_count)
         if named_count != ife_count:
             raise core.InvalidState("Missing named ifes")
-        self.logger.info("Named %i groups with %i ifes", len(named), named_count)
+
+        self.logger.info("Named %i groups with %i ifes",
+                         len(named), named_count)
 
         return named
 
@@ -102,8 +113,6 @@ class Builder(core.Base):
             filtered = it.ifilter(lambda c: c['resolution'] <= float(cutoff),
                                   filtered)
         filtered = list(filtered)
-        self.logger.info("Filter %s %s %i/%i", group['name']['handle'], cutoff, len(filtered), len(chains))
-
         if not filtered:
             return {}
 
@@ -156,6 +165,13 @@ class Builder(core.Base):
         return results
 
     def class_name(self, entry, resolution):
+        """Create the name of the class given the class and resolution.
+
+        :param dict entry: The class.
+        :param str resolution: The resolution cutoff.
+        :returns: The class name.
+        """
+
         return 'NR_{resolution}_{handle}.{version}'.format(
             resolution=resolution,
             handle=entry['name']['handle'],
@@ -164,8 +180,7 @@ class Builder(core.Base):
 
     def __call__(self, pdbs, current, new, resolutions=RESOLUTION_GROUPS,
                  **kwargs):
-
-        """Build the nr set
+        """Build the nr set.
 
         :pdbs: The list of pdbs to process.
         :current: Current release id.
@@ -179,6 +194,7 @@ class Builder(core.Base):
         known = self.load_classes_in_release(current)
         groups = self.group(pdbs)
         named = self.named(groups, known)
+        rep_finder = RepresentativeFinder(self.config, self.session)
 
         data = []
         for entry in named:
@@ -190,6 +206,120 @@ class Builder(core.Base):
                 filtered['release'] = new
                 filtered['name']['full'] = self.class_name(entry, resolution)
                 filtered['name']['cutoff'] = resolution
+                filtered['representative'] = rep_finder(filtered['members'])
                 data.append(filtered)
 
         return data
+
+
+class RepresentativeFinder(core.Base):
+    """A class to find the representative for a group of ifes. This will find
+    the best in terms of bp/nt and attempt to find all those with more bp's and
+    nts in the set.
+    """
+
+    def sorting_key(self, chain):
+        """Function to use for sorting by bps/nt. Deals with things where there
+        are 0 bps or nts. It must have bps, length and id entry.
+
+        :param dict chain: Chain to compute a sorting key for.
+        :returns: A tuple that can be used to sort the chains.
+        """
+
+        ratio = 0
+        if chain['bps'] and chain['length']:
+            ratio = float(chain['bps']) / float(chain['length'])
+        return (ratio, chain['id'])
+
+    def naive_best(self, group):
+        """Find the best chain terms of bps/nts. This is the starting point for
+        finding the representative in a set of ifes. This method is naive
+        because it does not favor more complete structures. In addition, it is
+        very sensitive to minor changes in number of basepairs and nts.
+
+        :param list group: A list of dictonaries to find the naive
+        representative of.
+        :returns: The initial representative.
+        """
+        return max(group, key=self.sorting_key)
+
+    def candidates(self, best, group):
+        """Find all possible candidates for a representative within the group,
+        given a current best ife. This finds all chains that have at least as
+        many basepairs and nucleotides as the best chain. The chains will be
+        returned in sorted order.
+
+        :param dict best: The current best.
+        :param list group: The list of dicts to search.
+        :returns: The list of
+        """
+
+        can = it.ifilter(lambda c: c['bps'] >= best['bps'], group)
+        can = it.ifilter(lambda c: c['length'] >= best['length'], can)
+        return sorted(can, self.sorting_key)
+
+    def increase(self, first, second, key):
+        """Compute the percent increase for the given set of dictionaries and
+        with the given key. If the second one is 0 then we return 100 for 100%
+        increase.
+
+        :param dict first: Dictionary to get the increase to.
+        :param dict second: Dictionary to get the increase from.
+        :param str key: Key to use
+        :returns: The percent increase.
+        """
+
+        if not second[key]:
+            if not first[key]:
+                return 0
+            return 100
+        return (float(first[key]) / float(second[key]) - 1) * 100
+
+    def best_above_cutoffs(self, representative, candidates):
+        """This will find the true representative given a current one and a
+        list of candidates. This will attempt to maximize the number of bps and
+        nts in the candidate as compared to the current representative. In
+        addition, it will only change representatives if we have have enough of
+        an increase. This adds stability to the process so minor improvements
+        are ignored, while large ones will lead to large changes.
+
+        :param dict representative: The current representative.
+        :param list candidates: A list of candidates to examine.
+        :returns: The new representative.
+        """
+
+        cutoff = (NR_LENGTH_PERCENT_INCREASE, NR_BP_PERCENT_INCREASE)
+        for candidate in candidates:
+            length_change = self.increase(candidate, representative, 'length')
+            bp_change = self.increase(candidate, representative, 'bps')
+            if (length_change, bp_change) > cutoff:
+                self.logger.debug("Switching rep to %s from %s",
+                                  representative['id'], candidate['id'])
+                representative = candidate
+        return representative
+
+    def __call__(self, group):
+        """Find the representative for the group.
+
+        :group: List of ifes to find the best for.
+        :returns: The ife which should be the representative.
+        """
+
+        if not group:
+            raise core.InvalidState("No ifes given")
+
+        best = self.naive_best(group)
+        if not best:
+            raise core.InvalidState("No current representative")
+        self.logger.debug("Naive representative: %s", best['id'])
+
+        candidates = self.candidates(best, group)
+        self.logger.debug("Found %i representative candidates",
+                          len(candidates))
+
+        rep = self.best_above_cutoffs(best, candidates)
+        if not rep:
+            raise core.InvalidState("No representative found")
+        self.logger.debug("Computed representative: %s", rep['id'])
+
+        return rep

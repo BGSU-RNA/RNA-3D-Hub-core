@@ -53,7 +53,7 @@ class Loader(core.MassLoader):
                     'nr_class_id': mapping[group['name']['full']],
                     'nr_release_id': group['release'],
                     'rank': chain['rank'],
-                    'rep': chain['rank'] == 0
+                    'rep': chain == group['representative'],
                 })
 
         return data
