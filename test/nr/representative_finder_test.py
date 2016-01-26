@@ -28,36 +28,61 @@ class SortingChainsTest(StageTest):
 class NaiveBestTest(StageTest):
     loader_class = RepresentativeFinder
 
-    def sort(self, *chains):
+    def best(self, *chains):
         return self.loader.naive_best(chains)
 
-    def test_it_can_deal_with_0_length_chains(self):
-        raise SkipTest()
+    def test_it_can_deal_with_0_bp_or_length_chains(self):
+        val = self.best({'bps': 13, 'length': 10, 'id': 'c'},
+                        {'bps': 0, 'length': 10, 'id': 'a'},
+                        {'bps': 50, 'length': 0, 'id': 'b'})
+        ans = {'bps': 13, 'length': 10, 'id': 'c'}
+        self.assertEquals(ans, val)
 
-    def test_it_can_deal_with_0_bp_chains(self):
-        raise SkipTest()
+    def test_gets_by_bps_per_nt(self):
+        val = self.best({'bps': 13, 'length': 10, 'id': 'c'},
+                        {'bps': 10, 'length': 10, 'id': 'a'},
+                        {'bps': 50, 'length': 10, 'id': 'b'})
+        ans = {'bps': 50, 'length': 10, 'id': 'b'}
+        self.assertEquals(ans, val)
 
-    def test_gets_by_length(self):
-        raise SkipTest()
-
-    def test_gets_by_bps(self):
-        raise SkipTest()
-
-    def test_it_tiebreaks_on_id(self):
-        raise SkipTest()
+    def test_it_tiebreaks_on_pdb(self):
+        val = self.best({'bps': 10, 'length': 10, 'id': 'c'},
+                        {'bps': 10, 'length': 10, 'id': 'a'},
+                        {'bps': 10, 'length': 10, 'id': 'b'})
+        ans = {'bps': 10, 'length': 10, 'id': 'c'}
+        self.assertEquals(ans, val)
 
 
 class CandidatesTest(StageTest):
     loader_class = RepresentativeFinder
 
-    def test_it_can_get_all_longer(self):
-        raise SkipTest()
+    def candidates(self, *chains):
+        default = {'bps': 10, 'length': 20, 'id': 'a'}
+        return self.loader.candidates(default, chains)
+
+    def test_it_can_get_all_longer_ifes(self):
+        val = self.candidates({'bps': 10, 'length': 10, 'id': 'b'},
+                              {'bps': 9, 'length': 100, 'id': 'e'},
+                              {'bps': 10, 'length': 30, 'id': 'c'},
+                              {'bps': 10, 'length': 20, 'id': 'd'})
+        ans = [{'bps': 10, 'length': 30, 'id': 'c'}]
+        self.assertEquals(ans, val)
 
     def test_it_can_get_all_with_more_bps(self):
-        raise SkipTest()
+        val = self.candidates({'bps': 10, 'length': 20, 'id': 'b'},
+                              {'bps': 100, 'length': 1, 'id': 'e'},
+                              {'bps': 13, 'length': 20, 'id': 'c'},
+                              {'bps': 0, 'length': 20, 'id': 'd'})
+        ans = [{'bps': 13, 'length': 20, 'id': 'c'}]
+        self.assertEquals(ans, val)
 
     def test_it_can_sort_results_correctly(self):
-        raise SkipTest()
+        val = self.candidates({'bps': 11, 'length': 20, 'id': 'b'},
+                              {'bps': 0, 'length': 20, 'id': 'd'},
+                              {'bps': 13, 'length': 20, 'id': 'c'})
+        ans = [{'bps': 11, 'length': 20, 'id': 'b'},
+               {'bps': 13, 'length': 20, 'id': 'c'}]
+        self.assertEquals(ans, val)
 
 
 class IncreaseTest(StageTest):
@@ -97,3 +122,7 @@ class BestAboveCutoffsTest(StageTest):
 
     def test_it_will_increase_if_bps_increase(self):
         raise SkipTest()
+
+
+class PickingRepresentativeTest(StageTest):
+    loader_class = RepresentativeFinder

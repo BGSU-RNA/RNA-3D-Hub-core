@@ -1,4 +1,5 @@
 import copy
+import operator as op
 import itertools as it
 
 from pymotifs import core
@@ -254,9 +255,15 @@ class RepresentativeFinder(core.Base):
         :returns: The list of
         """
 
-        can = it.ifilter(lambda c: c['bps'] >= best['bps'], group)
-        can = it.ifilter(lambda c: c['length'] >= best['length'], can)
-        return sorted(can, self.sorting_key)
+        len = op.itemgetter('length')
+        bp = op.itemgetter('bps')
+        length = lambda c: len(c) >= len(best)
+        bps = lambda c: bp(c) >= bp(best)
+        same = lambda c: bp(c) == bp(best) and len(c) == len(best)
+        possible = it.ifilter(length, group)
+        possible = it.ifilter(bps, possible)
+        possible = it.ifilterfalse(same, possible)
+        return sorted(possible, key=self.sorting_key)
 
     def increase(self, first, second, key):
         """Compute the percent increase for the given set of dictionaries and
