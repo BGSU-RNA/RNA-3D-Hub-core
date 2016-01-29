@@ -150,3 +150,8 @@ class PickingRepresentativeTest(StageTest):
         val = self.rep(('1GID', ('A', 'B')), ('1X8W', ('A', 'B', 'C', 'D')),
                        ('1GRZ', ('A', 'B')), id='NR_4.0_86492.1')
         self.assertEquals('1X8W|1|A', val.id)
+
+    def test_4OAU(self):
+        val = self.rep(('4OAU', 'A'), ('3S4G', 'B'), ('3GPQ', ('E', 'F')),
+                       id='NR_all_14757.1')
+        self.assertEquals('3GPQ|1|E', val.id)
