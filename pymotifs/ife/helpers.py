@@ -79,6 +79,7 @@ class IfeLoader(core.Base):
             ).filter_by(chain_name=chain, pdb_id=pdb)
 
             data = ut.result2dict(query.one())
+            data['model'] = model
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.sym_op,
@@ -152,7 +153,7 @@ class IfeChain(object):
 
     @property
     def id(self):
-        return '%s|%s' % (self.pdb, self.chain)
+        return '%s|%s|%s' % (self.pdb, self.model, self.chain)
 
     @property
     def is_structured(self):

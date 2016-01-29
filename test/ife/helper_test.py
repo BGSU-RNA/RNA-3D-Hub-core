@@ -91,27 +91,27 @@ class IfeGroupTest(TestCase):
         self.assertEquals(2, len(val))
 
     def test_has_an_id(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=5),
-                       IfeChain(pdb='0111', chain='C', internal=0))
-        self.assertEquals('0111|A', val.id)
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=5, model=10),
+                       IfeChain(pdb='0111', chain='C', internal=0, model=10))
+        self.assertEquals('0111|10|A', val.id)
 
     def test_uses_structured_only_in_id(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=5),
-                       IfeChain(pdb='0111', chain='C', internal=0),
-                       IfeChain(pdb='0111', chain='D', internal=6))
-        self.assertEquals('0111|D+0111|A', val.id)
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=5, model=10),
+                       IfeChain(pdb='0111', chain='C', internal=0, model=0),
+                       IfeChain(pdb='0111', chain='D', internal=6, model=10))
+        self.assertEquals('0111|10|D+0111|10|A', val.id)
 
     def test_if_no_structured_in_id_uses_first(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=2),
-                       IfeChain(pdb='0111', chain='C', internal=0),
-                       IfeChain(pdb='0111', chain='D', internal=2))
-        self.assertEquals('0111|A', val.id)
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=2, model=1),
+                       IfeChain(pdb='0111', chain='C', internal=0, model=2),
+                       IfeChain(pdb='0111', chain='D', internal=2, model=3))
+        self.assertEquals('0111|1|A', val.id)
 
     def test_duplicate_additions_do_nothing(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4),
-                       IfeChain(pdb='0111', chain='C', internal=0))
-        val.add(IfeChain(pdb='0111', chain='A', internal=4))
-        self.assertEquals('0111|A', val.id)
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4, model=4),
+                       IfeChain(pdb='0111', chain='C', internal=0, model=4))
+        val.add(IfeChain(pdb='0111', chain='A', internal=4, model=4))
+        self.assertEquals('0111|4|A', val.id)
 
     def test_dispatches_length_to_integral(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4, length=5))
@@ -152,19 +152,23 @@ class IfeGroupTest(TestCase):
         self.assertRaises(AttributeError, lambda: val.bob)
 
     def test_uses_most_bp_chain_as_integral(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4),
-                       IfeChain(pdb='0111', chain='C', internal=0))
-        self.assertEquals('0111|A', val.integral.id)
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4, model=1),
+                       IfeChain(pdb='0111', chain='C', internal=0, model=1))
+        self.assertEquals('0111|1|A', val.integral.id)
 
     def test_uses_length_as_tiebreak(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='A', length=10, internal=50),
-                       IfeChain(pdb='0111', chain='C', length=50, internal=50))
-        self.assertEquals('0111|C', val.integral.id)
+        val = IfeGroup(IfeChain(pdb='0111', chain='A', length=10, internal=50,
+                                model=10),
+                       IfeChain(pdb='0111', chain='C', length=50, internal=50,
+                                model=10))
+        self.assertEquals('0111|10|C', val.integral.id)
 
     def test_uses_name_to_tiebreak_integral_chain(self):
-        val = IfeGroup(IfeChain(pdb='0111', chain='C', length=10, internal=0),
-                       IfeChain(pdb='0111', chain='A', length=10, internal=0))
-        self.assertEquals('0111|A', val.integral.id)
+        val = IfeGroup(IfeChain(pdb='0111', chain='C', length=10, internal=0,
+                                model=3),
+                       IfeChain(pdb='0111', chain='A', length=10, internal=0,
+                                model=3))
+        self.assertEquals('0111|3|A', val.integral.id)
 
 
 class InfoLoadingTest(StageTest):
@@ -197,8 +201,8 @@ class InfoLoadingTest(StageTest):
         self.assertEquals(1542, val.full_length)
 
     def test_has_an_id(self):
-        val = self.loader.load("4V4Q", "AA")
-        self.assertEquals("4V4Q|AA", val.id)
+        val = self.loader.load("4V4Q", "AA", model=1)
+        self.assertEquals("4V4Q|1|AA", val.id)
 
     def test_marks_yeast_5_8S_structured(self):
         val = self.loader.load("4V7R", "D1")
