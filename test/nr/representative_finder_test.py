@@ -3,6 +3,8 @@ from nose import SkipTest
 
 from pymotifs.nr.builder import RepresentativeFinder
 
+from pymotifs.nr.groups.simplified import Grouper
+
 
 class SortingChainsTest(StageTest):
     loader_class = RepresentativeFinder
@@ -13,16 +15,20 @@ class SortingChainsTest(StageTest):
     def test_builds_key_with_nt_per_bp_and_id(self):
         chain1 = {'bps': 10, 'length': 20, 'id': 'a'}
         chain2 = {'bps': 20, 'length': 20, 'id': 'b'}
-        self.assertEquals(self.key(chain1), (0.5, 'a'))
-        self.assertEquals(self.key(chain2), (1, 'b'))
+        self.assertEquals(self.key(chain1), (0.5, None, 'a'))
+        self.assertEquals(self.key(chain2), (1, None, 'b'))
 
     def test_builds_key_with_0_if_one_is_0(self):
         chain1 = {'bps': 0, 'length': 10, 'id': 'c'}
         chain2 = {'bps': 10, 'length': 0, 'id': 'd'}
         chain3 = {'bps': 0, 'length': 0, 'id': 'e'}
-        self.assertEquals(self.key(chain1), (0, 'c'))
-        self.assertEquals(self.key(chain2), (0, 'd'))
-        self.assertEquals(self.key(chain3), (0, 'e'))
+        self.assertEquals(self.key(chain1), (0, None, 'c'))
+        self.assertEquals(self.key(chain2), (0, None, 'd'))
+        self.assertEquals(self.key(chain3), (0, None, 'e'))
+
+    def test_uses_inverse_resolution(self):
+        chain1 = {'bps': 0, 'length': 10, 'id': 'c', 'resolution': 10}
+        self.assertEquals(self.key(chain1), (0, -10, 'c'))
 
 
 class NaiveBestTest(StageTest):
@@ -50,6 +56,13 @@ class NaiveBestTest(StageTest):
                         {'bps': 10, 'length': 10, 'id': 'a'},
                         {'bps': 10, 'length': 10, 'id': 'b'})
         ans = {'bps': 10, 'length': 10, 'id': 'c'}
+        self.assertEquals(ans, val)
+
+    def test_if_all_have_0_bps_uses_resolution(self):
+        val = self.best({'bps': 0, 'length': 10, 'id': 'c', 'resolution': 4.0},
+                        {'bps': 0, 'length': 10, 'id': 'a', 'resolution': 3.0},
+                        {'bps': 0, 'length': 10, 'id': 'b', 'resolution': 2.0})
+        ans = {'bps': 0, 'length': 10, 'id': 'b', 'resolution': 2.0}
         self.assertEquals(ans, val)
 
 
@@ -111,18 +124,29 @@ class IncreaseTest(StageTest):
         self.assertEquals(self.increase({'a': 0}, {'a': 0}), 0)
 
 
-class BestAboveCutoffsTest(StageTest):
-    loader_class = RepresentativeFinder
-
-    def test_it_finds_chain_with_more_bps_and_nts(self):
-        raise SkipTest()
-
-    def test_it_will_increase_if_length_increases(self):
-        raise SkipTest()
-
-    def test_it_will_increase_if_bps_increase(self):
-        raise SkipTest()
-
-
 class PickingRepresentativeTest(StageTest):
     loader_class = RepresentativeFinder
+
+    def group(self, *args, **kwargs):
+        grouper = Grouper(self.loader.config, self.loader.session)
+        members = []
+        for pdb, chains in args:
+            ifes = grouper.ifes(pdb)
+            if not ifes:
+                raise SkipTest("No ifes found for %s" % pdb)
+            members.extend(ife for ife in ifes if ife['name'] in chains)
+        return {'id': kwargs['id'], 'members': members}
+
+    def rep(self, *args, **kwargs):
+        group = self.group(*args, **kwargs)
+        return self.loader(group)
+
+    def test_4MGM_4MGN(self):
+        val = self.rep(('4MGM', ('A', 'B')), ('4MGN', ('B', 'D')),
+                       id='NR_4.0_13428.1')
+        self.assertEquals('4MGN|1|B', val.id)
+
+    def test_1GID(self):
+        val = self.rep(('1GID', ('A', 'B')), ('1X8W', ('A', 'B', 'C', 'D')),
+                       ('1GRZ', ('A', 'B')), id='NR_4.0_86492.1')
+        self.assertEquals('1X8W|1|A', val.id)

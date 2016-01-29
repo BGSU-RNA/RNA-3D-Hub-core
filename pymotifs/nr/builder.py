@@ -1,3 +1,8 @@
+"""This module contains the code for creating a new NR set. It can find and
+group all ifes from structures into classes and then pick a representative of
+that class.
+"""
+
 import copy
 import operator as op
 import itertools as it
@@ -13,6 +18,7 @@ from pymotifs.nr.groups.simplified import Grouper
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
 
+"""Resolution cutoffs to use for NR classes"""
 RESOLUTION_GROUPS = ['1.5', '2.0', '2.5', '3.0', '3.5', '4.0', '20.0',
                      'all']
 
@@ -230,7 +236,10 @@ class RepresentativeFinder(core.Base):
         ratio = 0
         if chain['bps'] and chain['length']:
             ratio = float(chain['bps']) / float(chain['length'])
-        return (ratio, chain['id'])
+        resolution = chain.get('resolution')
+        if resolution:
+            resolution = resolution * -1
+        return (ratio, resolution, chain['id'])
 
     def naive_best(self, group):
         """Find the best chain terms of bps/nts. This is the starting point for
@@ -242,6 +251,7 @@ class RepresentativeFinder(core.Base):
         representative of.
         :returns: The initial representative.
         """
+        print(group)
         return max(group, key=self.sorting_key)
 
     def candidates(self, best, group):
@@ -252,7 +262,7 @@ class RepresentativeFinder(core.Base):
 
         :param dict best: The current best.
         :param list group: The list of dicts to search.
-        :returns: The list of
+        :returns: The list of candidates for the representative.
         """
 
         len = op.itemgetter('length')
@@ -296,14 +306,16 @@ class RepresentativeFinder(core.Base):
         """
 
         cutoff = (NR_LENGTH_PERCENT_INCREASE, NR_BP_PERCENT_INCREASE)
+        possible = []
         for candidate in candidates:
             length_change = self.increase(candidate, representative, 'length')
             bp_change = self.increase(candidate, representative, 'bps')
-            if (length_change, bp_change) > cutoff:
-                self.logger.debug("Switching rep to %s from %s",
-                                  representative['id'], candidate['id'])
-                representative = candidate
-        return representative
+            if (length_change, bp_change) >= cutoff:
+                possible.append(candidate)
+
+        if not possible:
+            return representative
+        return max(possible, key=self.sorting_key)
 
     def __call__(self, group):
         """Find the representative for the group.
