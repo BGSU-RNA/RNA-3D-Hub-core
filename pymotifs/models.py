@@ -27,8 +27,10 @@ def should_reflect(tablename, *args):
 
 
 def define_missing_views(metadata):
+    """A functionn to define the primary keys for views. We need to do this so
+    we can reflect these views.
+    """
 
-    # We have to define what columns are PK for views
     Table('exp_seq_pdb', metadata,
           Column('exp_seq_id', String, primary_key=True),
           Column('pdb_id', String, primary_key=True),
@@ -39,6 +41,12 @@ def define_missing_views(metadata):
           Column('correspondence_id', String, primary_key=True),
           Column('chain_id_1', Integer, primary_key=True),
           Column('chain_id_2', Integer, primary_key=True),
+          extend_existing=True)
+
+    Table('correspondence_units', metadata,
+          Column('correspondence_id', String, primary_key=True),
+          Column('unit_id_1', String, primary_key=True),
+          Column('unit_id_2', String, primary_key=True),
           extend_existing=True)
 
 

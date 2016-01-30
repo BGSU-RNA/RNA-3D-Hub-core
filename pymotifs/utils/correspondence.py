@@ -1,110 +1,7 @@
 from sqlalchemy.orm import aliased
-from sqlalchemy.sql.expression import text
 
 from pymotifs import core
 from pymotifs import models as mod
-
-
-ALL_PDBS_QUERY = """
-select
-    distinct P.pdb_id_2
-from correspondence_pdbs as P
-join correspondence_info as I
-on
-    I.correspondence_id = P.correspondence_id
-where
-    P.pdb_id_1 = :pdb
-    and I.good_alignment = 1
-;
-"""
-
-ALL_CHAINS_QUERY = """
-select distinct
-    P.correspondence_id,
-    P.chain_name_1,
-    P.chain_name_2,
-    C1.id as 'chain_id1',
-    C2.id as 'chain_id2'
-from correspondence_pdbs as P
-join correspondence_info as I
-on
-    I.correspondence_id = P.correspondence_id
-join chain_info as C1
-on
-    C1.pdb_id = P.pdb_id_1
-    and C1.chain_name = P.chain_name_1
-join ife_chains as A1
-on
-    A1.chain_id = C1.id
-join chain_info as C2
-on
-    C2.pdb_id = P.pdb_id_2
-    and C2.chain_name = P.chain_name_2
-join ife_chains as A2
-on
-    A2.chain_id = C2.id
-where
-    P.pdb_id_1 = :pdb1
-    and P.pdb_id_2 = :pdb2
-    and I.good_alignment = 1
-    and C1.id != C2.id
-    and A1.is_reference = 1
-    and A2.is_reference = 1
-;
-"""
-
-
-UNIT_ORDERING = """
-select
-    U.*
-from correspondence_units as U
-join chain_info as I1
-on
-    I1.pdb_id = U.pdb_id_1
-    and I1.chain_name = U.chain_name_1
-join chain_info as I2
-on
-    I2.pdb_id = U.pdb_id_2
-    and I2.chain_name = U.chain_name_2
-where
-    I1.id = :chain1
-    and I2.id = :chain2
-    and correspondence_id = :corr_id
-;
-"""
-
-
-UNIT_MAPPING = """
-select
-    *
-from correspondence_units
-where
-    pdb_id_1 = :pdb1
-    and pdb_id_2 = :pdb2
-;
-"""
-
-ALIGNED_CHAINS = """
-select distinct
-    C1.chain_id as 'chain_id1',
-    C2.chain_id as 'chain_id2',
-    I.good_alignment as 'good_alignment'
-from correspondence_pdbs as P
-join correspondence_info as I
-on
-    I.corresponence_id = P.corresponence_id
-join chain_info as C1
-on
-    C1.chain_id = P.chain_id_1
-join chain_info as C2
-on
-    C2.chain_id = P.chain_id2
-where
-    P.pdb_id_1 in ({pdbs})
-    and P.pdb_id_2 in ({pdbs})
-    and C1.chain_id != C2.chain_id
-;
-"""
 
 
 class Helper(core.Base):
@@ -115,13 +12,24 @@ class Helper(core.Base):
     def pdbs(self, pdb):
         """Get all pdbs which have been aligned to the given pdb and whose
         alignment is good.
+
+        :param str pdb: Pdb to get to get a list of all pdbs with corresponding
+        chains.
+        :returns: A list of pdb ids that have a corresponding chain to one
+        chain in the given structure.
         """
 
         with self.session() as session:
-            raw = text(ALL_PDBS_QUERY).bindparams(pdb=pdb)
-            query = session.execute(raw).fetchall()
-            data = [result.pdb_id_2 for result in query]
-            return data
+            corr_pdb = mod.CorrespondencePdbs
+            info = mod.CorrespondenceInfo
+            query = session.query(corr_pdb.pdb_id_2).\
+                join(info,
+                     info.correspondence_id == corr_pdb.correspondence_id).\
+                filter(corr_pdb.pdb_id_1 == pdb).\
+                filter(info.good_alignment == 1).\
+                order_by(corr_pdb.pdb_id_2).\
+                distinct()
+            return [result.pdb_id_2 for result in query]
 
     def chains(self, pdb1, pdb2):
         """Get all chains which correspond between the two structures. This
@@ -131,23 +39,39 @@ class Helper(core.Base):
         pdb. It will only load the reference chains from ife groups
         between the two structures.
 
-        :params string pdb1: The first pdb.
-        :params string pdb2: The second pdb.
+        :params str pdb1: The first pdb.
+        :params str pdb2: The second pdb.
         :returns: A list of tuples for the corresponding chains.
         """
 
         with self.session() as session:
-            raw = text(ALL_CHAINS_QUERY).bindparams(pdb1=pdb1, pdb2=pdb2)
-            query = session.execute(raw).fetchall()
+            pdbs = mod.CorrespondencePdbs
+            corr = mod.CorrespondenceInfo
+            ife1 = aliased(mod.IfeChains)
+            ife2 = aliased(mod.IfeChains)
+            query = session.query(pdbs.correspondence_id,
+                                  pdbs.chain_name_1,
+                                  pdbs.chain_name_2,
+                                  pdbs.chain_id_1,
+                                  pdbs.chain_id_2,
+                                  ).\
+                join(corr, corr.correspondence_id == pdbs.correspondence_id).\
+                join(ife1, ife1.chain_id == pdbs.chain_id_1).\
+                join(ife2, ife2.chain_id == pdbs.chain_id_2).\
+                filter(pdbs.pdb_id_1 == pdb1).\
+                filter(pdbs.pdb_id_2 == pdb2).\
+                filter(corr.good_alignment == 1).\
+                filter(pdbs.chain_id_1 != pdbs.chain_id_2).\
+                filter(ife1.is_integral == 1).\
+                filter(ife2.is_integral == 1)
 
             data = []
             for result in query:
-                corr_id = result.id
                 chain1 = {'id': result.chain_id_1, 'name': result.chain_name_1}
                 chain1['pdb'] = pdb1
-                chain2 = {'id': result.chain_id2, 'name': result.chain_name_2}
+                chain2 = {'id': result.chain_id_2, 'name': result.chain_name_2}
                 chain2['pdb'] = pdb2
-                data.append((corr_id, chain1, chain2))
+                data.append((result.correspondence_id, chain1, chain2))
 
         return data
 
@@ -164,39 +88,22 @@ class Helper(core.Base):
         :param dict chain2: The second chain.
         :returns: An ordering dictionary.
         """
-        ordering = {}
 
+        ordering = {}
         for result in self.__ordering__(corr_id, chain_id1, chain_id2):
             ordering[result.unit_id_1] = result.correspondence_index
             ordering[result.unit_id_2] = result.correspondence_index
-
         return ordering
-
-    def pdb_mapping(self, pdb1, pdb2, reversed=False):
-        """Get the mapping between two structures, ignoring the chain ids. This
-        mapping is one way by default, that is pdb1 to pdb2 only, not the
-        reverse. This can be changed with the reversed
-        """
-
-        with self.session() as session:
-            raw = text(UNIT_MAPPING).\
-                bindparams(pdb1=pdb1, pdb2=pdb2)
-            results = session.execute(raw)
-
-            mapping = {}
-            corr_id = None
-            for result in results:
-                if corr_id is None:
-                    corr_id = result.correspondence_id
-
-                mapping[result.unit_id_1] = result.unit_id_2
-                if reversed:
-                    mapping[result.unit_id2] = mapping[result.unit_id_1]
-
-            return corr_id, mapping
 
     def mapping(self, corr_id, chain1, chain2):
         """Get a mapping from nucleotides in chain1 to nucleotides in chain2.
+        The mapping is in both directions chain1 to chain2 and chain2 to
+        chain1.
+
+        :param int corr_id: The correspondence id to use.
+        :param dict chain1: A dictonary with an 'id' key for the chain id.
+        :param dict chain2: A dictonary with an 'id' key for the chain id.
+        :returns: A dictonary mapping between the units in the given chains.
         """
 
         mapping = {}
@@ -210,7 +117,9 @@ class Helper(core.Base):
         produce a dictionary of dictionaries where the final values are a
         boolean indicating a good alignment or not.
 
-        :ids: A list of pdb ids to use.
+        :param list ids: A list of pdb ids to use.
+        :param bool good: Bool to control if this should only load good
+        alignments.
         :returns: A dictionary of dictionaries indicating a good alignment or
         not.
         """
@@ -245,13 +154,31 @@ class Helper(core.Base):
                 status = bool(result.good_alignment)
                 mapping[result.chain_id1][result.chain_id2] = status
                 mapping[result.chain_id2][result.chain_id1] = status
+
             return mapping
 
     def __ordering__(self, corr_id, chain_id1, chain_id2):
-        with self.session() as session:
-            raw = text(UNIT_ORDERING).\
-                bindparams(chain1=chain_id1, chain2=chain_id2, corr_id=corr_id)
+        """Compute the correspondence between the given chain ids and given
+        correspondence id.
 
-            query = session.execute(raw)
+        :param int corr_id: The correpsondence id.
+        :param int chain_id1: The first chain.
+        :param int chain_id2: The second chain.
+        :returns: A generator over the matching rows in correspondence_units.
+        """
+
+        with self.session() as session:
+            units = mod.CorrespondenceUnits
+            info1 = aliased(mod.ChainInfo)
+            info2 = aliased(mod.ChainInfo)
+            query = session.query(units).\
+                join(info1, info1.pdb_id == units.pdb_id_1).\
+                join(info2, info2.pdb_id == units.pdb_id_2).\
+                filter(info1.chain_name == units.chain_name_1).\
+                filter(info2.chain_name == units.chain_name_2).\
+                filter(info1.chain_id == chain_id1).\
+                filter(info2.chain_id == chain_id2).\
+                filter(units.correspondence_id == corr_id)
+
             for result in query:
                 yield result
