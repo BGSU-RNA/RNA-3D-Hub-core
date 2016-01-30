@@ -4,12 +4,15 @@ is a centralized place for all such activities.
 """
 
 import inspect
+import logging
 import functools as ft
 
 from pymotifs.core import Stage
 
 """Base name of the module to look up in"""
 BASE = 'pymotifs'
+
+logger = logging.getLogger(__name__)
 
 
 class UnknownStageError(Exception):
@@ -67,7 +70,8 @@ def get_stage(name):
     fromlist.extend(parts[:-1])
     try:
         return __import__(BASE + '.' + name, fromlist=fromlist)
-    except ImportError:
+    except ImportError as err:
+        logger.exception(err)
         raise UnknownStageError(name)
 
 
