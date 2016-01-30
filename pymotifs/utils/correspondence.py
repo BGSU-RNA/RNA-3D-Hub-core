@@ -7,45 +7,45 @@ from pymotifs import models as mod
 
 ALL_PDBS_QUERY = """
 select
-    distinct P.pdb_id2
+    distinct P.pdb_id_2
 from correspondence_pdbs as P
 join correspondence_info as I
 on
-    I.id = P.id
+    I.correspondence_id = P.correspondence_id
 where
-    P.pdb_id1 = :pdb
+    P.pdb_id_1 = :pdb
     and I.good_alignment = 1
 ;
 """
 
 ALL_CHAINS_QUERY = """
 select distinct
-    P.id,
-    P.chain_name1,
-    P.chain_name2,
+    P.correspondence_id,
+    P.chain_name_1,
+    P.chain_name_2,
     C1.id as 'chain_id1',
     C2.id as 'chain_id2'
 from correspondence_pdbs as P
 join correspondence_info as I
 on
-    I.id = P.id
+    I.correspondence_id = P.correspondence_id
 join chain_info as C1
 on
-    C1.pdb_id = P.pdb_id1
-    and C1.chain_name = P.chain_name1
+    C1.pdb_id = P.pdb_id_1
+    and C1.chain_name = P.chain_name_1
 join ife_chains as A1
 on
     A1.chain_id = C1.id
 join chain_info as C2
 on
-    C2.pdb_id = P.pdb_id2
-    and C2.chain_name = P.chain_name2
+    C2.pdb_id = P.pdb_id_2
+    and C2.chain_name = P.chain_name_2
 join ife_chains as A2
 on
     A2.chain_id = C2.id
 where
-    P.pdb_id1 = :pdb1
-    and P.pdb_id2 = :pdb2
+    P.pdb_id_1 = :pdb1
+    and P.pdb_id_2 = :pdb2
     and I.good_alignment = 1
     and C1.id != C2.id
     and A1.is_reference = 1
@@ -60,12 +60,12 @@ select
 from correspondence_units as U
 join chain_info as I1
 on
-    I1.pdb_id = U.pdb_id1
-    and I1.chain_name = U.chain_name1
+    I1.pdb_id = U.pdb_id_1
+    and I1.chain_name = U.chain_name_1
 join chain_info as I2
 on
-    I2.pdb_id = U.pdb_id2
-    and I2.chain_name = U.chain_name2
+    I2.pdb_id = U.pdb_id_2
+    and I2.chain_name = U.chain_name_2
 where
     I1.id = :chain1
     and I2.id = :chain2
@@ -79,8 +79,8 @@ select
     *
 from correspondence_units
 where
-    pdb_id1 = :pdb1
-    and pdb_id2 = :pdb2
+    pdb_id_1 = :pdb1
+    and pdb_id_2 = :pdb2
 ;
 """
 
@@ -95,7 +95,7 @@ on
     I.corresponence_id = P.corresponence_id
 join chain_info as C1
 on
-    C1.chain_id = P.chain_id1
+    C1.chain_id = P.chain_id_1
 join chain_info as C2
 on
     C2.chain_id = P.chain_id2
@@ -120,7 +120,7 @@ class Helper(core.Base):
         with self.session() as session:
             raw = text(ALL_PDBS_QUERY).bindparams(pdb=pdb)
             query = session.execute(raw).fetchall()
-            data = [result.pdb_id2 for result in query]
+            data = [result.pdb_id_2 for result in query]
             return data
 
     def chains(self, pdb1, pdb2):
@@ -143,9 +143,9 @@ class Helper(core.Base):
             data = []
             for result in query:
                 corr_id = result.id
-                chain1 = {'id': result.chain_id1, 'name': result.chain_name1}
+                chain1 = {'id': result.chain_id_1, 'name': result.chain_name_1}
                 chain1['pdb'] = pdb1
-                chain2 = {'id': result.chain_id2, 'name': result.chain_name2}
+                chain2 = {'id': result.chain_id2, 'name': result.chain_name_2}
                 chain2['pdb'] = pdb2
                 data.append((corr_id, chain1, chain2))
 
@@ -167,8 +167,8 @@ class Helper(core.Base):
         ordering = {}
 
         for result in self.__ordering__(corr_id, chain_id1, chain_id2):
-            ordering[result.unit_id1] = result.correspondence_index
-            ordering[result.unit_id2] = result.correspondence_index
+            ordering[result.unit_id_1] = result.correspondence_index
+            ordering[result.unit_id_2] = result.correspondence_index
 
         return ordering
 
@@ -189,9 +189,9 @@ class Helper(core.Base):
                 if corr_id is None:
                     corr_id = result.correspondence_id
 
-                mapping[result.unit_id1] = result.unit_id2
+                mapping[result.unit_id_1] = result.unit_id_2
                 if reversed:
-                    mapping[result.unit_id2] = mapping[result.unit_id1]
+                    mapping[result.unit_id2] = mapping[result.unit_id_1]
 
             return corr_id, mapping
 
@@ -201,8 +201,8 @@ class Helper(core.Base):
 
         mapping = {}
         for result in self.__ordering__(corr_id, chain1['id'], chain2['id']):
-            mapping[result.unit_id1] = result.unit_id2
-            mapping[result.unit_id2] = result.unit_id1
+            mapping[result.unit_id_1] = result.unit_id_2
+            mapping[result.unit_id_2] = result.unit_id_1
         return mapping
 
     def aligned_chains(self, ids, good=None):
