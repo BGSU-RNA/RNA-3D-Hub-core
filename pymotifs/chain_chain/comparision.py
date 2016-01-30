@@ -13,10 +13,10 @@ from pymotifs.utils import correspondence as corr
 
 from pymotifs.models import ChainInfo
 from pymotifs.models import ChainChainSimilarity as Similarity
-from pymotifs.correspondence import Loader as CorrespondenceLoader
+from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
 from pymotifs.download import Downloader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
-from pymotifs.ife import Loader as IfeLoader
+from pymotifs.ife.loader import Loader as IfeLoader
 
 from fr3d.geometry.discrepancy import discrepancy
 
@@ -176,7 +176,8 @@ class Loader(core.Loader):
         with self.session() as session:
             return session.query(ChainInfo).\
                 filter_by(chain_id=chain_id).\
-                one().chain_name
+                one().\
+                chain_name
 
     def data(self, pdb, **kwargs):
         """Compute all chain to chain similarity data. This will get all
