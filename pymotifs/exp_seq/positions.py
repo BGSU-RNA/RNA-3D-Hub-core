@@ -1,3 +1,5 @@
+import itertools as it
+
 from pymotifs import core
 
 from pymotifs.models import ExpSeqInfo as Exp
@@ -11,6 +13,7 @@ from pymotifs.exp_seq.chain_mapping import Loader as ExpMappingLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([ExpMappingLoader, InfoLoader])
+    table = Position
 
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
@@ -27,22 +30,24 @@ class Loader(core.SimpleLoader):
 
     def sequence(self, exp_seq_id):
         with self.session() as session:
-            return session.query(Exp).get(exp_seq_id).sequence
+            exp = session.query(Exp).get(exp_seq_id)
+            return (exp.sequence, exp.normalized)
 
-    def positions(self, exp_id, sequence):
+    def positions(self, exp_id, sequence, normalized):
         positions = []
-        for index, char in enumerate(sequence):
+        pairs = it.izip_longest(sequence, normalized)
+        for index, (char, norm_char) in enumerate(pairs):
+            if char is None:
+                raise core.InvalidState("Norm sequence may never be longer")
+
             positions.append({
                 'exp_seq_id': exp_id,
                 'unit': char,
+                'normalized_unit': norm_char,
                 'index': index
             })
         return positions
 
     def data(self, exp_seq_id, **kwargs):
-        data = []
-        sequence = self.sequence(exp_seq_id)
-        for position in self.positions(exp_seq_id, sequence):
-            data.append(Position(**position))
-
-        return data
+        sequence, normalized = self.sequence(exp_seq_id)
+        return self.positions(exp_seq_id, sequence)
