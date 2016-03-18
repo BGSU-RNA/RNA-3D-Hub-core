@@ -31,7 +31,7 @@ class Dispatcher(object):
         self.name = name
         self._args = args
         self.skip_dependencies = kwargs.get('skip_dependencies')
-        self.exclude = set(kwargs.get('exclude', []))
+        self.exclude = set(kwargs.get('exclude', []) or [])
         self.logger = logging.getLogger(__name__)
 
     def to_exclude(self):
@@ -120,7 +120,9 @@ class Dispatcher(object):
         return stages
 
     def __call__(self, entries, **kwargs):
-        for stage in self.stages(self.name, build=True):
+        stages = self.stages(self.name, build=True)
+        self.logger.debug('Running stages: %s', stages)
+        for stage in stages:
             try:
                 self.logger.info("Running stage: %s", stage.name)
                 stage(entries, **kwargs)
