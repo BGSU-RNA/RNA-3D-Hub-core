@@ -7,7 +7,6 @@ from pymotifs import utils as ut
 from pymotifs import models as mod
 
 from pymotifs.ss.info import Loader as SsInfoLoader
-from pymotifs.nr.chains import Loader as NrChainsLoader
 from pymotifs.exp_seq.chain_mapping import Loader as ExpSeqChainLoader
 from pymotifs.ife.info import Loader as IfeLoader
 
