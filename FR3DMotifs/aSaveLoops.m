@@ -5,7 +5,7 @@ function [status,err_msg] = aSaveLoops(Loops, save_location)
         err_msg = '';
 
         % save loops from each pdb in a separate folder
-        save_location = fullfile(save_location, Loops(1).Filename(4:7));
+        save_location = fullfile(save_location, Loops(1).PDBID);
         if ~exist(save_location,'dir'), mkdir(save_location); end
 
         N = length(Loops);
