@@ -8,7 +8,7 @@ class GeneratingDataTest(StageTest):
 
     def setUp(self):
         super(GeneratingDataTest, self).setUp()
-        self.data = self.loader.positions(10, 'ACGU')
+        self.data = self.loader.positions(10, 'ACGI', 'ACGG')
 
     def test_can_find_all_positions(self):
         self.assertEquals(4, len(self.data))
@@ -16,10 +16,11 @@ class GeneratingDataTest(StageTest):
     def test_can_generate_valid_data(self):
         ans = {
             'exp_seq_id': 10,
-            'unit': 'A',
-            'index': 0
+            'unit': 'I',
+            'normalized_unit': 'G',
+            'index': 3,
         }
-        self.assertEquals(ans, self.data[0])
+        self.assertEquals(ans, self.data[3])
 
 
 class GettingSequencesTest(StageTest):
