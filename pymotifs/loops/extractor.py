@@ -64,6 +64,12 @@ class Loader(core.SimpleLoader):
     def _extract_loops(self, pdb, loop_type, mapping):
         """Uses matlab to extract the loops for a given structure of a specific
         type. This will also save the loop files into the correct place.
+
+        :param str pdb: PDB file to process
+        :param str loop_type: The type of loop (IL, HL, J3, ...) to extract
+        loops for.
+        :param dict mapping: A mapping of unit ids to known loop names.
+        :returns: The extracted loops.
         """
 
         try:
@@ -108,6 +114,9 @@ class Loader(core.SimpleLoader):
 
     def __save__(self, loops, location):
         """Save the loops to a file.
+
+        :loops: The loops matlab proxy object to save.
+        :param str location: The location to saave to.
         """
 
         if not os.path.isdir(location):
@@ -121,6 +130,7 @@ class Loader(core.SimpleLoader):
             raise err
 
         if status != 0:
+            self.logger.error(mlab.last_stdout)
             raise matlab.MatlabFailed("Could not save all loop mat files")
 
         self.logger.debug("Saved loop mat files")
