@@ -6,12 +6,15 @@ from pymotifs import utils
 from pymotifs.utils import matlab
 from pymotifs.models import LoopPositions
 from pymotifs.models import LoopInfo
+from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
+from pymotifs.loops.release import Loader as ReleaseLoader
 
 
 class Loader(core.Loader):
     merge_data = True
-    dependencies = set([InfoLoader])
+    dependencies = set([UnitInfoLoader, InfoLoader, ReleaseLoader])
+    allow_no_data = True
 
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)
@@ -20,7 +23,7 @@ class Loader(core.Loader):
     def remove(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(LoopInfo).filter_by(pdb_id=pdb)
-            ids = [result.id for result in query]
+            ids = [result.loop_id for result in query]
 
         if not ids:
             return True
@@ -100,6 +103,8 @@ class Loader(core.Loader):
                 self.logger.info("New loop %s found", row['loop_id'])
 
             entry.update(row)
+            entry['loop_id'] = row['loop_id']
+            print(entry)
             data.append(LoopPositions(**entry))
 
         return data
