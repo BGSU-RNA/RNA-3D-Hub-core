@@ -50,4 +50,4 @@ class Loader(core.SimpleLoader):
 
     def data(self, exp_seq_id, **kwargs):
         sequence, normalized = self.sequence(exp_seq_id)
-        return self.positions(exp_seq_id, sequence)
+        return self.positions(exp_seq_id, sequence, normalized)
