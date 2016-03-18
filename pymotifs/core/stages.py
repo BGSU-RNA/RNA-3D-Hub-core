@@ -521,7 +521,7 @@ class Exporter(Loader):
         """
 
         if not kwargs.get('all'):
-            return list(pdbs)
+            return [tuple(pdbs)]
 
         with self.session() as session:
             query = session.query(mod.PdbInfo.pdb_id).distinct()
