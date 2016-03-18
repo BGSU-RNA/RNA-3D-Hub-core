@@ -123,6 +123,7 @@ def bootstrap(ctx, **kwargs):
     kwargs['exclude'] = kwargs.get('exclude', [])
     kwargs['exclude'].append('units.distances')
     kwargs['seed'] = 1
+    kwargs['config'] = 'conf/bootstrap.json'
     kwargs.update(ctx.parent.objs)
     run(ctx, 'update', BOOTSTRAPPING_PDBS, **kwargs)
 
