@@ -10,6 +10,9 @@ from pymotifs.models import ExpSeqPdb
 from pymotifs.models import ChainSpecies
 from pymotifs.models import CorrespondenceInfo
 
+from pymotifs.constants import CORRESPONDENCE_HUGE_CUTOFF
+from pymotifs.constants import CORRESPONDENCE_SMALL_CUTOFF
+
 from pymotifs.chains.info import Loader as ChainInfoLoader
 from pymotifs.exp_seq.info import Loader as ExpSeqInfoLoader
 from pymotifs.chains.species import Loader as ChainSpeciesLoader
@@ -28,8 +31,8 @@ class Loader(core.MassLoader):
     allow_no_data = True
     table = CorrespondenceInfo
 
-    small_cutoff = 36
-    huge_cutoff = 2000
+    small_cutoff = CORRESPONDENCE_SMALL_CUTOFF
+    huge_cutoff = CORRESPONDENCE_HUGE_CUTOFF
 
     def has_data(self, pdb, **kwargs):
         return False
@@ -91,17 +94,21 @@ class Loader(core.MassLoader):
             'exp_seq_id_2': pair[1]['id']
         }
 
+    def unique_sequences(self, sequences):
+        mapping = dict((seq['id'], seq) for seq in sequences)
+        return mapping.values()
+
     def data(self, pdbs, **kwargs):
         self.logger.info("Using %i pdbs", len(pdbs))
         seqs = it.imap(self.lookup_sequences, pdbs)
         seqs = it.chain.from_iterable(seqs)
-        seqs = sorted(set(seqs), key=itemgetter('id'))
+        seqs = sorted(self.unique_sequences(seqs), key=itemgetter('id'))
         self.logger.info("Found %i unique sequences", len(seqs))
 
         is_known = ft.partial(self.is_known, self.known())
         pairs = it.combinations(seqs, 2)
         pairs = it.ifilter(self.length_match, pairs)
-        pairs = it.ifilter(self.species_match, pairs)
+        pairs = it.ifilter(self.species_matches, pairs)
         pairs = it.ifilterfalse(is_known, pairs)
         pairs = it.imap(self.as_pair, pairs)
         pairs = list(pairs)
