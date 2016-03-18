@@ -16,6 +16,14 @@ metadata = MetaData()
 Base = declarative_base(metadata=metadata)
 
 
+class TempPdbs(Base):
+    """A class used to when storing pdb_ids temporarily
+    """
+    __tablename__ = 'temp_pdbs'
+    __table_args__ = {'prefixes': ['TEMPORARY']}
+    pdb_id = Column(String(4), primary_key=True)
+
+
 def camelize_classname(tablename):
     return str(tablename[0].upper() +
                re.sub(r'_(\w)', lambda m: m.group(1).upper(), tablename[1:]))
