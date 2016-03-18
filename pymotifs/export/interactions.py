@@ -1,3 +1,5 @@
+import itertools as it
+
 from pymotifs import core
 from pymotifs.models import UnitPairsInteractions
 from pymotifs.interactions.pairwise import Loader as InterLoader
@@ -9,6 +11,7 @@ class Exporter(core.Exporter):
                'FR3D stacking (f_stacks)', 'FR3D base phosphate (f_bphs)']
     dependencies = set([InterLoader])
     compressed = True
+    mark = False
 
     def filename(self, *args, **kwargs):
         return self.config['locations']['interactions_gz']
@@ -26,20 +29,20 @@ class Exporter(core.Exporter):
                 UnitPairsInteractions.f_bphs.label(self.headers[4])
             ).filter_by(pdb_id=pdb)
 
-        count = query.count()
-        if not count:
-            self.logger.warning("No interactions found for %s", pdb)
-        else:
-            self.logger.info("Found %s interactions for %s", count, pdb)
+            count = query.count()
+            if not count:
+                self.logger.warning("No interactions found for %s", pdb)
+            else:
+                self.logger.info("Found %s interactions for %s", count, pdb)
 
-        return [row2dict(result) for result in query]
+            data = [row2dict(result) for result in query]
+            session.close()
+            return data
 
     def data(self, pdbs, **kwargs):
         """Load all interactions for the given structure. This returns a
         generator over all interactions.
         """
-
-        for pdb in pdbs:
-            self.logger.info('Writing out interactions for %s', pdb)
-            for interaction in self.interactions(pdb):
-                yield interaction
+        interactions = it.imap(self.interactions, pdbs)
+        interactions = it.chain.from_iterable(interactions)
+        return interactions

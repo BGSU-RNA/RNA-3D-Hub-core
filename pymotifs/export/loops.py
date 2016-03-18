@@ -3,12 +3,14 @@ from pymotifs import core
 from pymotifs.utils import row2dict
 
 from pymotifs.loops.extractor import Loader as LoopLoader
+from pymotifs.loops.positions import Loader as PositionLoader
 
 
 class Exporter(core.Exporter):
     headers = ['id', 'motif_id', 'pdb', 'nts']
-    dependencies = set([LoopLoader])
+    dependencies = set([LoopLoader, PositionLoader])
     compressed = True
+    mark = False
 
     def filename(self, pdb, **kwargs):
         return self.config['locations']['loops_gz']
@@ -17,7 +19,7 @@ class Exporter(core.Exporter):
         with self.session() as session:
             query = session.query(LoopInfo.loop_id.label('id'),
                                   LoopInfo.pdb_id.label('pdb'),
-                                  LoopInfo.info.unit_ids.label('nts')
+                                  LoopInfo.unit_ids.label('nts')
                                   ).\
                 filter_by(pdb_id=pdb)
 
