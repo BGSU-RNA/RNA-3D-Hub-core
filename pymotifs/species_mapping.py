@@ -27,7 +27,7 @@ class Parser(object):
         return None, None
 
     def parse(self, text):
-        root = ET.fromstring(text)
+        root = ET.fromstring(str(text))
         taxon = root.find('taxon')
         species_id, species_name = self.get_species(taxon)
         return {
@@ -70,6 +70,6 @@ class Loader(core.SimpleLoader):
     def data(self, taxonomy_id, **kwargs):
         helper = WebRequestHelper(parser=Parser())
         result = helper(self.url % taxonomy_id)
-        if result.species_id is None:
+        if 'species_id' not in result:
             self.logger.warning("No species found for %i", taxonomy_id)
         return mod.SpeciesMapping(**result)
