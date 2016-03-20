@@ -62,6 +62,8 @@ def grouper(n, iterable):
 
 
 def row2dict(row):
+    if row is None:
+        return None
     d = {}
     if hasattr(row, '__table__'):
         for column in row.__table__.columns:
