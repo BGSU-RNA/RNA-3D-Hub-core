@@ -258,7 +258,13 @@ class Stage(base.Base):
         :returns: Nothing
         """
 
-        entries = self.to_process(given, **kwargs)
+        entries = None
+        try:
+            entries = self.to_process(given, **kwargs)
+        except Skip as err:
+            self.logger.warn("Skipping this stage. Reason %s", str(err))
+            return []
+
         if not entries:
             self.logger.critical("Nothing to process")
             raise InvalidState("Nothing to process")
