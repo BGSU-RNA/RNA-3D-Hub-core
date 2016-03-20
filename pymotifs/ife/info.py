@@ -24,6 +24,7 @@ class Loader(core.SimpleLoader):
         yield mod.IfeInfo(
             ife_id=group.id,
             pdb_id=group.pdb,
+            model=group.model,
             chain_count=len(group),
             has_structured=bool(group.is_structured),
             has_integral=bool(group.integral),
@@ -39,6 +40,7 @@ class Loader(core.SimpleLoader):
             accompanying = not integral
             yield mod.IfeChains(
                 chain_id=chain.db_id,
+                model=chain.model,
                 ife_id=group.id,
                 is_integral=integral,
                 is_structured=chain.is_structured,
