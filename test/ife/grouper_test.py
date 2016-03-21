@@ -1,7 +1,6 @@
 import collections as coll
 
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.ife.helpers import IfeChain
 from pymotifs.ife.grouper import Grouper as IfeGrouper
@@ -252,7 +251,6 @@ class RealDataTest(StageTest):
         self.assertEquals(ans, self.grouping('4V4Q'))
 
     def test_euk_ribo_with_duplicates_4V88(self):
-        raise SkipTest()
         ans = {
             '4V88|A2': ['4V88|A2'],          # SSU alone
             '4V88|A3': ['4V88|A3'],          # 5S alone

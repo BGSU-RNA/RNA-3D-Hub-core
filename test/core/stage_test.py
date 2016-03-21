@@ -1,5 +1,6 @@
 import os
-from nose import SkipTest
+
+import pytest
 
 from pymotifs.core.stages import Stage
 from pymotifs.core import Skip
@@ -98,16 +99,19 @@ class RecomputingTest(Base):
 
 
 class BeenLongEnoughTest(Base):
+    @pytest.mark.skip()
     def test_knows_if_it_is_too_long(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_knows_if_not_too_long(self):
-        raise SkipTest()
+        pass
 
 
 class ShouldProcessTest(Base):
+    @pytest.mark.skip()
     def test_will_reprocess_if_too_long(self):
-        raise SkipTest()
+        pass
 
     def test_it_will_reprocess_if_given_recalculate(self):
         stage = SomeStage(CONFIG, None)

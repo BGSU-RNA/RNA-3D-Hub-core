@@ -1,6 +1,6 @@
-from test import StageTest
+import pytest
 
-from nose import SkipTest
+from test import StageTest
 
 from pymotifs.units.info import Loader
 
@@ -95,16 +95,10 @@ class CreatingUnitsTest(StageTest):
         self.assertEqual(ans, val)
 
     def test_sets_the_chain_index(self):
-        raise SkipTest()
-        val = self.data.chain_index
-        ans = 0
-        self.assertEqual(ans, val)
+        assert self.data.chain_index == 0
 
     def test_sets_the_global_index(self):
-        raise SkipTest()
-        val = self.data.global_index
-        ans = 0
-        self.assertEqual(ans, val)
+        assert self.data.global_index == 0
 
     def test_sets_the_type(self):
         val = self.data.unit_type_id

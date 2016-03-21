@@ -1,8 +1,6 @@
 from unittest import TestCase
 
 from test import StageTest
-from test import skip_without_matlab
-from nose import SkipTest
 
 from pymotifs.ife.helpers import IfeChain
 from pymotifs.ife.helpers import IfeGroup
@@ -181,13 +179,11 @@ class InfoLoadingTest(StageTest):
     def test_loads_interactions(self):
         _, val = self.loader("4V4Q")
         self.assertTrue(val)
-        raise SkipTest()
 
     def test_loads_database_id(self):
         val = self.loader.load("4V4Q", "AA")
         self.assertEquals(173, val.db_id)
 
-    @skip_without_matlab
     def test_loads_internal_cww(self):
         val = self.loader.load("4V4Q", "AA")
         self.assertEquals(472, val.internal)

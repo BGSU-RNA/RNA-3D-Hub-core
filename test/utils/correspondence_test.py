@@ -1,5 +1,4 @@
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs import models as mod
 from pymotifs.utils.correspondence import Helper

@@ -1,7 +1,8 @@
 import functools as ft
 
+import pytest
+
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.nr.groups.simplified import Grouper
 from pymotifs.nr.groups.simplified import ranking_key
@@ -252,14 +253,17 @@ class AlignmentTest(StageTest):
 class AreEquivlantTests(StageTest):
     loader_class = Grouper
 
+    @pytest.mark.skip()
     def test_are_different_are_different_species(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_are_different_if_bad_align(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_are_different_if_bad_disc(self):
-        raise SkipTest()
+        pass
 
 
 class LoadingIfeTest(StageTest):
@@ -374,14 +378,18 @@ class ValidIfeTest(StageTest):
 class GroupingTest(StageTest):
     loader_class = Grouper
 
+    @pytest.mark.skip()
     def test_it_will_complain_if_no_ifes_found(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_will_filter_out_invalid_ifes(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_will_create_groups(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_will_assign_rank_to_all_grouped_members(self):
-        raise SkipTest()
+        pass

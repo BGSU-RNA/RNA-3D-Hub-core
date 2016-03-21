@@ -1,4 +1,4 @@
-from nose import SkipTest
+import pytest
 
 from test import StageTest
 from test import CifStageTest
@@ -17,8 +17,9 @@ class QueryingTest(StageTest):
     def test_knows_has_no_data(self):
         self.assertFalse(self.loader.has_data('024D'))
 
+    @pytest.mark.skip()
     def test_can_delete_data(self):
-        raise SkipTest()
+        pass
 
 
 class ComputingCentersTest(CifStageTest):
@@ -34,14 +35,17 @@ class ComputingCentersTest(CifStageTest):
         ans = np.array([-0.4305, -3.74425, 18.200875])
         np.testing.assert_array_almost_equal(ans, val)
 
+    @pytest.mark.skip()
     def test_given_aa_gets_backbone_center(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_given_dna_gets_base_center(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_given_anything_else_gets_overall_center(self):
-        raise SkipTest()
+        pass
 
 
 class ComputingDistancesTest(CifStageTest):
@@ -57,17 +61,21 @@ class ComputingDistancesTest(CifStageTest):
         ans = 4.266
         np.testing.assert_almost_equal(ans, val, decimal=1)
 
+    @pytest.mark.skip()
     def test_computes_rna_to_any_distance(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_computes_protein_protein_distance(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_computes_protein_rna_distance(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_computes_water_water_distance(self):
-        raise SkipTest()
+        pass
 
 
 class DistancesLoaderTest(CifStageTest):

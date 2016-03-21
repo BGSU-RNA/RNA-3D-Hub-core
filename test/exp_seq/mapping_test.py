@@ -1,5 +1,6 @@
+import pytest
+
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.exp_seq.mapping import Loader
 
@@ -7,14 +8,17 @@ from pymotifs.exp_seq.mapping import Loader
 class QueryingTest(StageTest):
     loader_class = Loader
 
+    @pytest.mark.skip()
     def test_knows_if_has_data(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_knows_if_has_no_data(self):
-        raise SkipTest()
+        pass
 
+    @pytest.mark.skip()
     def test_can_remove_data(self):
-        raise SkipTest()
+        pass
 
 
 class DeterminingTheMappedChainsTest(StageTest):
@@ -35,5 +39,6 @@ class GettingExpMappingTest(StageTest):
     def test_can_get_full_mapping(self):
         self.assertEquals(122, len(self.data))
 
+    @pytest.mark.skip()
     def test_gets_a_correct_mapping(self):
-        raise SkipTest()
+        pass

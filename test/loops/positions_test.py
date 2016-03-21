@@ -1,6 +1,7 @@
 import os
 
-from nose import SkipTest
+import pytest
+
 from test import StageTest
 from test import skip_without_matlab
 
@@ -47,8 +48,9 @@ class RemovingTest(StageTest):
     def test_ignores_unknown_pdb(self):
         self.assertTrue(self.loader.remove('02S7'))
 
+    @pytest.mark.skip()
     def test_deletes_all_positions(self):
-        raise SkipTest()
+        pass
 
 
 @skip_without_matlab

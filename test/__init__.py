@@ -1,8 +1,7 @@
 import os
 import unittest as ut
-from functools import wraps
 
-from nose import SkipTest
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -41,16 +40,7 @@ def which(program):
     return None
 
 
-def skip_without_matlab(func):
-    """A wrapper around a test method to make it raise a SkipTest if we do not
-    have a matlab executable.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not which('matlab'):
-            raise SkipTest("Skipping without matlab")
-        return func(*args, **kwargs)
-    return wrapper
+skip_without_matlab = pytest.mark.skipif(which('matlab'))
 
 
 class StageTest(ut.TestCase):

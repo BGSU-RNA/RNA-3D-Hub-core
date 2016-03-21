@@ -2,7 +2,6 @@ import os
 
 from test import StageTest
 from test import skip_without_matlab
-from nose import SkipTest
 
 from pymotifs.loops.quality import LoopQualityLoader
 from pymotifs.models import LoopQa
@@ -35,7 +34,6 @@ class QueryingTest(StageTest):
     loader_class = LoopQualityLoader
 
     def test_can_detect_if_has_data(self):
-        raise SkipTest("Waiting for data import")
         self.assertTrue(self.loader.has_data('1GID'))
 
     def test_can_detect_if_has_no_data(self):

@@ -1,5 +1,6 @@
+import pytest
+
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.nr.builder import RepresentativeFinder
 
@@ -132,8 +133,6 @@ class PickingRepresentativeTest(StageTest):
         members = []
         for pdb, chains in args:
             ifes = grouper.ifes(pdb)
-            if not ifes:
-                raise SkipTest("No ifes found for %s" % pdb)
             members.extend(ife for ife in ifes if ife['name'] in chains)
         return {'id': kwargs['id'], 'members': members}
 

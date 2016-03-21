@@ -1,5 +1,6 @@
+import pytest
+
 from test import StageTest
-from nose import SkipTest
 
 from pymotifs.chains.species import Loader
 
@@ -13,8 +14,9 @@ class QueryingTest(StageTest):
     def test_knows_has_data(self):
         self.assertTrue(self.loader.has_data('124D'))
 
+    @pytest.mark.skip()
     def test_can_remove_data(self):
-        raise SkipTest()
+        pass
 
 
 class GettingDataTest(StageTest):

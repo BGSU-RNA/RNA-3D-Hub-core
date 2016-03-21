@@ -1,4 +1,4 @@
-from nose import SkipTest
+import pytest
 
 from test import QueryUtilTest
 
@@ -14,12 +14,13 @@ class SourceTest(QueryUtilTest):
     def test_knows_when_there_is_no_known_taxon_id(self):
         self.assertEquals([], self.db_obj.source('1ET4', 'A'))
 
+    @pytest.mark.skip(reason="Seems annotations on this have changed")
     def test_can_find_several_species_ids(self):
-        raise SkipTest("Seems annotations on this have changed")
         self.assertEquals([11103, 32630], self.db_obj.source('3T4B', 'A'))
 
+    @pytest.mark.skip()
     def test_fails_if_it_cannot_find_all_taxon_ids(self):
-        raise SkipTest()
+        pass
 
     def test_can_simplify_none_to_none(self):
         self.assertEquals(None, self.db_obj.source('3T4B', 'A', simplify=True))
@@ -43,14 +44,14 @@ class RnaChainsTest(QueryUtilTest):
 
     def test_can_return_ids_and_names(self):
         val = self.db_obj.rna_chains('4V4Q', return_id=True)[0]
-        self.assertEquals(('AA', 173), val)
+        self.assertEquals(('AA', 364L), val)
 
 
 class LoopLoadingTest(QueryUtilTest):
     query_class = st.Structure
 
+    @pytest.mark.skip()
     def test_can_load_data(self):
-        raise SkipTest
         val = self.db_obj.loops('IL_1FG0_007')
         ans = {
             'id': 'IL_1FG0_007',

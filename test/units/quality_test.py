@@ -1,5 +1,5 @@
 import unittest
-from nose import SkipTest
+import pytest
 
 from test import StageTest
 
@@ -97,8 +97,9 @@ class QueryingTest(StageTest):
     def test_knows_if_data_is_missing(self):
         self.assertFalse(self.loader.has_data('0bob'))
 
+    @pytest.mark.skip("No good data")
     def test_knows_if_data_exists(self):
-        raise SkipTest("No good data")
+        pass
 
 
 class MappingTest(StageTest):

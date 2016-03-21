@@ -1,5 +1,4 @@
 from unittest import TestCase
-from nose import SkipTest
 
 from test import StageTest
 
@@ -21,7 +20,7 @@ class ParsingTest(TestCase):
             'species_id': 562,
             'species_name': 'Escherichia coli'
         }
-        self.assertEquals(ans, val)
+        assert val == ans
 
     def test_can_get_correct_data_given_subspecies(self):
         val = self.parse('test/files/species-mapping/subspecies.xml')
@@ -30,6 +29,7 @@ class ParsingTest(TestCase):
             'species_id': 562,
             'species_name': 'Escherichia coli'
         }
+        assert val == ans
 
     def test_can_get_correct_data_given_genus(self):
         val = self.parse('test/files/species-mapping/genus.xml')
@@ -38,6 +38,7 @@ class ParsingTest(TestCase):
             'species_id': None,
             'species_name': None
         }
+        assert val == ans
 
 
 class SpeciesMappingTest(StageTest):
