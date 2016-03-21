@@ -82,8 +82,8 @@ class Loader(core.MassLoader):
     def known(self):
         with self.session() as session:
             query = session.query(
-                self.table.exp_seq_id_1.label('id'),
-                self.table.exp_seq_id_2.label('id'),
+                self.table.exp_seq_id_1.label('id1'),
+                self.table.exp_seq_id_2.label('id2'),
             ).distinct()
 
             return set((result.id1, result.id2) for result in query)
