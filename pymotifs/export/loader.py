@@ -6,4 +6,4 @@ from pymotifs.export.loops import Exporter as LoopExporter
 
 
 class Exporter(StageContainer):
-    stages = [CifAtom, LoopExporter, InteractionExporter]
+    stages = [CifAtom, InteractionExporter]
