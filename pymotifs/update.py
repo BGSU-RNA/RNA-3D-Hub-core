@@ -27,7 +27,7 @@ class Loader(core.StageContainer):
         species_mapping.Loader,
         units.Loader,
         interactions.Loader,
-        loops.Loader,
+        # loops.Loader,
         exp_seq.Loader,
         correspondence.Loader,
         ife.Loader,
