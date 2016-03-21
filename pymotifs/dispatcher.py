@@ -121,7 +121,8 @@ class Dispatcher(object):
 
     def __call__(self, entries, **kwargs):
         stages = self.stages(self.name, build=True)
-        self.logger.debug('Running stages: %s', stages)
+        names = [s.name for s in stages]
+        self.logger.debug('Running stages: %s', ', '.join(names))
         for stage in stages:
             try:
                 self.logger.info("Running stage: %s", stage.name)
