@@ -34,8 +34,12 @@ class Loader(core.SimpleLoader):
         """
 
         with self.session() as session:
-            query = session.query(Info).filter(Info.length != None)
-            return [result.correspondence_id for result in query]
+            query = session.query(Info).filter(Info.length == None)
+            ids = [result.correspondence_id for result in query]
+
+        if not ids:
+            raise core.Skip("Skipping positions, no new correspondencies")
+        return ids
 
     def query(self, session, corr_id):
         with self.session() as session:
