@@ -32,7 +32,7 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(Info)
+            query = session.query(Info.correspondence_id)
             return [result.correspondence_id for result in query]
 
     def remove(self, corr_id, **kwargs):
