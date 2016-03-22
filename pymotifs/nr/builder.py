@@ -234,8 +234,8 @@ class RepresentativeFinder(core.Base):
         """
 
         ratio = 0
-        if chain['bps'] and chain['length']:
-            ratio = float(chain['bps']) / float(chain['length'])
+        if chain['bp'] and chain['length']:
+            ratio = float(chain['bp']) / float(chain['length'])
         resolution = chain.get('resolution')
         if resolution:
             resolution = resolution * -1
@@ -251,7 +251,6 @@ class RepresentativeFinder(core.Base):
         representative of.
         :returns: The initial representative.
         """
-        print(group)
         return max(group, key=self.sorting_key)
 
     def candidates(self, best, group):
@@ -266,7 +265,7 @@ class RepresentativeFinder(core.Base):
         """
 
         len = op.itemgetter('length')
-        bp = op.itemgetter('bps')
+        bp = op.itemgetter('bp')
         length = lambda c: len(c) >= len(best)
         bps = lambda c: bp(c) >= bp(best)
         same = lambda c: bp(c) == bp(best) and len(c) == len(best)
@@ -309,7 +308,7 @@ class RepresentativeFinder(core.Base):
         possible = []
         for candidate in candidates:
             length_change = self.increase(candidate, representative, 'length')
-            bp_change = self.increase(candidate, representative, 'bps')
+            bp_change = self.increase(candidate, representative, 'bp')
             if (length_change, bp_change) >= cutoff:
                 possible.append(candidate)
 
