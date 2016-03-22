@@ -265,6 +265,11 @@ class AreEquivlantTests(StageTest):
     def test_are_different_if_bad_disc(self):
         pass
 
+    def test_always_joins_if_given_hardcoded_chains(self):
+        g1 = {'id': '1S72|1|0'}
+        g2 = {'id': '1FG0|1|A'}
+        self.assertTrue(self.loader.are_equivalent({}, {}, g1, g2))
+
 
 class LoadingIfeTest(StageTest):
     loader_class = Grouper

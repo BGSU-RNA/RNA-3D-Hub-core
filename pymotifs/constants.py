@@ -76,3 +76,8 @@ CORRESPONDENCE_SMALL_CUTOFF = 36
 
 """Length cutoff before being matched as huge"""
 CORRESPONDENCE_HUGE_CUTOFF = 2000
+
+"""Set of pairs that must be joined by into a equivelance class"""
+EQUIVELANT_PAIRS = set(
+    ('1S72|0', '1FG0|A'),
+)

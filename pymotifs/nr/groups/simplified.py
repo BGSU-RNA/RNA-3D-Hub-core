@@ -5,6 +5,7 @@ import collections as coll
 from pymotifs import core
 from pymotifs.utils import result2dict
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
+from pymotifs.constants import EQUIVELANT_PAIRS
 
 from pymotifs.models import PdbInfo
 from pymotifs.models import ChainInfo
@@ -223,6 +224,10 @@ class Grouper(core.Base):
                           group1['id'], group2['id'])
         return True
 
+    def is_hard_coded_join(self, group1, group2):
+        return (group1['id'], group2['id']) in EQUIVELANT_PAIRS or \
+            (group2['id'], group1['id']) in EQUIVELANT_PAIRS
+
     def are_equivalent(self, alignments, discrepancies, group1, group2):
         """Determine if two chains are equivalent. This requires that the
         chains align well and are not of conflicting species.
@@ -236,7 +241,8 @@ class Grouper(core.Base):
 
         return self.are_similar_species(group1, group2) and \
             self.has_good_alignment(alignments, group1, group2) and \
-            self.has_good_discrepancy(discrepancies, group1, group2)
+            self.has_good_discrepancy(discrepancies, group1, group2) or \
+            self.is_hard_coded_join(group1, group2)
 
     def validate(self, connections, group):
         pairs = it.product(group, group)
@@ -281,10 +287,6 @@ class Grouper(core.Base):
         self.logger.info("Detected %i chains not in alignments", len(missing))
 
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
-        # pairs = alignments.iteritems()
-        # pairs = it.imap(lambda (k, v): it.izip(it.repeat(k), v.keys()), pairs)
-        # pairs = it.chain.from_iterable(pairs)
-        # pairs = it.chain(pairs, missing)
         pairs = it.imap(lambda c: c['db_id'], chains)
         pairs = it.product(pairs, repeat=2)
         pairs = it.ifilter(is_mapped(0), pairs)
