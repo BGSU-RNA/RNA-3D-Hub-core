@@ -150,7 +150,8 @@ class PickingRepresentativeTest(StageTest):
                        ('1GRZ', ('A', 'B')), id='NR_4.0_86492.1')
         assert val['id'] == '1X8W|1|A'
 
-    @pytest.mark.xfail(reason="No cutoffs for small chains yet")
+    @pytest.mark.xfail(reason="No cutoffs for small chains yet."
+                       " Selects: 4OAU|1|A")
     def test_4OAU(self):
         val = self.rep(('4OAU', 'A'), ('3S4G', 'B'), ('3GPQ', ('E', 'F')),
                        id='NR_all_14757.1')
