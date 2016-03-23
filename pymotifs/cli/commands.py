@@ -122,6 +122,7 @@ def bootstrap(ctx, **kwargs):
     """
     kwargs['exclude'] = kwargs.get('exclude', [])
     kwargs['exclude'].append('units.distances')
+    kwargs['exclude'].append('export')
     kwargs['seed'] = 1
     kwargs['config'] = 'conf/bootstrap.json'
     kwargs.update(ctx.parent.objs)
