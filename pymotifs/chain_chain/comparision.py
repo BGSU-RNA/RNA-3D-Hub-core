@@ -36,7 +36,7 @@ class Loader(core.SimpleLoader):
     correspondences between ifes to compute the discrepancy between them.
     """
 
-    allow_no_data = True
+    mark = False
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         Downloader, IfeLoader])
 
