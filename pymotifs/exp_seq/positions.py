@@ -31,14 +31,13 @@ class Loader(core.SimpleLoader):
     def sequence(self, exp_seq_id):
         with self.session() as session:
             exp = session.query(Exp).get(exp_seq_id)
-            return (exp.sequence, exp.normalized)
+            return exp.sequence
 
-    def positions(self, exp_id, sequence, normalized):
+    def positions(self, exp_id, sequence):
         positions = []
-        pairs = it.izip_longest(sequence, normalized)
-        for index, (char, norm_char) in enumerate(pairs):
-            if char is None:
-                raise core.InvalidState("Norm sequence may never be longer")
+        info = InfoLoader(self.config, self.session)
+        for index, char in enumerate(sequence):
+            norm_char = info.translate(char)
 
             positions.append({
                 'exp_seq_id': exp_id,
@@ -49,5 +48,5 @@ class Loader(core.SimpleLoader):
         return positions
 
     def data(self, exp_seq_id, **kwargs):
-        sequence, normalized = self.sequence(exp_seq_id)
-        return self.positions(exp_seq_id, sequence, normalized)
+        sequence = self.sequence(exp_seq_id)
+        return self.positions(exp_seq_id, sequence)
