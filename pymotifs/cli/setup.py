@@ -46,9 +46,19 @@ def pdbs(config, options):
     return []
 
 
-def expand_stage_pattern(stage, key, options):
+def expand_stage_pattern(stage, value):
+    """Expands . and * to the current stage name and True as well as check that
+    all given stage names exist. This is used to process a given part of the
+    options dictonary to create the
+
+    :param str stage: The current stage name.
+    :param list value: The names to expand.
+    :returns: The list of expanded names.
+    """
+
     updated = []
-    for name in options.get(key, []):
+    raw = value or []
+    for name in raw:
         if name == '.':
             name = stage
         elif name == '*':
@@ -60,5 +70,4 @@ def expand_stage_pattern(stage, key, options):
 
         updated.append(name)
 
-    if updated:
-        options[key] = updated
+    return updated
