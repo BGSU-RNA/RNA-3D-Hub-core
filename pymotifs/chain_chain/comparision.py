@@ -25,12 +25,6 @@ from pymotifs.ife.loader import Loader as IfeLoader
 from fr3d.geometry.discrepancy import discrepancy
 
 
-class MissingAllBaseCenters(Exception):
-    """Raised when all bases are missing a base center in some structure.
-    """
-    pass
-
-
 class Loader(core.SimpleLoader):
     """A Loader to get all chain to chain similarity data. This will use the
     correspondences between ifes to compute the discrepancy between them.
@@ -80,7 +74,7 @@ class Loader(core.SimpleLoader):
         pairs = it.ifilter(lambda p: p[2], pairs)
         pairs = it.ifilter(lambda p: p[2]['good_alignment'], pairs)
         pairs = it.imap(as_tuple, pairs)
-        return list(pairs)
+        return sorted(pairs, key=lambda p: (p[0], p[1]))
 
     def query(self, session, entry, **kwargs):
         """Check if there are any chain_chain_similarity entries for this pdb.
@@ -137,8 +131,9 @@ class Loader(core.SimpleLoader):
                 continue
 
             if len(r1.centers['base']) != len(r2.centers['base']):
-                self.logger.warning("Base centers %s, %s differ in size",
-                                    r1, r2)
+                msg = "Base centers %s, %s differ in size, (%s, %s)"
+                self.logger.warning(msg, r1, r2, r1.centers['base'],
+                                    r2.centers['base'])
                 continue
 
             valid1.append(r1)
@@ -146,11 +141,11 @@ class Loader(core.SimpleLoader):
 
         if not valid1:
             self.logger.error("No residues with base centers for first")
-            raise MissingAllBaseCenters("Missing first's bases")
+            return (-1, 0)
 
         if not valid2:
             self.logger.error("No residues with base centers for second")
-            raise MissingAllBaseCenters("Missing second's bases")
+            return (-1, 0)
 
         self.logger.debug("Comparing %i pairs of residues", len(residues1))
         disc = discrepancy(valid1, valid2)
@@ -159,7 +154,7 @@ class Loader(core.SimpleLoader):
             data = (residues1[0].unit_id(), residues2[0].unit_id())
             raise core.InvalidState("NaN for discrepancy using %s, %s" % data)
 
-        return disc
+        return (disc, len(valid1))
 
     def info(self, ife_id):
         with self.session() as session:
@@ -172,9 +167,10 @@ class Loader(core.SimpleLoader):
                 join(mod.ChainInfo,
                      mod.ChainInfo.chain_id == mod.IfeChains.chain_id).\
                 filter(mod.IfeInfo.ife_id == ife_id).\
+                filter(mod.IfeInfo.new_style == 1).\
+                filter(mod.IfeChains.index == 0).\
                 one()
             info = ut.row2dict(result)
-            info['model'] = info['model'] or 1
 
         with self.session() as session:
             info['sym_op'] = session.query(mod.UnitInfo.sym_op).\
@@ -217,13 +213,15 @@ class Loader(core.SimpleLoader):
         if not residues1 or not residues2:
             raise core.Skip("No residues to compare")
 
+        discrepancy, length = self.discrepancy(corr_id, residues1, residues2)
         compare = {
             'chain_id_1': info1['chain_id'],
             'chain_id_2': info2['chain_id'],
             'model_1': info1['model'],
             'model_2': info2['model'],
             'correspondence_id': corr_id,
-            'discrepancy': self.discrepancy(corr_id, residues1, residues2),
+            'discrepancy': discrepancy,
+            'num_nucleotides': length,
         }
 
         reversed = dict(compare)
