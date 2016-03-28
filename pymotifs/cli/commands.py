@@ -1,5 +1,6 @@
 import random
 import logging
+import collections as coll
 
 import click
 
@@ -20,36 +21,95 @@ from pymotifs.version import __VERSION__
 from pymotifs.dispatcher import Dispatcher
 
 
+# This constant is included and then changed during testing so we do not
+# actually execute the stages unless we need to. This allows us to better test
+# if we are loading all the options and configuration correctly.
+SHOULD_RUN = True
+
+
+Result = coll.namedtuple('Result', ['result', 'success', 'message'])
+
+
+class Runnable(object):
+    """This object works to define the what will be run. This is mostly used to
+    make it easier to inspect and test out commands. I've found a couple issues
+    where things aren't be used correctly so I'm restructing things to create
+    more tests.
+    """
+
+    def __init__(self, name, ids, config, engine, options):
+        self.config = config
+        self.target = name
+        self._ids = ids
+        self.engine = engine
+        self._options = options
+
+    @property
+    def skipped_stages(self):
+        return setup.expand_stage_pattern(self.target,
+                                          self._options.get('skip_stage'))
+
+    @property
+    def recalculate_stages(self):
+        return setup.expand_stage_pattern(self.target,
+                                          self._options.get('recalculate'))
+
+    @property
+    def session(self):
+        return sessionmaker(self.engine)
+
+    @property
+    def dispatcher(self):
+        return Dispatcher(self.target, self.config, self.session,
+                          skip_dependencies=self.skip_dependencies,
+                          exclude=self.skipped_stages)
+
+    @property
+    def skip_dependencies(self):
+        return self.options.get('skip_dependencies', False)
+
+    @property
+    def options(self):
+        opts = dict(self._options)
+        opts['recalculate'] = self.recalculate_stages
+        opts['dry_run'] = SHOULD_RUN and opts['dry_run']
+        return opts
+
+    def ids(self):
+        return self._ids or setup.pdbs(self.config, self.options)
+
+    def __call__(self):
+        if 'seed' in self.options:
+            random.seed(self.options['seed'])
+
+        result = None
+        success = None
+        try:
+            if SHOULD_RUN:
+                result = self.dispatcher(self.ids(), **self.options)
+            success = True
+        except Exception as error:
+            success = False
+            logging.exception(error)
+
+        msg = None
+        if self.options['email']:
+            emailer = Emailer(self.config, self.engine)
+            emailer = emailer.success if success else emailer.fail
+            msg = emailer(self.target,
+                          log_file=self.options['log_file'],
+                          dry_run=self.options['dry_run'])
+
+        return Result(result=result, success=success, message=msg)
+
+
 def run(ctx, name, ids, config=None, engine=None, **kwargs):
-    if kwargs.get('seed', None) is not None:
-        random.seed(kwargs['seed'])
-
     mod.reflect(engine)
-
-    try:
-        setup.expand_stage_pattern(name, 'recalculate', kwargs)
-        setup.expand_stage_pattern(name, 'skip_stage', kwargs)
-    except introspect.UnknownStageError as err:
-        click.secho("Unknown stage %s" % err.args, err=True, fg='red')
-        ctx.exit(1)
-
-    if not ids:
-        ids = setup.pdbs(config, kwargs)
-
-    kwargs['exclude'] = kwargs.get('skip_stage')
-
-    error = None
-    dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
-    mailer = Emailer(config, engine)
-    try:
-        dispatcher(ids, **kwargs)
-    except Exception as error:
+    runnable = Runnable(name, ids, config, engine, kwargs)
+    result = runnable()
+    if not result.success:
         click.secho("Pipeline failed", fg='red', err=True)
-        logging.exception(error)
         ctx.exit(1)
-    finally:
-        if kwargs['email']:
-            mailer(name, ids=ids, error=None, **kwargs)
 
 
 @click.group(short_help="Interface to update pipeline",
@@ -120,9 +180,8 @@ def bootstrap(ctx, **kwargs):
     will populate a database with some default data for testing. This will not
     import any distance data.
     """
-    kwargs['exclude'] = kwargs.get('exclude', [])
-    kwargs['exclude'].append('units.distances')
-    kwargs['exclude'].append('export')
+
+    kwargs['skip_stage'] = ['units.distances', 'export', 'pdb.obsolete']
     kwargs['seed'] = 1
     kwargs['config'] = 'conf/bootstrap.json'
     kwargs.update(ctx.parent.objs)
