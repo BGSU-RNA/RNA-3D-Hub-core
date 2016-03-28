@@ -3,8 +3,12 @@ import hashlib
 import cStringIO as sio
 import collections as coll
 import xml.etree.ElementTree as ET
-from elementtree import SimpleXMLTreeBuilder
-ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
+
+try:
+    from elementtree import SimpleXMLTreeBuilder
+    ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
+except:
+    pass
 
 import pymotifs.utils as ut
 import pymotifs.core as core
