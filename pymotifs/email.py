@@ -1,7 +1,11 @@
+import logging
+
 from mailer import Mailer
 from mailer import Message
 
 from pymotifs import core
+
+logger = logging.getLogger(__name__)
 
 
 class Emailer(core.Base):
@@ -28,7 +32,15 @@ class Emailer(core.Base):
 
         return ''.join(bad_lines)
 
-    def message(self, name, log_file=None, error=None, **kwargs):
+    @property
+    def mailer(self):
+        """Create the mailer used to send the email.
+
+        :returns: The Mailer to use.
+        """
+        return Mailer(self.config['email']['server'])
+
+    def message(self, name, log_file=None, status=None):
         """Create an email for the given stage based upon the log file.
 
         If no log file is provided or it is False then the email's body will
@@ -36,15 +48,11 @@ class Emailer(core.Base):
         an error object is given this will be used to indicate the stage
         failed.
 
-        :stage: Name of the stage that was run.
-        :log_file: Filename for the log file
-        :error: Exception object that occurred.
+        :param str stage: Name of the stage that was run.
+        :param str log_file: Filename for the log file
+        :param str status: The status to use in the subject line.
         :returns: A Mailer message to send.
         """
-
-        status = 'Succeeded'
-        if error:
-            status = 'Failed'
 
         kwargs = {'stage': name, 'status': status}
         subject = self.config['email']['subject'].format(**kwargs)
@@ -59,27 +67,29 @@ class Emailer(core.Base):
 
         return msg
 
-    def mailer(self, **kwargs):
-        """Create the mailer used to send the email.
-
-        :returns: The Mailer to use.
+    def success(self, name, log_file=None, dry_run=False):
+        """Send a sucess message.
         """
-        return Mailer(self.config['email']['server'])
+        self.msg = self.message(name, status='Success', log_file=log_file)
+        return self.__send__(self.msg)
 
-    def __call__(self, name, **kwargs):
-        """Send the email if needed. If this is a dry run no mail is sent and
-        the email is just returned instead. If we have been configured to send
-        no email then no email is built and None is returned. Otherwise the
-        result of sending the email is returned.
+    def fail(self, name, log_file=None, dry_run=False):
+        """Send a failure message.
+        """
+        self.msg = self.message(name, status='Failed', log_file=log_file)
+        return self.__send__(self.msg)
 
-        :name: The name of the stage that was run.
+    def __send__(self, message, dry_run=False):
+        """Send a a message. This takes some message and sends it. If an
+        exception occurs None is returned and the exception is logged.
         """
 
-        mailer = self.mailer()
-        msg = self.message(name, **kwargs)
-
-        if kwargs.get('dry_run'):
-            self.logger.info("Dry run so no mail sent")
-            return msg
-
-        return mailer.send(msg)
+        try:
+            if dry_run:
+                self.logger.info("Dry run so no mail sent")
+            else:
+                self.mailer.send(self.msg)
+                return message
+        except Exception as err:
+            logger.exception(err)
+            return None
