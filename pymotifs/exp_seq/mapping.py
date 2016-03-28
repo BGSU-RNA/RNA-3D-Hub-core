@@ -11,6 +11,16 @@ from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.units.info import Loader as UnitLoader
 
 
+DELETE = """
+DELETE exp_seq_unit_mapping
+FROM exp_seq_unit_mapping
+JOIN unit_info
+ON
+    unit_info.unit_id = exp_seq_unit_mapping.unit_id
+WHERE unit_info.pdb_id = :pdb_id
+"""
+
+
 class Loader(core.Loader):
     dependencies = set([InfoLoader, PositionLoader, UnitLoader])
 
@@ -40,13 +50,7 @@ class Loader(core.Loader):
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(UnitInfo.unit_id).filter_by(pdb_id=pdb)
-            units = [result.unit_id for result in query]
-
-        with self.session() as session:
-            session.query(UnitMapping).\
-                filter(UnitMapping.unit_id.in_(units)).\
-                delete(synchronize_session=False)
+            session.execute(DELETE, {'pdb_id': pdb})
 
     def chain_mapping(self, cif, chain, exp_mapping):
         for (_, seq_id, unit_id) in cif.experimental_sequence_mapping(chain):
