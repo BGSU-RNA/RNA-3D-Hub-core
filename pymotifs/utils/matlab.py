@@ -2,6 +2,8 @@ import os
 import logging
 import functools as ft
 
+from pymotifs.core.exceptions import Skip
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -13,9 +15,11 @@ except Exception as err:
     logger.error("Could not import matlab")
     logger.exception(err)
 
-from pymotifs.core.exceptions import Skip
-
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+
+def exists():
+    return 'mlab' in globals()
 
 
 class MatlabFailed(Exception):
@@ -39,9 +43,9 @@ class Matlab(object):
             del self.mlab
 
     def __startup__(self):
-        logger.debug('Starting up matlab')
-        if 'mlab' not in globals():
+        if not exists():
             raise Skip("No matlab around, skipping")
+        logger.debug('Starting up matlab')
         self.mlab = mlab
         os.chdir(BASE)
         # self.mlab._autosync_dirs = False

@@ -10,37 +10,17 @@ from fr3d.cif.reader import Cif
 import pymotifs.models as models
 from pymotifs.config import load as config_loader
 
+from pymotifs.utils.matlab import exists as has_matlab
+
 CONFIG = config_loader('conf/test.json', )
 engine = create_engine(CONFIG['db']['uri'])
 models.reflect(engine)
 Session = sessionmaker(bind=engine)
 
 
-def which(program):
-    """A utility function to check if we have an executable.
-
-    :program: The program name to search for.
-    :return: Path of the executable or None if it does not exist.
-    """
-
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
-
-
-skip_without_matlab = pytest.mark.skipif(which('matlab'))
+skip_without_matlab = pytest.mark.skipif(
+    has_matlab() is True,
+    reason="No matlab installed")
 
 
 class StageTest(ut.TestCase):
