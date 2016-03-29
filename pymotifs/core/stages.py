@@ -490,10 +490,16 @@ class MassLoader(Loader):
         return any(parent(pdb, **kwargs) for pdb in pdbs)
 
     def mark_processed(self, pdbs, **kwargs):
+        """Mark which all PDBs as processed. This marks each one individually.
+        """
         for pdb in pdbs:
             super(MassLoader, self).mark_processed(pdb, **kwargs)
 
     def remove(self, pdbs, **kwargs):
+        """Does nothing in mass loaders. These stages are generally complicated
+        and it's hard to know what the correct move is. So we do nothing here
+        and instead log that we are doing nothing.
+        """
         self.logger.debug("Remove does nothing in MassLoaders")
 
     @abc.abstractmethod
