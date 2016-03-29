@@ -1,5 +1,6 @@
+import pytest
+
 from test import StageTest
-from test import SkipTest
 
 from pymotifs.interactions.pairwise import Loader
 
@@ -68,8 +69,8 @@ class ParsingACsvTest(StageTest):
         }
         self.assertTrue(ans, val)
 
+    @pytest.mark.skip(reason="Not sure of data to use")
     def test_it_merges_entries(self):
-        raise SkipTest()
         val = self.data[10]  # Not sure what index to use
         ans = {}
         self.assertTrue(ans, val)
@@ -80,3 +81,10 @@ class ParsingACsvTest(StageTest):
     def test_skips_invalid_entries(self):
         ints = [d.get('f_lwbp') for d in self.data]
         self.assertFalse('perp' in ints)
+
+
+class RunningMatlabTest(StageTest):
+    loader_class = Loader
+
+    def test_annotates_a_structure(self):
+        assert len(self.loader.data('1GID')) == 1513
