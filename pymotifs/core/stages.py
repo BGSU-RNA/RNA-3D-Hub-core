@@ -426,7 +426,15 @@ class SimpleLoader(Loader):
             return bool(self.query(session, args).limit(1).count())
 
     def remove(self, args, **kwargs):
-        """This will delete all entries for the given arguments
+        """This will delete all entries for the given arguments. If the keyword
+        argument dry_run is given then this will not actually delete anything.
+        This will also check if there is nothing to delete and do nothing in
+        that case. This also deals with the fact that SQLalchemly does not
+        support joins in delete for mysql by finding all data, and then
+        deleting each entry. This is very slow but does allow us to use joins
+        in the query method.
+
+        :param args: The argument to remove, generally a PDB id.
         """
 
         self.logger.info("Removing data for %s", str(args))
