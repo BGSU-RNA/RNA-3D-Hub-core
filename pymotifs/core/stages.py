@@ -82,6 +82,9 @@ class Stage(base.Base):
         """
         pass
 
+    def remove(self, entry, **kwargs):
+        pass
+
     def cif(self, pdb):
         """A method to load the cif file for a given pdb id.
 
@@ -288,7 +291,7 @@ class Stage(base.Base):
                 self.logger.exception(err)
 
                 try:
-                    self.remove(entry)
+                    self.remove(entry, **kwargs)
                 except Exception as err:
                     raise InvalidState("Could not cleanup failed data %s",
                                        entry)
@@ -345,7 +348,7 @@ class Loader(Stage):
         pass
 
     @abc.abstractmethod
-    def remove(self, pdb):
+    def remove(self, pdb, **kwargs):
         """Remove any old data for this pdb. This is used both when we have
         failed to store all data as well as when we are overwriting existing
         data. This should never raise anything unless something is drastically
