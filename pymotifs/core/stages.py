@@ -29,9 +29,6 @@ class Stage(base.Base):
     pipeline.
     """
 
-    """ If we should stop the whole stage if one part fails. """
-    stop_on_failure = True
-
     """ Maximum length of time between updates. False for forever. """
     update_gap = None
 
@@ -269,6 +266,7 @@ class Stage(base.Base):
             self.logger.critical("Nothing to process")
             raise InvalidState("Nothing to process")
 
+        failed = []
         processed = []
         for index, entry in enumerate(entries):
             self.logger.info("Processing %s: %s/%s", entry, index + 1,
@@ -288,14 +286,23 @@ class Stage(base.Base):
             except Exception as err:
                 self.logger.error("Error raised in processing of %s", entry)
                 self.logger.exception(err)
-                if self.stop_on_failure:
+
+                try:
                     self.remove(entry)
-                    raise StageFailed(self.name)
-                continue
+                except Exception as err:
+                    raise InvalidState("Could not cleanup failed data %s",
+                                       entry)
+                else:
+                    failed.append(entry)
+                    continue
 
             if self.mark:
                 self.mark_processed(entry, **kwargs)
             processed.append(entry)
+
+        if failed:
+            ids = ', '.join(str(f) for f in failed)
+            raise StageFailed("Pipeline failed on these inputs %s", ids)
 
         return processed
 
