@@ -6,11 +6,15 @@ import pymotifs.core as core
 from pymotifs.models import UnitInfo
 from pymotifs.models import UnitRotations
 
+from pymotifs.units.info import Loader as InfoLoader
+
 
 class Loader(core.SimpleLoader):
-    """A class to load rotation matrices into the database. This will load the
-    RNA rotation matrices into the database.
+    """A class to load rotation matrices into the database.
     """
+
+    dependencies = set([InfoLoader])
+    allow_no_data = False
 
     def query(self, session, pdb):
         """Create a query to lookup the rotation matrices.
@@ -21,8 +25,8 @@ class Loader(core.SimpleLoader):
         """
 
         return session.query(UnitRotations).\
-            join(UnitInfo, UnitInfo.id == UnitRotations.id).\
-            filter(UnitInfo.pdb == pdb)
+            join(UnitInfo, UnitInfo.unit_id == UnitRotations.unit_id).\
+            filter(UnitInfo.pdb_id == pdb)
 
     def data(self, pdb, **kwargs):
         """Get the rotation matrices for all RNA residues in the given pdb.
@@ -35,7 +39,7 @@ class Loader(core.SimpleLoader):
         for residue in structure.residues():
             if hasattr(residue, 'rotation_matrix'):
                 matrix = residue.rotation_matrix
-                yield UnitRotations(id=residue.unit_id(),
+                yield UnitRotations(unit_id=residue.unit_id(),
                                     r1c1=matrix[0, 0],
                                     r1c2=matrix[0, 1],
                                     r1c3=matrix[0, 2],
