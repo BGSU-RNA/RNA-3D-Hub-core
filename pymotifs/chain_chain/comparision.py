@@ -7,6 +7,7 @@ This will only compare chains which are an integral part of an IFE.
 """
 
 import itertools as it
+import collections as coll
 
 import numpy as np
 # from sqlalchemy.orm import aliased
@@ -14,6 +15,7 @@ import numpy as np
 from pymotifs import core
 from pymotifs import models as mod
 import pymotifs.utils as ut
+from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 from pymotifs.utils import correspondence as corr
 # from pymotifs.utils import temporary_tables as tt
 
@@ -33,6 +35,11 @@ class Loader(core.SimpleLoader):
     mark = False
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         Downloader, IfeLoader])
+    max_new_connections = 10
+
+    def __init__(self, *args, **kwargs):
+        super(Loader, self).__init__(*args, **kwargs)
+        self.new_updates = coll.defaultdict(0)
 
     def ifes_info(self, pdb):
         with self.session() as session:
@@ -75,6 +82,11 @@ class Loader(core.SimpleLoader):
         pairs = it.ifilter(lambda p: p[2]['good_alignment'], pairs)
         pairs = it.imap(as_tuple, pairs)
         return sorted(pairs, key=lambda p: (p[0], p[1]))
+
+    def has_data(self, entry, **kwargs):
+        if not super(Loader, self).has_data(entry, **kwargs):
+            return self.new_updates(entry[0]) <= self.max_new_connections
+        return False
 
     def query(self, session, entry, **kwargs):
         """Check if there are any chain_chain_similarity entries for this pdb.
@@ -229,6 +241,10 @@ class Loader(core.SimpleLoader):
         reversed['chain_id_2'] = compare['chain_id_1']
         reversed['model_1'] = compare['model_2']
         reversed['model_2'] = compare['model_1']
+
+        if discrepancy <= NR_DISCREPANCY_CUTOFF:
+            self.new_updates[entry[0]] += 1
+
         return [
             mod.ChainChainSimilarity(**compare),
             mod.ChainChainSimilarity(**reversed)
