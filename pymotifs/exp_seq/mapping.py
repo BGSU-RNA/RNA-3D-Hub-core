@@ -18,6 +18,7 @@ JOIN unit_info
 ON
     unit_info.unit_id = exp_seq_unit_mapping.unit_id
 WHERE unit_info.pdb_id = :pdb_id
+;
 """
 
 
@@ -66,40 +67,45 @@ class Loader(core.Loader):
             pos_id = exp_mapping[index]
             yield UnitMapping(unit_id=unit_id, exp_seq_position_id=pos_id)
 
-    def exp_mapping(self, pdb, chain):
+    def exp_mapping(self, pdb, chains):
         with self.session() as session:
             query = session.query(ExpPosition.index,
-                                  ExpPosition.exp_seq_position_id).\
+                                  ExpPosition.exp_seq_position_id,
+                                  ChainInfo.chain_name).\
                 join(ChainMapping,
                      ChainMapping.exp_seq_id == ExpPosition.exp_seq_id).\
                 join(ChainInfo, ChainInfo.chain_id == ChainMapping.chain_id).\
                 filter(ChainInfo.pdb_id == pdb).\
-                filter(ChainInfo.chain_name == chain)
+                filter(ChainInfo.chain_name.in_(chains))
 
+            seen = set()
             mapping = {}
             for result in query:
                 mapping[result.index] = result.exp_seq_position_id
+                seen.add(result.chain_name)
+
+            if seen != set(chains):
+                msg = "Could not get mappings for all chains in %s, %s"
+                raise core.InvalidState(msg, pdb, ', '.join(chains))
+
             return mapping
 
     def mapped_chains(self, pdb):
         with self.session() as session:
             query = session.query(ChainInfo.chain_name).\
-                join(ChainMapping, ChainMapping.chain_id == ChainInfo.chain_id).\
+                join(ChainMapping,
+                     ChainMapping.chain_id == ChainInfo.chain_id).\
                 filter(ChainInfo.pdb_id == pdb).\
                 filter(ChainInfo.entity_macromolecule_type == 'Polyribonucleotide (RNA)')
             return [result.chain_name for result in query]
 
     def data(self, pdb, **kwargs):
-
         cif = self.cif(pdb)
         chains = self.mapped_chains(cif.pdb)
-
-        for chain_name in chains:
-            exp_mapping = self.exp_mapping(cif.pdb, chain_name)
-            if not exp_mapping:
-                raise core.InvalidState("No mapping generated for %s, %s "
-                                        "indicting no positions, skipping" %
-                                        (cif.pdb, chain_name))
-
-            for entry in self.chain_mapping(cif, chain_name, exp_mapping):
-                yield entry
+        if not chains:
+            raise core.InvalidState("Found no chains in %s", pdb)
+        exp_mapping = self.exp_mapping(cif.pdb, chains)
+        print(exp_mapping)
+        for entry in self.chain_mapping(cif, chains, exp_mapping):
+            print(entry)
+            yield entry
