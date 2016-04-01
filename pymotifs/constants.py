@@ -63,7 +63,7 @@ BOOTSTRAPPING_PDBS = (
 )
 
 """Max allowed discrepancy between chains for NR grouping"""
-NR_DISCREPANCY_CUTOFF = 0.5
+NR_DISCREPANCY_CUTOFF = 0.4
 
 """Min percent increase of length to change representative"""
 NR_LENGTH_PERCENT_INCREASE = 1.0
