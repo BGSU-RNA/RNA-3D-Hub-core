@@ -24,9 +24,11 @@ class Loader(core.SimpleLoader):
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
         for residue in structure.residues():
-            for name, center in residue.centers.items():
+            for name in residue.centers.definitions():
+                center = residue.centers[name]
                 yield UnitCenters(unit_id=residue.unit_id(),
                                   name=name,
+                                  pdb_id=pdb,
                                   x=center[0],
                                   y=center[1],
                                   z=center[2])
