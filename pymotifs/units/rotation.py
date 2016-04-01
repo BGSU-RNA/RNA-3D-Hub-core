@@ -36,16 +36,18 @@ class Loader(core.SimpleLoader):
         """
 
         structure = self.structure(pdb)
+        structure.infer_hydrogens()
         for residue in structure.residues():
             if hasattr(residue, 'rotation_matrix'):
                 matrix = residue.rotation_matrix
                 yield UnitRotations(unit_id=residue.unit_id(),
-                                    r1c1=matrix[0, 0],
-                                    r1c2=matrix[0, 1],
-                                    r1c3=matrix[0, 2],
-                                    r2c1=matrix[1, 0],
-                                    r2c2=matrix[1, 1],
-                                    r2c3=matrix[1, 2],
-                                    r3c1=matrix[2, 0],
-                                    r3c2=matrix[2, 1],
-                                    r3c3=matrix[2, 2])
+                                    pdb_id=pdb,
+                                    cell_0_0=matrix[0, 0],
+                                    cell_0_1=matrix[0, 1],
+                                    cell_0_2=matrix[0, 2],
+                                    cell_1_0=matrix[1, 0],
+                                    cell_1_1=matrix[1, 1],
+                                    cell_1_2=matrix[1, 2],
+                                    cell_2_0=matrix[2, 0],
+                                    cell_2_1=matrix[2, 1],
+                                    cell_2_2=matrix[2, 2])
