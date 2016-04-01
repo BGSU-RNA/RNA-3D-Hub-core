@@ -34,19 +34,24 @@ class GettingExpMappingTest(StageTest):
 
     def test_can_get_full_mapping(self):
         val = self.loader.exp_mapping('1S72', ['9', '0'])
-        self.assertEquals(2922, len(val))
+        self.assertEquals(2922 + 122, len(val))
 
     def test_can_get_full_mapping_with_duplicate_exp_seq(self):
         val = self.loader.exp_mapping('1GID', ['A', 'B'])
-        self.assertEquals(158, len(val))
+        self.assertEquals(158 * 2, len(val))
 
     def test_complains_if_cannot_get_mappings_for_all_chains(self):
         with pytest.raises(core.InvalidState):
             val = self.loader.exp_mapping('1GID', ['A', 'X'])
 
-    @pytest.mark.skip()
     def test_gets_a_correct_mapping(self):
-        pass
+        val = self.loader.exp_mapping('1GID', ['A', 'B'])
+        ans = []
+        for chain in ['A', 'B']:
+            for index in range(158):
+                ans.append((chain, index))
+        assert ans == sorted(val.keys())
+
 
 
 class DataTest(StageTest):

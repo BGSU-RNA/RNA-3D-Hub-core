@@ -1,3 +1,9 @@
+"""Map experimental sequence positions to unit ids. This will process the
+pdbx_poly_seq_scheme entry in cif files to produce a mapping between
+experimental sequence positions and unit ids. It deals with positions that are
+not mapped to unit ids as well.
+"""
+
 from pymotifs import core
 
 from pymotifs.models import ChainInfo
@@ -26,6 +32,16 @@ class Loader(core.Loader):
     dependencies = set([InfoLoader, PositionLoader, UnitLoader])
 
     def has_data(self, pdb, **kwargs):
+        """Checks if we have all the data for a given structure. This is a bit
+        strange as compared to other has_data methods as it will raise skip for
+        things without rna chains, such as unknown PDB ids. This could cause
+        some issue with partially mapped structures, but I haven't seen this
+        yet.
+
+        :param str pdb: The pdb id.
+        :returns: A boolean.
+        """
+
         with self.session() as session:
             query = session.query(ChainInfo.chain_name).\
                 filter(ChainInfo.pdb_id == pdb).\
@@ -54,20 +70,35 @@ class Loader(core.Loader):
             session.execute(DELETE, {'pdb_id': pdb})
 
     def chain_mapping(self, cif, chain, exp_mapping):
+        """Compute the mapping between experimental sequence position id and
+        unit id.
+
+        :param Cif cif: The cif data structure to use.
+        :param list chain: The chains to lookup.
+        :paraaam dict exp_mapping: A dict from `exp_mapping` that maps to
+        experimental sequence position id.
+        :yields: The mappings.
+        """
         for (_, seq_id, unit_id) in cif.experimental_sequence_mapping(chain):
             if not unit_id:
                 unit_id = None
 
             parts = seq_id.split("|")
             index = long(parts[4]) - 1
+            chain = unit_id.split('|')[2]
+            key = (chain, index)
 
-            if index not in exp_mapping:
-                raise core.InvalidState("No pos id for %s" % seq_id)
+            if key not in exp_mapping:
+                raise core.InvalidState("No pos id for %s" % key)
 
-            pos_id = exp_mapping[index]
+            pos_id = exp_mapping[(chain, index)]
             yield UnitMapping(unit_id=unit_id, exp_seq_position_id=pos_id)
 
     def exp_mapping(self, pdb, chains):
+        """Compute a mapping from index in a chain to experimental sequence
+        position.
+        """
+
         with self.session() as session:
             query = session.query(ExpPosition.index,
                                   ExpPosition.exp_seq_position_id,
@@ -81,7 +112,7 @@ class Loader(core.Loader):
             seen = set()
             mapping = {}
             for result in query:
-                mapping[result.index] = result.exp_seq_position_id
+                mapping[(result.chain_name, result.index)] = result.exp_seq_position_id
                 seen.add(result.chain_name)
 
             if seen != set(chains):
