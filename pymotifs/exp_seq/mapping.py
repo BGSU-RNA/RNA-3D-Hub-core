@@ -85,7 +85,7 @@ class Loader(core.Loader):
 
             parts = seq_id.split("|")
             index = long(parts[4]) - 1
-            chain = unit_id.split('|')[2]
+            chain = parts[2]
             key = (chain, index)
 
             if key not in exp_mapping:
