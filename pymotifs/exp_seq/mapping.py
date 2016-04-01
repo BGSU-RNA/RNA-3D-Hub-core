@@ -105,7 +105,5 @@ class Loader(core.Loader):
         if not chains:
             raise core.InvalidState("Found no chains in %s", pdb)
         exp_mapping = self.exp_mapping(cif.pdb, chains)
-        print(exp_mapping)
         for entry in self.chain_mapping(cif, chains, exp_mapping):
-            print(entry)
             yield entry
