@@ -23,6 +23,8 @@ from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
 from pymotifs.download import Downloader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
+from pymotifs.units.centers import Loader as CenterLoader
+from pymotifs.units.rotation import Loader as RotationLoader
 
 from fr3d.geometry.discrepancy import discrepancy
 
@@ -34,7 +36,7 @@ class Loader(core.SimpleLoader):
 
     mark = False
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
-                        Downloader, IfeLoader])
+                        Downloader, IfeLoader, CenterLoader, RotationLoader])
     max_new_connections = 10
 
     def __init__(self, *args, **kwargs):
