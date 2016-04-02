@@ -10,23 +10,21 @@ import itertools as it
 import collections as coll
 
 import numpy as np
-# from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased
 
 from pymotifs import core
 from pymotifs import models as mod
 import pymotifs.utils as ut
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 from pymotifs.utils import correspondence as corr
-# from pymotifs.utils import temporary_tables as tt
 
 from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
-from pymotifs.download import Downloader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
 
-from fr3d.geometry.discrepancy import discrepancy
+from fr3d.geometry.discrepancy import matrix_discrepancy
 
 
 class Loader(core.SimpleLoader):
@@ -36,12 +34,12 @@ class Loader(core.SimpleLoader):
 
     mark = False
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
-                        Downloader, IfeLoader, CenterLoader, RotationLoader])
+                        IfeLoader, CenterLoader, RotationLoader])
     max_new_connections = 10
 
     def __init__(self, *args, **kwargs):
         super(Loader, self).__init__(*args, **kwargs)
-        self.new_updates = coll.defaultdict(0)
+        self.new_updates = coll.defaultdict(int)
 
     def ifes_info(self, pdb):
         with self.session() as session:
@@ -86,89 +84,163 @@ class Loader(core.SimpleLoader):
         return sorted(pairs, key=lambda p: (p[0], p[1]))
 
     def has_data(self, entry, **kwargs):
-        if not super(Loader, self).has_data(entry, **kwargs):
-            return self.new_updates(entry[0]) <= self.max_new_connections
-        return False
+        if super(Loader, self).has_data(entry, **kwargs):
+            return True
+        return self.new_updates[entry[0]] > self.max_new_connections
 
     def query(self, session, entry, **kwargs):
         """Check if there are any chain_chain_similarity entries for this pdb.
         """
 
-        return session.query(mod.ChainChainSimilarity).\
-            filter(mod.ChainChainSimilarity.chain_id_1 == entry[0]).\
-            filter(mod.ChainChainSimilarity.chain_id_2 == entry[1]).\
-            filter(mod.ChainChainSimilarity.correspondence_id == entry[2])
+        ife1 = aliased(mod.IfeChains)
+        ife2 = aliased(mod.IfeChains)
+        cc = mod.ChainChainSimilarity
+        return session.query(cc).\
+            join(ife1, ife1.chain_id == cc.chain_id_1).\
+            join(ife2, ife2.chain_id == cc.chain_id_2).\
+            filter(ife1.ife_id == entry[0]).\
+            filter(ife2.ife_id == entry[1]).\
+            filter(ife1.index == 0).\
+            filter(ife2.index == 0).\
+            filter(cc.correspondence_id == entry[2])
 
-    def residues(self, cif, model, sym_op, chain, ordering):
-        """Get the specified chain and extract only the residues in the
-        ordering dictionary and return them in the specified order.
+    def centers(self, corr_id, info1, info2, ordering, name='base'):
+        with self.session() as session:
+            centers1 = aliased(mod.UnitCenters)
+            centers2 = aliased(mod.UnitCenters)
+            units1 = aliased(mod.UnitInfo)
+            units2 = aliased(mod.UnitInfo)
+            corr = mod.CorrespondenceUnits
+            results = session.query(centers1.unit_id.label('unit1'),
+                                    centers1.x.label('x1'),
+                                    centers1.y.label('y1'),
+                                    centers1.z.label('z1'),
+                                    centers2.unit_id.label('unit2'),
+                                    centers2.x.label('x2'),
+                                    centers2.y.label('y2'),
+                                    centers2.z.label('z2')).\
+                join(corr, corr.unit_id_1 == centers1.unit_id).\
+                join(centers2, corr.unit_id_2 == centers2.unit_id).\
+                join(units1, units1.unit_id == corr.unit_id_1).\
+                join(units2, units2.unit_id == corr.unit_id_2).\
+                filter(centers1.name == centers2.name).\
+                filter(centers1.name == name).\
+                filter(corr.correspondence_id == corr_id).\
+                filter(units1.pdb_id == info1['pdb']).\
+                filter(units1.sym_op == info1['sym_op']).\
+                filter(units1.model == info1['model']).\
+                filter(units1.chain == info1['chain_name']).\
+                filter(units2.pdb_id == info2['pdb']).\
+                filter(units2.sym_op == info2['sym_op']).\
+                filter(units2.model == info2['model']).\
+                filter(units2.chain == info2['chain_name']).\
+                order_by(corr.correspondence_index).\
+                all()
 
-        :cif: The cif object to get the chain from.
-        :model: The model number to use.
-        :sym_op: The symmetry_operator to use.
-        :chain: The name of the chain to access.
-        :ordering: The ordering dictonary to use.
-        :returns: A sorted list of the residues in the chain.
-        """
+            results.sort(key=lambda r: ordering[r.unit1])
 
-        residues = cif.residues(model=model, chain=chain, symmetry=sym_op)
-        residues = it.ifilter(lambda r: r.unit_id() in ordering, residues)
-        residues = sorted(residues, key=lambda r: ordering[r.unit_id()])
-        if not residues:
-            raise core.InvalidState("Could not find all residues for %s" %
-                                    chain)
+            first = []
+            second = []
+            seen = set()
+            for result in results:
+                if result.unit1 in seen:
+                    raise core.InvalidState("Got duplicate unit %s" % unit1)
+                if result.unit2 in seen:
+                    raise core.InvalidState("Got duplicate unit %s" % unit2)
 
-        return residues
+                seen.add(result.unit1)
+                seen.add(result.unit2)
 
-    def discrepancy(self, corr_id, residues1, residues2):
+                first.append(np.array([result.x1, result.y1, result.z1]))
+                second.append(np.array([result.x2, result.y2, result.z2]))
+            return first, second
+
+    def rotations(self, corr_id, info1, info2, ordering):
+        with self.session() as session:
+            rot1 = aliased(mod.UnitRotations)
+            rot2 = aliased(mod.UnitRotations)
+            units1 = aliased(mod.UnitInfo)
+            units2 = aliased(mod.UnitInfo)
+            corr = mod.CorrespondenceUnits
+            results = session.query(rot1.unit_id.label('unit1'),
+                                    rot1.cell_0_0.label('f_cell_0_0'),
+                                    rot1.cell_0_1.label('f_cell_0_1'),
+                                    rot1.cell_0_2.label('f_cell_0_2'),
+                                    rot1.cell_1_0.label('f_cell_1_0'),
+                                    rot1.cell_1_1.label('f_cell_1_1'),
+                                    rot1.cell_1_2.label('f_cell_1_2'),
+                                    rot1.cell_2_0.label('f_cell_2_0'),
+                                    rot1.cell_2_1.label('f_cell_2_1'),
+                                    rot1.cell_2_2.label('f_cell_2_2'),
+                                    rot2.unit_id.label('unit2'),
+                                    rot2.cell_0_0.label('s_cell_0_0'),
+                                    rot2.cell_0_1.label('s_cell_0_1'),
+                                    rot2.cell_0_2.label('s_cell_0_2'),
+                                    rot2.cell_1_0.label('s_cell_1_0'),
+                                    rot2.cell_1_1.label('s_cell_1_1'),
+                                    rot2.cell_1_2.label('s_cell_1_2'),
+                                    rot2.cell_2_0.label('s_cell_2_0'),
+                                    rot2.cell_2_1.label('s_cell_2_1'),
+                                    rot2.cell_2_2.label('s_cell_2_2')).\
+                join(corr, corr.unit_id_1 == rot1.unit_id).\
+                join(rot2, corr.unit_id_2 == rot2.unit_id).\
+                join(units1, rot1.unit_id == units1.unit_id).\
+                join(units2, rot2.unit_id == units2.unit_id).\
+                filter(units1.pdb_id == info1['pdb']).\
+                filter(units1.sym_op == info1['sym_op']).\
+                filter(units1.model == info1['model']).\
+                filter(units1.chain == info1['chain_name']).\
+                filter(units2.pdb_id == info2['pdb']).\
+                filter(units2.sym_op == info2['sym_op']).\
+                filter(units2.model == info2['model']).\
+                filter(units2.chain == info2['chain_name']).\
+                filter(corr.correspondence_id == corr_id).\
+                order_by(corr.correspondence_index).\
+                all()
+
+            # results.sort(key=lambda r: ordering[r.unit1])
+
+            r1 = []
+            r2 = []
+            seen = set()
+            for r in results:
+                if r.unit1 in seen:
+                    raise core.InvalidState("Got duplicate unit %s" % r.unit1)
+                if r.unit2 in seen:
+                    raise core.InvalidState("Got duplicate unit %s" % r.unit2)
+
+                seen.add(r.unit1)
+                seen.add(r.unit2)
+
+                r1.append(np.array([[r.f_cell_0_0, r.f_cell_0_1, r.f_cell_0_2],
+                                    [r.f_cell_1_0, r.f_cell_1_1, r.f_cell_1_2],
+                                    [r.f_cell_2_0, r.f_cell_2_1, r.f_cell_2_2]]))
+                r2.append(np.array([[r.s_cell_0_0, r.s_cell_0_1, r.s_cell_0_2],
+                                    [r.s_cell_1_0, r.s_cell_1_1, r.s_cell_1_2],
+                                    [r.s_cell_2_0, r.s_cell_2_1, r.s_cell_2_2]]))
+            return r1, r2
+
+
+    def discrepancy(self, corr_id, centers1, centers2, rot1, rot2):
         """Compare the chains. This will filter out all residues in the chain
         that do not have a base center computed.
         """
 
-        valid1 = []
-        valid2 = []
+        if not centers1 or not rot1:
+            self.logger.error("No residues with base centers/rot for first")
+            return -1, 0
 
-        for r1, r2 in zip(residues1, residues2):
-            if 'base' not in r1.centers or 'base' not in r2.centers:
-                self.logger.debug("Missing base centers for %s, %s", r1, r2)
-                continue
+        if not centers2 or not rot2:
+            self.logger.error("No residues with base centers/rot for second")
+            return -1, 0
 
-            skip = False
-            if r1.centers['base'] is None:
-                self.logger.warning("Bad center for %s", r1)
-                skip = True
-            if r2.centers['base'] is None:
-                self.logger.warning("Bad center for %s", r2)
-                skip = True
-
-            if skip:
-                continue
-
-            if len(r1.centers['base']) != len(r2.centers['base']):
-                msg = "Base centers %s, %s differ in size, (%s, %s)"
-                self.logger.warning(msg, r1, r2, r1.centers['base'],
-                                    r2.centers['base'])
-                continue
-
-            valid1.append(r1)
-            valid2.append(r2)
-
-        if not valid1:
-            self.logger.error("No residues with base centers for first")
-            return (-1, 0)
-
-        if not valid2:
-            self.logger.error("No residues with base centers for second")
-            return (-1, 0)
-
-        self.logger.debug("Comparing %i pairs of residues", len(residues1))
-        disc = discrepancy(valid1, valid2)
+        self.logger.debug("Comparing %i pairs of residues", len(centers1))
+        disc = matrix_discrepancy(centers1, centers2, rot1, rot2)
 
         if np.isnan(disc):
-            data = (residues1[0].unit_id(), residues2[0].unit_id())
-            raise core.InvalidState("NaN for discrepancy using %s, %s" % data)
+            raise core.InvalidState("NaN for discrepancy")
 
-        return (disc, len(valid1))
+        return disc, len(centers1)
 
     def info(self, ife_id):
         with self.session() as session:
@@ -196,11 +268,13 @@ class Loader(core.SimpleLoader):
 
         return info
 
-    def load(self, ife_id):
-        info = self.info(ife_id)
-        structure = self.structure(info['pdb'])
-        structure.infer_hydrogens()
-        return structure, info
+    def ordering(self, corr_id, info1, info2):
+        util = corr.Helper(self.config, self.session.maker)
+        ordering = util.ordering(corr_id, info1['chain_id'], info2['chain_id'])
+        if not ordering:
+            dat = (corr_id, info1['chain_id'], info2['chain_id'])
+            raise core.InvalidState("No ordering for %i, %s, %s", dat)
+        return ordering
 
     def data(self, entry, **kwargs):
         """Compute all chain to chain similarity data. This will get all
@@ -209,32 +283,22 @@ class Loader(core.SimpleLoader):
         a good one.
         """
 
-        cif1, info1 = self.load(entry[0])
-        cif2, info2 = self.load(entry[1])
+        info1 = self.info(entry[0])
+        info2 = self.info(entry[1])
         corr_id = entry[2]
 
-        util = corr.Helper(self.config, self.session.maker)
-        ordering = util.ordering(corr_id, info1['chain_id'], info2['chain_id'])
-        if not ordering:
-            dat = (corr_id, info1['chain_id'], info2['chain_id'])
-            raise core.InvalidState("No ordering for %i, %s, %s", dat)
+        ordering = self.ordering(corr_id, info1, info2)
+        centers1, centers2 = self.centers(corr_id, info1, info2, ordering)
+        rot1, rot2 = self.rotations(corr_id, info1, info2, ordering)
+        disc, length = self.discrepancy(corr_id, centers1, centers2, rot1, rot2)
 
-        residues1 = self.residues(cif1, info1['model'], info1['sym_op'],
-                                  info1['chain_name'], ordering)
-        residues2 = self.residues(cif2, info2['model'], info2['sym_op'],
-                                  info2['chain_name'], ordering)
-
-        if not residues1 or not residues2:
-            raise core.Skip("No residues to compare")
-
-        discrepancy, length = self.discrepancy(corr_id, residues1, residues2)
         compare = {
             'chain_id_1': info1['chain_id'],
             'chain_id_2': info2['chain_id'],
             'model_1': info1['model'],
             'model_2': info2['model'],
             'correspondence_id': corr_id,
-            'discrepancy': discrepancy,
+            'discrepancy': disc,
             'num_nucleotides': length,
         }
 
