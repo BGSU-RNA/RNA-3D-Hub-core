@@ -10,5 +10,5 @@ from pymotifs.units.rotation import Loader as RotationLoader
 
 
 class Loader(core.StageContainer):
-    stages = set([InfoLoader, QualityLoader, DistancesLoader, CenterLoader
+    stages = set([InfoLoader, QualityLoader, DistancesLoader, CenterLoader,
                   RotationLoader, RedundantNucleotidesLoader])
