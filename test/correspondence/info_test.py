@@ -18,6 +18,10 @@ class LoadingSequencesTest(StageTest):
         ans = [{'id': 51, 'length': 158, 'species': 32630}]
         self.assertEquals(ans, val)
 
+    @pytest.mark.skip(reason="No data yet")
+    def test_it_will_not_load_non_normalized(self):
+        self.fail()
+
 
 class ShortSequencesTest(StageTest):
     loader_class = Loader
