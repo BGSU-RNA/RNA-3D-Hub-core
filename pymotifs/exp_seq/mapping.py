@@ -14,6 +14,7 @@ from pymotifs.models import ExpSeqChainMapping as ChainMapping
 
 from pymotifs.exp_seq.info import Loader as InfoLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
+from pymotifs.exp_seq.chain_mapping import Loader as ChainMappingLoader
 from pymotifs.units.info import Loader as UnitLoader
 
 
@@ -29,7 +30,8 @@ WHERE unit_info.pdb_id = :pdb_id
 
 
 class Loader(core.Loader):
-    dependencies = set([InfoLoader, PositionLoader, UnitLoader])
+    dependencies = set([InfoLoader, PositionLoader, ChainMappingLoader,
+                        UnitLoader])
 
     def has_data(self, pdb, **kwargs):
         """Checks if we have all the data for a given structure. This is a bit
