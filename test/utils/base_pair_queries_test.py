@@ -19,7 +19,7 @@ class RepresentativeBpTest(QueryUtilTest):
 
     def test_gets_count_for_one_chain(self):
         val = self.db_obj.representative('1J5E', 'A', count=True)
-        ans = 689
+        ans = 691
         self.assertEquals(ans, val)
 
     def test_gets_count_for_several_chains(self):
