@@ -25,6 +25,16 @@ class Loader(core.SimpleLoader):
             filter(mod.ChainInfo.pdb_id == pdb)
 
     def validated(self, chain_id, assigned):
+        """Attempt to fix the assigned taxon id for a given chain id. This will
+        look at data, like the name to produce a taxon id. For example things
+        named 'Escherichia coli' and given label 512 (blue tongue virus) are
+        labeled 562 (E coli) instead.
+
+        :param int chain_id: Id of the chain to correct.
+        :param int assigned: The currently assigned taxon id.
+        :returns: A new taxon id.
+        """
+
         given_name = None
         species = assigned
         with self.session() as session:
@@ -40,6 +50,12 @@ class Loader(core.SimpleLoader):
         return int(species)
 
     def data(self, pdb, **kwargs):
+        """Compute and assignment of the chain ids in this pdb.
+
+        :param str pdb: The PDB id.
+        :returns: A dict with chain_id and species_id.
+        """
+
         helper = Structure(self.session.maker)
         data = []
         rna_chains = helper.rna_chains(pdb, return_id=True)
