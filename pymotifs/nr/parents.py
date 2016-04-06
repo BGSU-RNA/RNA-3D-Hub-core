@@ -67,7 +67,4 @@ class Loader(core.MassLoader):
         if not mapping:
             raise core.InvalidState("No mapping loaded")
 
-        for parent in self.parents(grouping, mapping):
-            yield parent
-
-        self.cached('nr', remove=True)
+        return self.parents(grouping, mapping)
