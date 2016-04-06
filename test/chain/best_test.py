@@ -6,7 +6,6 @@ from pymotifs.chains.best import BestChainsAndModelsLoader
 class QueryingTest(StageTest):
     loader_class = BestChainsAndModelsLoader
 
-    @skip_without_matlab
     def test_knows_if_known_pdb(self):
         self.assertTrue(self.loader.has_data('124D'))
 
