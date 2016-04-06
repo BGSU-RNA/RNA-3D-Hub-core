@@ -71,7 +71,8 @@ class LoadingResiduesTest(StageTest):
 
     def test_it_loads_all_centers(self):
         ordering = self.loader.ordering(248, self.info1, self.info2)
-        center1, center2 = self.loader.centers(248, self.info1, self.info2, ordering)
+        center1, center2 = self.loader.centers(248, self.info1, self.info2,
+                                               ordering)
         assert len(center1) == 242
         assert len(center2) == 242
         assert_array_almost_equal(center1[0], [42.3341, 96.7131, 29.8361])
@@ -79,7 +80,8 @@ class LoadingResiduesTest(StageTest):
 
     def test_loads_all_rotations(self):
         ordering = self.loader.ordering(248, self.info1, self.info2)
-        rot1, rot2 = self.loader.rotations(248, self.info1, self.info2, ordering)
+        rot1, rot2 = self.loader.rotations(248, self.info1, self.info2,
+                                           ordering)
         assert len(rot1) == 242
         assert len(rot2) == 242
         assert_array_almost_equal(rot1[0], [[0.712491, -0.507095, 0.484986],
@@ -91,19 +93,20 @@ class LoadingResiduesTest(StageTest):
 
     def test_will_give_empty_for_unknown(self):
         ordering = self.loader.ordering(248, self.info1, self.info2)
-        assert self.loader.centers(None, self.info1, self.info2, ordering) == ([], [])
-        assert self.loader.rotations(None, self.info1, self.info2, ordering) == ([], [])
+        centers = self.loader.centers(None, self.info1, self.info2, ordering)
+        rotations = self.loader.rotations(None, self.info1, self.info2,
+                                          ordering)
+        assert centers == ([], [])
+        assert rotations == ([], [])
 
 
 class ComputingDataTest(StageTest):
     loader_class = Loader
 
-    @pytest.mark.skip()
     def test_computes_both_discrepancies(self):
         val = self.loader.data(('1X8W|1|D', '1GRZ|1|B', 248L))
         self.assertTrue(len(val), 2)
 
-    @pytest.mark.skip()
     def test_it_increments_new_counts(self):
         assert self.loader.new_updates['1X8W|1|D'] == 0
         self.loader.data(('1X8W|1|D', '1GRZ|1|B', 248L))

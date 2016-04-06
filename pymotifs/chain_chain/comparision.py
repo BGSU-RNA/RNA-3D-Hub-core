@@ -235,7 +235,7 @@ class Loader(core.SimpleLoader):
             return -1, 0
 
         self.logger.debug("Comparing %i pairs of residues", len(centers1))
-        disc = matrix_discrepancy(centers1, centers2, rot1, rot2)
+        disc = matrix_discrepancy(centers1, rot1, centers2, rot2)
 
         if np.isnan(disc):
             raise core.InvalidState("NaN for discrepancy")
@@ -290,7 +290,8 @@ class Loader(core.SimpleLoader):
         ordering = self.ordering(corr_id, info1, info2)
         centers1, centers2 = self.centers(corr_id, info1, info2, ordering)
         rot1, rot2 = self.rotations(corr_id, info1, info2, ordering)
-        disc, length = self.discrepancy(corr_id, centers1, centers2, rot1, rot2)
+        disc, length = self.discrepancy(corr_id, centers1, centers2,
+                                        rot1, rot2)
 
         compare = {
             'chain_id_1': info1['chain_id'],
@@ -308,7 +309,7 @@ class Loader(core.SimpleLoader):
         reversed['model_1'] = compare['model_2']
         reversed['model_2'] = compare['model_1']
 
-        if discrepancy <= NR_DISCREPANCY_CUTOFF:
+        if disc <= NR_DISCREPANCY_CUTOFF:
             self.new_updates[entry[0]] += 1
 
         return [
