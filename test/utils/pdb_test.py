@@ -15,7 +15,7 @@ class RnaPdbsHelperTest(TestCase):
 
     def test_can_find_all_before_date(self):
         val = self.helper(dates=(None, date(2014, 12, 11)))
-        self.assertEquals(2708, len(val))
+        self.assertEquals(2712, len(val))
 
     def test_can_find_all_after_date(self):
         val = self.helper(dates=(date(2014, 12, 11), None))
