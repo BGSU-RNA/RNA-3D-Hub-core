@@ -182,6 +182,9 @@ class Loader(core.MassLoader):
         seqs = it.imap(self.lookup_sequences, pdbs)
         seqs = it.chain.from_iterable(seqs)
         seqs = self.unique_sequences(seqs)
+        if not seqs:
+            raise core.InvalidState("Found no new sequences")
+
         self.logger.info("Found %i unique sequences", len(seqs))
         return sorted(seqs, key=lambda s: s['id'])
 
