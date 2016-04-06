@@ -3,6 +3,7 @@ import pytest
 from test import StageTest
 
 from pymotifs.chains.species import Loader
+from pymotifs.models import ChainInfo
 
 
 class QueryingTest(StageTest):
@@ -52,14 +53,24 @@ class GettingDataTest(StageTest):
 class ValidatingTest(StageTest):
     loader_class = Loader
 
+    def id_of(self, pdb, name):
+        with self.loader.session() as session:
+            return session.query(ChainInfo).\
+                filter_by(pdb_id=pdb, chain_name=name).\
+                one().\
+                chain_id
+
     def test_will_try_to_correct_bad_ecoli(self):
-        val = self.loader.validated(1195, None)
+        chain_id = self.id_of('4V9Q', 'BV')
+        val = self.loader.validated(chain_id, None)
         self.assertEquals(562, val)
 
     def test_will_try_to_correct_bad_512(self):
-        val = self.loader.validated(1195, 512)
+        chain_id = self.id_of('4V9Q', 'BV')
+        val = self.loader.validated(chain_id, 512)
         self.assertEquals(562, val)
 
     def test_will_return_good_name(self):
-        val = self.loader.validated(55, 274)
+        chain_id = self.id_of('1FJG', 'A')
+        val = self.loader.validated(chain_id, 274)
         self.assertEquals(274, val)
