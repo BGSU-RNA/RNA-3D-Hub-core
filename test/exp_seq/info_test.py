@@ -21,8 +21,8 @@ class ToProcessTest(StageTest):
         self.assertEquals(2, len(self.loader.to_process(['1S72'])))
 
     def test_loads_only_unique_sequences(self):
-        val = self.loader.to_process(['1AQ4', '1AQ3', '124D'])
-        ans = ['CAUGUGAC', 'ACAUGAGGAUUACCCAUGU']
+        val = self.loader.to_process(['157D', '124D'])
+        ans = ['CAUGUGAC', 'CGCGAAUUAGCG']
         self.assertEquals(ans, val)
 
 
