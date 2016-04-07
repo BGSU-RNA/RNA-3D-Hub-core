@@ -6,6 +6,8 @@ from pymotifs import core
 from pymotifs import utils
 from pymotifs import models as mod
 
+from pymotifs.pdbs.info import Loader as InfoLoader
+
 
 class Parser(object):
     def __call__(self, text):
@@ -30,6 +32,8 @@ class Loader(core.MassLoader):
     merge_data = True
     table = mod.PdbObsolete
     update_gap = timedelta(1)
+
+    dependencies = set([InfoLoader])
 
     def has_data(self, pdb_id, **kwargs):
         return False
