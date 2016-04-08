@@ -10,8 +10,15 @@ import collections as coll
 from pymotifs import core
 from pymotifs import models as mod
 
+from pymotifs.nr.release import Loader as ReleaseLoader
+from pymotifs.nr.chains import Loader as ChainLoader
+from pymotifs.nr.classes import Loader as ClassLoader
+from pymotifs.nr.parents import Loader as ParentLoader
+
 
 class Loader(core.MassLoader):
+    dependencies = set([ReleaseLoader, ChainLoader, ClassLoader, ParentLoader])
+
     def has_data(self, *args, **kwargs):
         grouping = self.cached('nr')
         if not grouping:
