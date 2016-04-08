@@ -12,7 +12,6 @@ class QueryingTest(StageTest):
     def test_knows_it_has_no_data(self):
         assert self.loader.has_data('024D') is False
 
-    @pytest.mark.xfail()
     def test_knows_it_has_data(self):
         assert self.loader.has_data('124D') is True
 
@@ -27,4 +26,13 @@ class LoadingCenters(CifStageTest):
 
     def test_it_can_compute_centers(self):
         val = list(self.loader.data(self.structure))
-        assert len(val) > 0
+        assert len(val) == 16
+
+
+class MissingCentersTest(CifStageTest):
+    loader_class = Loader
+    filename = 'test/files/cif/1A34.cif'
+
+    def test_it_can_handle_struture_with_missing_centers(self):
+        val = list(self.loader.data(self.structure))
+        assert len(val) == 666

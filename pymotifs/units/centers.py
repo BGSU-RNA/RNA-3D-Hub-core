@@ -26,9 +26,10 @@ class Loader(core.SimpleLoader):
         for residue in structure.residues():
             for name in residue.centers.definitions():
                 center = residue.centers[name]
-                yield UnitCenters(unit_id=residue.unit_id(),
-                                  name=name,
-                                  pdb_id=pdb,
-                                  x=center[0],
-                                  y=center[1],
-                                  z=center[2])
+                if len(center) == 3:
+                    yield UnitCenters(unit_id=residue.unit_id(),
+                                      name=name,
+                                      pdb_id=pdb,
+                                      x=center[0],
+                                      y=center[1],
+                                      z=center[2])
