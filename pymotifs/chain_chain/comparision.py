@@ -18,7 +18,7 @@ import pymotifs.utils as ut
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 from pymotifs.utils import correspondence as corr
 
-from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
+from pymotifs.correspondence.summary import Loader as CorrespondenceLoader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
@@ -86,7 +86,10 @@ class Loader(core.SimpleLoader):
     def has_data(self, entry, **kwargs):
         if super(Loader, self).has_data(entry, **kwargs):
             return True
-        return self.new_updates[entry[0]] > self.max_new_connections
+        done_enough = self.new_updates[entry[0]] > self.max_new_connections
+        if done_enough:
+            self.logger.debug("Already stored enough new comparisions")
+        return done_enough
 
     def query(self, session, entry, **kwargs):
         """Check if there are any chain_chain_similarity entries for this pdb.
