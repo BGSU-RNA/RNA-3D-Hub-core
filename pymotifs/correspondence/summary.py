@@ -12,7 +12,6 @@ from pymotifs.models import ExpSeqInfo as ExpInfo
 from pymotifs.models import ExpSeqPosition as ExpPosition
 from pymotifs.models import CorrespondenceInfo as Info
 from pymotifs.models import CorrespondencePositions as Position
-from pymotifs.correspondence.info import Loader as InfoLoader
 from pymotifs.correspondence.positions import Loader as PositionLoader
 
 
@@ -20,7 +19,7 @@ class Loader(core.Loader):
     merge_data = True
     mark = False
 
-    dependencies = set([PositionLoader, InfoLoader])
+    dependencies = set([PositionLoader])
 
     def to_process(self, pdbs, **kwargs):
         """We transform the list of pdbs into the list of correspondences that
