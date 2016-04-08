@@ -120,12 +120,15 @@ def bootstrap(ctx, **kwargs):
     will populate a database with some default data for testing. This will not
     import any distance data.
     """
-    kwargs['exclude'] = kwargs.get('exclude', [])
-    kwargs['exclude'].append('units.distances')
-    kwargs['exclude'].append('export')
-    kwargs['seed'] = 1
-    kwargs['config'] = 'conf/bootstrap.json'
     kwargs.update(ctx.parent.objs)
+    kwargs['config'] = conf.load('conf/bootstrap.json')
+    kwargs['engine'] = create_engine(kwargs['config']['db']['uri'])
+    kwargs['skip_stage'] = kwargs.get('skip_stage', [])
+    kwargs['skip_stage'].append('units.distances')
+    kwargs['skip_stage'].append('pdbs.obsolete')
+    kwargs['skip_stage'].append('export.loader')
+    kwargs['log_level'] = 'debug'
+    kwargs['seed'] = 1
     run(ctx, 'update', BOOTSTRAPPING_PDBS, **kwargs)
 
 
