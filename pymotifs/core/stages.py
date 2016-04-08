@@ -520,6 +520,19 @@ class StageContainer(Stage):
     """The list of stages that are children of this loader"""
     stages = []
 
+    def __init__(self, *args, **kwargs):
+        self._args = args
+        self._kwargs = kwargs
+        super(StageContainer, self).__init__(*args, **kwargs)
+
+    def expand(self):
+        """Return a list of objects built from the stages, using the same
+        arguments this was built with.
+
+        :returns: A list of the stage objects.
+        """
+        return [s(*self._args, **self._kwargs) for s in self.stages]
+
 
 class Exporter(Loader):
     """A class that saves to CSV files.
