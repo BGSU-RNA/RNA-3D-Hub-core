@@ -86,7 +86,8 @@ class HasRsRParserTest(unittest.TestCase):
                 'pdb': '4V7W',
                 'alt_id': None,
             },
-            'real_space_r': 0.218
+            'real_space_r': 0.218,
+            'z_score': 0.26,
         }
         self.assertEquals(ans, val)
 
@@ -97,9 +98,8 @@ class QueryingTest(StageTest):
     def test_knows_if_data_is_missing(self):
         self.assertFalse(self.loader.has_data('0bob'))
 
-    @pytest.mark.skip("No good data")
     def test_knows_if_data_exists(self):
-        pass
+        self.assertTrue(self.loader.has_data('157D'))
 
 
 class MappingTest(StageTest):

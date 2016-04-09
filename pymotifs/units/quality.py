@@ -66,6 +66,9 @@ class Parser(object):
             if 'rsr' in residue.attrib:
                 data['real_space_r'] = float(residue.attrib['rsr'])
 
+            if 'rsrz' in residue.attrib:
+                data['z_score'] = float(residue.attrib['rsrz'])
+
             if 'DCC' in residue.attrib:
                 pass
 
