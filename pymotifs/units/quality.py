@@ -128,6 +128,9 @@ class Loader(core.SimpleLoader):
         key = (entry['id']['chain'], entry['id']['component_number'],
                entry['id']['insertion_code'], entry['id']['alt_id'])
 
+        if not mapping[key]:
+            self.logger.warning("Could not find unit id for %s", entry)
+
         for unit_id in mapping[key]:
             yield {
                 'unit_id': unit_id,
