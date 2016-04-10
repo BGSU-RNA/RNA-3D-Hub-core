@@ -129,7 +129,7 @@ class Loader(core.SimpleLoader):
                entry['id']['insertion_code'], entry['id']['alt_id'])
 
         if not mapping[key]:
-            self.logger.warning("Could not find unit id for %s", entry)
+            raise core.InvalidState("Could not find unit id for %s" % entry)
 
         for unit_id in mapping[key]:
             yield {
