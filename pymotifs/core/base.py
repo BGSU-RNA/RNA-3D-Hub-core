@@ -19,6 +19,6 @@ class Base(object):
 
         self.config = coll.defaultdict(dict)
         self.config.update(config)
-        self.name = self.__class__.__module__
         self.session = Session(session_maker)
+        self.name = self.__class__.__module__.replace('pymotifs.', '')
         self.logger = logging.getLogger(self.name)
