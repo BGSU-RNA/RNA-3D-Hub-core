@@ -133,6 +133,18 @@ class Stage(base.Base):
         with open(filename, 'wb') as raw:
             pickle.dump(data, raw)
 
+    def evict(self, name):
+        """Clear cached data. This will remove cached data if it exists,
+        otherwise it will emit a warning.
+
+        :param str name: The name of the cached data.
+        """
+        filename = self.cache_filename(name)
+        if not os.path.exists(filename):
+            self.logger.warning("Attempt to remove nonexisting cache %s", name)
+            return None
+        os.remove(filename)
+
     def cached(self, name, remove=False):
         """Load some cached data.
 
@@ -147,11 +159,7 @@ class Stage(base.Base):
                 data = pickle.load(raw)
 
         if remove:
-            if not os.path.exists(filename):
-                self.logger.warning("Attempt to remove nonexisting cache %s",
-                                    name)
-            else:
-                os.remove(filename)
+            self.evict(name)
 
         return data
 

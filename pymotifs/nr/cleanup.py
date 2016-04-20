@@ -11,7 +11,7 @@ from pymotifs.nr.parents import Loader as ParentLoader
 from pymotifs.nr.parent_counts import Loader as CountLoader
 
 
-class Cleanup(core.Loader):
+class Cleanup(core.MassLoader):
     allow_no_data = True
     dependencies = set([ReleaseLoader, ChainLoader, ClassLoader, ParentLoader,
                         CountLoader])
@@ -26,5 +26,6 @@ class Cleanup(core.Loader):
         self.logger.info("Nothing to remove")
 
     def data(self, *args, **kwargs):
-        self.cached('nr', remove=True)
+        self.logger.info('Cleaning up nr data')
+        self.evict('nr')
         return None
