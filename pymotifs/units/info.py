@@ -32,7 +32,7 @@ class Loader(core.SimpleLoader):
                         alt_id=getattr(nt, 'alt_id', None),
                         ins_code=nt.insertion_code,
                         sym_op=nt.symmetry,
-                        chain_index=getattr(nt, 'chain_index', None),
+                        chain_index=nt.index,
                         unit_type_id=self.type(nt))
 
     def data(self, pdb, **kwargs):
