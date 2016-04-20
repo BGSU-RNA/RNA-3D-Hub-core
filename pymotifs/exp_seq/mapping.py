@@ -81,19 +81,17 @@ class Loader(core.Loader):
         experimental sequence position id.
         :yields: The mappings.
         """
-        for (_, seq_id, unit_id) in cif.experimental_sequence_mapping(chain):
-            if not unit_id:
-                unit_id = None
-
-            parts = seq_id.split("|")
-            index = long(parts[4]) - 1
+        for mapping in cif.experimental_sequence_mapping(chain):
+            unit_id = mapping['unit_id']
+            parts = mapping['seq_id'].split("|")
+            index = mapping['index']
             chain = parts[2]
             key = (chain, index)
 
             if key not in exp_mapping:
-                raise core.InvalidState("No pos id for %s" % key)
+                raise core.InvalidState("No pos id for %s" % str(key))
 
-            pos_id = exp_mapping[(chain, index)]
+            pos_id = exp_mapping[key]
             yield UnitMapping(unit_id=unit_id, exp_seq_position_id=pos_id)
 
     def exp_mapping(self, pdb, chains):
@@ -114,7 +112,8 @@ class Loader(core.Loader):
             seen = set()
             mapping = {}
             for result in query:
-                mapping[(result.chain_name, result.index)] = result.exp_seq_position_id
+                key = (result.chain_name, result.index)
+                mapping[key] = result.exp_seq_position_id
                 seen.add(result.chain_name)
 
             if seen != set(chains):
