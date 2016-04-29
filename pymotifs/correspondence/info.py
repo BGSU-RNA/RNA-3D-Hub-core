@@ -4,8 +4,8 @@ not included with the given pdbs.
 """
 
 import itertools as it
-import functools as ft
-from operator import itemgetter
+# import functools as ft
+# from operator import itemgetter
 
 from pymotifs import core
 from pymotifs import utils as ut
@@ -98,6 +98,9 @@ class Loader(core.MassLoader):
         :returns: The
         """
 
+        common = pair[0]['species'].intersection(pair[1]['species'])
+        if len(common):
+            return True
         species = set()
         for seq in pair:
             species.update(seq['species'])

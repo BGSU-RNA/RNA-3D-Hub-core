@@ -92,6 +92,10 @@ class SpeciesTest(StageTest):
         pair = [{'species': set([1])}, {'species': set([1])}]
         self.assertTrue(self.loader.species_matches(pair))
 
+    def test_matches_if_one_in_common(self):
+        pair = [{'species': set([1])}, {'species': set([1, 3])}]
+        self.assertTrue(self.loader.species_matches(pair))
+
 
 class IsKnownTest(StageTest):
     loader_class = Loader
@@ -101,7 +105,7 @@ class IsKnownTest(StageTest):
         assert self.loader.is_known(pair) is False
 
     def test_knows_if_a_pair_is_known(self):
-        pair = [{'id': 51}, {'id': 52}]
+        pair = [{'id': 1}, {'id': 2}]
         assert self.loader.is_known(pair) is True
 
 
