@@ -338,6 +338,11 @@ class RepresentativeFinder(core.Base):
         rep = self.best_above_cutoffs(best, candidates)
         if not rep:
             raise core.InvalidState("No representative found")
+
+        if rep['id'] != best['id']:
+            self.logger.info("Changed representative from %s to %s",
+                             best['id'], rep['id'])
+
         self.logger.debug("Computed representative: %s", rep['id'])
 
         return rep
