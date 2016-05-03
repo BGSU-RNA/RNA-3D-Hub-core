@@ -66,10 +66,10 @@ BOOTSTRAPPING_PDBS = (
 NR_DISCREPANCY_CUTOFF = 0.4
 
 """Min percent increase of length to change representative"""
-NR_LENGTH_PERCENT_INCREASE = 1.0
+NR_LENGTH_PERCENT_INCREASE = 0.5
 
 """Min percent increase of bp count to change representative"""
-NR_BP_PERCENT_INCREASE = 1.0
+NR_BP_PERCENT_INCREASE = 0.5
 
 """Length cutoff before being matched as small"""
 CORRESPONDENCE_SMALL_CUTOFF = 36
