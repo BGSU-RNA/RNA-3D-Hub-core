@@ -13,6 +13,8 @@ from pymotifs.models import ChainSpecies
 from pymotifs.models import IfeInfo
 from pymotifs.models import IfeChains
 from pymotifs.models import ChainChainSimilarity
+from pymotifs.models import ExpSeqInfo
+from pymotifs.models import ExpSeqPdb
 
 from pymotifs.utils import connectedsets as cs
 from pymotifs.utils import correspondence as cr
@@ -97,8 +99,13 @@ class Grouper(core.Base):
                      PdbInfo.pdb_id == ChainInfo.pdb_id).\
                 join(ChainSpecies,
                      ChainSpecies.chain_id == ChainInfo.chain_id).\
+                join(ExpSeqPdb,
+                     ExpSeqPdb.chain_id == ChainInfo.chain_id).\
+                join(ExpSeqInfo,
+                     ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
                 filter(IfeInfo.pdb_id == pdb).\
                 filter(IfeInfo.new_style == True).\
+                filter(ExpSeqInfo.was_normalized == 1).\
                 order_by(IfeChains.ife_id, IfeChains.index)
 
             if query.count() == 0:
@@ -187,8 +194,8 @@ class Grouper(core.Base):
         """Check if the longest chains of the two groups agree.
         """
 
-        source1 = group1['species']
-        source2 = group2['species']
+        source1 = group1['source']
+        source2 = group2['source']
         if source1 != SYNTHEIC[0] and source2 != SYNTHEIC[0] and \
                 source1 is not None and source2 is not None \
                 and source1 != source2:
@@ -225,8 +232,13 @@ class Grouper(core.Base):
         return True
 
     def is_hard_coded_join(self, group1, group2):
-        return (group1['id'], group2['id']) in EQUIVELANT_PAIRS or \
-            (group2['id'], group1['id']) in EQUIVELANT_PAIRS
+        def simple(ife_id):
+            parts = ife_id.split('|')
+            return '|'.join([parts[0], parts[-1]])
+
+        id1 = (simple(group1['id']), simple(group2['id']))
+        id2 = (simple(group2['id']), simple(group1['id']))
+        return id1 in EQUIVELANT_PAIRS or id2 in EQUIVELANT_PAIRS
 
     def are_equivalent(self, alignments, discrepancies, group1, group2):
         """Determine if two chains are equivalent. This requires that the
@@ -238,11 +250,12 @@ class Grouper(core.Base):
         :chain2: The second chain.
         :returns: True if the two chains are equivalent, False otherwise
         """
+        if self.is_hard_coded_join(group1, group2):
+            return True
 
         return self.are_similar_species(group1, group2) and \
             self.has_good_alignment(alignments, group1, group2) and \
-            self.has_good_discrepancy(discrepancies, group1, group2) or \
-            self.is_hard_coded_join(group1, group2)
+            self.has_good_discrepancy(discrepancies, group1, group2)
 
     def validate(self, connections, group):
         pairs = it.product(group, group)
