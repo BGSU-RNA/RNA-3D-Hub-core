@@ -1,3 +1,5 @@
+import collections as coll
+
 from sqlalchemy.orm import aliased
 
 from pymotifs import core
@@ -67,10 +69,16 @@ class Helper(core.Base):
 
             data = []
             for result in query:
-                chain1 = {'id': result.chain_id_1, 'name': result.chain_name_1}
-                chain1['pdb'] = pdb1
-                chain2 = {'id': result.chain_id_2, 'name': result.chain_name_2}
-                chain2['pdb'] = pdb2
+                chain1 = {
+                    'pdb': pdb1,
+                    'id': result.chain_id_1,
+                    'name': result.chain_name_1
+                }
+                chain2 = {
+                    'pdb': pdb2,
+                    'id': result.chain_id_2,
+                    'name': result.chain_name_2
+                }
                 data.append((result.correspondence_id, chain1, chain2))
 
         return data
@@ -112,50 +120,53 @@ class Helper(core.Base):
             mapping[result.unit_id_2] = result.unit_id_1
         return mapping
 
-    def aligned_chains(self, ids, good=None):
+    def aligned_chains(self, ids, good=None, use_names=False):
         """Determine which chains a good alignment between them. This will
         produce a dictionary of dictionaries where the final values are a
         boolean indicating a good alignment or not.
 
         :param list ids: A list of pdb ids to use.
         :param bool good: Bool to control if this should only load good
-        alignments.
+        alignments. True means only good alignments, False means only bad, and
+        None means all alignments.
+        :param bool use_names: A flag to indicate if we should use the names
+        for chains or the id stored in the database.
         :returns: A dictionary of dictionaries indicating a good alignment or
         not.
         """
 
-        mapping = {}
         with self.session() as session:
-            c1 = aliased(mod.ChainInfo)
-            c2 = aliased(mod.ChainInfo)
-            m1 = aliased(mod.ExpSeqChainMapping)
-            m2 = aliased(mod.ExpSeqChainMapping)
             info = mod.CorrespondenceInfo
-            query = session.query(info.good_alignment,
-                                  c1.chain_id.label('chain_id1'),
-                                  c2.chain_id.label('chain_id2')).\
-                join(m1, m1.exp_seq_id == info.exp_seq_id_1).\
-                join(m2, m2.exp_seq_id == info.exp_seq_id_2).\
-                join(c1, c1.chain_id == m1.chain_id).\
-                join(c2, c2.chain_id == m2.chain_id).\
-                filter(c1.pdb_id.in_(ids)).\
-                filter(c2.pdb_id.in_(ids)).\
-                filter(c1.chain_id != c2.chain_id)
+            exp = mod.CorrespondencePdbs
+            query = session.query(exp.pdb_id_1.label('pdb1'),
+                                  exp.chain_name_1.label('name1'),
+                                  exp.pdb_id_2.label('pdb2'),
+                                  exp.chain_name_2.label('name2'),
+                                  exp.chain_id_1.label('chain_id1'),
+                                  exp.chain_id_2.label('chain_id2'),
+                                  info.good_alignment).\
+                join(info, info.correspondence_id == exp.correspondence_id).\
+                filter(exp.pdb_id_1.in_(ids)).\
+                filter(exp.pdb_id_2.in_(ids)).\
+                filter(exp.chain_id_1 != exp.chain_id_2)
 
             if good is not None:
                 query = query.filter(info.good_alignment == int(good))
 
+            mapping = coll.defaultdict(dict)
             for result in query:
-                if result.chain_id1 not in mapping:
-                    mapping[result.chain_id1] = {}
-                if result.chain_id2 not in mapping:
-                    mapping[result.chain_id2] = {}
+                id1 = result.chain_id1
+                id2 = result.chain_id2
+                if use_names:
+                    name = '%s||%s'
+                    id1 = name % (result.pdb1, result.name1)
+                    id2 = name % (result.pdb2, result.name2)
 
                 status = bool(result.good_alignment)
-                mapping[result.chain_id1][result.chain_id2] = status
-                mapping[result.chain_id2][result.chain_id1] = status
+                mapping[id1][id2] = status
+                mapping[id2][id1] = status
 
-            return mapping
+            return dict(mapping)
 
     def __ordering__(self, corr_id, chain_id1, chain_id2):
         """Compute the correspondence between the given chain ids and given

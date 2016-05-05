@@ -213,7 +213,10 @@ class Builder(core.Base):
                 filtered['release'] = new
                 filtered['name']['full'] = self.class_name(entry, resolution)
                 filtered['name']['cutoff'] = resolution
-                filtered['representative'] = rep_finder(filtered['members'])
+                rep = rep_finder(filtered['members'])
+                filtered['representative'] = rep
+                filtered['members'].remove(rep)
+                filtered['members'].insert(0, rep)
                 data.append(filtered)
 
         return data
