@@ -214,9 +214,12 @@ class Builder(core.Base):
                 filtered['name']['full'] = self.class_name(entry, resolution)
                 filtered['name']['cutoff'] = resolution
                 rep = rep_finder(filtered['members'])
+                rep['rank'] = 0
                 filtered['representative'] = rep
                 filtered['members'].remove(rep)
                 filtered['members'].insert(0, rep)
+                for index, member in enumerate(filtered['members']):
+                    member['rank'] = index
                 data.append(filtered)
 
         return data
