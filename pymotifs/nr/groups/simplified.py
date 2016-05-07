@@ -89,7 +89,7 @@ class Grouper(core.Base):
                                   IfeInfo.pdb_id.label('pdb'),
                                   IfeInfo.length,
                                   PdbInfo.resolution,
-                                  ChainSpecies.species_id.label('source')).\
+                                  ChainSpecies.species_id.label('species')).\
                 join(IfeInfo,
                      IfeInfo.pdb_id == ChainInfo.pdb_id).\
                 join(IfeChains,
@@ -123,7 +123,7 @@ class Grouper(core.Base):
                     'bp': chains[0]['bp'],
                     'name': chains[0]['name'],
                     'length': chains[0]['length'],
-                    'species': chains[0]['source'],
+                    'species': chains[0]['species'],
                     'chains': chains,
                     'db_id': chains[0]['db_id'],
                     'resolution': chains[0]['resolution'],
@@ -194,13 +194,13 @@ class Grouper(core.Base):
         """Check if the longest chains of the two groups agree.
         """
 
-        source1 = group1['source']
-        source2 = group2['source']
-        if source1 != SYNTHEIC[0] and source2 != SYNTHEIC[0] and \
-                source1 is not None and source2 is not None \
-                and source1 != source2:
-            self.logger.debug("Splitting %s, %s: Different sources (%i, %i)",
-                              group1['id'], group2['id'], source1, source2)
+        species1 = group1['species']
+        species2 = group2['species']
+        if species1 != SYNTHEIC[0] and species2 != SYNTHEIC[0] and \
+                species1 is not None and species2 is not None \
+                and species1 != species2:
+            self.logger.debug("Splitting %s, %s: Different speciess (%i, %i)",
+                              group1['id'], group2['id'], species1, species2)
             return False
 
         self.logger.debug("Good species: %s, %s", group1['id'], group2['id'])
