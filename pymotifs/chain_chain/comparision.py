@@ -9,6 +9,7 @@ it is run it will only add 10 new connections to the database.
 
 import itertools as it
 import collections as coll
+import functools as ft
 
 import numpy as np
 from sqlalchemy.orm import aliased
@@ -16,6 +17,7 @@ from sqlalchemy.orm import aliased
 from pymotifs import core
 from pymotifs import models as mod
 import pymotifs.utils as ut
+from pymotifs.utils.correspondence import Helper as Correspondence
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 
 from pymotifs.correspondence.summary import Loader as CorrespondenceLoader
@@ -74,42 +76,46 @@ class Loader(core.SimpleLoader):
                 filter(mod.IfeChains.index == 0)
             return [ut.row2dict(result) for result in query]
 
-    def find_correspondence(self, pair):
-        """Find the correspondence id for the given pair, using chain ids.
+    def good_alignment(self, alignments, pair):
+        return alignments.get(pair[0]['chain_id'], {}).\
+            get(pair[1]['chain_id'], False)
 
-        :param tuple pair: The pair of dictonaries.
-        :returns: A tuple of the given chain ids in the pair and a dicontary of
-        containing the correspondence_id and good_alignment.
-        """
-
+    def known_correspondencies(self, ifes):
+        chains = [ife['chain_id'] for ife in ifes]
         with self.session() as session:
-            pdbs = mod.CorrespondencePdbs
-            info = mod.CorrespondenceInfo
-            result = session.query(pdbs.correspondence_id,
-                                   info.good_alignment).\
-                join(info,
-                     info.correspondence_id == pdbs.correspondence_id).\
-                filter(pdbs.chain_id_1 == pair[0]['chain_id']).\
-                filter(pdbs.chain_id_2 == pair[1]['chain_id']).\
-                first()
+            query = session.query(mod.CorrespondencePdbs).\
+                filter(mod.CorrespondencePdbs.chain_id_1.in_(chains)).\
+                filter(mod.CorrespondencePdbs.chain_id_2.in_(chains))
 
-            return (pair[0], pair[1], ut.row2dict(result))
+            data = {}
+            for result in query:
+                corr_id = result.correspondence_id
+                data[(result.chain_id_1, result.chain_id_2)] = corr_id
+                data[(result.chain_id_2, result.chain_id_1)] = corr_id
+
+        return data
 
     def to_process(self, pdbs, **kwargs):
         """This will figure out all chains that need to be processed to
         determine the discrepancies.
         """
 
-        def as_tuple(pair):
-            return (pair[0]['ife_id'], pair[1]['ife_id'],
-                    pair[2]['correspondence_id'])
+        def as_result_tuple(known, pair):
+            corr_id = known[(pair[0]['chain_id'], pair[1]['chain_id'])]
+            return (pair[0]['ife_id'], pair[1]['ife_id'], corr_id)
+
+        helper = Correspondence(self.config, self.session)
+        alignments = helper.aligned_chains(pdbs, good=True)
+        good = ft.partial(self.good_alignment, alignments)
 
         ifes = it.imap(self.ifes_info, pdbs)
         ifes = it.chain.from_iterable(ifes)
+        ifes = list(ifes)
+        known_correspondencies = self.known_correspondencies(ifes)
+        as_tuple = ft.partial(as_result_tuple, known_correspondencies)
+
         pairs = it.combinations(ifes, 2)
-        pairs = it.imap(self.find_correspondence, pairs)
-        pairs = it.ifilter(lambda p: p[2], pairs)
-        pairs = it.ifilter(lambda p: p[2]['good_alignment'], pairs)
+        pairs = it.ifilter(good, pairs)
         pairs = it.imap(as_tuple, pairs)
         return sorted(set(pairs), key=lambda p: (p[0], p[1]))
 
