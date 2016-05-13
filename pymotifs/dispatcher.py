@@ -174,8 +174,8 @@ class Dispatcher(object):
         """
 
         stages = self.stages(self.name)
-        self.logger.debug('Running stages: %s',
-                          ', '.join(s.name for s in stages))
+        self.logger.info('Running stages: %s',
+                         ', '.join(s.name for s in stages))
 
         for stage in stages:
             try:
