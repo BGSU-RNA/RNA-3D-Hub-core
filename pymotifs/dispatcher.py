@@ -9,6 +9,7 @@ import itertools as it
 from pymotifs import core
 from pymotifs.cli import introspect as intro
 
+from pymotifs.utils import flatten
 from pymotifs.utils import toposort as topo
 
 
@@ -63,6 +64,11 @@ class Dispatcher(object):
         :returns: A dictonary with the dependency graph.
         """
 
+        def process_stage(stage):
+            if issubclass(stage, core.StageContainer):
+                return [process_stage(s) for s in stage.stages]
+            return [stage]
+
         stack = []
         for stage in stages:
             if issubclass(stage, core.StageContainer):
@@ -79,8 +85,11 @@ class Dispatcher(object):
             if issubclass(current, core.StageContainer):
                 stack.extend(current.stages)
             else:
-                deps[current] = current.dependencies
-                stack.extend(current.dependencies)
+                current_deps = [process_stage(s) for s in current.dependencies]
+                current_deps = flatten(current_deps)
+                current_deps = set(current_deps)
+                deps[current] = current_deps
+                stack.extend(current_deps)
 
         return deps
 

@@ -9,7 +9,10 @@ from pymotifs import core
 from pymotifs.dispatcher import Dispatcher
 from pymotifs.units import loader as units
 from pymotifs.pdbs import loader as pdbs
+from pymotifs.ife import loader as ifes
 from pymotifs import download as down
+from pymotifs.chains import loader as chains
+from pymotifs.interactions import loader as interactions
 # from pymotifs.export import loader as export
 # from pymotifs import mat_files as mat
 from pymotifs.cli.introspect import UnknownStageError
@@ -73,6 +76,12 @@ class DependenciesTest(ut.TestCase):
             pdbs.ObsoleteLoader: set([pdbs.InfoLoader]),
             units.InfoLoader: set([down.Downloader, pdbs.InfoLoader]),
         }
+
+    def test_it_computes_dependencies_for_nested_containers(self):
+        val = self.dispatcher.dependencies([ifes.Loader])
+        assert val[ifes.InfoLoader] == \
+            set([chains.InfoLoader, chains.SpeciesLoader,
+                 interactions.PairwiseLoader, interactions.HLSummaryLoader])
 
 
 class LevelsTest(ut.TestCase):
@@ -144,7 +153,6 @@ class StagesTest(ut.TestCase):
     def test_can_exclude_specific_stages(self):
         self.dispatcher.exclude = set(['units.distances'])
         val = self.stages('units.loader')
-        print('val', val)
         assert 'units.distances' not in val
         assert val == [
             'download',
@@ -181,3 +189,21 @@ class StagesTest(ut.TestCase):
     def test_can_get_one_stage_built(self):
         self.dispatcher.skip_dependencies = True
         assert self.stages('units.info') == ['units.info']
+
+    def test_running_with_nested_container_dependencies(self):
+        val = self.stages('ife.loader')
+        assert val.index('interactions.pairwise') < val.index('ife.info')
+        assert val == [
+            'download',
+            'pdbs.info',
+            'export.cifatom',
+            'pdbs.obsolete',
+            'units.info',
+            'chains.info',
+            'mat_files',
+            'interactions.pairwise',
+            'species_mapping',
+            'chains.species',
+            'interactions.helix_loop_summary',
+            'ife.info'
+        ]
