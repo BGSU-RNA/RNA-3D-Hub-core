@@ -61,6 +61,33 @@ def grouper(n, iterable):
         yield chunk
 
 
+def list_or_tuple(obj):
+    """Detect if something is a list or a tuple. This is useful when flattening
+    lists with flatten.
+
+    :param obj: An object
+    :returns: True if the object is a list or tuple.
+    """
+
+    return isinstance(obj, (list, tuple))
+
+
+def flatten(sequence, predicate=list_or_tuple):
+    """Flatten deeply nested lists. This produces a generator which will
+    flatten deepely nested lists. Modified from: https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch04s07.html
+
+    :param lst: A list, tuple or generator to flatten.
+    :yeilds: The individual components from the nested iterator.
+    """
+
+    for obj in sequence:
+        if predicate(obj):
+            for entry in flatten(obj):
+                yield entry
+        else:
+            yield obj
+
+
 def row2dict(row):
     if row is None:
         return None
