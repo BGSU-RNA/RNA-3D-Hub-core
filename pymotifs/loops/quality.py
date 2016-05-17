@@ -38,6 +38,12 @@ class Loader(core.SimpleLoader):
             filter(mod.LoopInfo.pdb_id == pdb).\
             filter(mod.LoopQa.release_id == release_id)
 
+    def is_complementary(self, loop):
+        pass
+
+    def has_modified(self, loop):
+        pass
+
     def parse(self, raw, release_id):
         """Reads the csv file, imports all distances, deletes the file when done
            to avoid stale data and free up disk space

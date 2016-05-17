@@ -1,3 +1,7 @@
+import os
+import shutil
+
+from test import CONFIG
 from test import StageTest
 from test import skip_without_matlab
 
@@ -109,3 +113,26 @@ class ExtractLoopsTest(StageTest):
         self.assertEqual(len(names), 22)
         self.assertEqual(len(ids), 22)
         self.assertEqual(len(units), 22)
+
+
+class CreatingFilesTest(StageTest):
+    loader_class = Loader
+    base = os.path.join(CONFIG['locations']['loops_mat_files'], '1GID')
+
+    def setUp(self):
+        super(CreatingFilesTest, self).setUp()
+        if os.path.exists(self.base):
+            shutil.rmtree(self.base)
+        self.data = self.loader.data('1GID')
+
+    @skip_without_matlab
+    def test_creates_the_required_files(self):
+        def loop(loop_id):
+            return str(os.path.join(self.base, loop_id + '.mat'))
+
+        assert os.path.isdir(self.base)
+        assert os.path.exists(loop('IL_1GID_001'))
+        assert os.path.exists(loop('HL_1GID_001'))
+
+        # 22 loops
+        assert len(os.listdir(self.base)) == 22

@@ -23,6 +23,9 @@ class Loader(core.SimpleLoader):
     def query(self, session, pdb):
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
+    def remove(self, *args, **kwargs):
+        self.logger.info("We don't actually remove data for loop extractor")
+
     def _next_loop_number_string(self, current):
         """Compute the next loop number string. This will pad to either 3 or 6
         characters with zeros. If the next number is over 999 we use 6,
@@ -92,7 +95,7 @@ class Loader(core.SimpleLoader):
         for index in xrange(count):
             loop = loops[index].AllLoops_table
             loop_id = self._get_loop_id(loop.full_id, pdb, loop_type, mapping)
-            loop.Filename = loop_id
+            loops[index].Filename = loop_id
 
             data.append(mod.LoopInfo(
                 loop_id=loop_id,
@@ -120,7 +123,7 @@ class Loader(core.SimpleLoader):
         """
 
         if not os.path.isdir(location):
-            os.mkdir(location)
+            os.makedirs(location)
 
         try:
             mlab = matlab.Matlab(self.config['locations']['fr3d_root'])

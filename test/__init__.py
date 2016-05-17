@@ -19,7 +19,7 @@ Session = sessionmaker(bind=engine)
 
 
 skip_without_matlab = pytest.mark.skipif(
-    has_matlab() is True,
+    has_matlab() is False,
     reason="No matlab installed")
 
 
