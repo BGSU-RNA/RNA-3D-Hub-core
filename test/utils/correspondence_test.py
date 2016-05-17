@@ -1,3 +1,6 @@
+import string
+import itertools as it
+
 from test import StageTest
 
 from pymotifs import models as mod
@@ -7,34 +10,48 @@ from pymotifs.utils.correspondence import Helper
 class AlignedChainsTest(StageTest):
     loader_class = Helper
 
-    def setUp(self):
-        super(AlignedChainsTest, self).setUp()
-        self.alignments = self.loader.aligned_chains(['1GID', '3T4B'])
+    def aligned(self, pdbs, **kwargs):
+        return self.loader.aligned_chains(pdbs, use_names=True, **kwargs)
+
+    def unknown_pdbs(self):
+        comb = it.combinations(string.ascii_uppercase, 3)
+        comb = it.imap(lambda c: ''.join(c), comb)
+        return it.imap(lambda c: '0' + c, comb)
 
     def test_can_load_all_alignments_from_the_pdb(self):
-        self.assertEquals([60, 61, 172], sorted(self.alignments.keys()))
+        val = sorted(self.aligned(['1GID', '3T4B']).keys())
+        assert ['1GID||A', '1GID||B', '3T4B||A'] == val
 
     def test_can_load_all_alignments_to_each(self):
-        ans = {
-            172L: {60L: False, 61L: False},
-            60L: {172L: False, 61L: True},
-            61L: {172L: False, 60L: True}
+        assert self.aligned(['1GID', '124D', '3T4B']) == {
+            '3T4B||A': {'1GID||A': False, '1GID||B': False, '124D||B': False},
+            '1GID||A': {'3T4B||A': False, '1GID||B': True, '124D||B': False},
+            '1GID||B': {'3T4B||A': False, '1GID||A': True, '124D||B': False},
+            '124D||B': {'1GID||A': False, '1GID||B': False, '124D||B': False}
         }
-        self.assertEquals(ans, self.alignments)
+
+    def test_can_load_all_alignments_for_many_structures(self):
+        pdbs = ['1GID', '3T4B'] * 4000
+        pdbs.extend(self.unknown_pdbs())
+        assert self.aligned(pdbs) == {
+            '3T4B||A': {'1GID||A': False, '1GID||B': False},
+            '1GID||A': {'3T4B||A': False, '1GID||B': True},
+            '1GID||B': {'3T4B||A': False, '1GID||A': True},
+        }
 
     def test_can_load_only_good_alignments(self):
-        val = self.loader.aligned_chains(['1GID', '3T4B'], good=True)
-        ans = {60L: {61L: True}, 61L: {60L: True}}
-        self.assertEquals(ans, val)
+        val = self.aligned(['1GID', '124D', '3T4B'], good=True)
+        ans = {'1GID||A': {'1GID||B': True}, '1GID||B': {'1GID||A': True}}
+        assert val == ans
 
     def test_can_load_only_bad_alignments(self):
-        val = self.loader.aligned_chains(['1GID', '3T4B'], good=False)
+        val = self.aligned(['1GID', '124D', '3T4B'], good=False)
         ans = {
-            172L: {60L: False, 61L: False},
-            60L: {172L: False},
-            61L: {172L: False}
+            '3T4B||A': {'1GID||A': False, '1GID||B': False, '124D||B': False},
+            '1GID||A': {'3T4B||A': False, '124D||B': False},
+            '1GID||B': {'3T4B||A': False, '124D||B': False}
         }
-        self.assertEquals(ans, val)
+        assert val == ans
 
 
 class ChainTest(StageTest):
@@ -51,8 +68,7 @@ class ChainTest(StageTest):
         return corr
 
     def test_can_all_corresponding_chains(self):
-        val = self.corr('1FCW', '4V42')
-        ans = [
+        assert self.corr('1FCW', '4V42') == [
             ({'pdb': '1FCW', 'name': 'A'}, {'pdb': '4V42', 'name': 'AB'}),
             ({'pdb': '1FCW', 'name': 'B'}, {'pdb': '4V42', 'name': 'AB'}),
             ({'pdb': '1FCW', 'name': 'C'}, {'pdb': '4V42', 'name': 'AB'}),
@@ -64,18 +80,16 @@ class ChainTest(StageTest):
             ({'pdb': '1FCW', 'name': 'D'}, {'pdb': '4V42', 'name': 'AC'}),
             ({'pdb': '1FCW', 'name': 'E'}, {'pdb': '4V42', 'name': 'AC'}),
         ]
-        self.assertEquals(val, ans)
 
     def test_gives_nothing_if_no_corresponding(self):
-        self.assertEquals([], self.loader.chains('1DUH', '1KOG'))
+        assert self.loader.chains('1DUH', '1KOG') == []
 
 
 class CorrespondingPdbTest(StageTest):
     loader_class = Helper
 
     def test_can_get_pdbs_that_have_correspondence(self):
-        val = self.loader.pdbs('1FCW')
-        self.assertEquals(['1FCW', '4V42'], val)
+        assert self.loader.pdbs('1FCW') == ['1FCW', '4V42']
 
 
 class OrderingTest(StageTest):
@@ -103,7 +117,7 @@ class OrderingTest(StageTest):
         return self.loader.ordering(corr_id, c1, c2)
 
     def test_can_get_ordering_alignments_between_chains(self):
-        ans = {
+        assert self.ordering('4V9Q', 'BX', '4V9Q', 'DX') == {
             '4V9Q|1|BX|A|14': 0,
             '4V9Q|1|DX|A|14': 0,
             '4V9Q|1|BX|A|15': 1,
@@ -115,10 +129,9 @@ class OrderingTest(StageTest):
             '4V9Q|1|BX|G|18': 4,
             '4V9Q|1|DX|G|18': 4,
         }
-        self.assertEquals(ans, self.ordering('4V9Q', 'BX', '4V9Q', 'DX'))
 
     def test_gives_nothing_for_not_correspondence(self):
-        self.assertEquals({}, self.ordering('1KOG', 'I', '1DUH', 'A'))
+        assert self.ordering('1KOG', 'I', '1DUH', 'A') == {}
 
 
 class MappingTest(StageTest):
@@ -147,7 +160,7 @@ class MappingTest(StageTest):
         return self.loader.mapping(corr_id, c1, c2)
 
     def test_it_gives_mapping_between_chains(self):
-        ans = {
+        assert self.mapping('4V9Q', 'BX', '4V9Q', 'DX') == {
             '4V9Q|1|BX|A|14': '4V9Q|1|DX|A|14',
             '4V9Q|1|BX|A|15': '4V9Q|1|DX|A|15',
             '4V9Q|1|BX|A|16': '4V9Q|1|DX|A|16',
@@ -159,7 +172,6 @@ class MappingTest(StageTest):
             '4V9Q|1|DX|U|17': '4V9Q|1|BX|U|17',
             '4V9Q|1|DX|G|18': '4V9Q|1|BX|G|18',
         }
-        self.assertEquals(ans, self.mapping('4V9Q', 'BX', '4V9Q', 'DX'))
 
     def test_it_gives_empty_if_no_mapping(self):
-        self.assertEquals({}, self.mapping('1FJG', 'X', '1EKD', 'A'))
+        assert self.mapping('1FJG', 'X', '1EKD', 'A') == {}
