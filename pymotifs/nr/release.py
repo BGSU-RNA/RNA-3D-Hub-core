@@ -42,7 +42,7 @@ class Loader(core.MassLoader):
         with self.session() as session:
             query = session.query(mod.NrReleases.nr_release_id,
                                   mod.NrReleases.index).\
-                order_by(desc(mod.NrReleases.date)).\
+                order_by(desc(mod.NrReleases.index)).\
                 limit(1)
 
             if query.count() == 0:
