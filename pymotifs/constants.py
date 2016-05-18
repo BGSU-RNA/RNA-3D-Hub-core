@@ -82,3 +82,5 @@ EQUIVELANT_PAIRS = set([
     ('1S72|0', '1FG0|A'),
     ('1S72|0', '1FFZ|A')
 ])
+
+LONG_RANGE = 3
