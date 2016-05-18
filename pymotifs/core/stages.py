@@ -197,10 +197,28 @@ class Stage(base.Base):
         diff = abs(datetime.datetime.now() - current)
         return diff > self.update_gap
 
+    def was_marked(self, pdb, **kwargs):
+        """This will check if we have already done and marked. This is useful
+        for skipping over stages which may or may not produce data. We do not
+        want to waste time constantly retrying these stages so instead we check
+        if there is a mark for the run and if so we can skip it.
+
+        :param str pdb: The pdb to use.
+        :returns: True if this was done and marked in the past.
+        """
+
+        with self.session() as session:
+            query = session.query(mod.PdbAnalysisStatus).\
+                filter_by(pdb_id=pdb, stage=self.name).\
+                limit(1)
+            return bool(query.count())
+
     def should_process(self, entry, **kwargs):
         """Determine if we should process this entry. This is true if we are
         told to recompute, if we do not have data for this pdb or it has been
-        long enough since the last update.
+        long enough since the last update. In the case of a stage, which may
+        not produce data we will skip running it if we have a mark for the
+        stage.
 
         :entry: The entry to check.
         :kwargs: Some keyword arguments for determining if we should process
@@ -223,6 +241,11 @@ class Stage(base.Base):
             return True
 
         if self.is_missing(entry, **kwargs):
+            if self.allow_no_data is True and self.was_marked(entry, **kwargs):
+                self.logger.debug("Last run produced no data, skipping %s",
+                                  entry)
+                return False
+
             self.logger.debug("Missing data from %s. Will compute", entry)
             return True
         return False
@@ -312,7 +335,7 @@ class Stage(base.Base):
             processed.append(entry)
 
         if failed:
-            ids = ', '.join(str(f) for f in failed)
+            ids = ' '.join(str(f) for f in failed)
             raise StageFailed("Pipeline failed on these inputs %s" % ids)
 
         return processed
