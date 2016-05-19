@@ -83,16 +83,18 @@ class Loader(core.Loader):
         """
         for mapping in cif.experimental_sequence_mapping(chain):
             unit_id = mapping['unit_id']
-            parts = mapping['seq_id'].split("|")
             index = mapping['index']
-            chain = parts[2]
+            chain = mapping['chain']
             key = (chain, index)
 
             if key not in exp_mapping:
                 raise core.InvalidState("No pos id for %s" % str(key))
 
             pos_id = exp_mapping[key]
-            yield UnitMapping(unit_id=unit_id, exp_seq_position_id=pos_id)
+            yield UnitMapping(unit_id=unit_id,
+                              chain=chain,
+                              exp_seq_position_id=pos_id,
+                              )
 
     def exp_mapping(self, pdb, chains):
         """Compute a mapping from index in a chain to experimental sequence
