@@ -19,6 +19,7 @@ from pymotifs.units.info import Loader as InfoLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader])
+    table = UnitCoordinates
 
     def query(self, session, pdb):
         return session.query(UnitCoordinates).\
@@ -28,7 +29,7 @@ class Loader(core.SimpleLoader):
     def coordinates(self, pdb, residue):
         structure = Structure([residue], pdb=pdb)
         sio = StringIO()
-        writer = CifAtom(sio)
+        writer = CifAtom(sio, units=False)
         writer(structure)
         raw = sio.getvalue()
         # Skip the first 24 lines which consist of all the header information
@@ -49,6 +50,6 @@ class Loader(core.SimpleLoader):
             if unit.sequence == 'HOH':
                 continue
             yield {
-                'unit_id': unit.unit_id,
+                'unit_id': unit.unit_id(),
                 'coordinates': self.coordinates(pdb, unit)
             }
