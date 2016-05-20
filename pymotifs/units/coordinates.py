@@ -29,7 +29,7 @@ class Loader(core.SimpleLoader):
     def coordinates(self, pdb, residue):
         structure = Structure([residue], pdb=pdb)
         sio = StringIO()
-        writer = CifAtom(sio, units=False)
+        writer = CifAtom(sio, unit_ids=False)
         writer(structure)
         raw = sio.getvalue()
         # Skip the first 24 lines which consist of all the header information
