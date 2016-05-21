@@ -9,12 +9,13 @@ from pymotifs import models as mod
 
 from pymotifs.ife.grouper import Grouper
 
+from pymotifs.units.loader import Loader as UnitInfoLoader
 from pymotifs.chains.loader import Loader as ChainLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([ChainLoader, InteractionLoader])
+    dependencies = set([ChainLoader, InteractionLoader, UnitInfoLoader])
     merge_data = True
 
     def query(self, session, pdb_id):
