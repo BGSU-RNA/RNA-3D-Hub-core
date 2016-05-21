@@ -94,7 +94,11 @@ def row2dict(row):
     d = {}
     if hasattr(row, '__table__'):
         for column in row.__table__.columns:
-            d[column.name] = str(getattr(row, column.name))
+            value = getattr(row, column.name)
+            # if value is not None:
+            d[column.name] = value
+            # else:
+            # d[column.name] = None
     elif hasattr(row, '_fields'):
         for column in row._fields:
             d[column] = getattr(row, column)
