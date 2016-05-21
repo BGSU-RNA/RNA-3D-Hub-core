@@ -2,6 +2,8 @@ import os
 
 import pytest
 
+from fr3d.unit_ids import decode
+
 from test import StageTest
 from test import skip_without_matlab
 
@@ -68,7 +70,7 @@ class MatlabTest(StageTest):
         ans = {
             'loop_id': "HL_1GID_001",
             'position': 1,
-            'unit_id': "1GID|1|B|G|234",
+            'unit_id': "1GID|1|A|G|149",
             'bulge': 0,
             'flanking': 1,
             'border': 1
@@ -78,3 +80,16 @@ class MatlabTest(StageTest):
     def test_will_remove_file_after_loading(self):
         path = './MotifAtlas/Precomputed/1GID/LoopPositions.csv'
         self.assertFalse(os.path.exists(path))
+
+
+class SymmetryOperatorTests(StageTest):
+    loader_class = Loader
+
+    def setUp(self):
+        super(SymmetryOperatorTests, self).setUp()
+        self.positions = self.loader.data('1DUH')
+
+    def test_it_uses_a_single_symmetry_operator(self):
+        units = [pos.unit_id for pos in self.positions]
+        sym_ops = set(decode(uid)['symmetry'] for uid in units)
+        assert sym_ops == set(['1_555'])
