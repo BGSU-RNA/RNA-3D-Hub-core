@@ -80,7 +80,7 @@ CORRESPONDENCE_HUGE_CUTOFF = 2000
 """Set of pairs that must be joined by into a equivelance class"""
 EQUIVELANT_PAIRS = set([
     ('1S72|0', '1FG0|A'),
-    ('1S72|0', '1FFZ|A')
+    ('1S72|0', '1FFZ|A'),
 ])
 
 LONG_RANGE = 3
