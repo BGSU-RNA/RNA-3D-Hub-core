@@ -19,53 +19,64 @@ from pymotifs.interactions.pairwise import Loader as InterLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([InterLoader])
+    table = UnitInteractionSummary
 
     def query(self, session, pdb):
-        session.query(UnitInteractionSummary).\
+        return session.query(UnitInteractionSummary).\
             filter_by(pdb_id=pdb)
 
     def increment_bp(self, current, bp, crossing):
-        self.increment(current, 'bps', bp, crossing)
+        return self.increment(current, 'bps', bp, crossing)
 
     def increment_stacks(self, current, stack, crossing):
-        self.increment(current, 'stacks', stack, crossing)
+        return self.increment(current, 'stacks', stack, crossing)
 
-    def incremement_bphs(self, current, unit1, unit2, bph, crossing):
+    def increment_bphs(self, current, unit1, unit2, bph, crossing):
         if unit1 != unit2 and bph != '0BPh':
-            self.increment(current, 'bphs', bph, crossing)
+            return self.increment(current, 'bphs', bph, crossing)
+        return current
 
     def increment(self, current, family, name, crossing):
         if name and name[0] != 'n':
             current[name] += 1
             current['total'] += 1
             current[family] += 1
-            if crossing > LONG_RANGE:
-                current['lr_' + name] += 1
-                current['lr_total'] += 1
-                current['lr_' + family] += 1
+            lr_inc = int(crossing > LONG_RANGE)
+            current['lr_' + name] += lr_inc
+            current['lr_total'] += lr_inc
+            current['lr_' + family] += lr_inc
+        return current
 
     def data(self, pdb_id, **kwargs):
 
         with self.session() as session:
-            query = session.query(UnitPairsInteractions,
+            query = session.query(UnitInfo.unit_id.label('unit_id_1'),
                                   UnitInfo.model,
-                                  UnitInfo.chain_name,
+                                  UnitInfo.chain,
+                                  UnitInfo.pdb_id,
+                                  UnitPairsInteractions.unit_id_2,
+                                  UnitPairsInteractions.f_lwbp,
+                                  UnitPairsInteractions.f_bphs,
+                                  UnitPairsInteractions.f_stacks,
+                                  UnitPairsInteractions.f_crossing,
                                   ).\
-                join(UnitInfo,
-                     UnitInfo.unit_id == UnitPairsInteractions.unit_id_id).\
-                filter_by(pdb_id=pdb_id)
+                outerjoin(UnitPairsInteractions,
+                          UnitInfo.unit_id == UnitPairsInteractions.unit_id_1).\
+                filter(UnitInfo.pdb_id == pdb_id).\
+                filter(UnitInfo.unit_type_id == 'rna')
 
             data = coll.defaultdict(lambda: coll.defaultdict(int))
             for result in query:
-                current = result[result.unit_id_1]
+                current = data[result.unit_id_1]
+                current['unit_id'] = result.unit_id_1
                 current['pdb_id'] = result.pdb_id
                 current['model'] = result.model
-                current['chain'] = result.chain_name
+                current['chain'] = result.chain
                 crossing = result.f_crossing
                 self.increment_bp(current, result.f_lwbp, crossing)
                 self.increment_stacks(current, result.f_stacks, crossing)
-                self.increment_bphs(current, result.f_bph, result.unit_id_1,
-                                    result.unit_id_2, crossing)
-                result[result.unit_id_1] = crossing
+                self.increment_bphs(current, result.unit_id_1,
+                                    result.unit_id_2, result.f_bphs, crossing)
+                data[current['unit_id']] = current
 
-            return [UnitInteractionSummary(dict(v)) for v in data.values()]
+            return [(dict(v)) for v in data.values()]
