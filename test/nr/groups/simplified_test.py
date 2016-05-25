@@ -268,7 +268,9 @@ class AreEquivlantTests(StageTest):
     def test_always_joins_if_given_hardcoded_chains(self):
         g1 = {'id': '1S72|1|0'}
         g2 = {'id': '1FG0|1|A'}
+        g3 = {'id': '1FFZ|1|A'}
         self.assertTrue(self.loader.are_equivalent({}, {}, g1, g2))
+        self.assertTrue(self.loader.are_equivalent({}, {}, g1, g3))
 
 
 class LoadingIfeTest(StageTest):
@@ -300,7 +302,7 @@ class LoadingIfeTest(StageTest):
 
     def test_sorts_ife_chains_by_stored_index(self):
         ife = self.data[3]
-        self.assertEquals(ife['id'], '4V9Q|BV')
+        self.assertEquals(ife['id'], '4V9Q|1|BV')
         val = [c['name'] for c in ife['chains']]
         ans = ['BV', 'BX']
         self.assertEquals(ans, val)
@@ -312,16 +314,16 @@ class LoadingIfeTest(StageTest):
             for chain in ife['chains']:
                 val[ife['id']].append(chain['name'])
         ans = {
-            '4V9Q|AA': ['AA'],
-            '4V9Q|AB': ['AB'],
-            '4V9Q|BA': ['BA'],
-            '4V9Q|BV': ['BV', 'BX'],
-            '4V9Q|BW': ['BW'],
-            '4V9Q|CA': ['CA'],
-            '4V9Q|CB': ['CB'],
-            '4V9Q|DA': ['DA'],
-            '4V9Q|DV': ['DV', 'DX'],
-            '4V9Q|DW': ['DW'],
+            '4V9Q|1|AA': ['AA'],
+            '4V9Q|1|AB': ['AB'],
+            '4V9Q|1|BA': ['BA'],
+            '4V9Q|1|BV': ['BV', 'BX'],
+            '4V9Q|1|BW': ['BW'],
+            '4V9Q|1|CA': ['CA'],
+            '4V9Q|1|CB': ['CB'],
+            '4V9Q|1|DA': ['DA'],
+            '4V9Q|1|DV': ['DV', 'DX'],
+            '4V9Q|1|DW': ['DW'],
         }
         self.assertEquals(ans, val)
 
@@ -329,6 +331,10 @@ class LoadingIfeTest(StageTest):
         ifes = self.loader.ifes('1A34')
         val = set(ife['db_id'] for ife in ifes)
         self.assertEquals(1, len(val))
+
+    @pytest.mark.skip(reason="No data yet")
+    def test_it_only_loads_ife_with_normalized_seq(self):
+        pass
 
 
 class PairsTest(StageTest):
@@ -380,6 +386,22 @@ class ValidIfeTest(StageTest):
         self.assertTrue(self.loader.valid_ife({'id': '1', 'length': 1}))
 
 
+class SpeciesSplittingTest(StageTest):
+    loader_class = Grouper
+
+    @pytest.mark.skip()
+    def test_it_leaves_a_group_with_small_members_alone(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_splits_large_by_species(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_puts_synthenic_with_largest_group(self):
+        pass
+
+
 class GroupingTest(StageTest):
     loader_class = Grouper
 
@@ -397,4 +419,8 @@ class GroupingTest(StageTest):
 
     @pytest.mark.skip()
     def test_will_assign_rank_to_all_grouped_members(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_will_enforce_splitting_by_species(self):
         pass

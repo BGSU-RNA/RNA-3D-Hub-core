@@ -84,3 +84,9 @@ EQUIVELANT_PAIRS = set([
 ])
 
 LONG_RANGE = 3
+
+"""NCBI Taxon id for synthetic constructs"""
+SYNTHENIC_SPECIES_ID = 32630
+
+"""Min size for groups that must have a homogenous species"""
+NR_MIN_HOMOGENEOUS_SIZE = 70

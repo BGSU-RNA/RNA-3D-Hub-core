@@ -6,6 +6,8 @@ from pymotifs import core
 from pymotifs.utils import result2dict
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 from pymotifs.constants import EQUIVELANT_PAIRS
+from pymotifs.constants import SYNTHEIC_SPECIES_ID
+from pymotifs.constants import NR_MIN_HOMOGENEOUS_SIZE
 
 from pymotifs.models import PdbInfo
 from pymotifs.models import ChainInfo
@@ -266,6 +268,45 @@ class Grouper(core.Base):
             self.logger.debug("Pair %s, %s not connected", *pair)
         self.logger.debug("%i pairs are not connected", len(pairs))
 
+    def split_by_species(self, group):
+        """Split a group by species. This will put all members with the same
+        species into their own group. The ones with synthetic or unknown are
+        placed with the largest group.
+
+        :param list group: A list of chains to split by species.
+        :returns: The list of species split by group.
+        """
+
+        species = coll.defaultdict(list)
+        for entry in group:
+            name = group['species']
+            if name is None or name == SYNTHEIC_SPECIES_ID:
+                name = SYNTHEIC_SPECIES_ID
+            species[name].append(entry)
+
+        unknown = species.pop(SYNTHEIC_SPECIES_ID, [])
+        largest_group = max(group.keys(), key=lambda k: len(species[k]))
+        largest_group.extend(unknown)
+
+        return species.values()
+
+    def enforce_species_splitting(self, group):
+        """For groups over the NR_MIN_HOMOGENEOUS_SIZE we require that all
+        members of the group have the same species (excluding unknown or
+        synthetic species of course). We enforce this requirement here. The
+        splitting is done in spilt_by_species.
+
+        :param list group: List of chains in a single group.
+        :yields: Each subgroup with consistent species, in no particular order.
+        """
+
+        max_length = max(group, key=lambda e: e['length'])
+        if max_length < NR_MIN_HOMOGENEOUS_SIZE:
+            yield group
+
+        for subgroup in self.split_by_species(group):
+            yield subgroup
+
     def pairs(self, chains, alignments, discrepancies):
         """Generate an iterator of all equivalent pairs of chains.
 
@@ -332,7 +373,9 @@ class Grouper(core.Base):
         groups = []
         for ids in cs.find_connected(graph).values():
             self.validate(graph, list(ids))
-            groups.append(mapping[id] for id in ids)
+            group = [mapping[id] for id in ids]
+            for subgroup in self.enforce_species_splitting(group):
+                groups.append(subgroup)
 
         return groups
 
