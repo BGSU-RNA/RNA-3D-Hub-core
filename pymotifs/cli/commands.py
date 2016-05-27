@@ -126,7 +126,8 @@ def bootstrap(ctx, **kwargs):
     kwargs['skip_stage'] = kwargs.get('skip_stage', [])
     kwargs['skip_stage'].append('units.distances')
     kwargs['skip_stage'].append('pdbs.obsolete')
-    kwargs['skip_stage'].append('export.loader')
+    kwargs['skip_stage'].append('export.interactions')
+    kwargs['skip_stage'].append('export.loops')
     kwargs['log_level'] = 'debug'
     kwargs['seed'] = 1
     run(ctx, 'update', BOOTSTRAPPING_PDBS, **kwargs)
