@@ -73,7 +73,11 @@ class Loader(core.SimpleLoader):
 
         data = coll.defaultdict(dict)
         with open(filename, 'rb') as raw:
-            for row in csv.reader(raw, delimiter=',', quotechar='"'):
+            reader = csv.reader(raw, delimiter=',', quotechar='"')
+            for index, row in enumerate(reader):
+                if not row[0] or not row[1]:
+                    msg = "Line %s did not include both units"
+                    raise core.InvalidState(msg % index)
                 interaction = data[(row[0], row[1])]
                 interaction['unit_id_1'] = row[0]
                 interaction['unit_id_2'] = row[1]
