@@ -94,9 +94,8 @@ class CreatingUnitsTest(StageTest):
         ans = '1_555'
         self.assertEqual(ans, val)
 
-    @pytest.mark.xfail(reason='Not computing index yet')
     def test_sets_the_chain_index(self):
-        assert self.data.chain_index == 0
+        assert self.data.chain_index == 1
 
     @pytest.mark.xfail(reason='Not computing index yet')
     def test_sets_the_global_index(self):
