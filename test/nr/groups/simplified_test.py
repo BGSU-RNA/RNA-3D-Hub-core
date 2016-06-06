@@ -284,7 +284,8 @@ class LoadingIfeTest(StageTest):
         self.assertEquals(10, len(self.data))
 
     def test_assigns_species_by_first_chain(self):
-        self.assertEquals(512, self.data[3]['species'])
+        assert self.data[3]['id'] == '4V9Q|1|BV'
+        self.assertEquals(562, self.data[3]['species'])
 
     def test_sets_length_to_first(self):
         self.assertEquals(77, self.data[3]['length'])
@@ -298,7 +299,7 @@ class LoadingIfeTest(StageTest):
     def test_sets_db_id_to_first_chain_db_id(self):
         val = self.data[0]
         self.assertEquals(val['db_id'], val['chains'][0]['db_id'])
-        self.assertEquals(1149, val['db_id'])
+        self.assertEquals(1548, val['db_id'])
 
     def test_sorts_ife_chains_by_stored_index(self):
         ife = self.data[3]
@@ -351,11 +352,11 @@ class PairsTest(StageTest):
             3: {5: False, 1: False, 4: True}
         }
         self.chains = [
-            {'id': 0, 'db_id': 1, 'chains': [{'db_id': 1}], 'species': None},
-            {'id': 1, 'db_id': 2, 'chains': [{'db_id': 2}], 'species': 1},
-            {'id': 2, 'db_id': 3, 'chains': [{'db_id': 3}], 'species': 32630},
-            {'id': 3, 'db_id': 4, 'chains': [{'db_id': 4}], 'species': 1},
-            {'id': 4, 'db_id': 5, 'chains': [{'db_id': 5}], 'species': 1}
+            {'id': '0', 'db_id': 1, 'chains': [{'db_id': 1}], 'species': None},
+            {'id': '1', 'db_id': 2, 'chains': [{'db_id': 2}], 'species': 1},
+            {'id': '2', 'db_id': 3, 'chains': [{'db_id': 3}], 'species': 32630},
+            {'id': '3', 'db_id': 4, 'chains': [{'db_id': 4}], 'species': 1},
+            {'id': '4', 'db_id': 5, 'chains': [{'db_id': 5}], 'species': 1}
         ]
 
     def test_will_create_all_valid_pairs(self):
@@ -389,13 +390,22 @@ class ValidIfeTest(StageTest):
 class SpeciesSplittingTest(StageTest):
     loader_class = Grouper
 
-    @pytest.mark.skip()
-    def test_it_leaves_a_group_with_small_members_alone(self):
-        pass
+    def group(self, *pdbs):
+        groups = []
+        self.loader.use_discrepancy = False
+        for group in self.loader(pdbs):
+            groups.append(set(ife['id'] for ife in group['members']))
+        self.loader.use_discrepancy = True
+        return groups
 
-    @pytest.mark.skip()
+    def test_it_leaves_a_group_with_small_members_alone(self):
+        groups = self.group('4A3J', '4A3G', '3J9M')
+        assert set(['4A3J|1|P', '4A3G|1|P', '3J9M|1|u']) in groups
+
     def test_it_splits_large_by_species(self):
-        pass
+        groups = self.group('4V9Q', '3CW5', '4TUE')
+        assert set(['4TUE|1|QV', '4TUE|1|XV']) in groups
+        assert set(['4TUE|1|QA', '4TUE|1|XA', '4V9Q|1|BA', '4V9Q|1|DA']) in groups
 
     @pytest.mark.skip()
     def test_it_puts_synthenic_with_largest_group(self):
@@ -404,6 +414,12 @@ class SpeciesSplittingTest(StageTest):
 
 class GroupingTest(StageTest):
     loader_class = Grouper
+
+    def group(self, *pdbs):
+        groups = []
+        for group in self.loader(pdbs):
+            groups.append(set(ife['id'] for ife in group['members']))
+        return groups
 
     @pytest.mark.skip()
     def test_it_will_complain_if_no_ifes_found(self):
@@ -421,6 +437,7 @@ class GroupingTest(StageTest):
     def test_will_assign_rank_to_all_grouped_members(self):
         pass
 
-    @pytest.mark.skip()
     def test_it_will_enforce_splitting_by_species(self):
-        pass
+        groups = self.group('4V9Q', '3CW5', '4TUE')
+        assert set(['4TUE|1|QV', '4TUE|1|XV']) in groups
+        assert set(['4TUE|1|QA', '4TUE|1|XA', '4V9Q|1|BA', '4V9Q|1|DA']) in groups
