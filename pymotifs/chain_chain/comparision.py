@@ -20,7 +20,7 @@ import pymotifs.utils as ut
 from pymotifs.utils.correspondence import Helper as Correspondence
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 
-from pymotifs.correspondence.summary import Loader as CorrespondenceLoader
+from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
@@ -237,6 +237,10 @@ class Loader(core.SimpleLoader):
 
         if not centers2.all() or not rot2.all():
             self.logger.error("No residues with base centers/rot for second")
+            return -1, 0
+
+        if not len(centers1) or not len(centers2):
+            self.logger.error("Empty centers")
             return -1, 0
 
         self.logger.debug("Comparing %i pairs of residues", len(centers1))
