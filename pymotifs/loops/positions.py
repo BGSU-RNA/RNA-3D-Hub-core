@@ -104,7 +104,6 @@ class Loader(core.Loader):
 
             entry.update(row)
             entry['loop_id'] = row['loop_id']
-            print(entry)
             data.append(LoopPositions(**entry))
 
         return data
