@@ -173,7 +173,6 @@ class RealDataValidationTests(StageTest):
             'loop_release_id': '0.01'
         }
 
-    @pytest.mark.skip()
     def test_can_detect_if_has_incomplete_nts(self):
         loop = self.loop('IL_2HOM_001')
         cif = self.loader.cif('2HOM')
@@ -184,12 +183,12 @@ class RealDataValidationTests(StageTest):
             'loop_id': 'IL_2HOM_001',
             'complementary': None,
             'modifications': None,
-            'nt_signature': '23, 24, 25, 29, 30, 31, 32, 33, 34, 35, 36',
+            'nt_signature': '18, 19, 20, 45, 47, 48',
             'status': 5,
             'loop_release_id': '0.01',
         }
 
-    def test_can_detect_if_is_complemenatry(self):
+    def test_can_detect_is_complementary(self):
         loop = self.loop('IL_1GRZ_007')
         cif = self.loader.cif('1GRZ')
         incomplete = self.loader.incomplete(cif)

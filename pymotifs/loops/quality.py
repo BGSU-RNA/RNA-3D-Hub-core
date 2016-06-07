@@ -12,8 +12,6 @@ nucleotides. The disqualification codes are:
 6 - self-complementary internal loop
 """
 
-from pprint import pprint
-
 import operator as op
 import functools as ft
 import itertools as it
@@ -22,7 +20,7 @@ import collections as coll
 from sqlalchemy import asc
 from sqlalchemy import desc
 
-from fr3d import definitions as defs
+from fr3d.unit_ids import decode
 
 from pymotifs import core
 from pymotifs.utils import row2dict
@@ -115,7 +113,7 @@ class Loader(core.SimpleLoader):
                 'chains': set(),
                 'signature': [],
                 'endpoints': []
-            }
+                }
 
         with self.session() as session:
             query = session.query(mod.LoopInfo.loop_id.label('id'),
@@ -265,7 +263,10 @@ class Loader(core.SimpleLoader):
 
     def has_breaks(self, loop):
         """Check if there are any chain breaks within the loop.
+
+        :returns: Bool, true if the loop has any breaks.
         """
+
         for (u1, u2) in loop['endpoints']:
             start = self.position_info(u1)
             stop = self.position_info(u2)
@@ -293,7 +294,6 @@ class Loader(core.SimpleLoader):
             for unit in self.units_between(u1, u2):
                 key = (int(unit['model']), unit['chain'], int(unit['number']),
                        unit['ins_code'], unit['alt_id'])
-                print(key, incomplete)
                 if key in incomplete:
                     return True
         return False
@@ -313,6 +313,20 @@ class Loader(core.SimpleLoader):
             return len(loop['chains']) > 3
         raise core.InvalidState("Unknown type of loop")
 
+    def too_many_sym_ops(self, loop):
+        """Detect if we have only 1 symmetry operator in this loop. This is
+        an invalid loop.
+
+        :param dict loop: The loop to examine.
+        :returns: Bool, true if there is more symmetry operator.
+        """
+
+        ops = set()
+        for nt in loop['nts']:
+            parts = decode(nt)
+            ops.add(parts['symmetry'])
+        return len(ops) != 1
+
     def status(self, incomplete, loop):
         """Compute the status code. The status code is defined above.
 
@@ -326,6 +340,8 @@ class Loader(core.SimpleLoader):
             return 3
         if self.bad_chain_number(loop):
             return 4
+        if self.too_many_sym_ops(loop):
+            return 7
         if self.has_incomplete_nucleotides(incomplete, loop):
             return 5
         if self.is_complementary(loop):
