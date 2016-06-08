@@ -10,6 +10,7 @@ nucleotides. The disqualification codes are:
 4 - abnormal chain number
 5 - incomplete nucleotides
 6 - self-complementary internal loop
+7 - Too many symmetry operators
 """
 
 import operator as op
@@ -116,7 +117,6 @@ class Loader(core.SimpleLoader):
                 'chains': set(),
                 'signature': [],
                 'endpoints': [],
-                'parts': [],
                 }
 
         with self.session() as session:
@@ -138,7 +138,6 @@ class Loader(core.SimpleLoader):
                 order_by(asc(mod.LoopPositions.position))
 
             loops = coll.defaultdict(empty_loop)
-            border_index = 0
             for result in query:
                 current = loops[result.id]
                 current['id'] = result.id
@@ -150,14 +149,8 @@ class Loader(core.SimpleLoader):
                 current['pdb'] = result.pdb
                 current['seq'] = result.seq
 
-                print(result.id, result.uid, result.unit)
-                cur_part.append(result.unit)
                 if result.border:
                     current['endpoints'].append(result.uid)
-                    if border_index % 2 != 0:
-                        current['parts'].append(cur_part)
-                        cur_part = []
-                    border_index += 1
 
                 loops[result.id] = current
 
@@ -221,16 +214,22 @@ class Loader(core.SimpleLoader):
         """Detect if a sequence is complementary.
         """
 
-        sequence = loop['units']
-
         if len(loop['units']) % 2 != 0:
             return False
 
-        print(loop['parts'])
-        pair = zip(sequence, reversed(sequence))
-        for index, (first, second) in enumerate(pair):
-            if first != COMPLEMENTARY[second]:
+        parts = []
+        for (start, stop) in loop['endpoints']:
+            units = self.units_between(start, stop)
+            parts.append([u['unit'] for u in units])
+
+        pair = zip(parts, reversed(parts))
+        for (part1, part2) in pair:
+            if len(part1) != len(part2):
                 return False
+            seq_pair = zip(part1, reversed(part2))
+            for (first, second) in seq_pair:
+                if first != COMPLEMENTARY[second]:
+                    return False
 
         return True
 

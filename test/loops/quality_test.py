@@ -37,14 +37,6 @@ class ComplementarySequenceTest(Base):
         loop = self.loop('IL_1GRZ_007')
         assert self.loader.has_no_non_cWW(loop) is True
 
-    def test_can_find_if_complemenatry_sequence(self):
-        valid = {'units': ['A', 'C', 'C', 'G']}
-        invalid1 = {'units': ['A', 'C', 'G', 'U']}
-        invalid2 = {'units': ['A', 'C', 'A', 'G', 'U']}
-        assert self.loader.complementary_sequence(valid) is False
-        assert self.loader.complementary_sequence(invalid1) is True
-        assert self.loader.complementary_sequence(invalid2) is False
-
     def test_knows_if_not_complementary(self):
         loop = self.loop('IL_3CPW_080')
         assert self.loader.has_no_non_cWW(loop) is True
@@ -753,4 +745,13 @@ class RealDataTest(Base):
             'J3_1S72_008': 1,
             'J3_1S72_009': 1,
             'J3_1S72_010': 1,
+        }
+
+    def test_can_process_3T4B(self):
+        assert self.data('3T4B') == {
+            'HL_3T4B_001': 1,
+            'HL_3T4B_002': 1,
+            'HL_3T4B_003': 1,
+            'IL_3T4B_001': 1,
+            'IL_3T4B_002': 1,
         }
