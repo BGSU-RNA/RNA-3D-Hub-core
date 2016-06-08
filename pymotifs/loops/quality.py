@@ -44,6 +44,8 @@ COMPLEMENTARY = {
 class Loader(core.SimpleLoader):
     dependencies = set([ReleaseLoader, InfoLoader, PositionLoader,
                         ExpSeqPositionLoader, ExpSeqMappingLoader])
+    table = mod.LoopQa
+    allow_no_data = True
 
     def current_id(self):
         """Compute the current loop release id.
@@ -89,6 +91,7 @@ class Loader(core.SimpleLoader):
             model = int(row['PDB_model_num'])
             chain = row['auth_asym_id']
             num = int(row['auth_seq_id'])
+            seq = row['auth_comp_id']
             ins = None
             if row['PDB_ins_code'] != '?':
                 ins = row['PDB_ins_code']
@@ -97,7 +100,7 @@ class Loader(core.SimpleLoader):
             if 'label_alt_id' in row and row['label_alt_id'] != '?':
                 alt_id = row['label_alt_id']
 
-            key = (model, chain, num, alt_id, ins)
+            key = (model, chain, num, seq, alt_id, ins)
             data.add(key)
 
         return data
@@ -112,7 +115,8 @@ class Loader(core.SimpleLoader):
                 'units': [],
                 'chains': set(),
                 'signature': [],
-                'endpoints': []
+                'endpoints': [],
+                'parts': [],
                 }
 
         with self.session() as session:
@@ -124,7 +128,7 @@ class Loader(core.SimpleLoader):
                                   mod.LoopInfo.seq.label('seq'),
                                   mod.UnitInfo.chain.label('chain'),
                                   mod.UnitInfo.number.label('number'),
-                                  mod.LoopPositions.flanking,
+                                  mod.LoopPositions.border,
                                   ).\
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
@@ -134,6 +138,7 @@ class Loader(core.SimpleLoader):
                 order_by(asc(mod.LoopPositions.position))
 
             loops = coll.defaultdict(empty_loop)
+            border_index = 0
             for result in query:
                 current = loops[result.id]
                 current['id'] = result.id
@@ -145,8 +150,14 @@ class Loader(core.SimpleLoader):
                 current['pdb'] = result.pdb
                 current['seq'] = result.seq
 
-                if result.flanking:
+                print(result.id, result.uid, result.unit)
+                cur_part.append(result.unit)
+                if result.border:
                     current['endpoints'].append(result.uid)
+                    if border_index % 2 != 0:
+                        current['parts'].append(cur_part)
+                        cur_part = []
+                    border_index += 1
 
                 loops[result.id] = current
 
@@ -154,10 +165,13 @@ class Loader(core.SimpleLoader):
             for loop in loops:
                 ends = loop['endpoints']
                 loop['endpoints'] = [(e1, e2) for (e1, e2) in grouper(2, ends)]
-
             return loops
 
     def position_info(self, unit):
+        """Get the information about a position in an experimental sequence
+        using a unit id.
+        """
+
         with self.session() as session:
             pos = mod.ExpSeqPosition
             mapping = mod.ExpSeqUnitMapping
@@ -177,6 +191,10 @@ class Loader(core.SimpleLoader):
             return row2dict(result)
 
     def units_between(self, unit1, unit2):
+        """Get a list of all units between two units. This assumes they are on
+        the same chain and have the same symmetry operator.
+        """
+
         start = self.position_info(unit1)
         stop = self.position_info(unit2)
         with self.session() as session:
@@ -205,14 +223,12 @@ class Loader(core.SimpleLoader):
 
         sequence = loop['units']
 
-        midpoint = None
         if len(loop['units']) % 2 != 0:
-            midpoint = int(len(loop['units']) / 2)
+            return False
 
+        print(loop['parts'])
         pair = zip(sequence, reversed(sequence))
         for index, (first, second) in enumerate(pair):
-            if midpoint is not None and index == midpoint:
-                continue
             if first != COMPLEMENTARY[second]:
                 return False
 
@@ -293,7 +309,7 @@ class Loader(core.SimpleLoader):
         for (u1, u2) in loop['endpoints']:
             for unit in self.units_between(u1, u2):
                 key = (int(unit['model']), unit['chain'], int(unit['number']),
-                       unit['ins_code'], unit['alt_id'])
+                       unit['unit'], unit['ins_code'], unit['alt_id'])
                 if key in incomplete:
                     return True
         return False
@@ -366,7 +382,7 @@ class Loader(core.SimpleLoader):
             'loop_release_id': release_id,
         }
 
-    def data(self, pdb):
+    def data(self, pdb, **kwargs):
         """Compute the qa status of each loop in the structure.
 
         :param str pdb: The pdb id to use.
