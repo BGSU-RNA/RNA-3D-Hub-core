@@ -27,7 +27,7 @@ class AlignedChainsTest(StageTest):
             '3T4B||A': {'1GID||A': False, '1GID||B': False, '124D||B': False},
             '1GID||A': {'3T4B||A': False, '1GID||B': True, '124D||B': False},
             '1GID||B': {'3T4B||A': False, '1GID||A': True, '124D||B': False},
-            '124D||B': {'1GID||A': False, '1GID||B': False, '124D||B': False}
+            '124D||B': {'1GID||A': False, '1GID||B': False, '3T4B||A': False}
         }
 
     def test_can_load_all_alignments_for_many_structures(self):
@@ -46,12 +46,12 @@ class AlignedChainsTest(StageTest):
 
     def test_can_load_only_bad_alignments(self):
         val = self.aligned(['1GID', '124D', '3T4B'], good=False)
-        ans = {
+        assert val == {
             '3T4B||A': {'1GID||A': False, '1GID||B': False, '124D||B': False},
             '1GID||A': {'3T4B||A': False, '124D||B': False},
-            '1GID||B': {'3T4B||A': False, '124D||B': False}
+            '1GID||B': {'3T4B||A': False, '124D||B': False},
+            '124D||B': {'1GID||A': False, '1GID||B': False, '3T4B||A': False},
         }
-        assert val == ans
 
 
 class ChainTest(StageTest):

@@ -1,8 +1,10 @@
+import itertools as it
 import collections as coll
 
 from sqlalchemy.orm import aliased
 
 from pymotifs import core
+from pymotifs.utils import row2dict
 from pymotifs import models as mod
 
 
@@ -136,37 +138,48 @@ class Helper(core.Base):
         """
 
         with self.session() as session:
-            info = mod.CorrespondenceInfo
-            exp = mod.CorrespondencePdbs
-            query = session.query(exp.pdb_id_1.label('pdb1'),
-                                  exp.chain_name_1.label('name1'),
-                                  exp.pdb_id_2.label('pdb2'),
-                                  exp.chain_name_2.label('name2'),
-                                  exp.chain_id_1.label('chain_id1'),
-                                  exp.chain_id_2.label('chain_id2'),
-                                  info.good_alignment).\
-                join(info, info.correspondence_id == exp.correspondence_id).\
-                filter(exp.pdb_id_1.in_(ids)).\
-                filter(exp.pdb_id_2.in_(ids)).\
-                filter(exp.chain_id_1 != exp.chain_id_2)
+            exps = mod.ExpSeqPdb
+            query = session.query(exps).\
+                filter(exps.pdb_id.in_(ids))
 
-            if good is not None:
-                query = query.filter(info.good_alignment == int(good))
+            exp_mapping = coll.defaultdict(set)
+            for result in query:
+                name = result.chain_id
+                if use_names:
+                    name = '%s||%s' % (result.pdb_id, result.chain_name)
+                exp_mapping[result.exp_seq_id].add(name)
+
+        with self.session() as session:
+            info = mod.CorrespondenceInfo
+            query = session.query(info)
 
             mapping = coll.defaultdict(dict)
             for result in query:
-                id1 = result.chain_id1
-                id2 = result.chain_id2
-                if use_names:
-                    name = '%s||%s'
-                    id1 = name % (result.pdb1, result.name1)
-                    id2 = name % (result.pdb2, result.name2)
+                is_good = bool(result.good_alignment)
+                pairs = it.product(exp_mapping[result.exp_seq_id_1],
+                                   exp_mapping[result.exp_seq_id_2])
+                pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
+                for name1, name2 in pairs:
+                    mapping[name1][name2] = is_good
+                    mapping[name2][name1] = is_good
 
-                status = bool(result.good_alignment)
-                mapping[id1][id2] = status
-                mapping[id2][id1] = status
+        ids = it.chain.from_iterable(exp_mapping.values())
+        pairs = it.product(ids, repeat=2)
+        pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
+        pairs = list(pairs)
+        for name1, name2 in pairs:
+            if name2 not in mapping[name1]:
+                mapping[name1][name2] = False
+                mapping[name2][name1] = False
 
-            return dict(mapping)
+        if good is not None:
+            for name1, name2 in pairs:
+                if mapping[name1][name2] != good:
+                    mapping[name1].pop(name2)
+                if not mapping[name1]:
+                    mapping.pop(name1)
+
+        return dict(mapping)
 
     def __ordering__(self, corr_id, chain_id1, chain_id2):
         """Compute the correspondence between the given chain ids and given
