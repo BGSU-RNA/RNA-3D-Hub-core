@@ -237,7 +237,6 @@ class RealDataValidationTests(Base):
 class IncompleteResidueTest(Base):
     loader_class = Loader
 
-    @pytest.mark.xfail(reason="No data yet")
     def test_knows_if_not_incomplete(self):
         loop = self.loop('HL_1GID_003')
         cif = self.loader.cif('1GID')
@@ -314,22 +313,22 @@ class RealDataTest(Base):
         assert self.data('1GID') == {
             'HL_1GID_001': 1,
             'HL_1GID_002': 1,
-            'HL_1GID_003': 5,
+            'HL_1GID_003': 1,  # Changed
             'HL_1GID_004': 1,
             'HL_1GID_005': 1,
-            'HL_1GID_006': 5,
-            'IL_1GID_001': 5,
+            'HL_1GID_006': 1,
+            'IL_1GID_001': 1,
             'IL_1GID_002': 1,
             'IL_1GID_003': 1,
             'IL_1GID_004': 1,
-            'IL_1GID_005': 5,
+            'IL_1GID_005': 1,
             'IL_1GID_006': 1,
             'IL_1GID_007': 1,
-            'IL_1GID_008': 5,
+            'IL_1GID_008': 1,
             'IL_1GID_009': 1,
             'IL_1GID_010': 1,
-            'IL_1GID_011': 5,
-            'IL_1GID_012': 5,
+            'IL_1GID_011': 1,
+            'IL_1GID_012': 1,
             'IL_1GID_013': 1,
             'IL_1GID_014': 1,
             'J3_1GID_001': 1,

@@ -89,6 +89,10 @@ class Loader(core.SimpleLoader):
         total = it.chain(getattr(cif, 'pdbx_unobs_or_zero_occ_residues', []),
                          getattr(cif, 'pdbx_unobs_or_zero_occ_atoms', []))
         for row in total:
+            # Uses only the unobserved entries
+            if row['occupancy_flag'] != '1':
+                continue
+
             model = int(row['PDB_model_num'])
             chain = row['auth_asym_id']
             num = int(row['auth_seq_id'])
