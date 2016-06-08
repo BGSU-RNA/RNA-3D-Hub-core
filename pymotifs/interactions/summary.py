@@ -26,6 +26,8 @@ class Loader(core.SimpleLoader):
             filter_by(pdb_id=pdb)
 
     def increment_bp(self, current, bp, crossing):
+        if bp == 'wat':
+            return current
         return self.increment(current, 'bps', bp, crossing)
 
     def increment_stacks(self, current, stack, crossing):
