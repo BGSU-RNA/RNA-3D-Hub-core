@@ -40,6 +40,7 @@ BOOTSTRAPPING_PDBS = (
     "2HOL",
     "2HOM",
     "2HOO",
+    "2MKN",
     "2QQP",
     "3CPW",
     "3CW5",
