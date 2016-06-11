@@ -123,7 +123,7 @@ class IfeLoader(core.Base):
         for name1, name2 in pairs:
             count = counter(name1, name2)
             if name1 == name2:
-                count = 0L
+                count = 0
             interactions[name1][name2] = count
 
         return dict(interactions)
