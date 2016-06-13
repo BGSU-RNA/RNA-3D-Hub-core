@@ -232,7 +232,7 @@ class Loader(core.SimpleLoader):
                 return False
             seq_pair = zip(part1, reversed(part2))
             for (first, second) in seq_pair:
-                if first != COMPLEMENTARY[second]:
+                if second not in COMPLEMENTARY or first != COMPLEMENTARY[second]:
                     return False
 
         return True
