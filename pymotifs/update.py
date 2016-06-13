@@ -17,6 +17,7 @@ from pymotifs.correspondence import loader as correspondence
 from pymotifs.ife import loader as ife
 from pymotifs.chain_chain import loader as cc
 from pymotifs.export import loader as export
+from pymotifs.nr import loader as nr
 
 
 class Loader(core.StageContainer):
@@ -32,5 +33,6 @@ class Loader(core.StageContainer):
         correspondence.Loader,
         ife.Loader,
         cc.Loader,
-        export.Exporter
+        export.Exporter,
+        nr.Loader,
     ])
