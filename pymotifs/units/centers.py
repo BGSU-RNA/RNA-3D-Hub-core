@@ -14,7 +14,7 @@ class Loader(core.SimpleLoader):
     """
 
     dependencies = set([InfoLoader])
-    allow_no_data = False
+    allow_no_data = True
 
     def query(self, session, pdb):
         return session.query(UnitCenters).\
