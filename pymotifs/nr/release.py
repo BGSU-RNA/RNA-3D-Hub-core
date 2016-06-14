@@ -52,12 +52,19 @@ class Loader(core.MassLoader):
             return current.nr_release_id, current.index
 
     def data(self, pdbs, **kwargs):
-        now = kwargs.get('before_date', dt.datetime.now())
+
+        now = dt.datetime.now()
+        if kwargs.get('before_date', None):
+            now = kwargs.get('before_date', dt.datetime.now())
+
         current, index = self.current_id()
         next = self.next_id(current)
         self.build(pdbs, current, next, **kwargs)
+        parent = current
+        if current == '0.0':
+            parent = next
         return mod.NrReleases(nr_release_id=next,
                               date=now,
-                              parent_nr_release_id=current,
+                              parent_nr_release_id=parent,
                               description=now.strftime("%Y%m%d"),
                               index=index + 1)
