@@ -30,7 +30,6 @@ will run smoothly the next time round without any intervention.
 """
 
 import os
-import logging
 import math
 import time
 import glob
@@ -40,16 +39,22 @@ from subprocess import Popen, list2cmdline
 from pymotifs import core
 from pymotifs.utils import matlab
 
+SCRIPT = """
+cd '{base}';
+setup();
+cd '{fr3d}';
+aAaSearches('{input_file}', {start}, {stop});
+"""
 
-class ClusterMotifs(object):
+
+class ClusterMotifs(core.Base):
     jobs = 4
     script_prefix = 'aAa_script_'
     retries = 3
 
-    def __init__(self, config, session_maker):
-        self.config = config
-        self.session = core.Session(session_maker)
-        self.logger = logging.getLogger(__name__)
+    def __init__(self, *args):
+        super(ClusterMotifs, self).__init__(*args)
+        self.mlab = matlab.Matlab(self.config['locations']['base'])
         self.fr3d_root = self.config['locations']['fr3d_root']
         self.mlab_input_filename = os.path.join(self.fr3d_root, 'loops.txt')
 
@@ -92,9 +97,10 @@ class ClusterMotifs(object):
         tasks = {}
         retries_left = self.retries
         while True:
-            while cmds and len(processes) < self.num_jobs:
+            while cmds and len(processes) < self.jobs:
                 task = cmds.pop()
                 list2cmdline(task)
+                print(task)
                 p = Popen(task)
                 tasks[p.pid] = task  # associate task with a pid
                 self.logger.info('Task %s has pid %i' % (task, p.pid))
@@ -107,16 +113,17 @@ class ClusterMotifs(object):
                         processes.remove(p)
                     else:
                         retries_left -= 1
-                        if retries_left == 0:
+                        if not retries_left:
                             self.logger.critical('Parallel task failed')
+                            self.logger.error(p.stdout)
                             raise matlab.MatlabFailed("Clustering failed")
-                        else:
-                            self.logger.warning('Restarting Parallel task')
-                            task = tasks[p.pid]  # retrieve the failed task
-                            processes.remove(p)
-                            p = Popen(task)  # new process with the same task
-                            tasks[p.pid] = task  # save the new task's pid
-                            processes.append(p)
+
+                        self.logger.warning('Restarting Parallel task')
+                        task = tasks[p.pid]  # retrieve the failed task
+                        processes.remove(p)
+                        p = Popen(task)  # new process with the same task
+                        tasks[p.pid] = task  # save the new task's pid
+                        processes.append(p)
 
             if not processes and not cmds:
                 break
@@ -132,25 +139,23 @@ class ClusterMotifs(object):
         """
 
         N = len(loops)
-        interval = int(math.ceil(N / float(self.num_jobs)))
+        interval = int(math.ceil(N / float(self.jobs)))
         self.logger.info('%i loops, will process in groups of %i' %
                          (N, interval))
         commands = []
         mlab_params = ' -nodisplay -nojvm -r '
         current_max = 0
 
-        os.chdir(self.fr3d_root)
-
+        base = self.config['locations']['base']
         i = 1
         while current_max < N:
             # prepare matlab code
-            cd_command = "cd '%s'" % self.fr3d_root
+            mlab_command = SCRIPT.format(base=base,
+                                         fr3d=self.fr3d_root,
+                                         input_file=self.mlab_input_filename,
+                                         start=current_max + 1,
+                                         stop=current_max + interval)
 
-            aAa_command = "aAaSearches('%s', %i, %i)" % \
-                (self.mlab_input_filename, current_max + 1,
-                 current_max + interval)
-
-            mlab_command = ';'.join([cd_command, 'setup', aAa_command])
             script_name = '%s%i.m' % (self.script_prefix, i)
             i += 1
 
@@ -162,6 +167,7 @@ class ClusterMotifs(object):
             # prepare bash command to run the matlab script
             ext = script_name[:-2]
             try_catch = 'try %s(), catch, exit(1), end, exit(0)' % ext
+            cd_command = "cd {fr3d}".format(fr3d=self.fr3d_root)
             bash_command = '"' + ';'.join([cd_command, try_catch]) + '"'
             commands.append([self.config['locations']['mlab_app'],
                             mlab_params + bash_command])
@@ -199,11 +205,10 @@ class ClusterMotifs(object):
 
         output_dir = self.make_release_directory(loop_type)
         self.make_input_file_for_matlab(loops)
-        self.parallel_exec_commands(self.prepare_aAa_commands())
+        self.parallel_exec_commands(self.prepare_aAa_commands(loops))
 
         [status, err_msg] = \
-            self.mlab.MotifAtlasPipeline(self.mlab_input_filename,
-                                         output_dir, nout=2)
+            self.mlab.MotifAtlasPipeline(loops, output_dir, nout=2)
 
         if err_msg:
             raise matlab.MatlabFailed(err_msg)
@@ -211,4 +216,4 @@ class ClusterMotifs(object):
         self._clean_up()
         self.logger.info('Successful clustering')
 
-        return output_dir,
+        return output_dir

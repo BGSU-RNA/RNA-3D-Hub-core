@@ -1,16 +1,23 @@
-import datetime
+"""This will create a new motif release and cluster all motifs. This will
+cluster loops from all structure IFE's, that are representatives of their NR
+class and come from X-ray structures. The clustered motifs are not yet stored
+in the database but are just computed and temporary files are written.
+"""
 
-from fr3d import unit_ids as uid
+import datetime as dt
+
+from sqlalchemy import desc
 
 from pymotifs import core
+from pymotifs.utils import releases as rel
+from pymotifs import models as mod
 from pymotifs.motifs.cluster import ClusterMotifs
-from pymotifs.utils.releases import Release
-from pymotifs.models import PdbBestChainsAndModels
-from pymotifs.models import LoopQa
-from pymotifs.models import LoopsAll
-from pymotifs.models import MlReleases
-from pymotifs.models import NrPdbs
-from pymotifs.models import NrClasses
+
+from pymotifs.nr.release import Loader as NrReleaseLoader
+from pymotifs.loops.release import Loader as LoopReleaseLoader
+
+from pymotifs.nr.loader import Loader as NrLoader
+from pymotifs.loops.loader import Loader as LoopLoader
 
 """ A list of loop ids we should not use for clustering. """
 BLACKLIST = set([
@@ -25,128 +32,161 @@ BLACKLIST = set([
 class Loader(core.MassLoader):
     types = ['IL', 'HL']
     resolution = '4.0'
+    dependencies = set([NrLoader, LoopLoader])
 
-    def best_chains(self, pdbs):
-        """Get a mapping from pdb id to the best chains.
+    def has_data(self, *args, **kwargs):
+        """This will always return True because we only want to update if the time
+        difference has been large enough.
+        """
+        return False
+
+    def ifes(self, nr_release_id, pdb_ids):
+        """Get a listing of all IFE's to use in clustering. The IFE's must be
+        from the given list of structures, the ife must be representative for
+        each class and the class should have the given resolution. Also, the
+        structure must be an x-ray structure.
 
         :pdbs: The pdbs to get the best chains and models for.
-        :returns: A dictonary mapping from pdb id to a set of the best chains
+        :returns: A dictionary mapping from pdb id to a set of the best chains
         and models.
         """
 
-        best_chains = {}
         with self.session() as session:
-            query = session.query(PdbBestChainsAndModels).\
-                filter(PdbBestChainsAndModels.pdb_id.in_(pdbs))
+            chains = mod.NrChains
+            classes = mod.NrClasses
+            ifes = mod.IfeInfo
+            pdbs = mod.PdbInfo
+            query = session.query(chains).\
+                join(classes, classes.nr_class_id == chains.nr_class_id).\
+                join(ifes, ifes.ife_id == chains.ife_id).\
+                join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
+                filter(chains.rep == 1).\
+                filter(chains.nr_release_id == nr_release_id).\
+                filter(classes.resolution == self.resolution).\
+                filter(ifes.pdb_id.in_(pdb_ids)).\
+                filter(ifes.has_structured == 1).\
+                filter(pdbs.experimental_technique == 'X-RAY DIFFRACTION').\
+                order_by(chains.ife_id)
 
-            for result in query:
-                best_chains[result.pdb_id] = set(result.best_chains.split(','))
+            return [result.ife_id for result in query]
 
-        if not best_chains:
-            raise core.StageFailed("Could not get best chains")
+    def loops(self, loop_release_id, loop_type, ifes):
+        """Get the list of loop ids to use in clustering. These loops must be
+        from IFE's in the given list and marked as valid in the loop quality
+        step.
 
-        return best_chains
-
-    def valid_loops(self, loop_type, pdbs):
-        """Get all valid loop ids that may go into clustering. A loop is valid
-        if it is in the most recent release, is in the given list of pdbs, is
-        of the requested type (IL, HL), have a valid QA status, and are not in
-        BLACKLIST.
+        :param str loop_release_id: The loop release id to use.
+        :param str loop_type: The type of loop to use, eg, IL, HL.
+        :param list ifes: A list of ifes to find loops in.
         """
 
-        helper = Release(self.config, self.session.maker)
-        release_id = helper.current('loop')
+        found = []
+        for ife in ifes:
+            with self.session() as session:
+                loops = mod.LoopInfo
+                quality = mod.LoopQa
+                pos = mod.LoopPositions
+                ifes = mod.IfeInfo
+                ife_chains = mod.IfeChains
+                chain_info = mod.ChainInfo
+                units = mod.UnitInfo
+                query = session.query(loops.loop_id).\
+                    join(quality, quality.loop_id == loops.loop_id).\
+                    join(pos, pos.loop_id == loops.loop_id).\
+                    join(units, units.unit_id == pos.unit_id).\
+                    join(chain_info, chain_info.chain_name == units.chain).\
+                    join(ife_chains,
+                         ife_chains.chain_id == chain_info.chain_id).\
+                    filter(quality.status == 1).\
+                    filter(quality.loop_release_id == loop_release_id).\
+                    filter(loops.type == loop_type).\
+                    filter(ife_chains.ife_id == ife).\
+                    distinct()
+
+                found.extend(result.loop_id for result in query)
+        return found
+
+    def current_id(self):
+        """Get the current motif release id and the index. If there is no
+        release then the release_id is 0.0 and the index is 0.
+
+        :returns: The current release id and index.
+        """
 
         with self.session() as session:
-            query = session.query(LoopsAll.id, LoopsAll.nt_ids).\
-                join(LoopQa, LoopQa.id == LoopsAll.id).\
-                filter(LoopQa.status == 1).\
-                filter(LoopQa.release_id == release_id).\
-                filter(LoopsAll.type == loop_type).\
-                filter(LoopsAll.pdb.in_(pdbs)).\
-                filter(~(LoopsAll.id.in_(BLACKLIST)))
+            query = session.query(mod.MlReleases.ml_releases_id,
+                                  mod.MlReleases.index).\
+                order_by(desc(mod.MlReleases.index)).\
+                limit(1)
 
-            data = []
-            for result in query:
-                data.append({
-                    'id': result.id,
-                    'unit_ids': result.nt_ids
-                })
-            return data
+            if query.count() == 0:
+                return '0.0', 0
 
-    def select_structures(self, pdbs):
-        helper = Release(self.config, self.session.maker)
-        nr_release = helper.current('nr')
-
-        with self.session() as session:
-            query = session.query(NrPdbs.id).\
-                join(NrClasses, NrClasses.id == NrPdbs.class_id).\
-                filter(NrClasses.release_id == NrPdbs.release_id).\
-                filter(NrPdbs.release_id == nr_release).\
-                filter(NrClasses.resolution == self.resolution).\
-                filter(NrPdbs.rep == 1).\
-                filter(NrPdbs.id.in_(pdbs))
-
-            return [result.id for result in query]
-
-    def loops(self, loop_type, pdbs):
-
-        best_chains = self.best_chains(pdbs)
-        valid = self.valid_loops(loop_type, pdbs)
-        self.logger.info("Found %i valid loops", len(valid))
-
-        """keep only loops from best chains based on their nt_ids"""
-        loops = []
-        for loop in valid:
-            chains = set()
-            pdb = None
-            for unit_id in loop['unit_ids'].split(','):
-                if '_' in unit_id:
-                    parts = unit_id.split('_')
-                    pdb = parts[0]
-                    chains.add(parts[3])
-                else:
-                    data = uid.parse(unit_id)
-                    pdb = data['pdb']
-                    chains.add(data['chain'])
-
-            if not chains:
-                raise core.StageFailed("Could not determine loop chains")
-
-            if chains.issubset(best_chains[pdb]):
-                loops.append(loop['id'])
-
-        self.logger.info('Selected %i loops', len(loops))
-
-        return loops
+            current = query.one()
+            return current.nr_release_id, current.index
 
     def data(self, pdbs, **kwargs):
-        helper = Release(self.config, self.session.maker)
-        current = helper.current('motif')
-        next = helper.next(current, self.config['release_mode']['motifs'])
-        self.logger.info("Motif Release will be %s", next)
+        """Compute the releases for the given pdbs. This will cluster the
+        motifs in the files as well as write a release. Future motif stages
+        store the clustered data.
 
-        selected_pdbs = self.select_structures(pdbs)
-        self.logger.info("Using %s of the %s structures",
-                         len(selected_pdbs), pdbs)
+        :param list pdbs: The pdbs to store.
+        :returns: A list of new releases, one for each type (eg IL, HL).
+        """
 
-        loops = self.loop(selected_pdbs)
+        motif_release, index = self.current_id()
+        loop_release = LoopReleaseLoader(self.config, self.session).\
+            current_id()
+        nr_release, _ = NrReleaseLoader(self.config, self.session).current_id()
+
+        next = rel.next_id(motif_release,
+                           mode=self.config['release_mode']['motifs'])
+
+        self.logger.info("Current release is %s", motif_release)
+        self.logger.info("Motif release will be %s", next)
+
+        parent = motif_release
+        if parent == '0.0':
+            parent = next
+
+        ifes = self.ifes(nr_release, pdbs)
+        self.logger.info("Found %i ifes using release %s" %
+                         (len(pdbs), nr_release))
+        if not ifes:
+            raise core.InvalidState("No ifes found for nr %s" % nr_release)
 
         cluster = ClusterMotifs(self.config, self.session.maker)
 
-        data = []
-        for type in self.types:
+        now = dt.datetime.now()
+        if kwargs.get('before_date', None):
+            now = kwargs.get('before_date', dt.datetime.now())
 
+        data = []
+        for loop_type in self.types:
+            folder = None
             if kwargs['dry_run']:
                 self.logger.info("Skipping clustering in a dry run")
-                continue
+            else:
+                loops = self.loops(loop_release, loop_type, ifes)
+                self.logger.info("Found %i loops with release %s" %
+                                 (len(loops), loop_release))
 
-            self.logger.info("Starting to cluster all %s", type)
-            folder, annotation = cluster(type, loops)
-            self.logger.info("Done clustering all %s", type)
+                if not loops:
+                    raise core.InvalidState("No loops to cluster for %s" %
+                                            loop_release)
 
-            data.append(MlReleases(id=next, date=datetime.datetime.now(),
-                                   type=type, description=folder,
-                                   annotation=annotation))
+                self.logger.info("Starting to cluster all %s", type)
+                folder = cluster(loop_type, loops)
+                self.logger.info("Done clustering all %s into %s",
+                                 type, folder)
+
+            data.append(mod.MlReleases(id=next,
+                                       parent_motif_release_id=parent,
+                                       date=now,
+                                       type=type,
+                                       description=folder,
+                                       index=index + 1,
+                                       loop_release_id=loop_release,
+                                       nr_release_id=nr_release))
 
         return data
