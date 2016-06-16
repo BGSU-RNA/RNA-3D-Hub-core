@@ -3,7 +3,6 @@
 
 import pymotifs.core as core
 
-from pymotifs.models import UnitInfo
 from pymotifs.models import UnitCenters
 
 from pymotifs.units.info import Loader as InfoLoader
@@ -18,8 +17,7 @@ class Loader(core.SimpleLoader):
 
     def query(self, session, pdb):
         return session.query(UnitCenters).\
-            join(UnitInfo, UnitInfo.unit_id == UnitCenters.unit_id).\
-            filter(UnitInfo.pdb_id == pdb)
+            filter(UnitCenters.pdb_id == pdb)
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)

@@ -3,7 +3,6 @@
 
 import pymotifs.core as core
 
-from pymotifs.models import UnitInfo
 from pymotifs.models import UnitRotations
 
 from pymotifs.units.info import Loader as InfoLoader
@@ -25,8 +24,7 @@ class Loader(core.SimpleLoader):
         """
 
         return session.query(UnitRotations).\
-            join(UnitInfo, UnitInfo.unit_id == UnitRotations.unit_id).\
-            filter(UnitInfo.pdb_id == pdb)
+            filter(UnitRotations.pdb_id == pdb)
 
     def data(self, pdb, **kwargs):
         """Get the rotation matrices for all RNA residues in the given pdb.
