@@ -24,7 +24,6 @@ BOOTSTRAPPING_PDBS = (
     "1ET4",
     "1F5H",
     "1F5U",
-    "1FAT",
     "1FCW",
     "1FEU",
     "1FG0",
