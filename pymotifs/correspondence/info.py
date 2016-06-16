@@ -18,10 +18,9 @@ from pymotifs.models import CorrespondenceInfo
 from pymotifs.constants import CORRESPONDENCE_HUGE_CUTOFF
 from pymotifs.constants import CORRESPONDENCE_SMALL_CUTOFF
 
+from pymotifs.exp_seq.loader import Loader as ExpSeqLoader
 from pymotifs.chains.info import Loader as ChainInfoLoader
-from pymotifs.exp_seq.info import Loader as ExpSeqInfoLoader
 from pymotifs.chains.species import Loader as ChainSpeciesLoader
-from pymotifs.exp_seq.chain_mapping import Loader as ExpSeqChainMappingLoader
 
 
 class Loader(core.MassLoader):
@@ -31,8 +30,7 @@ class Loader(core.MassLoader):
     pair, inserting or storing each pair as needed.
     """
 
-    dependencies = set([ChainSpeciesLoader, ExpSeqInfoLoader,
-                        ExpSeqChainMappingLoader, ChainInfoLoader])
+    dependencies = set([ChainSpeciesLoader, ExpSeqLoader, ChainInfoLoader])
     allow_no_data = True
     table = CorrespondenceInfo
 
@@ -64,6 +62,9 @@ class Loader(core.MassLoader):
                 filter(ExpSeqPdb.pdb_id == pdb).\
                 filter(ExpSeqInfo.was_normalized).\
                 distinct()
+
+            if not query.count():
+                raise core.InvalidState("No sequences for %s" % pdb)
 
             return [ut.row2dict(result) for result in query]
 
