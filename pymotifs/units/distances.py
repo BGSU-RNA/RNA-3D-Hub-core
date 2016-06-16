@@ -11,6 +11,7 @@ from pymotifs.units.info import Loader as InfoLoader
 class Loader(core.SimpleLoader):
     max_distance = 10.0
     dependencies = set([InfoLoader])
+    disallowed = set(['HOH'])
 
     def query(self, session, pdb):
         with self.session() as session:
@@ -37,7 +38,7 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
-        not_water = lambda p: p[0].sequence != 'HOH' and p[1].sequence != 'HOH'
+        not_water = lambda p: p[0].sequence not in self.disallowed or p[1].sequence not in self.disallowed
 
         pairs = structure.pairs(distance={'cutoff': self.max_distance})
         pairs = it.ifilter(not_water, pairs)
