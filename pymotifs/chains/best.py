@@ -24,7 +24,6 @@ class BestChainsAndModelsLoader(core.SimpleLoader):
         chains, models, err = mlab.loadBestChainsAndModels(pdb, nout=3)
 
         if err != '':
-            print(chains, models, err)
             raise matlab.MatlabFailed(err)
 
         return {'pdb_id': pdb, 'best_chains': chains, 'best_models': models}
