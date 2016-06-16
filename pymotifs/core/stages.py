@@ -233,21 +233,18 @@ class Stage(base.Base):
             pass
 
         if self.must_recompute(entry, **kwargs):
-            self.logger.debug("Performing a forced recompute")
+            self.logger.info("Performing a forced recompute")
             return True
 
         if self.been_long_enough(entry, **kwargs):
-            self.logger.debug("Time gap for %s too large, recomputing", entry)
+            self.logger.info("Time gap for %s too large, recomputing", entry)
             return True
 
         if self.is_missing(entry, **kwargs):
-            if self.allow_no_data is True and self.was_marked(entry, **kwargs):
-                self.logger.debug("Last run produced no data, skipping %s",
-                                  entry)
-                return False
-
-            self.logger.debug("Missing data from %s. Will compute", entry)
+            self.logger.info("Missing data from %s. Will compute", entry)
             return True
+
+        self.logger.info("No need to compute %s", entry)
         return False
 
     def to_process(self, pdbs, **kwargs):
