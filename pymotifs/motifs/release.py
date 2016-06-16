@@ -125,6 +125,9 @@ class Loader(core.MassLoader):
             current = query.one()
             return current.nr_release_id, current.index
 
+    def load_and_cache(self, folder):
+        pass
+
     def data(self, pdbs, **kwargs):
         """Compute the releases for the given pdbs. This will cluster the
         motifs in the files as well as write a release. Future motif stages
@@ -175,16 +178,16 @@ class Loader(core.MassLoader):
                     raise core.InvalidState("No loops to cluster for %s" %
                                             loop_release)
 
-                self.logger.info("Starting to cluster all %s", type)
+                self.logger.info("Starting to cluster all %s", loop_type)
                 folder = cluster(loop_type, loops)
                 self.logger.info("Done clustering all %s into %s",
-                                 type, folder)
+                                 loop_type, folder)
+                self.load_and_cahe(folder)
 
             data.append(mod.MlReleases(id=next,
                                        parent_motif_release_id=parent,
                                        date=now,
                                        type=type,
-                                       description=folder,
                                        index=index + 1,
                                        loop_release_id=loop_release,
                                        nr_release_id=nr_release))

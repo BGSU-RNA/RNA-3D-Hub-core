@@ -19,7 +19,7 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
 
     try
 
-        startLogging();
+        % startLogging();
 
         if ~exist(location, 'dir'), mkdir(location); end
 
@@ -51,12 +51,12 @@ function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
         movefile([pwd filesep 'MM*.mat'], location);
         movefile([pwd filesep 'MM*.txt'], location);
 
-        stopLogging();
+        % stopLogging();
 
     catch err
         err_msg = 'Error in MotifAtlasPipeline';
         disp(err_msg);
-        stopLogging();
+        % stopLogging();
         status = 2;
     end
 

@@ -54,7 +54,6 @@ class ClusterMotifs(core.Base):
 
     def __init__(self, *args):
         super(ClusterMotifs, self).__init__(*args)
-        self.mlab = matlab.Matlab(self.config['locations']['base'])
         self.fr3d_root = self.config['locations']['fr3d_root']
         self.mlab_input_filename = os.path.join(self.fr3d_root, 'loops.txt')
 
@@ -100,7 +99,6 @@ class ClusterMotifs(core.Base):
             while cmds and len(processes) < self.jobs:
                 task = cmds.pop()
                 list2cmdline(task)
-                print(task)
                 p = Popen(task)
                 tasks[p.pid] = task  # associate task with a pid
                 self.logger.info('Task %s has pid %i' % (task, p.pid))
@@ -203,12 +201,13 @@ class ClusterMotifs(core.Base):
 
         self._clean_up()
 
-        output_dir = self.make_release_directory(loop_type)
+        output_dir = str(self.make_release_directory(loop_type))
         self.make_input_file_for_matlab(loops)
         self.parallel_exec_commands(self.prepare_aAa_commands(loops))
 
+        mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         [status, err_msg] = \
-            self.mlab.MotifAtlasPipeline(loops, output_dir, nout=2)
+            mlab.MotifAtlasPipeline(self.mlab_input_filename, output_dir, nout=2)
 
         if err_msg:
             raise matlab.MatlabFailed(err_msg)
