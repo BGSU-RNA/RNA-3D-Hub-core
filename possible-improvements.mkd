@@ -1,0 +1,16 @@
+# Possible changes
+
+1. Set all NULL f_crossing to 0 or recompute them
+    NULL in f_crossing should be 0. It may be best to recompute the data with
+    NULL's though.
+
+2. Add foreign key from unit_pairs_interactions.f_lwbp to bp_family_info
+    bp_family_info is where all bp's are defined so it makes sense to have an
+    FK to that table.
+
+3. Prevent NULL in f_crossing
+    It should never be null as it is defined for all interactions.
+
+4. Add a unique constraint in exp_seq_unit_mapping (unit_id, exp_seq_position_id)
+    Each unit id may only be part of 1 experimental sequence position so it is
+    useful to enforce this in the database.
