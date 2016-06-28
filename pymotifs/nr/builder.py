@@ -12,7 +12,7 @@ from pymotifs import core
 from pymotifs.models import NrChains
 from pymotifs.models import NrClasses
 
-from pymotifs.nr.groups.naming import Namer
+from pymotifs.utils.naming import Namer
 from pymotifs.nr.groups.simplified import Grouper
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
