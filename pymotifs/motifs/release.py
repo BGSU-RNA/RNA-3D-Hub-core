@@ -11,7 +11,9 @@ from sqlalchemy import desc
 from pymotifs import core
 from pymotifs.utils import releases as rel
 from pymotifs import models as mod
+
 from pymotifs.motifs.cluster import ClusterMotifs
+from pymotifs.motifs.builder import Builder
 
 from pymotifs.nr.release import Loader as NrReleaseLoader
 from pymotifs.loops.release import Loader as LoopReleaseLoader
@@ -125,8 +127,10 @@ class Loader(core.MassLoader):
             current = query.one()
             return current.nr_release_id, current.index
 
-    def load_and_cache(self, folder):
-        pass
+    def load_and_cache(self, type, parent_id, release_id, folder):
+        builder = Builder(self.config, self.session)
+        motifs = builder(parent_id, release_id, folder)
+        self.cache(motifs, type + '_motifs')
 
     def data(self, pdbs, **kwargs):
         """Compute the releases for the given pdbs. This will cluster the
@@ -182,7 +186,7 @@ class Loader(core.MassLoader):
                 folder = cluster(loop_type, loops)
                 self.logger.info("Done clustering all %s into %s",
                                  loop_type, folder)
-                self.load_and_cahe(folder)
+                self.load_and_cache(loop_type, parent, next, folder)
 
             data.append(mod.MlReleases(id=next,
                                        parent_motif_release_id=parent,
