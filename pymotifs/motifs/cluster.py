@@ -201,7 +201,7 @@ class ClusterMotifs(core.Base):
 
         self._clean_up()
 
-        output_dir = str(self.make_release_directory(loop_type))
+        output_dir = self.make_release_directory(loop_type)
         self.make_input_file_for_matlab(loops)
         self.parallel_exec_commands(self.prepare_aAa_commands(loops))
 
