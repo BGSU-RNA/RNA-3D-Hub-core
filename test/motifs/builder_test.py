@@ -1,7 +1,10 @@
+import pytest
+
 import collections as coll
 
 from test import StageTest
 
+from pymotifs.motifs.builder import Builder
 from pymotifs.motifs.builder import Combiner
 
 
@@ -144,3 +147,33 @@ class CombinerTest(StageTest):
             ],
             'signature': "10_cWW-cWW--tWH",
         }
+
+
+class BuilderTests(StageTest):
+    loader_class = Builder
+    directory = 'test/files/motifs/IL_20120905_0000/'
+
+    def test_it_can_load_all_mutual_discrepancy(self):
+        val = self.loader.mutual_discrepancy(self.directory)
+        assert len(val) == 47992
+        assert val[0] == {
+            'loop_id_1': 'IL_1ZEV_001',
+            'discrepancy': 0.4232,
+            'loop_id_2': 'IL_4A1B_028',
+        }
+
+    @pytest.mark.skip()
+    def test_it_can_load_all_known_handles(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_can_load_known_motifs(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_can_all_new_motifs(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_can_load_all_release_data(self):
+        pass

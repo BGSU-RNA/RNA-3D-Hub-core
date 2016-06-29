@@ -5,21 +5,32 @@ in the database but are just computed and temporary files are written.
 """
 
 import datetime as dt
+import collections as coll
 
 from sqlalchemy import desc
 
 from pymotifs import core
-from pymotifs.utils import releases as rel
 from pymotifs import models as mod
+from pymotifs.utils import releases as rel
+
+from pymotifs.motifs.builder import Builder
+from pymotifs.motifs.builder import MutualDiscrepancyLoader
 
 from pymotifs.motifs.cluster import ClusterMotifs
-from pymotifs.motifs.builder import Builder
 
 from pymotifs.nr.release import Loader as NrReleaseLoader
 from pymotifs.loops.release import Loader as LoopReleaseLoader
 
 from pymotifs.nr.loader import Loader as NrLoader
 from pymotifs.loops.loader import Loader as LoopLoader
+
+Releases = coll.namedtuple('Releases', [
+    'loop',
+    'nr',
+    'parent',
+    'parent_index',
+    'current'
+])
 
 """ A list of loop ids we should not use for clustering. """
 BLACKLIST = set([
@@ -30,8 +41,15 @@ BLACKLIST = set([
     'HL_2IL9_005'
 ])
 
+"""The filename to cache all loop discrepancy data in"""
+DISC_CACHE = 'disc'
+
 
 class Loader(core.MassLoader):
+    """A loader to create a motif release as well as process and cache all release
+    data.
+    """
+
     types = ['IL', 'HL']
     resolution = '4.0'
     dependencies = set([NrLoader, LoopLoader])
@@ -70,6 +88,10 @@ class Loader(core.MassLoader):
                 filter(pdbs.experimental_technique == 'X-RAY DIFFRACTION').\
                 order_by(chains.ife_id)
 
+            if not query.count():
+                raise core.InvalidState("No ifes found for nr %s" %
+                                        nr_release_id)
+
             return [result.ife_id for result in query]
 
     def loops(self, loop_release_id, loop_type, ifes):
@@ -106,6 +128,10 @@ class Loader(core.MassLoader):
                     distinct()
 
                 found.extend(result.loop_id for result in query)
+
+        if not loops:
+            raise core.InvalidState("No loops to cluster for %s" %
+                                    loop_release_id)
         return found
 
     def current_id(self):
@@ -127,10 +153,133 @@ class Loader(core.MassLoader):
             current = query.one()
             return current.nr_release_id, current.index
 
-    def load_and_cache(self, type, parent_id, release_id, folder):
+    def load_and_cache(self, type, releases, folder):
+        """This will load the result of running the pipeline and cache the
+        data.
+
+        :param str type: The loop type, IL, HL, etc
+        :param Release relases: The releases to use.
+        :param str folder: The path to the results of the pipeline.
+        :returns: Nothing
+        """
+
         builder = Builder(self.config, self.session)
-        motifs = builder(parent_id, release_id, folder)
-        self.cache(motifs, type + '_motifs')
+        motifs = builder(releases.parent, releases.current, folder)
+        self.cache(motifs, type)
+
+    def cache_discrepancies(self, loop_type, folder):
+        """This will load and cache discrepancies. If we have already cached
+        some data we will append to the cached data as well.
+
+        :param str loop_type: The loop type, IL, HL, etc.
+        :param str folder: The path to where the motif data was computed.
+        """
+
+        loader = MutualDiscrepancyLoader(self.config, self.session)
+        data = loader(folder)
+        current = self.cached('disc')
+        if current is not None:
+            current.append(data)
+        self.cache(data, DISC_CACHE)
+
+    def nr_release_id(self, before_date=None, **kwargs):
+        """Get the nr release. If no before_date is given then we get the
+        latest, otherwise we get the release for the given date. If no release
+        exists for that date then we fail.
+
+        :param date before_date: The date to use.
+        :returns: The nr release id.
+        """
+
+        if before_date is None:
+            nr_release, _ = NrReleaseLoader(self.config, self.session).\
+                current_id()
+            return nr_release
+
+        with self.session() as session:
+            query = session.query(mod.NrReleases).\
+                filter_by(date=before_date)
+
+            if query.count() != 1:
+                raise core.InvalidState("No nr release for date %s",
+                                        before_date)
+            return query.one().nr_release_id
+
+    def loop_release_id(self, before_date=None, **kwargs):
+        """Get the loop release. If no before_date is given then we get the
+        latest, otherwise we get the release for the given date. If no release
+        exists for that date then we fail.
+
+        :param date before_date: The date to use.
+        :returns: The loop release id.
+        """
+
+        if before_date is None:
+            return LoopReleaseLoader(self.config, self.session).current_id()
+
+        with self.session() as session:
+            query = session.query(mod.LoopReleases).\
+                filter_by(date=before_date)
+
+            if query.count() != 1:
+                raise core.InvalidState("No loop release for date %s",
+                                        before_date)
+            return query.one().loop_release_id
+
+    def motif_relase_id(self, **kwargs):
+        """Get the next motif id.
+
+        :returns: The next motif id.
+        """
+
+        motif_release, index = self.current_id()
+        parent = motif_release
+        mode = self.config['release_mode']['motifs']
+        current = rel.next_id(motif_release, mode=mode)
+
+        if parent == '0.0':
+            parent = current
+
+        return current
+
+    def releases(self, **kwargs):
+        """Compute all releases.
+
+        :returns: A Release object describing all releases to use.
+        """
+
+        return Releases(
+            self.loop_release_id(**kwargs),
+            self.nr_release_id(**kwargs),
+            *self.loop_release_id(**kwargs)
+        )
+
+    def cluster(self, loop_type, releases, ifes, **kwargs):
+        """This will cluster all motifs of the given loop type in the given
+        ifes. It will run the matlab code to cluster all motifs and then the
+        produced data will be loaded into a single data structure and cached
+        for future use.
+
+        :param str loop_type: The type of loop, ie IL or HL.
+        :param Release releases: The named tuple of the type of loops.
+        :param list ifes: The ifes to lookup loops in.
+        :param kwargs: The keyword arguments. Notably the before_date key. This
+        will change the date for the nr release and loop release used. It
+        should be a date that a loop release and nr release exist for that
+        date.
+        :returns: None. All data is cached and nothing is returned.
+        """
+
+        cluster = ClusterMotifs(self.config, self.session.maker)
+        loops = self.loops(releases.loop, loop_type, ifes)
+        self.logger.info("Found %i loops", len(loops))
+
+        self.logger.info("Starting to cluster all %s", loop_type)
+        folder = cluster(loop_type, loops)
+        self.logger.info("Done clustering all %s into %s",
+                         loop_type, folder)
+        self.load_and_cache(loop_type, releases, folder)
+        self.cache_discrepancies(loop_type, folder)
 
     def data(self, pdbs, **kwargs):
         """Compute the releases for the given pdbs. This will cluster the
@@ -141,28 +290,11 @@ class Loader(core.MassLoader):
         :returns: A list of new releases, one for each type (eg IL, HL).
         """
 
-        motif_release, index = self.current_id()
-        loop_release = LoopReleaseLoader(self.config, self.session).\
-            current_id()
-        nr_release, _ = NrReleaseLoader(self.config, self.session).current_id()
+        releases = self.releases(**kwargs)
+        self.logger.info("Current releases are %s", str(releases))
 
-        next = rel.next_id(motif_release,
-                           mode=self.config['release_mode']['motifs'])
-
-        self.logger.info("Current release is %s", motif_release)
-        self.logger.info("Motif release will be %s", next)
-
-        parent = motif_release
-        if parent == '0.0':
-            parent = next
-
-        ifes = self.ifes(nr_release, pdbs)
-        self.logger.info("Found %i ifes using release %s" %
-                         (len(pdbs), nr_release))
-        if not ifes:
-            raise core.InvalidState("No ifes found for nr %s" % nr_release)
-
-        cluster = ClusterMotifs(self.config, self.session.maker)
+        ifes = self.ifes(releases.nr, pdbs)
+        self.logger.info("Found %i ifes" % (len(ifes)))
 
         now = dt.datetime.now()
         if kwargs.get('before_date', None):
@@ -170,30 +302,13 @@ class Loader(core.MassLoader):
 
         data = []
         for loop_type in self.types:
-            folder = None
-            if kwargs['dry_run']:
-                self.logger.info("Skipping clustering in a dry run")
-            else:
-                loops = self.loops(loop_release, loop_type, ifes)
-                self.logger.info("Found %i loops with release %s" %
-                                 (len(loops), loop_release))
-
-                if not loops:
-                    raise core.InvalidState("No loops to cluster for %s" %
-                                            loop_release)
-
-                self.logger.info("Starting to cluster all %s", loop_type)
-                folder = cluster(loop_type, loops)
-                self.logger.info("Done clustering all %s into %s",
-                                 loop_type, folder)
-                self.load_and_cache(loop_type, parent, next, folder)
-
-            data.append(mod.MlReleases(id=next,
-                                       parent_motif_release_id=parent,
+            self.cluster(loop_type, releases, ifes, **kwargs)
+            data.append(mod.MlReleases(id=releases.current,
+                                       parent_motif_release_id=releases.parent,
                                        date=now,
-                                       type=type,
-                                       index=index + 1,
-                                       loop_release_id=loop_release,
-                                       nr_release_id=nr_release))
+                                       type=loop_type,
+                                       index=releases.parent_index + 1,
+                                       loop_release_id=releases.loop,
+                                       nr_release_id=releases.nr))
 
         return data
