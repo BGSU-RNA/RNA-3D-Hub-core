@@ -1,7 +1,6 @@
 from test import StageTest
 
-from pymotifs.nr.groups.naming import Namer
-from pymotifs.nr.classes import Loader as ClassLoader
+from pymotifs.utils.naming import Namer
 
 
 class ParentTest(StageTest):
