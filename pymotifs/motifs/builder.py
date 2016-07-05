@@ -187,7 +187,7 @@ class Builder(core.Base):
         """
 
         with self.session() as session:
-            query = session.query(mod.MlMotifInfo.handle).distinct()
+            query = session.query(mod.MlMotifsInfo.handle).distinct()
             return set(result.handle for result in query)
 
     def motifs(self, parent_id, release_id, directory):
@@ -231,4 +231,5 @@ class Builder(core.Base):
         return {
             'motifs': self.motifs(parent_id, release_id, directory),
             'discrepancies': self.mutual_discrepancy(directory),
+            'release': release_id,
         }
