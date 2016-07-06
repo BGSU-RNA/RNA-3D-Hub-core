@@ -1,3 +1,7 @@
+"""This contains all command line interface commands that the pipeline script
+can run. This is effectively the main function for the pipeline.
+"""
+
 import random
 import logging
 
@@ -11,7 +15,7 @@ from pymotifs.cli import introspect
 from pymotifs.cli.params import FILE
 from pymotifs.cli.params import DATE
 from pymotifs.cli.params import PDB
-from pymotifs.constants import BOOTSTRAPPING_PDBS
+from pymotifs.constants import BOOTSTRAPPING
 from pymotifs.email import Emailer
 
 from pymotifs import models as mod
@@ -114,23 +118,22 @@ def do(ctx, name, ids, **kwargs):
 @cli.command(short_help='populate a database')
 @click.pass_context
 def bootstrap(ctx, **kwargs):
-    """Poupulate a testing database.
+    """Populate a testing database.
 
     To test this pipeline working copy of the database is needed. This command
     will populate a database with some default data for testing. This will not
-    import any distance data.
+    export interactions or loops, nor does it load the obsolete data. This will
+    run 4 updates to create several nr and motif data sets to use.
     """
+
     kwargs.update(ctx.parent.objs)
     kwargs['config'] = conf.load('conf/bootstrap.json')
     kwargs['engine'] = create_engine(kwargs['config']['db']['uri'])
-    kwargs['skip_stage'] = kwargs.get('skip_stage', [])
-    kwargs['skip_stage'].append('units.distances')
-    kwargs['skip_stage'].append('pdbs.obsolete')
-    kwargs['skip_stage'].append('export.interactions')
-    kwargs['skip_stage'].append('export.loops')
-    kwargs['log_level'] = 'debug'
-    kwargs['seed'] = 1
-    run(ctx, 'update', BOOTSTRAPPING_PDBS, **kwargs)
+    for index, step in enumerate(BOOTSTRAPPING['steps']):
+        logging.info("Running step %i", index)
+        args = dict(kwargs)
+        args.update(BOOTSTRAPPING['args'])
+        run(ctx, 'update', step['pdbs'], **args)
 
 
 @cli.command(short_help="List stages")
@@ -149,6 +152,9 @@ def list(ctx, **kwargs):
 @click.argument('name', type=str)
 @click.pass_context
 def about(ctx, name=None, **kwargs):
+    """Display help for a stage.
+    """
+
     mod.reflect(ctx.parent.objs['engine'])
 
     info = introspect.get_stage_info(name)

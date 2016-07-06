@@ -11,85 +11,61 @@ STRUCTURED_BP_PER_NT = 0.5
 IFE_EXTERNAL_INTERNAL_FRACTION = 0.6
 
 """PDBS used when bootstrapping the database"""
-BOOTSTRAPPING_PDBS = (
-    "124D",
-    "157D",
-    "1A34",
-    "1AQ3",
-    "1CGM",
-    "1DUH",
-    "1E4P",
-    "1EIY",
-    "1EKD",
-    "1ET4",
-    "1F5H",
-    "1F5U",
-    "1FCW",
-    "1FEU",
-    "1FG0",
-    "1FJG",
-    "1G59",
-    "1GID",
-    "1GRZ",
-    "1I9K",
-    "1IBK",
-    "1J5E",
-    "1KOG",
-    "1MDG",
-    "1S72",
-    "1UTD",
-    "1VY4",
-    "1WMQ",
-    "1X8W",
-    "2G32",
-    "2HOJ",
-    "2HOK",
-    "2HOL",
-    "2HOM",
-    "2HOO",
-    "2IL9",
-    "2MKN",
-    "2QQP",
-    "2UUA",
-    "3CPW",
-    "3CW5",
-    "3GPQ",
-    "3J9M",
-    "3T4B",
-    "4A3G",
-    "4A3J",
-    "4CS1",
-    "4FTE",
-    "4MCE",
-    "4MGM",
-    "4MGN",
-    "4NGG",
-    "4NMG",
-    "4OAU",
-    "4OQ8",
-    "4OQ9",
-    "4PMI",
-    "4Q0B",
-    "4R3I",
-    "4TUE",
-    "4V42",
-    "4V4Q",
-    "4V6F",
-    "4V6M",
-    "4V6R",
-    "4V7R",
-    "4V7W",
-    "4V88",
-    "4V8G",
-    "4V8H",
-    "4V8I",
-    "4V9K",
-    "4V9O",
-    "4V9Q",
-    "4X4N",
-    "4YBB",
-    "5AJ3",
-)
+BOOTSTRAPPING = {
+    'args': {
+        'skip_stage': ['pdbs.obsolete', 'export.interactions', 'export.loops',
+                       'units.quality'],
+        'seed': 1,
+        'log_level': 'debug',
+    },
+    'steps': [
+        {
+            'pdbs': ["157D", "1CGM", "1DUH", "1EIY", "1EKD", "1ET4", "1F5H",
+                     "1G59", "1GID", "1I9K", "1IBK", "1J5E", "1KOG", "1MDG",
+                     "1UTD", "1VY4", "1WMQ", "1X8W", "2G32", "2HOJ", "2HOK",
+                     "2HOL", "2HOM", "2HOO", "2IL9", "3CW5", "4A3G", "4A3J",
+                     "4CS1", "4FTE", "4PMI", "4Q0B", "4V6R", "4V7R", "4V7W",
+                     "4V88", "4V8G", "4V8I", "4V9K"],
+        },
+
+        {
+            'pdbs': ["124D", "157D", "1AQ3", "1CGM", "1DUH", "1E4P", "1EIY",
+                     "1EKD", "1ET4", "1F5H", "1G59", "1GID", "1I9K", "1IBK",
+                     "1J5E", "1KOG", "1MDG", "1UTD", "1VY4", "1WMQ", "1X8W",
+                     "2G32", "2HOJ", "2HOK", "2HOL", "2HOM", "3CW5", "3GPQ",
+                     "3J9M", "3T4B", "4A3G", "4A3J", "4CS1", "4FTE", "4PMI",
+                     "4Q0B", "4V6R", "4V7R", "4V7W", "4V88", "4V8G", "4V8H",
+                     "4V8I", "4V9K", "4V9O", "4V9Q"]
+        },
+
+        {
+            'pdbs': ["157D", "1A34", "1AQ3", "1CGM", "1DUH", "1E4P", "1EIY",
+                     "1EKD", "1F5U", "1FCW", "1FEU", "1FG0", "1FJG", "1G59",
+                     "1GID", "1GRZ", "1I9K", "1IBK", "1J5E", "1KOG", "1MDG",
+                     "1S72", "1UTD", "1VY4", "1WMQ", "1X8W", "2G32", "2HOJ",
+                     "2HOK", "2HOL", "2IL9", "2QQP", "2UUA", "3CPW", "3CW5",
+                     "3GPQ", "3J9M", "3T4B", "4A3G", "4A3J", "4CS1", "4FTE",
+                     "4MCE", "4MGM", "4MGN", "4NGG", "4NMG", "4OAU", "4OQ8",
+                     "4OQ9", "4PMI", "4Q0B", "4R3I", "4TUE", "4V42", "4V4Q",
+                     "4V6F", "4V6M", "4V6R", "4V7R", "4V7W", "4V88", "4V8G",
+                     "4V8H", "4V9O", "4V9Q", "4X4N", "4YBB", "5AJ3"]
+        },
+
+        {
+            'pdbs': ["124D", "157D", "1A34", "1AQ3", "1CGM", "1DUH", "1E4P",
+                     "1EIY", "1EKD", "1ET4", "1F5H", "1F5U", "1FCW", "1FEU",
+                     "1FG0", "1FJG", "1G59", "1GID", "1GRZ", "1I9K", "1IBK",
+                     "1J5E", "1KOG", "1MDG", "1S72", "1UTD", "1VY4", "1WMQ",
+                     "1X8W", "2G32", "2HOJ", "2HOK", "2HOL", "2HOM", "2HOO",
+                     "2IL9", "2MKN", "2QQP", "2UUA", "3CPW", "3CW5", "3GPQ",
+                     "3J9M", "3T4B", "4A3G", "4A3J", "4CS1", "4FTE", "4MCE",
+                     "4MGM", "4MGN", "4NGG", "4NMG", "4OAU", "4OQ8", "4OQ9",
+                     "4PMI", "4Q0B", "4R3I", "4TUE", "4V42", "4V4Q", "4V6F",
+                     "4V6M", "4V6R", "4V7R", "4V7W", "4V88", "4V8G", "4V8H",
+                     "4V8I", "4V9K", "4V9O", "4V9Q", "4X4N", "4YBB", "5AJ3"]
+        }
+    ]
+}
 
 """Max allowed discrepancy between chains for NR grouping"""
 NR_DISCREPANCY_CUTOFF = 0.4
@@ -108,10 +84,13 @@ CORRESPONDENCE_HUGE_CUTOFF = 2000
 
 """Set of pairs that must be joined by into a equivelance class"""
 EQUIVELANT_PAIRS = set([
-    ('1S72|0', '1FG0|A'),
-    ('1S72|0', '1FFZ|A'),
+    (('1S72', '0'), ('1FG0', 'A')),
+    (('1S72', '0'), ('1FFZ', 'A')),
 ])
 
+"""Number of basepairs that an interaction must, ie greater-than, cross to be
+long range.
+"""
 LONG_RANGE = 3
 
 """NCBI Taxon id for synthetic constructs"""
@@ -119,3 +98,21 @@ SYNTHENIC_SPECIES_ID = 32630
 
 """Min size for groups that must have a homogenous species"""
 NR_MIN_HOMOGENEOUS_SIZE = 70
+
+"""Resolution cutoffs to use for NR classes"""
+RESOLUTION_GROUPS = [
+    '1.5',
+    '2.0',
+    '2.5',
+    '3.0',
+    '3.5',
+    '4.0',
+    '20.0',
+    'all'
+]
+
+"""The pattern to use for naming nr classes"""
+NR_CLASS_NAME = 'NR_{resolution}_{handle}.{version}'
+
+"""The pattern to use for naming motif groups"""
+MOTIF_GROUP_NAME = '{type}_{handle}.{version}'
