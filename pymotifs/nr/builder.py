@@ -17,19 +17,61 @@ from pymotifs.nr.groups.simplified import Grouper
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
-
-"""Resolution cutoffs to use for NR classes"""
-RESOLUTION_GROUPS = ['1.5', '2.0', '2.5', '3.0', '3.5', '4.0', '20.0',
-                     'all']
+from pymotifs.constants import RESOLUTION_GROUPS
+from pymotifs.constants import NR_CLASS_NAME
 
 
-class Builder(core.Base):
-    """Class to build a new nr set. This handles the logic of grouping the ifes
-    into groups, filter them by resolutions, name them using the previous
-    release as well as determine the representative.
-    """
+class Known(core.Base):
+    def handles(self):
+        """Return a set of all known handles for the nr set.
+        """
+        with self.session() as session:
+            query = session.query(NrClasses.handle).distinct()
+            return set(result.handle for result in query)
 
-    def class_id_mapping(self, names, release_id):
+    def classes(self, release_id, cutoff):
+        """Get all classes with the given resolution cutoff in the given
+        release. If nothing is below the cutoff then an empty dictonary will be
+        returned.
+
+        :release_id: Release id to lookup.
+        :cutoff: The resolution cutoff to use. Default is 'all'.
+        :returns A list of dictonaries for each class.
+        """
+
+        with self.session() as session:
+            query = session.query(NrChains.ife_id.label('id'),
+                                  NrClasses.handle.label('handle'),
+                                  NrClasses.version.label('version'),
+                                  NrClasses.nr_class_id.label('class_id'),
+                                  NrClasses.name.label('full_name'),
+                                  ).\
+                join(NrClasses,
+                     NrChains.nr_class_id == NrClasses.nr_class_id).\
+                filter(NrClasses.nr_release_id == release_id).\
+                filter(NrClasses.resolution == cutoff).\
+                order_by(NrClasses.nr_class_id)
+
+            grouped = it.groupby(query, lambda v: (v.handle, v.version))
+
+            results = []
+            for (handle, version), members in grouped:
+                members = list(members)
+                class_id = members[0].class_id
+                full_name = members[0].full_name
+                results.append({
+                    'members': [{'id': member.id} for member in members],
+                    'name': {
+                        'class_id': class_id,
+                        'full': full_name,
+                        'handle': handle,
+                        'version': int(version)
+                    }
+                })
+
+        return results
+
+    def mapping(self, release_id, names):
         """Create a mapping from nr class names to id in the database. This
         will raise an exception if it cannot find all names or if not given a
         list of names and a release id.
@@ -62,13 +104,12 @@ class Builder(core.Base):
 
         return mapping
 
-    def known_handles(self):
-        """Return a set of all known handles for the nr set.
-        """
 
-        with self.session() as session:
-            query = session.query(NrClasses.handle).distinct()
-            return set(result.handle for result in query)
+class Builder(core.Base):
+    """Class to build a new nr set. This handles the logic of grouping the ifes
+    into groups, filter them by resolutions, name them using the previous
+    release as well as determine the representative.
+    """
 
     def group(self, pdbs, **kwargs):
         """Group all pdbs into nr sets.
@@ -101,6 +142,12 @@ class Builder(core.Base):
 
         return named
 
+    def counts(self, groups):
+        """Compute the counts of changes to relative to the parent class
+        """
+
+        pass
+
     def within_cutoff(self, group, cutoff):
         """Filter the group to produce a new one where all members of the group
         are within the resolution cutoff. This will update the rank of the
@@ -110,68 +157,26 @@ class Builder(core.Base):
         :param str cutoff: The resolution cutoff to use.
         """
 
-        updated = copy.deepcopy(group)
-        chains = updated['members']
+        if cutoff == 'all':
+            return copy.deepcopy(group)
 
-        filtered = chains
-        if cutoff != 'all':
-            filtered = it.ifilter(lambda c: c['resolution'] is not None,
-                                  filtered)
-            filtered = it.ifilter(lambda c: c['resolution'] <= float(cutoff),
-                                  filtered)
+        cutoff = float(cutoff)
+        updated = copy.deepcopy(group)
+
+        filtered = updated['members']
+        filtered = it.ifilter(lambda c: c['resolution'] is not None, filtered)
+        filtered = it.ifilter(lambda c: c['resolution'] <= cutoff, filtered)
         filtered = list(filtered)
         if not filtered:
             return {}
 
-        filtered.sort(key=lambda f: f['rank'])
         for index, entry in enumerate(filtered):
             entry['rank'] = index
 
         updated['members'] = filtered
         return updated
 
-    def load_classes_in_release(self, release_id, cutoff='all'):
-        """Get all classes with the given resolution cutoff in the given
-        release. If nothing is below the cutoff then an empty dictonary will be
-        returned.
-
-        :release_id: Release id to lookup.
-        :cutoff: The resolution cutoff to use. Default is 'all'.
-        :returns A list of dictonaries for each class.
-        """
-
-        with self.session() as session:
-            query = session.query(NrChains.ife_id.label('id'),
-                                  NrClasses.handle.label('handle'),
-                                  NrClasses.version.label('version'),
-                                  NrClasses.nr_class_id.label('class_id'),
-                                  NrClasses.name.label('full_name'),
-                                  ).\
-                join(NrClasses, NrChains.nr_class_id == NrClasses.nr_class_id).\
-                filter(NrClasses.nr_release_id == release_id).\
-                filter(NrClasses.resolution == cutoff).\
-                order_by(NrClasses.nr_class_id)
-
-            grouped = it.groupby(query, lambda v: (v.handle, v.version))
-
-            results = []
-            for (handle, version), members in grouped:
-                members = list(members)
-                class_id = members[0].class_id
-                full_name = members[0].full_name
-                results.append({
-                    'members': [{'id': member.id} for member in members],
-                    'name': {
-                        'class_id': class_id,
-                        'full': full_name,
-                        'handle': handle,
-                        'version': int(version)
-                    }
-                })
-
-        return results
-
-    def class_name(self, entry, resolution):
+    def class_name(self, resolution, entry):
         """Create the name of the class given the class and resolution.
 
         :param dict entry: The class.
@@ -179,7 +184,7 @@ class Builder(core.Base):
         :returns: The class name.
         """
 
-        return 'NR_{resolution}_{handle}.{version}'.format(
+        return NR_CLASS_NAME.format(
             resolution=resolution,
             handle=entry['name']['handle'],
             version=entry['name']['version']
@@ -211,7 +216,7 @@ class Builder(core.Base):
                     continue
 
                 filtered['release'] = new
-                filtered['name']['full'] = self.class_name(entry, resolution)
+                filtered['name']['full'] = self.class_name(resolution, entry)
                 filtered['name']['cutoff'] = resolution
                 rep = rep_finder(filtered['members'])
                 rep['rank'] = 0
@@ -222,7 +227,10 @@ class Builder(core.Base):
                     member['rank'] = index
                 data.append(filtered)
 
-        return data
+        return {
+            'parent_counts': self.counts(data),
+            'groups': data
+        }
 
 
 class RepresentativeFinder(core.Base):
@@ -272,11 +280,9 @@ class RepresentativeFinder(core.Base):
 
         len = op.itemgetter('length')
         bp = op.itemgetter('bp')
-        length = lambda c: len(c) >= len(best)
-        bps = lambda c: bp(c) >= bp(best)
         same = lambda c: bp(c) == bp(best) and len(c) == len(best)
-        possible = it.ifilter(length, group)
-        possible = it.ifilter(bps, possible)
+        possible = it.ifilter(lambda c: len(c) >= len(best), group)
+        possible = it.ifilter(lambda c: bp(c) >= bp(best), possible)
         possible = it.ifilterfalse(same, possible)
         return sorted(possible, key=self.sorting_key)
 
