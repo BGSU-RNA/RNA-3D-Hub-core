@@ -1,4 +1,5 @@
 import random
+import itertools as it
 
 from pymotifs import core
 
@@ -125,7 +126,8 @@ class Namer(core.Base):
             named_group['parents'] = [p['group'] for p in parents]
             named_group['comment'] = name.pop('comment')
             named_group['name'] = dict(name)
-            self.logger.info("Named group with %i members", len(named_group['members']))
+            self.logger.info("Named group with %i members",
+                             len(named_group['members']))
 
             named.append(named_group)
             handles.add(named_group['name']['handle'])
@@ -134,3 +136,97 @@ class Namer(core.Base):
             raise core.InvalidState("Missing groups in naming")
 
         return named
+
+
+class ChangeCounter(core.Base):
+    """A class to help summarize changes between two sets of named groups.
+    """
+
+    def group_changes(self, groups, parent_groups):
+        """Compute the number of changes at the group level. That is the number
+        of added, removed, updated or unchanged groups.
+        """
+
+        as_handle = lambda g: g['name']['handle']
+        as_name = lambda g: (g['name']['handle'], g['name']['version'])
+        parents = set(as_name(g) for g in parent_groups)
+        parent_handles = set(as_handle(g) for g in parent_groups)
+
+        added = []
+        updated = []
+        unchanged = []
+        for group in groups:
+            name = as_name(group)
+            if name in parents:
+                unchanged.append(group)
+            elif group['name']['handle'] in parent_handles:
+                updated.append(group)
+            else:
+                added.append(group)
+
+        removed = []
+        handles = set(as_handle(g) for g in groups)
+        for parent in parent_groups:
+            handle = as_handle(parent)
+            if handle not in handles:
+                removed.append(parent)
+
+        return {
+            'added': added,
+            'removed': removed,
+            'updated': updated,
+            'unchanged': unchanged
+        }
+
+    def transformed_changes(self, groups, parents, fn):
+        """Compute the counts of changes given some transformation function.
+
+        :param list groups: The list of groups to compare.
+        :param list parents: The list of parent groups to compare against.
+        :param function fn: The function to use for transforming.
+        :returns: A dictonary of the
+        """
+
+        def as_set(entries):
+            mapped = it.imap(fn, entries)
+            return set(it.chain.from_iterable(mapped))
+
+        current = as_set(groups)
+        parent = as_set(parents)
+
+        return {
+            'added': current - parent,
+            'removed': parent - current,
+            'unchanged': current.intersection(parent),
+        }
+
+    def __as_counts__(self, changes):
+        counts = {}
+        for name, change in changes.items():
+            counts[name] = len(change)
+        return counts
+
+    def __call__(self, groups, parents, **transformers):
+        """Compute the number of changes between groups and parent groups.
+        """
+
+        def members(group):
+            return [m['id'] for m in group['members']]
+
+        group_changes = self.group_changes(groups, parents)
+        member_changes = self.transformed_changes(groups, parents, members)
+
+        data = {
+            'groups': self.__as_counts__(group_changes),
+            'members': self.__as_counts__(member_changes),
+        }
+
+        as_len = lambda n: len(group_changes[n])
+        total = sum(as_len(n) for n in ['added', 'unchanged', 'updated'])
+        assert len(groups) == total
+
+        for entry_name, fn in transformers.items():
+            changes = self.transformed_changes(groups, parents, fn)
+            data[entry_name] = self.__as_counts__(changes)
+
+        return data
