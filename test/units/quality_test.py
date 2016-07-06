@@ -153,3 +153,32 @@ class AltIdParsingTest(StageTest):
     def test_can_generate_ids_using_alt_ids(self):
         val = [nt for nt in self.nts if nt['id']['alt_id']]
         self.assertTrue(2, len(val))
+
+
+class UnusualUnitsTest(StageTest):
+    loader_class = ntq.Loader
+
+    @classmethod
+    def setUpClass(cls):
+        with open('test/files/validation/2uua_validation.xml.gz', 'rb') as raw:
+            cls.parser = ntq.Parser(raw.read())
+            cls.nts = list(cls.parser.nts())
+
+    def test_can_generate_unit_ids_for_all_units(self):
+        assert len(self.nts) == 3934
+
+    @pytest.mark.skip()
+    def test_can_generate_unit_id_for_hard_unit(self):
+        data = {
+            'real_space_r': 0.32,
+            'id': {
+                'component_id': 'PAR',
+                'chain': 'Z',
+                'insertion_code': None,
+                'component_number': 1,
+                'alt_id': None,
+                'model': 1,
+                'pdb': '2UUA'
+            }
+        }
+        pass

@@ -139,3 +139,23 @@ class QueryingTest(StageTest):
 
     def test_knows_if_no_data_exists(self):
         self.assertFalse(self.loader.has_data('0GID'))
+
+
+class MissingDataTest(StageTest):
+    loader_class = Loader
+
+    @pytest.mark.skip()
+    def test_gets_unit_id_for_paryomycin(self):
+        data = {
+            'real_space_r': 0.32,
+            'id': {
+                'component_id': 'PAR',
+                'chain': 'Z',
+                'insertion_code': None,
+                'component_number': 1,
+                'alt_id': None,
+                'model': 1,
+                'pdb': '2UUA'
+            }
+        }
+        pass
