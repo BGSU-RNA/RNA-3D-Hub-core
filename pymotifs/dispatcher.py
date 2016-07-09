@@ -193,8 +193,6 @@ class Dispatcher(object):
             except Exception as err:
                 self.logger.error("Uncaught exception with stage: %s",
                                   self.name)
-                self.logger.error("Message: %s" % str(err))
-                self.logger.exception(err)
                 raise err
 
         self.logger.info("Finished pipeline")
