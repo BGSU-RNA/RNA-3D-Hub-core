@@ -4,6 +4,7 @@ from sqlalchemy import desc
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import NR_CACHE_NAME
 
 from pymotifs.utils import releases as rel
 from pymotifs.nr.builder import Builder
@@ -33,7 +34,7 @@ class Loader(core.MassLoader):
 
     def build(self, pdbs, current_release, next_release, **kwargs):
         builder = Builder(self.config, self.session)
-        self.cache('nr', builder(pdbs, current_release, next_release))
+        self.cache(NR_CACHE_NAME, builder(pdbs, current_release, next_release))
 
     def next_id(self, current):
         return rel.next_id(current, mode=self.config['release_mode']['nrlist'])
@@ -59,10 +60,10 @@ class Loader(core.MassLoader):
 
         current, index = self.current_id()
         next = self.next_id(current)
-        self.build(pdbs, current, next, **kwargs)
         parent = current
         if current == '0.0':
             parent = next
+        self.build(pdbs, parent, next, **kwargs)
         return mod.NrReleases(nr_release_id=next,
                               date=now,
                               parent_nr_release_id=parent,

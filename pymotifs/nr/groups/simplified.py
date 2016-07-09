@@ -238,7 +238,7 @@ class Grouper(core.Base):
     def is_hard_coded_join(self, group1, group2):
         def simple(ife_id):
             parts = ife_id.split('|')
-            return '|'.join([parts[0], parts[-1]])
+            return (parts[0], parts[-1])
 
         id1 = (simple(group1['id']), simple(group2['id']))
         id2 = (simple(group2['id']), simple(group1['id']))

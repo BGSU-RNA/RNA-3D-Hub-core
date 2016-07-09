@@ -6,6 +6,7 @@ that class.
 import copy
 import operator as op
 import itertools as it
+import collections as coll
 
 from pymotifs import core
 
@@ -13,6 +14,7 @@ from pymotifs.models import NrChains
 from pymotifs.models import NrClasses
 
 from pymotifs.utils.naming import Namer
+from pymotifs.utils.naming import ChangeCounter
 from pymotifs.nr.groups.simplified import Grouper
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
@@ -39,6 +41,19 @@ class Known(core.Base):
         :returns A list of dictonaries for each class.
         """
 
+        def empty():
+            return {
+                'members': [],
+                'name': {
+                    'class_id': None,
+                    'full': None,
+                    'handle': None,
+                    'version': None,
+                    'cutoff': cutoff,
+                },
+                'release': release_id,
+            }
+
         with self.session() as session:
             query = session.query(NrChains.ife_id.label('id'),
                                   NrClasses.handle.label('handle'),
@@ -52,24 +67,18 @@ class Known(core.Base):
                 filter(NrClasses.resolution == cutoff).\
                 order_by(NrClasses.nr_class_id)
 
-            grouped = it.groupby(query, lambda v: (v.handle, v.version))
+            results = coll.defaultdict(empty)
+            for result in query:
+                results[result.class_id]['members'].append({'id': result.id})
+                results[result.class_id]['name'] = {
+                    'class_id': result.class_id,
+                    'full': result.full_name,
+                    'handle': result.handle,
+                    'version': int(result.version),
+                    'cutoff': cutoff,
+                }
 
-            results = []
-            for (handle, version), members in grouped:
-                members = list(members)
-                class_id = members[0].class_id
-                full_name = members[0].full_name
-                results.append({
-                    'members': [{'id': member.id} for member in members],
-                    'name': {
-                        'class_id': class_id,
-                        'full': full_name,
-                        'handle': handle,
-                        'version': int(version)
-                    }
-                })
-
-        return results
+        return results.values()
 
     def mapping(self, release_id, names):
         """Create a mapping from nr class names to id in the database. This
@@ -114,7 +123,8 @@ class Builder(core.Base):
     def group(self, pdbs, **kwargs):
         """Group all pdbs into nr sets.
         """
-
+        if not pdbs:
+            raise core.InvalidState("Must give pdbs to group")
         grouper = Grouper(self.config, self.session)
         return grouper(pdbs, **kwargs)
 
@@ -129,8 +139,8 @@ class Builder(core.Base):
                          len(groups), ife_count)
 
         namer = Namer(self.config, self.session)
-        handles = self.known_handles()
-        named = namer(groups, parents, handles)
+        known = Known(self.config, self.session)
+        named = namer(groups, parents, known.handles())
 
         named_count = it.imap(lambda g: len(g['members']), named)
         named_count = sum(named_count)
@@ -142,11 +152,40 @@ class Builder(core.Base):
 
         return named
 
-    def counts(self, groups):
-        """Compute the counts of changes to relative to the parent class
+    def counts(self, parents, current):
+        """Compare two releases and count the number of changes.
         """
 
-        pass
+        data = []
+        grouped = it.groupby(current, lambda g: g['name']['cutoff'])
+        for cutoff, groups in grouped:
+            entry = {'cutoff': cutoff}
+            entry.update(self.cutoff_counts(parents[cutoff], list(groups)))
+            data.append(entry)
+        return data
+
+    def cutoff_counts(self, parents, groups):
+        """Compute the counts of changes to relative to the parent class. The
+        groups should be from the named method, while parents should be as from
+        Known.motifs.
+
+        :param list groups: The list of groups.
+        :param list parents: The parent groups.
+        :returns: A dictonary with 'pdbs' and 'classes' entries, which
+        summarize the changes for the release. The classes entry the same as
+        the 'groups' entry produced by ChangeCounter. And the pdbs entry is the
+        result of a transform.
+        """
+
+        def as_pdbs(group):
+            return [m['id'].split('|')[0] for m in group['members']]
+
+        counter = ChangeCounter(self.config, self.session)
+        counts = counter(groups, parents, pdbs=as_pdbs)
+        counts['ifes'] = counts.pop('members')
+        counts['pdbs'].pop('unchanged')
+        counts['classes'] = counts.pop('groups')
+        return counts
 
     def within_cutoff(self, group, cutoff):
         """Filter the group to produce a new one where all members of the group
@@ -190,8 +229,34 @@ class Builder(core.Base):
             version=entry['name']['version']
         )
 
-    def __call__(self, pdbs, current, new, resolutions=RESOLUTION_GROUPS,
-                 **kwargs):
+    def filter_groups(self, groups, resolutions):
+        data = []
+        for entry in groups:
+            for resolution in resolutions:
+                filtered = self.within_cutoff(entry, resolution)
+                if not filtered:
+                    continue
+                filtered['name']['full'] = self.class_name(resolution, entry)
+                filtered['name']['cutoff'] = resolution
+                data.append(filtered)
+        return sorted(data, key=lambda g: g['name']['cutoff'])
+
+    def find_representatives(self, groups):
+        data = []
+        rep_finder = RepresentativeFinder(self.config, self.session)
+        for group in groups:
+            rep = rep_finder(group['members'])
+            rep['rank'] = 0
+            group['representative'] = rep
+            group['members'].remove(rep)
+            group['members'].insert(0, rep)
+            for index, member in enumerate(group['members']):
+                member['rank'] = index
+            data.append(group)
+        return data
+
+    def __call__(self, pdbs, parent_release, current_release,
+                 cutoffs=RESOLUTION_GROUPS, **kwargs):
         """Build the nr set.
 
         :pdbs: The list of pdbs to process.
@@ -203,33 +268,22 @@ class Builder(core.Base):
 
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
-        known = self.load_classes_in_release(current)
+        known = Known(self.config, self.session)
         groups = self.group(pdbs)
-        named = self.named(groups, known)
-        rep_finder = RepresentativeFinder(self.config, self.session)
 
-        data = []
-        for entry in named:
-            for resolution in resolutions:
-                filtered = self.within_cutoff(entry, resolution)
-                if not filtered:
-                    continue
+        parents = {}
+        for cutoff in cutoffs:
+            parents[cutoff] = known.classes(parent_release, cutoff)
 
-                filtered['release'] = new
-                filtered['name']['full'] = self.class_name(resolution, entry)
-                filtered['name']['cutoff'] = resolution
-                rep = rep_finder(filtered['members'])
-                rep['rank'] = 0
-                filtered['representative'] = rep
-                filtered['members'].remove(rep)
-                filtered['members'].insert(0, rep)
-                for index, member in enumerate(filtered['members']):
-                    member['rank'] = index
-                data.append(filtered)
+        named = self.named(groups, parents['all'])
+        filtered = self.filter_groups(named, cutoffs)
+        with_reps = self.find_representatives(filtered)
 
         return {
-            'parent_counts': self.counts(data),
-            'groups': data
+            'parent_counts': self.counts(parents, with_reps),
+            'groups': with_reps,
+            'release': current_release,
+            'parent': parent_release,
         }
 
 
@@ -356,5 +410,4 @@ class RepresentativeFinder(core.Base):
                              best['id'], rep['id'])
 
         self.logger.debug("Computed representative: %s", rep['id'])
-
         return rep
