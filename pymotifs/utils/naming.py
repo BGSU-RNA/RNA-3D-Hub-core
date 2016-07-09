@@ -221,8 +221,8 @@ class ChangeCounter(core.Base):
             'members': self.__as_counts__(member_changes),
         }
 
-        as_len = lambda n: len(group_changes[n])
-        total = sum(as_len(n) for n in ['added', 'unchanged', 'updated'])
+        keys = ['added', 'unchanged', 'updated']
+        total = sum(len(group_changes[n]) for n in keys)
         assert len(groups) == total
 
         for entry_name, fn in transformers.items():
