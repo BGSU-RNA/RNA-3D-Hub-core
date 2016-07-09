@@ -13,13 +13,14 @@ IFE_EXTERNAL_INTERNAL_FRACTION = 0.6
 """PDBS used when bootstrapping the database"""
 BOOTSTRAPPING = {
     'args': {
-        'skip_stage': ['pdbs.obsolete', 'export.interactions', 'export.loops',
-                       'units.quality'],
+        'skip_stage': ['pdbs.obsolete', 'export.interactions', 'export.loops'],
         'seed': 1,
         'log_level': 'debug',
     },
     'steps': [
         {
+            'stage': 'update',
+            'args': {},
             'pdbs': ["157D", "1CGM", "1DUH", "1EIY", "1EKD", "1ET4", "1F5H",
                      "1G59", "1GID", "1I9K", "1IBK", "1J5E", "1KOG", "1MDG",
                      "1UTD", "1VY4", "1WMQ", "1X8W", "2G32", "2HOJ", "2HOK",
@@ -29,6 +30,8 @@ BOOTSTRAPPING = {
         },
 
         {
+            'stage': 'update',
+            'args': {},
             'pdbs': ["124D", "157D", "1AQ3", "1CGM", "1DUH", "1E4P", "1EIY",
                      "1EKD", "1ET4", "1F5H", "1G59", "1GID", "1I9K", "1IBK",
                      "1J5E", "1KOG", "1MDG", "1UTD", "1VY4", "1WMQ", "1X8W",
@@ -39,6 +42,8 @@ BOOTSTRAPPING = {
         },
 
         {
+            'stage': 'update',
+            'args': {},
             'pdbs': ["157D", "1A34", "1AQ3", "1CGM", "1DUH", "1E4P", "1EIY",
                      "1EKD", "1F5U", "1FCW", "1FEU", "1FG0", "1FJG", "1G59",
                      "1GID", "1GRZ", "1I9K", "1IBK", "1J5E", "1KOG", "1MDG",
@@ -52,6 +57,8 @@ BOOTSTRAPPING = {
         },
 
         {
+            'stage': 'update',
+            'args': {},
             'pdbs': ["124D", "157D", "1A34", "1AQ3", "1CGM", "1DUH", "1E4P",
                      "1EIY", "1EKD", "1ET4", "1F5H", "1F5U", "1FCW", "1FEU",
                      "1FG0", "1FJG", "1G59", "1GID", "1GRZ", "1I9K", "1IBK",
@@ -116,3 +123,6 @@ NR_CLASS_NAME = 'NR_{resolution}_{handle}.{version}'
 
 """The pattern to use for naming motif groups"""
 MOTIF_GROUP_NAME = '{type}_{handle}.{version}'
+
+"""Filename to cache to NR data to"""
+NR_CACHE_NAME = 'nr'

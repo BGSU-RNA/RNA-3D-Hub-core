@@ -25,6 +25,18 @@ from pymotifs.dispatcher import Dispatcher
 
 
 def run(ctx, name, ids, config=None, engine=None, **kwargs):
+    """Actually run the pipeline. This is the main function which will load and
+    run the stages.
+
+    :param str name: The name of the stage to run.
+    :param list ids: The PDB ids to use.
+    :param dict config: The configuration dictionary as produced by
+    pymotifs.config.load.
+    :param engine: The SQL Alchemy engine connection.
+    :param dict **kwargs: The other keyword arguments which will be passed to
+    dispatcher.
+    """
+
     if kwargs.get('seed', None) is not None:
         random.seed(kwargs['seed'])
 
@@ -115,7 +127,7 @@ def do(ctx, name, ids, **kwargs):
     run(ctx, name, ids, **kwargs)
 
 
-@cli.command(short_help='populate a database')
+@cli.command(short_help='Populate a database')
 @click.pass_context
 def bootstrap(ctx, **kwargs):
     """Populate a testing database.
@@ -133,7 +145,8 @@ def bootstrap(ctx, **kwargs):
         logging.info("Running step %i", index)
         args = dict(kwargs)
         args.update(BOOTSTRAPPING['args'])
-        run(ctx, 'update', step['pdbs'], **args)
+        args.update(step.get('args', {}))
+        run(ctx, step['stage'], step['pdbs'], **args)
 
 
 @cli.command(short_help="List stages")
