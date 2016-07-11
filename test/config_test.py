@@ -6,7 +6,7 @@ from pymotifs import config
 
 class ConfigTest(TestCase):
     def setUp(self):
-        self.conf = config.load("conf/test.json")
+        self.conf = config.load("conf/bootstrap.json.txt")
 
     def test_can_load_data(self):
         self.assertTrue('db' in self.conf)
@@ -21,10 +21,31 @@ class ConfigTest(TestCase):
         ans = os.getcwd()
         self.assertEquals(ans, val)
 
+    def test_it_keeps_known_keys(self):
+        assert set(self.conf['locations'].keys()) == set([
+            "2ds_destination",
+            "cache",
+            "fr3d_root",
+            "interactions_gz",
+            "log_dir",
+            "loops_gz",
+            "loops_mat_files",
+            "loops_search_dir",
+            "mlab_app",
+            "releases_dir",
+            '2ds_destination',
+            'base',
+            'cache',
+            'fr3d_root',
+            'log_dir',
+            'loops_mat_files',
+            'loops_search_dir',
+            'releases_dir',
+        ])
+
     def test_does_not_override_nested_values(self):
-        val = self.conf['locations']['loops_mat_files']
-        ans = "/home/pipeline/hub-core/MotifAtlas/PrecomputedData"
-        self.assertEquals(ans, val)
+        val = self.conf['locations']['loops_gz']
+        assert val == "/home/pipeline/hub-core/MotifAtlas/loops.gz"
 
 
 class MergingTest(TestCase):
@@ -47,3 +68,9 @@ class MergingTest(TestCase):
         b = {'a': {'b': u'2'}}
         val = config.merge(a, b)
         self.assertTrue(isinstance(val['a']['b'], str))
+
+    def will_merge_both_directions(self):
+        a = {'a': {'a': {'c': 1}}}
+        b = {'a': {'a': {'d': 1}, 'b': 3}}
+        assert config.merge(a, b) == {'a': {'a': {'c': 1}, 'b': 3}}
+        assert config.merge(b, a) == {'a': {'a': {'c': 1}, 'b': 3}}
