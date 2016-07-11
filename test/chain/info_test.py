@@ -13,7 +13,9 @@ class GetIdsTest(StageTest):
         ]
         reports = self.loader.get_ids(reports)
         val = sorted([report['chain_id'] for report in reports])
-        self.assertEquals([5, 6], val)
+        assert len(val) == 2
+        types = [type(v) for v in val]
+        assert types == [long, long]
 
     def test_will_not_set_missing_ids(self):
         reports = [{'structureId': '0E4P', 'chainId': 'A'}]
