@@ -46,7 +46,8 @@ class ToExcludeTests(ut.TestCase):
         val = self.dispatcher.to_exclude('units.loader')
         assert val == set(['units.info', 'units.distances', 'units.quality',
                            'units.distances', 'units.centers', 'units.loader',
-                           'units.rotation', 'units.redundant'])
+                           'units.rotation', 'units.redundant',
+                           'units.coordinates'])
 
 
 class DependenciesTest(ut.TestCase):
@@ -79,9 +80,18 @@ class DependenciesTest(ut.TestCase):
 
     def test_it_computes_dependencies_for_nested_containers(self):
         val = self.dispatcher.dependencies([ifes.Loader])
-        assert val[ifes.InfoLoader] == \
-            set([chains.InfoLoader, chains.SpeciesLoader,
-                 interactions.PairwiseLoader, interactions.HLSummaryLoader])
+        assert val[ifes.InfoLoader] == set([
+            units.InfoLoader,
+            units.QualityLoader,
+            units.DistancesLoader,
+            units.CenterLoader,
+            units.RotationLoader,
+            units.RedundantNucleotidesLoader,
+            units.CoordinateLoader,
+            chains.InfoLoader,
+            chains.SpeciesLoader,
+            interactions.PairwiseLoader
+        ])
 
 
 class LevelsTest(ut.TestCase):
@@ -130,6 +140,7 @@ class StagesTest(ut.TestCase):
         assert self.stages('units.loader') == [
             'units.info',
             'units.centers',
+            'units.coordinates',
             'units.distances',
             'units.quality',
             'units.rotation',
@@ -144,6 +155,7 @@ class StagesTest(ut.TestCase):
             'units.info',
             'mat_files',
             'units.centers',
+            'units.coordinates',
             'units.distances',
             'units.quality',
             'units.rotation',
@@ -161,6 +173,7 @@ class StagesTest(ut.TestCase):
             'units.info',
             'mat_files',
             'units.centers',
+            'units.coordinates',
             'units.quality',
             'units.rotation',
             'units.redundant',
@@ -174,6 +187,7 @@ class StagesTest(ut.TestCase):
             'units.info',
             'mat_files',
             'units.centers',
+            'units.coordinates',
             'units.quality',
             'units.rotation',
             'units.redundant',
@@ -201,9 +215,14 @@ class StagesTest(ut.TestCase):
             'units.info',
             'chains.info',
             'mat_files',
+            'units.centers',
+            'units.coordinates',
+            'units.distances',
+            'units.quality',
+            'units.rotation',
             'interactions.pairwise',
             'species_mapping',
+            'units.redundant',
             'chains.species',
-            'interactions.helix_loop_summary',
             'ife.info'
         ]
