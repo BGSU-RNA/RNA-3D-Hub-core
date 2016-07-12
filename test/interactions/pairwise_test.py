@@ -1,6 +1,7 @@
 import pytest
 
 from test import StageTest
+from test import skip_without_matlab
 
 from pymotifs.interactions.pairwise import Loader
 
@@ -87,5 +88,6 @@ class ParsingACsvTest(StageTest):
 class RunningMatlabTest(StageTest):
     loader_class = Loader
 
+    @skip_without_matlab
     def test_annotates_a_structure(self):
         assert len(self.loader.data('1GID')) == 1513
