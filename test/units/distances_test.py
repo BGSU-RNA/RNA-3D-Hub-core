@@ -26,22 +26,20 @@ class ComputingCentersTest(CifStageTest):
     loader_class = Loader
     filename = 'test/files/cif/124D.cif'
 
-    def setUp(self):
-        super(ComputingCentersTest, self).setUp()
-        self.residues = list(self.structure.residues())
-
     def test_given_rna_gets_base_center(self):
-        val = self.loader.center(self.residues[8])
-        ans = np.array([-0.4305, -3.74425, 18.200875])
+        print(list(self.structure.residues()))
+        val = self.loader.center(self.structure.residue('124D|1|B|U|13'))
+        ans = np.array([-5.94833333, 5.85976667, 8.00386667])
         np.testing.assert_array_almost_equal(ans, val)
 
     @pytest.mark.skip()
     def test_given_aa_gets_backbone_center(self):
         pass
 
-    @pytest.mark.skip()
-    def test_given_dna_gets_base_center(self):
-        pass
+    def test_given_dna_gets_center(self):
+        val = self.loader.center(self.structure.residue('124D|1|A|DA|4'))
+        ans = np.array([5.193938, 5.475406, 10.362031])
+        np.testing.assert_array_almost_equal(ans, val)
 
     @pytest.mark.skip()
     def test_given_anything_else_gets_overall_center(self):
@@ -52,18 +50,19 @@ class ComputingDistancesTest(CifStageTest):
     loader_class = Loader
     filename = 'test/files/cif/124D.cif'
 
-    def setUp(self):
-        super(ComputingDistancesTest, self).setUp()
-        self.residues = list(self.structure.residues())
+    def dist(self, u1, u2):
+        return self.loader.distance(self.structure.residue(u1),
+                                    self.structure.residue(u2))
 
     def test_can_compute_rna_rna_distance(self):
-        val = self.loader.distance(self.residues[8], self.residues[9])
-        ans = 4.266
+        val = self.dist('124D|1|B|U|11', '124D|1|B|U|13')
+        ans = 9.82
         np.testing.assert_almost_equal(ans, val, decimal=1)
 
-    @pytest.mark.skip()
     def test_computes_rna_to_any_distance(self):
-        pass
+        val = self.dist('124D|1|B|U|11', '124D|1|A|DA|4')
+        ans = 15.07
+        np.testing.assert_almost_equal(ans, val, decimal=1)
 
     @pytest.mark.skip()
     def test_computes_protein_protein_distance(self):
@@ -73,10 +72,6 @@ class ComputingDistancesTest(CifStageTest):
     def test_computes_protein_rna_distance(self):
         pass
 
-    @pytest.mark.skip()
-    def test_computes_water_water_distance(self):
-        pass
-
 
 class DistancesLoaderTest(CifStageTest):
     loader_class = Loader
@@ -84,7 +79,7 @@ class DistancesLoaderTest(CifStageTest):
 
     def test_can_load_distances(self):
         val = list(self.loader.data(self.structure))
-        self.assertEquals(3284, len(val))
+        self.assertEquals(2708, len(val))
 
 
 class ProblematicStructureTest(CifStageTest):
