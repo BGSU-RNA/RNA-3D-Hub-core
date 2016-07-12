@@ -1,3 +1,4 @@
+import operator as op
 import itertools as it
 import collections as coll
 
@@ -83,7 +84,8 @@ class Helper(core.Base):
                 }
                 data.append((result.correspondence_id, chain1, chain2))
 
-        return data
+        key = op.itemgetter('pdb', 'name')
+        return sorted(data, key=lambda p: (p[0], key(p[1]), key(p[2])))
 
     def ordering(self, corr_id, chain_id1, chain_id2):
         """Load the ordering of units in the given chain to chain

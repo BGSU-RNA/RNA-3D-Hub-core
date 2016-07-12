@@ -1,4 +1,5 @@
 import string
+import operator as op
 import itertools as it
 
 from test import StageTest
@@ -68,7 +69,8 @@ class ChainTest(StageTest):
         return corr
 
     def test_can_all_corresponding_chains(self):
-        assert self.corr('1FCW', '4V42') == [
+        key = op.itemgetter('pdb', 'name')
+        assert self.corr('1FCW', '4V42') == sorted([
             ({'pdb': '1FCW', 'name': 'A'}, {'pdb': '4V42', 'name': 'AB'}),
             ({'pdb': '1FCW', 'name': 'B'}, {'pdb': '4V42', 'name': 'AB'}),
             ({'pdb': '1FCW', 'name': 'C'}, {'pdb': '4V42', 'name': 'AB'}),
@@ -79,7 +81,7 @@ class ChainTest(StageTest):
             ({'pdb': '1FCW', 'name': 'C'}, {'pdb': '4V42', 'name': 'AC'}),
             ({'pdb': '1FCW', 'name': 'D'}, {'pdb': '4V42', 'name': 'AC'}),
             ({'pdb': '1FCW', 'name': 'E'}, {'pdb': '4V42', 'name': 'AC'}),
-        ]
+        ], key=lambda p: (key(p[0]), key(p[1])))
 
     def test_gives_nothing_if_no_corresponding(self):
         assert self.loader.chains('1DUH', '1KOG') == []
@@ -174,4 +176,6 @@ class MappingTest(StageTest):
         }
 
     def test_it_gives_empty_if_no_mapping(self):
-        assert self.mapping('1FJG', 'X', '1EKD', 'A') == {}
+        assert self.loader.mapping(None,
+                                   self.chain('1FJG', 'X'),
+                                   self.chain('1EKD', 'A')) == {}
