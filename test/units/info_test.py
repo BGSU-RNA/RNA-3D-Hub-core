@@ -144,18 +144,21 @@ class QueryingTest(StageTest):
 class MissingDataTest(StageTest):
     loader_class = Loader
 
-    @pytest.mark.skip()
+    @classmethod
+    def setUpClass(cls):
+        with open('test/files/cif/2UUA.cif', 'rb') as raw:
+            cls.structure = Cif(raw).structure()
+
+    def setUp(self):
+        super(MissingDataTest, self).setUp()
+        self.structure = self.__class__.structure
+        self.data = list(self.loader.data(self.structure))
+
+    def test_loads_all_chain(self):
+        chains = {d.chain for d in self.data}
+        assert 'Z' in chains
+        assert chains == set('ABCDEFGHIJKLMNOPQRSTUXYZ')
+
     def test_gets_unit_id_for_paryomycin(self):
-        data = {
-            'real_space_r': 0.32,
-            'id': {
-                'component_id': 'PAR',
-                'chain': 'Z',
-                'insertion_code': None,
-                'component_number': 1,
-                'alt_id': None,
-                'model': 1,
-                'pdb': '2UUA'
-            }
-        }
-        pass
+        uids = {d.unit_id for d in self.data}
+        assert '2UUA|1|Z|PAR|1' in uids
