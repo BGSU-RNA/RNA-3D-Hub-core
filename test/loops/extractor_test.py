@@ -31,7 +31,7 @@ class MappingTests(StageTest):
 
     def test_can_get_a_correct_mapping_for_J3(self):
         mapping = self.loader._mapping('4V4Q', 'J3')
-        self.assertEqual(38, len(mapping))
+        self.assertEqual(52, len(mapping))
 
     def test_gets_empty_mapping_for_missing_structure(self):
         val = self.loader._mapping('0000', 'IL')
