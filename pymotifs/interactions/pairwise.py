@@ -7,6 +7,7 @@ them into the database.
 import re
 import os
 import csv
+import operator as op
 import collections as coll
 
 from pymotifs import core
@@ -89,7 +90,8 @@ class Loader(core.SimpleLoader):
                 if inter_type:
                     interaction[inter_type] = family
 
-        return data.values()
+        key = op.itemgetter('unit_id_1', 'unit_id_2')
+        return sorted(data.values(), key=key)
 
     def data(self, pdb, **kwargs):
         """Compute the interaction annotations for a pdb file.

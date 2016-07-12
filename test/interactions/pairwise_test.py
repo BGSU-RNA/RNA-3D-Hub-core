@@ -62,18 +62,19 @@ class ParsingACsvTest(StageTest):
     def test_can_create_correct_data_structure(self):
         val = self.data[0]
         ans = {
-            'unit1_id': "1GID|1|A|A|104",
-            'unit2_id': "1GID|1|A|G|103",
-            'f_stacks': "s53 ",
+            'unit_id_1': "1GID|1|A|A|104",
+            'unit_id_2': "1GID|1|A|A|104",
+            'pdb_id': '1GID',
+            'f_bphs': '0BPh',
             'f_crossing': 0
         }
-        self.assertTrue(ans, val)
+        assert val == ans
 
     @pytest.mark.skip(reason="Not sure of data to use")
     def test_it_merges_entries(self):
         val = self.data[10]  # Not sure what index to use
         ans = {}
-        self.assertTrue(ans, val)
+        assert val == ans
 
     def test_it_converts_crossing_to_int(self):
         self.assertEqual(0, self.data[0]['f_crossing'])
