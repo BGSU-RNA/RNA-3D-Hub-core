@@ -46,7 +46,7 @@ class GettingDataTest(StageTest):
         data.sort(key=lambda c: c['chain_id'])
         val = [entry['species_id'] for entry in data]
         #      AA,  AB,  BA,  BV,  BW,  BX,    CA,  CB,  DA,  DV,  DW,  DX
-        ans = [274, 274, 274, 562, 562, 32630, 274, 274, 274, 562, 562, 32630]
+        ans = [274, 274, 274, 512, 512, 32630, 274, 274, 274, 512, 512, 32630]
         self.assertEquals(ans, val)
 
 
