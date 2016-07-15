@@ -11,6 +11,10 @@ import collections as coll
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils.naming import Namer
+from pymotifs.utils.naming import ChangeCounter
+from pymotifs.constants import MOTIF_GROUP_NAME
+
+from pymotifs.motifs.cluster import ClusterMotifs
 
 
 class BaseParser(core.Base):
@@ -159,38 +163,72 @@ class Combiner(core.Base):
         return data
 
 
-class Builder(core.Base):
-    """This will build the data structures for a motif release. This will load
-    and merge all motif data as well as compute names for the given
+class Known(core.Base):
+    """A class to help load information from the database.
     """
 
-    def load_motifs(self, release_id):
-        """Load all motifs for the given release id. This is used later to
-        generate naming for the motifs.
+    def loops(self, loop_type, ml_release_id):
+        """Get a set of all known loops that were part of the given motif
+        release.
         """
+        motifs = self.motifs(loop_type, ml_release_id)
+        loops = set()
+        for motif in motifs:
+            loops.update(motif.members)
+        return loops
 
-        with self.session() as session:
-            query = session.query(mod.MlLoops).\
-                filter_by(ml_release_id=release_id)
-
-            data = coll.defaultdict(lambda: {'name': None, 'members': []})
-            for result in query:
-                data[result.motif_id]['name'] = result.motif_id
-                data[result.motif_id]['members'].append({'id': result.loop_id})
-            return data.values()
-
-    def known_handles(self):
-        """Get all known handles already in use. This is used in producing new
-        names for the motifs.
-
-        :returns: A set of all known handles.
+    def handles(self):
+        """Get all handles that hav ever been used.
         """
 
         with self.session() as session:
             query = session.query(mod.MlMotifsInfo.handle).distinct()
             return set(result.handle for result in query)
 
-    def motifs(self, parent_id, release_id, directory):
+    def names(self, loop_type, ml_release_id):
+        """Get the names of motifs of the given type in the given release.
+        """
+
+        motifs = self.motifs(loop_type, ml_release_id)
+        return set(m['name'] for m in motifs)
+
+    def motifs(self, loop_type, ml_release_id):
+        """Get a listing of all motifs in the given release.
+        """
+
+        with self.session() as session:
+            motifs = mod.MlMotifsInfo
+            query = session.query(
+                motifs.handle,
+                motifs.version,
+                motifs.motif_id,
+                mod.MlLoops.loop_id,
+            ).\
+                join(mod.MlLoops,
+                     (mod.MlLoops.motif_id == motifs.motif_id) &
+                     (mod.MlLoops.ml_release_id == motifs.ml_release_id)).\
+                join(mod.LoopInfo,
+                     mod.LoopInfo.loop_id == mod.MlLoops.loop_id).\
+                filter(mod.MlLoops.ml_release_id == ml_release_id).\
+                filter(mod.LoopInfo.type == loop_type)
+
+            data = coll.defaultdict(lambda: {'name': None, 'members': []})
+            for result in query:
+                data[result.motif_id]['name'] = {
+                    'full': result.motif_id,
+                    'handle': result.handle,
+                    'version': int(result.version),
+                }
+                data[result.motif_id]['members'].append({'id': result.loop_id})
+            return sorted(data.values(), key=lambda d: d['name']['full'])
+
+
+class Builder(core.Base):
+    """This will build the data structures for a motif release. This will load
+    and merge all motif data as well as compute names for the given
+    """
+
+    def motifs(self, loop_type, parent_id, release_id, directory):
         """Load all motif data and then name them.
 
         :param str parent_id: The id of the parent release.
@@ -200,11 +238,18 @@ class Builder(core.Base):
         """
 
         combiner = Combiner(self.config, self.session)
+        known = Known(self.config, self.session)
         motifs = combiner(release_id, directory).values()
-        parents = self.load_motifs(parent_id)
-        handles = self.known_handles()
+        parents = known.motifs(loop_type, parent_id)
+        handles = known.handles()
         namer = Namer(self.config, self.session)
-        return namer(motifs, parents, handles)
+        named = namer(motifs, parents, handles)
+        generate = MOTIF_GROUP_NAME.format
+        for motif in named:
+            motif['motif_id'] = generate(type=loop_type,
+                                         handle=motif['name']['handle'],
+                                         version=motif['name']['version'])
+        return named
 
     def mutual_discrepancy(self, directory):
         """Load all mutual discrepancy information.
@@ -216,7 +261,28 @@ class Builder(core.Base):
         loader = MutualDiscrepancyLoader(self.config, self.session)
         return list(loader(directory))
 
-    def __call__(self, parent_id, release_id, directory):
+    def parent_counts(self, parents, motifs):
+        """Compute the number of changes between this release and the parent
+        release.
+
+        :param list parents: The parent motifs.
+        :param list motifs: The motifs in the currrent release.
+        :returns: A dictonary with entries for loops, motifs, and pdbs.
+        """
+
+        def as_pdb(group):
+            return []
+
+        counter = ChangeCounter(self.config, self.session)
+        counts = counter(motifs, parents, pdbs=as_pdb)
+        counts['loops'] = counts.pop('members')
+        counts['motifs'] = counts.pop('groups')
+        del counts['loops']['unchanged']
+        del counts['pdbs']['unchanged']
+
+        return counts
+
+    def __call__(self, loop_type, parent_id, release_id, loops):
         """Build the data structures for a motif release. This will load and
         name all motifs as well as load the mutual discrepancy information.
 
@@ -228,8 +294,17 @@ class Builder(core.Base):
         discrepancies.
         """
 
+        cluster = ClusterMotifs(self.config, self.session)
+        directory = cluster(loop_type, loops)
+        motifs = self.motifs(loop_type, parent_id, release_id, directory)
+        known = Known(self.config, self.session)
+        parents = known.motifs(loop_type, parent_id)
+
         return {
-            'motifs': self.motifs(parent_id, release_id, directory),
+            'motifs': motifs,
+            'loop_type': loop_type,
+            'counts': self.parent_counts(parents, motifs),
             'discrepancies': self.mutual_discrepancy(directory),
             'release': release_id,
+            'parent': parent_id,
         }
