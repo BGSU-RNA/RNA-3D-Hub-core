@@ -147,7 +147,6 @@ class ProcessingTests(Base):
         stage = SomeStage(CONFIG, None)
         val = stage.to_process([u'abc'])
         self.assertEqual(['ABC'], val)
-        print(val)
         self.assertTrue(isinstance(val[0], str))
 
     def test_will_return_processed_input(self):
