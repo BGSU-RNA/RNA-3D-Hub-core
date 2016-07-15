@@ -1,6 +1,9 @@
 """Load the motif info data.
+
+This will load the cached data to store all motifs into the DB.
 """
 
+from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.motifs.utils import BaseLoader
@@ -9,18 +12,24 @@ from pymotifs.motifs.release import Loader as ReleaseLoader
 
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader])
-    table = mod.MlMotifInfo
+    table = mod.MlMotifsInfo
 
-    def as_motif(self, entry):
-        return self.table(
-            motif_id=entry['motif_id'],
-            ml_release_id=entry['release_id'],
-            type=entry['loop_type'],
-            handle=entry['name']['handle'],
-            version=entry['name']['version'],
-            comment=entry['name']['comment'],
-        )
+    def motifs(self, cached):
+        data = []
+        for entry in cached['motifs']:
+            data.append(self.table(
+                motif_id=entry['motif_id'],
+                ml_release_id=cached['release'],
+                type=cached['loop_type'],
+                handle=entry['name']['handle'],
+                version=entry['name']['version'],
+                comment=entry['comment'],
+            ))
+        return data
 
     def data(self, pair, **kwargs):
-        cached = self.cached(pair[0])
-        return [self.as_motif(entry) for entry in cached['motifs']]
+        loop_type, release = pair
+        cached = self.cached(loop_type)
+        if not cached:
+            raise core.InvalidState("No cached data")
+        return self.motifs(cached)
