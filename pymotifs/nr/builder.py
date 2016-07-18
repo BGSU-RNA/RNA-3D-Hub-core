@@ -382,15 +382,21 @@ class RepresentativeFinder(core.Base):
             return representative
         return max(possible, key=self.sorting_key)
 
-    def __call__(self, group):
+    def __call__(self, possible):
         """Find the representative for the group.
 
-        :group: List of ifes to find the best for.
+        :param list group: List of ifes to find the best for.
         :returns: The ife which should be the representative.
         """
 
-        if not group:
+        if not possible:
             raise core.InvalidState("No ifes given")
+
+        # Prefer any xray over any cyro em, as cyro modesl are generally built
+        # using x-ray and not yet carefully modeled.
+        group = [ife for ife in possible if ife['method'] == 'X-RAY DIFFRACTION']
+        if not group:
+            group = possible
 
         best = self.naive_best(group)
         if not best:

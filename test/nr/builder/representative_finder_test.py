@@ -125,6 +125,44 @@ class IncreaseTest(StageTest):
         self.assertEquals(self.increase({'a': 0}, {'a': 0}), 0)
 
 
+class CyroEmTest(StageTest):
+    loader_class = RepresentativeFinder
+
+    def rep(self, group):
+        return self.loader(group)
+
+    def test_it_prefers_xray_to_cyro(self):
+        chains = [
+            {'bp': 10, 'length': 10, 'resolution': 4, 'id': 'b', 'method': 'ELECTRON MICROSCOPY'},
+            {'bp': 10, 'length': 10, 'resolution': 4, 'id': 'a', 'method': 'X-RAY DIFFRACTION'},
+        ]
+        assert self.rep(chains) == chains[1]
+
+    def test_it_will_use_xray_with_worse_resolution_than_cyro(self):
+        chains = [
+            {'bp': 10, 'length': 10, 'resolution': 2, 'id': 'b', 'method': 'ELECTRON MICROSCOPY'},
+            {'bp': 10, 'length': 10, 'resolution': 3, 'id': 'a', 'method': 'X-RAY DIFFRACTION'},
+            {'bp': 20, 'length': 10, 'resolution': 3, 'id': 'c', 'method': 'X-RAY DIFFRACTION'},
+        ]
+        assert self.rep(chains) == chains[2]
+
+    def test_it_will_use_xray_over_better_bp_nt_cyro(self):
+        chains = [
+            {'bp': 20, 'length': 20, 'resolution': 2, 'id': 'b', 'method': 'ELECTRON MICROSCOPY'},
+            {'bp': 10, 'length': 10, 'resolution': 3, 'id': 'a', 'method': 'X-RAY DIFFRACTION'},
+            {'bp': 10, 'length': 10, 'resolution': 4, 'id': 'c', 'method': 'X-RAY DIFFRACTION'},
+        ]
+        assert self.rep(chains) == chains[1]
+
+    def test_it_will_use_cryo_if_only_cyro(self):
+        chains = [
+            {'bp': 10, 'length': 10, 'resolution': 3, 'id': 'b', 'method': 'ELECTRON MICROSCOPY'},
+            {'bp': 20, 'length': 20, 'resolution': 3, 'id': 'a', 'method': 'ELECTRON MICROSCOPY'},
+            {'bp': 20, 'length': 10, 'resolution': 3, 'id': 'c', 'method': 'ELECTRON MICROSCOPY'},
+        ]
+        assert self.rep(chains) == chains[1]
+
+
 class PickingRepresentativeTest(StageTest):
     loader_class = RepresentativeFinder
 

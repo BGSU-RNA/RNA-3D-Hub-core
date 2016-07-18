@@ -93,6 +93,7 @@ class Grouper(core.Base):
                                   IfeInfo.pdb_id.label('pdb'),
                                   IfeInfo.length,
                                   PdbInfo.resolution,
+                                  PdbInfo.experimental_technique.label('method'),
                                   ChainSpecies.species_id.label('species')).\
                 join(IfeInfo,
                      IfeInfo.pdb_id == ChainInfo.pdb_id).\
@@ -131,6 +132,7 @@ class Grouper(core.Base):
                     'chains': chains,
                     'db_id': chains[0]['db_id'],
                     'resolution': chains[0]['resolution'],
+                    'method': chains[0]['method'],
                 })
 
         if not groups:
