@@ -19,7 +19,7 @@ class ComputingDataTest(StageTest):
     def test_it_loads_all_data(self):
         assert len(self.ordering) == 81
 
-    def test_it_creates_valid_data(self):
+    def test_it_creates_correct_data(self):
         assert self.ordering[0] == {
             'motif_id': 'IL_85752.1',
             'loop_id': 'IL_1ET4_003',
@@ -27,3 +27,6 @@ class ComputingDataTest(StageTest):
             'original_order': 1,
             'similarity_order': 1,
         }
+
+    def test_it_creates_valid_data(self):
+        assert self.loader.table(**self.ordering[0])
