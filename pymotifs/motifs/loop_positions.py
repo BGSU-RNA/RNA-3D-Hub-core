@@ -10,17 +10,24 @@ from pymotifs.motifs.release import Loader as ReleaseLoader
 
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader, InfoLoader])
-    table = mod.MlLoopOrder
+    table = mod.MlLoopPositions
 
-    def as_position(self, entry):
-        return {
-            'motif_id': entry['motif_id'],
-            'loop_id': entry['positions']['loop_id'],
-            'ml_release_id': entry['release_id'],
-            'position': entry['positions']['position'],
-            'unit_id': entry['positions']['unit_id'],
-        }
+    def positions(self, cached):
+        data = []
+        for motif in cached['motifs']:
+            for position in motif['positions']:
+                data.append({
+                    'motif_id': motif['motif_id'],
+                    'loop_id': position['loop_id'],
+                    'ml_release_id': cached['release'],
+                    'position': position['position'],
+                    'unit_id': position['unit_id'],
+                })
+        return data
 
-    def data(self, pair, **kwargs):
-        cached = self.cached(pair[0])
-        return [self.as_position(entry) for entry in cached]
+    def data(self, release, **kwargs):
+        data = self.cached(NR_CACHE_NAME)
+        if not data:
+            raise core.InvalidState("Missing cached data")
+
+        return self.positions(data)
