@@ -17,14 +17,14 @@ class Loader(core.SimpleLoader):
     dependencies = set([ReleaseLoader])
     save_loops = True
 
-    def __init__(self, *args, **kwargs):
-        super(Loader, self).__init__(*args, **kwargs)
-
     def query(self, session, pdb):
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
     def remove(self, *args, **kwargs):
         self.logger.info("We don't actually remove data for loop extractor")
+
+    def sorted(self, units):
+        return ','.join(sorted(units.split(',')))
 
     def _next_loop_number_string(self, current):
         """Compute the next loop number string. This will pad to either 3 or 6
@@ -94,7 +94,8 @@ class Loader(core.SimpleLoader):
         data = []
         for index in xrange(count):
             loop = loops[index].AllLoops_table
-            loop_id = self._get_loop_id(loop.full_id, pdb, loop_type, mapping)
+            full_id = self.sorted(loop.full_id)
+            loop_id = self._get_loop_id(full_id, pdb, loop_type, mapping)
             loops[index].Filename = loop_id
 
             data.append(mod.LoopInfo(
@@ -107,7 +108,7 @@ class Loader(core.SimpleLoader):
                 r_seq=loop.r_seq,
                 nwc_seq=loop.nwc,
                 r_nwc_seq=loop.r_nwc,
-                unit_ids=loop.full_id,
+                unit_ids=full_id,
                 loop_name=loop.loop_name))
 
         if self.save_loops:
@@ -153,6 +154,11 @@ class Loader(core.SimpleLoader):
         with self.session() as session:
             query = self.query(session, pdb_id).filter_by(type=loop_type)
             for result in query:
+                unit_ids = self.sorted(result.unit_ids)
+                if unit_ids in mapping:
+                    self.logger.error("Loop %s duplicates %s",
+                                      result.loop_id, mapping[unit_ids])
+                    continue
                 mapping[result.unit_ids] = result.loop_id
         return mapping
 

@@ -43,6 +43,14 @@ class MappingTests(StageTest):
         self.assertTrue('_' not in seperators)
 
 
+class SortingUnitsTest(StageTest):
+    loader_class = Loader
+
+    def test_it_sorts_units(self):
+        val = self.loader.sorted('b,c,a,d')
+        assert val == 'a,b,c,d'
+
+
 class GettingLoopIdsTest(StageTest):
     loader_class = Loader
 
