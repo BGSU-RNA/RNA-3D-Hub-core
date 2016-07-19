@@ -29,10 +29,17 @@ class Loader(BaseLoader):
                 })
         return data
 
+    def no_parents(self, data):
+        classes = [d['classes'] for d in data['parent_counts']]
+        counts = [abs(d['unchanged']) + abs(d['updated']) for d in classes]
+        return not sum(counts)
+
     def data(self, release, **kwargs):
         data = self.cached(NR_CACHE_NAME)
         if not data:
             raise core.InvalidState("No grouping loaded")
         if data['parent'] == data['release']:
             raise core.Skip("First release has no parents")
+        if self.no_parents(data):
+            raise core.Skip("Parent counts shows no parents")
         return self.parents(release, data['groups'])
