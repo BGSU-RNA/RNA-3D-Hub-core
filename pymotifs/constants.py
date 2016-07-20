@@ -20,7 +20,7 @@ BOOTSTRAPPING = {
     'steps': [
         {
             'stage': 'update',
-            'args': {},
+            'args': {'skip_dependencies': True},
             'pdbs': ["157D", "1CGM", "1DUH", "1EIY", "1EKD", "1ET4", "1F5H",
                      "1G59", "1GID", "1I9K", "1IBK", "1J5E", "1KOG", "1MDG",
                      "1UTD", "1VY4", "1WMQ", "1X8W", "2G32", "2HOJ", "2HOK",
@@ -63,14 +63,14 @@ BOOTSTRAPPING = {
                      "1EIY", "1EKD", "1ET4", "1F5H", "1F5U", "1FCW", "1FEU",
                      "1FG0", "1FJG", "1G59", "1GID", "1GRZ", "1I9K", "1IBK",
                      "1J5E", "1KOG", "1MDG", "1S72", "1UTD", "1VY4", "1WMQ",
-                     "1X8W", "1YZ9", "2G32", "2HOJ", "2HOK", "2HOL", "2HOM",
-                     "2HOO", "2IL9", "2MKN", "2QQP", "2UUA", "3CPW", "3CW5",
-                     "3GPQ", "3J9M", "3T4B", "4A3G", "4A3J", "4CS1", "4FTE",
-                     "4MCE", "4MGM", "4MGN", "4NGG", "4NMG", "4OAU", "4OQ8",
-                     "4OQ9", "4PMI", "4Q0B", "4R3I", "4TUE", "4V42", "4V4Q",
-                     "4V6F", "4V6M", "4V6R", "4V7R", "4V7W", "4V88", "4V8G",
-                     "4V8H", "4V8I", "4V9K", "4V9O", "4V9Q", "4X4N", "4YBB",
-                     "5AJ3"]
+                     "1X8W", "1YZ9", "1Z7F", "2G32", "2HOJ", "2HOK", "2HOL",
+                     "2HOM", "2HOO", "2IL9", "2MKN", "2QQP", "2UUA", "3CPW",
+                     "3CW5", "3GPQ", "3J9M", "3T4B", "4A3G", "4A3J", "4CS1",
+                     "4FTE", "4MCE", "4MGM", "4MGN", "4NGG", "4NMG", "4OAU",
+                     "4OQ8", "4OQ9", "4PMI", "4Q0B", "4R3I", "4TUE", "4V42",
+                     "4V4Q", "4V6F", "4V6M", "4V6R", "4V7R", "4V7W", "4V88",
+                     "4V8G", "4V8H", "4V8I", "4V9K", "4V9O", "4V9Q", "4X4N",
+                     "4YBB", "5AJ3"]
         }
     ]
 }
