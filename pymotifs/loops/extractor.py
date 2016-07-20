@@ -160,7 +160,7 @@ class Loader(core.SimpleLoader):
                     self.logger.error("Loop %s duplicates %s",
                                       result.loop_id, mapping[unit_ids])
                     continue
-                mapping[result.unit_ids] = result.loop_id
+                mapping[unit_ids] = result.loop_id
         return mapping
 
     def data(self, pdb, **kwargs):
