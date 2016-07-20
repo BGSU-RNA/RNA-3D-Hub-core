@@ -121,8 +121,8 @@ class RealDataTest(StageTest):
     @pytest.mark.skip()
     def test_1Z7F(self):
         corrected = self.loader(['1Z7F|2|A|A|5||||6_765',
-                                '1Z7F|2|A|C|6||||6_765',
-                                '1Z7F|2|A|U|7||||6_765',
+                                 '1Z7F|2|A|C|6||||6_765',
+                                 '1Z7F|2|A|U|7||||6_765',
                                  '1Z7F|1|A|A|10',
                                  '1Z7F|1|A|A|11',
                                  '1Z7F|1|A|U|12'])
