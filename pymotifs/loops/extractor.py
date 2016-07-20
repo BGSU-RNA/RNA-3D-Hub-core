@@ -8,13 +8,14 @@ from pymotifs import core
 from pymotifs.utils import matlab
 from pymotifs import models as mod
 from pymotifs.loops.release import Loader as ReleaseLoader
+from pymotifs.pdbs.info import Loader as PdbLoader
 
 
 class Loader(core.SimpleLoader):
     loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
-    dependencies = set([ReleaseLoader])
+    dependencies = set([ReleaseLoader, PdbLoader])
     save_loops = True
 
     def query(self, session, pdb):
