@@ -14,9 +14,6 @@ from pymotifs import models as mod
 from pymotifs.utils import releases as rel
 
 from pymotifs.motifs.builder import Builder
-from pymotifs.motifs.builder import MutualDiscrepancyLoader
-
-from pymotifs.motifs.cluster import ClusterMotifs
 
 from pymotifs.nr.release import Loader as NrReleaseLoader
 from pymotifs.loops.release import Loader as LoopReleaseLoader
@@ -40,9 +37,6 @@ BLACKLIST = set([
     'HL_2IL9_002',
     'HL_2IL9_005'
 ])
-
-"""The filename to cache all loop discrepancy data in"""
-DISC_CACHE = 'disc'
 
 
 class Loader(core.MassLoader):
@@ -94,7 +88,7 @@ class Loader(core.MassLoader):
 
             return [result.ife_id for result in query]
 
-    def loops(self, loop_release_id, loop_type, ifes):
+    def loops(self, loop_release_id, loop_type, given):
         """Get the list of loop ids to use in clustering. These loops must be
         from IFE's in the given list and marked as valid in the loop quality
         step.
@@ -104,13 +98,12 @@ class Loader(core.MassLoader):
         :param list ifes: A list of ifes to find loops in.
         """
 
-        found = []
-        for ife in ifes:
+        found = set()
+        for current in given:
             with self.session() as session:
                 loops = mod.LoopInfo
                 quality = mod.LoopQa
                 pos = mod.LoopPositions
-                ifes = mod.IfeInfo
                 ife_chains = mod.IfeChains
                 chain_info = mod.ChainInfo
                 units = mod.UnitInfo
@@ -118,23 +111,26 @@ class Loader(core.MassLoader):
                     join(quality, quality.loop_id == loops.loop_id).\
                     join(pos, pos.loop_id == loops.loop_id).\
                     join(units, units.unit_id == pos.unit_id).\
-                    join(chain_info, chain_info.chain_name == units.chain).\
+                    join(chain_info,
+                         (chain_info.chain_name == units.chain) &
+                         (chain_info.pdb_id == units.pdb_id)).\
                     join(ife_chains,
                          ife_chains.chain_id == chain_info.chain_id).\
                     filter(quality.status == 1).\
                     filter(quality.loop_release_id == loop_release_id).\
                     filter(loops.type == loop_type).\
-                    filter(ife_chains.ife_id == ife).\
+                    filter(ife_chains.ife_id == current).\
+                    filter(~loops.loop_id.in_(BLACKLIST)).\
                     distinct()
 
-                found.extend(result.loop_id for result in query)
+                found.update(result.loop_id for result in query)
 
         if not loops:
             raise core.InvalidState("No loops to cluster for %s" %
                                     loop_release_id)
-        return found
+        return sorted(found)
 
-    def current_id(self):
+    def current_id(self, **kwargs):
         """Get the current motif release id and the index. If there is no
         release then the release_id is 0.0 and the index is 0.
 
@@ -142,22 +138,22 @@ class Loader(core.MassLoader):
         """
 
         with self.session() as session:
-            query = session.query(mod.MlReleases.ml_releases_id,
+            query = session.query(mod.MlReleases.ml_release_id,
                                   mod.MlReleases.index).\
                 order_by(desc(mod.MlReleases.index)).\
                 limit(1)
 
             if query.count() == 0:
-                return '0.0', 0
+                return ('0.0', 0)
 
             current = query.one()
-            return current.nr_release_id, current.index
+            return (current.ml_release_id, current.index)
 
-    def load_and_cache(self, type, releases, folder):
+    def load_and_cache(self, loop_type, releases, folder):
         """This will load the result of running the pipeline and cache the
         data.
 
-        :param str type: The loop type, IL, HL, etc
+        :param str loop_type: The loop type, IL, HL, etc
         :param Release relases: The releases to use.
         :param str folder: The path to the results of the pipeline.
         :returns: Nothing
@@ -165,22 +161,7 @@ class Loader(core.MassLoader):
 
         builder = Builder(self.config, self.session)
         motifs = builder(releases.parent, releases.current, folder)
-        self.cache(motifs, type)
-
-    def cache_discrepancies(self, loop_type, folder):
-        """This will load and cache discrepancies. If we have already cached
-        some data we will append to the cached data as well.
-
-        :param str loop_type: The loop type, IL, HL, etc.
-        :param str folder: The path to where the motif data was computed.
-        """
-
-        loader = MutualDiscrepancyLoader(self.config, self.session)
-        data = loader(folder)
-        current = self.cached('disc')
-        if current is not None:
-            current.append(data)
-        self.cache(data, DISC_CACHE)
+        self.cache(loop_type, motifs)
 
     def nr_release_id(self, before_date=None, **kwargs):
         """Get the nr release. If no before_date is given then we get the
@@ -201,8 +182,7 @@ class Loader(core.MassLoader):
                 filter_by(date=before_date)
 
             if query.count() != 1:
-                raise core.InvalidState("No nr release for date %s",
-                                        before_date)
+                raise core.InvalidState("No nr release on %s", before_date)
             return query.one().nr_release_id
 
     def loop_release_id(self, before_date=None, **kwargs):
@@ -222,25 +202,18 @@ class Loader(core.MassLoader):
                 filter_by(date=before_date)
 
             if query.count() != 1:
-                raise core.InvalidState("No loop release for date %s",
-                                        before_date)
+                raise core.InvalidState("No loop release on %s", before_date)
             return query.one().loop_release_id
 
-    def motif_relase_id(self, **kwargs):
+    def next_motif_release_id(self, **kwargs):
         """Get the next motif id.
 
         :returns: The next motif id.
         """
 
         motif_release, index = self.current_id()
-        parent = motif_release
         mode = self.config['release_mode']['motifs']
-        current = rel.next_id(motif_release, mode=mode)
-
-        if parent == '0.0':
-            parent = current
-
-        return current
+        return rel.next_id(motif_release, mode=mode)
 
     def releases(self, **kwargs):
         """Compute all releases.
@@ -248,10 +221,17 @@ class Loader(core.MassLoader):
         :returns: A Release object describing all releases to use.
         """
 
+        parent, parent_index = self.current_id(**kwargs)
+        next_release = self.next_motif_release_id(**kwargs)
+        if parent == '0.0':
+            parent = next_release
+
         return Releases(
             self.loop_release_id(**kwargs),
             self.nr_release_id(**kwargs),
-            *self.loop_release_id(**kwargs)
+            parent,
+            parent_index,
+            next_release,
         )
 
     def cluster(self, loop_type, releases, ifes, **kwargs):
@@ -270,16 +250,13 @@ class Loader(core.MassLoader):
         :returns: None. All data is cached and nothing is returned.
         """
 
-        cluster = ClusterMotifs(self.config, self.session.maker)
         loops = self.loops(releases.loop, loop_type, ifes)
         self.logger.info("Found %i loops", len(loops))
-
         self.logger.info("Starting to cluster all %s", loop_type)
-        folder = cluster(loop_type, loops)
-        self.logger.info("Done clustering all %s into %s",
-                         loop_type, folder)
-        self.load_and_cache(loop_type, releases, folder)
-        self.cache_discrepancies(loop_type, folder)
+        builder = Builder(self.config, self.session)
+        motifs = builder(loop_type, releases.parent, releases.current, loops)
+        self.cache(loop_type, motifs)
+        self.logger.info("Done clustering %s", loop_type)
 
     def data(self, pdbs, **kwargs):
         """Compute the releases for the given pdbs. This will cluster the
@@ -303,8 +280,8 @@ class Loader(core.MassLoader):
         data = []
         for loop_type in self.types:
             self.cluster(loop_type, releases, ifes, **kwargs)
-            data.append(mod.MlReleases(id=releases.current,
-                                       parent_motif_release_id=releases.parent,
+            data.append(mod.MlReleases(ml_release_id=releases.current,
+                                       parent_ml_release_id=releases.parent,
                                        date=now,
                                        type=loop_type,
                                        index=releases.parent_index + 1,
