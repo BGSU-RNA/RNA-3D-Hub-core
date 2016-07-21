@@ -4,6 +4,7 @@ import collections as coll
 
 from test import StageTest
 
+from pymotifs.motifs.builder import Known
 from pymotifs.motifs.builder import Builder
 from pymotifs.motifs.builder import Combiner
 
@@ -149,6 +150,27 @@ class CombinerTest(StageTest):
         }
 
 
+class KnownTests(StageTest):
+    loader_class = Known
+
+    def test_it_can_load_all_loops(self):
+        val = self.loader.loops('IL', '1.0')
+        assert len(val) == 0
+
+    def test_it_can_load_all_handles(self):
+        val = self.loader.handles()
+        assert len(val) == 0
+
+    def test_it_can_load_all_names(self):
+        val = self.loader.names('IL', '1.0')
+        assert len(val) == 0
+        # assert '' in val
+
+    def test_it_can_load_all_motifs(self):
+        val = self.loader.motifs('IL', '1.0')
+        assert val == []
+
+
 class BuilderTests(StageTest):
     loader_class = Builder
     directory = 'test/files/motifs/IL_20120905_0000/'
@@ -163,16 +185,21 @@ class BuilderTests(StageTest):
         }
 
     @pytest.mark.skip()
-    def test_it_can_load_all_known_handles(self):
+    def test_it_can_compute_parent_counts(self):
+        # val = self.loader.parent_counts(
         pass
 
     @pytest.mark.skip()
-    def test_it_can_load_known_motifs(self):
+    def test_it_can_name_all_new_motifs(self):
         pass
+        # data = self.loader('IL', '0.0', '0.1',
 
     @pytest.mark.skip()
-    def test_it_can_all_new_motifs(self):
-        pass
+    def test_it_assigns_the_release_ids(self):
+        loops = []
+        data = self.loader('IL', '0.1', '0.2', loops)
+        assert data['release'] == '0.2'
+        assert data['parent'] == '0.1'
 
     @pytest.mark.skip()
     def test_it_can_load_all_release_data(self):
