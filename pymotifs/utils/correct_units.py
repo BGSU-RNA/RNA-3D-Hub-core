@@ -14,6 +14,12 @@ Unit = coll.namedtuple('Unit', ['pdb', 'model', 'chain', 'component_number',
 
 
 class Correcter(core.Base):
+    """This is a class to try and correct some of the mistakes that are present
+    in our mappings from old to new style ids. Basically, this compares a unit
+    id to the known unit ids. If there is not the same id some corrections are
+    attempted to make the units match.
+    """
+
     def normalized_mapping(self, pdb_id):
         """This produces a dictonary that can be used to correct bad unit ids.
         Some of the loops stored after we migrated the database have incorrect
@@ -154,3 +160,41 @@ class Correcter(core.Base):
                                                 require_all=require_all))
 
         return valid
+
+
+class TranslateCorrectly(core.Base):
+    """Translate and correct some unit ids. This will use the translate tools
+    to turn an old style to a new style id followed by attempting to correct
+    the units id.
+    """
+
+    def correct(self, pdb, unit_ids):
+        """Correct the units in a given pdb file.
+
+        :param str pdb: The PDB id to use.
+        :param list unit_ids: The unit ids to correct.
+        :returns: The corrected unit ids.
+        """
+
+        correcter = Correcter(self.config, self.session)
+        mapping = correcter.normalized_mapping(pdb)
+        units = [correcter.as_unit(uid) for uid in unit_ids]
+        corrected = correcter.correct_structure(pdb, mapping, units)
+        return [mapping[u] for u in corrected]
+
+    def __call__(self, pdb, unit_ids, sort=False):
+        """Translate and correct unit ids in a given structure.
+
+        :param str pdb: The PDB to use.
+        :param str unit_ids: A comma seperated string of unit ids.
+        :param bool sort: Weather or not we should sort the unit ids.
+        :returns: A list sorted or not of the translated and corrected unit ids
+        given.
+        """
+
+        translator = Translator(self.session)
+        translated = translator(unit_ids)
+        corrected = self.correct(pdb, translated)
+        if sort:
+            return sorted(corrected)
+        return corrected
