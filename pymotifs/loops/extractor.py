@@ -2,11 +2,15 @@
 all loops and then will save them in the correct location as specificed by
 'locations'. It also stores the the loop information into the database.
 """
+
 import os
+import functools as ft
 
 from pymotifs import core
 from pymotifs.utils import matlab
 from pymotifs import models as mod
+from pymotifs.utils.correct_units import Correcter
+
 from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
 
@@ -22,10 +26,32 @@ class Loader(core.SimpleLoader):
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
     def remove(self, *args, **kwargs):
+        """Does not actually remove from the DB. We always want the loop ids to
+        be consitent so we do not automatically remove loops.
+        """
+
         self.logger.info("We don't actually remove data for loop extractor")
 
-    def sorted(self, units):
-        return ','.join(sorted(units.split(',')))
+    def normalizer(self, pdb):
+        """Create a callable that will normalize a comma seperated string of
+        unit ids for a particular structure.
+
+        :param str pdb: The PDB id to use for normalization.
+        :returns: A callable that will translate a comma seperated string of
+        unit ids in the structure.
+        """
+
+        corrector = Correcter(self.config, self.session)
+        mapping = corrector.normalized_mapping(pdb)
+
+        def fn(unit_string):
+            unit_ids = unit_string.split(',')
+            units = [corrector.as_unit(uid) for uid in unit_ids]
+            corrected = corrector.correct_structure(pdb, mapping, units,
+                                                    require_all=True)
+            return tuple(sorted(mapping[unit] for unit in corrected))
+
+        return fn
 
     def _next_loop_number_string(self, current):
         """Compute the next loop number string. This will pad to either 3 or 6
@@ -65,7 +91,7 @@ class Loader(core.SimpleLoader):
 
         return mapping[units]
 
-    def _extract_loops(self, pdb, loop_type, mapping):
+    def _extract_loops(self, pdb, loop_type, mapping, normalize):
         """Uses matlab to extract the loops for a given structure of a specific
         type. This will also save the loop files into the correct place.
 
@@ -95,7 +121,7 @@ class Loader(core.SimpleLoader):
         data = []
         for index in xrange(count):
             loop = loops[index].AllLoops_table
-            full_id = self.sorted(loop.full_id)
+            full_id = normalize(loop.full_id)
             loop_id = self._get_loop_id(full_id, pdb, loop_type, mapping)
             loops[index].Filename = loop_id
 
@@ -109,7 +135,7 @@ class Loader(core.SimpleLoader):
                 r_seq=loop.r_seq,
                 nwc_seq=loop.nwc,
                 r_nwc_seq=loop.r_nwc,
-                unit_ids=full_id,
+                unit_ids=','.join(full_id),
                 loop_name=loop.loop_name))
 
         if self.save_loops:
@@ -140,7 +166,7 @@ class Loader(core.SimpleLoader):
 
         self.logger.debug("Saved loop mat files")
 
-    def _mapping(self, pdb_id, loop_type):
+    def _mapping(self, pdb_id, loop_type, normalizer):
         """Compute a mapping from the nts to the loop id.  This is used
         for setting ids by either looking up the old known id or creating a new
         one if no one is found.
@@ -155,7 +181,7 @@ class Loader(core.SimpleLoader):
         with self.session() as session:
             query = self.query(session, pdb_id).filter_by(type=loop_type)
             for result in query:
-                unit_ids = self.sorted(result.unit_ids)
+                unit_ids = normalizer(result.unit_ids)
                 if unit_ids in mapping:
                     self.logger.error("Loop %s duplicates %s",
                                       result.loop_id, mapping[unit_ids])
@@ -164,8 +190,15 @@ class Loader(core.SimpleLoader):
         return mapping
 
     def data(self, pdb, **kwargs):
+        """Compute the loops in the given structure.
+
+        :param str pdb: The structure to get loops for.
+        :returns: A list of all the loops.
+        """
+
         data = []
+        normalizer = self.normalizer(pdb)
         for loop_type in self.loop_types:
-            mapping = self._mapping(pdb, loop_type)
-            data.extend(self._extract_loops(pdb, loop_type, mapping))
+            mapping = self._mapping(pdb, loop_type, normalizer)
+            data.extend(self._extract_loops(pdb, loop_type, mapping, normalizer))
         return data

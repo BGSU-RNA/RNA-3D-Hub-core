@@ -22,41 +22,61 @@ class MappingTests(StageTest):
     loader_class = Loader
 
     def test_can_get_a_correct_mapping_for_HL(self):
-        mapping = self.loader._mapping('4V4Q', 'HL')
+        normalizer = self.loader.normalizer('4V4Q')
+        mapping = self.loader._mapping('4V4Q', 'HL', normalizer)
         self.assertEqual(206, len(mapping))
 
     def test_can_get_a_correct_mapping_for_IL(self):
-        mapping = self.loader._mapping('4V4Q', 'IL')
+        normalizer = self.loader.normalizer('4V4Q')
+        mapping = self.loader._mapping('4V4Q', 'IL', normalizer)
         self.assertEqual(354, len(mapping))
 
     def test_can_get_a_correct_mapping_for_J3(self):
-        mapping = self.loader._mapping('4V4Q', 'J3')
+        normalizer = self.loader.normalizer('4V4Q')
+        mapping = self.loader._mapping('4V4Q', 'J3', normalizer)
         self.assertEqual(52, len(mapping))
 
     def test_gets_empty_mapping_for_missing_structure(self):
-        val = self.loader._mapping('0000', 'IL')
+        normalizer = self.loader.normalizer('4V4Q')
+        val = self.loader._mapping('0000', 'IL', normalizer)
         self.assertEquals({}, val)
 
     def test_has_no_old_style_ids(self):
-        mapping = self.loader._mapping('1GID', 'HL')
+        normalizer = self.loader.normalizer('1GID')
+        mapping = self.loader._mapping('1GID', 'HL', normalizer)
         seperators = [key[4] for key in mapping.keys()]
         self.assertTrue('_' not in seperators)
 
 
-class SortingUnitsTest(StageTest):
+class NormalizingUnitsTest(StageTest):
     loader_class = Loader
 
-    def test_it_sorts_units(self):
-        val = self.loader.sorted('b,c,a,d')
-        assert val == 'a,b,c,d'
+    def setUp(self):
+        super(NormalizingUnitsTest, self).setUp()
+        self.normalize = self.loader.normalizer('1DUH')
 
+    def test_it_will_normalize_units(self):
+        units = (
+            '1DUH|1|A|A|39,'
+            '1DUH|1|A|A|42,'
+            '1DUH|1|A|U|50||||4_555,'
+            '1DUH|2|A|A|42||||4_555,'
+        )
+
+        assert self.normalize(units) == tuple(sorted([
+            '1DUH|1|A|A|39',
+            '1DUH|1|A|A|42',
+            '1DUH|1|A|U|50||||4_555',
+            '1DUH|1|A|A|42||||4_555',
+        ]))
 
 class GettingLoopIdsTest(StageTest):
     loader_class = Loader
 
     def setUp(self):
         super(GettingLoopIdsTest, self).setUp()
-        self.mapping = self.loader._mapping('4V4Q', 'IL')
+        self.normalizer = self.loader.normalizer('4V4Q')
+        self.mapping = self.loader._mapping('4V4Q', 'IL', self.normalizer)
 
     def test_generates_a_new_id_for_an_unknown_loop(self):
         val = self.loader._get_loop_id('bob', '4V4Q', 'IL', self.mapping)
@@ -68,22 +88,22 @@ class GettingLoopIdsTest(StageTest):
         self.assertEquals(self.mapping['bob'], 'IL_4V4Q_355')
 
     def test_uses_old_id_for_known_loop(self):
-        nts = (
-            '4V4Q|1|AA|A|607,'
-            '4V4Q|1|AA|A|608,'
-            '4V4Q|1|AA|A|609,'
-            '4V4Q|1|AA|A|629,'
-            '4V4Q|1|AA|A|630,'
-            '4V4Q|1|AA|C|611,'
-            '4V4Q|1|AA|C|612,'
-            '4V4Q|1|AA|C|631,'
-            '4V4Q|1|AA|G|606,'
-            '4V4Q|1|AA|G|628,'
-            '4V4Q|1|AA|G|633,'
-            '4V4Q|1|AA|U|605,'
-            '4V4Q|1|AA|U|610,'
-            '4V4Q|1|AA|U|632'
-        )
+        nts = tuple(sorted([
+            '4V4Q|1|AA|A|607',
+            '4V4Q|1|AA|A|608',
+            '4V4Q|1|AA|A|609',
+            '4V4Q|1|AA|A|629',
+            '4V4Q|1|AA|A|630',
+            '4V4Q|1|AA|C|611',
+            '4V4Q|1|AA|C|612',
+            '4V4Q|1|AA|C|631',
+            '4V4Q|1|AA|G|606',
+            '4V4Q|1|AA|G|628',
+            '4V4Q|1|AA|G|633',
+            '4V4Q|1|AA|U|605',
+            '4V4Q|1|AA|U|610',
+            '4V4Q|1|AA|U|632',
+        ]))
         val = self.loader._get_loop_id(nts, '4V4Q', 'IL', self.mapping)
         self.assertEquals('IL_4V4Q_033', val)
 
