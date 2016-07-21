@@ -1,3 +1,7 @@
+"""Load the loop positions into the database. This will run the matlab code to
+extract the loops and place them into the database.
+"""
+
 import os
 import csv
 
@@ -57,6 +61,9 @@ class Loader(core.Loader):
             return data
 
     def known(self, pdb):
+        """Determine the known
+        """
+
         mapping = {}
         with self.session() as session:
             query = session.query(LoopPositions).\
@@ -69,7 +76,16 @@ class Loader(core.Loader):
 
         return mapping
 
-    def annotation_file(self, pdb):
+    def annotations(self, pdb, remove=True):
+        """Call matlab and parse the annotations to create a list of unit id to
+        loop mappings.
+
+        :param str pdb: The pdb id to use.
+        :param Bool remove: Flag to indicate if the produced file should be
+        removed.
+        :returns: The annotations produced by matlab.
+        """
+
         mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         path = str(os.path.join(self.precomputed, pdb))
         try:
@@ -82,25 +98,46 @@ class Loader(core.Loader):
         if err_msg != '':
             raise matlab.MatlabFailed(err_msg)
 
-        return output_file
-
-    def annotations(self, pdb, remove=True):
-        output_file = self.annotation_file(pdb)
         data = self.parse(output_file)
         if remove:
             os.remove(output_file)
         return data
 
+    def loop_units_mapping(self, pdb):
+        """Load the mapping from loop id to the unit ids stored as part of the
+        unit_ids field. This is used for sanity checking the given unit to loop
+        positions mapping. This will load all loops mapping.
+
+        :param str pdb: The PDB id to use.
+        :returns: A dictonary mapping from loop id to unit ids.
+        """
+
+        with self.session() as session:
+            query = session.query(LoopInfo).\
+                filter_by(pdb_id=pdb)
+
+            mapping = {}
+            for result in query:
+                mapping[result.loop_id] = set(result.unit_ids.split(','))
+            return mapping
+
     def data(self, pdb, **kwargs):
         """Update loop_positions table by loading data from the mat files
         stored in the PrecomputedData folder
+
+        :param str pdb: The PDB id to get the loop positions for.
         """
+
         data = []
         known = self.known(pdb)
+        mapping = self.loop_units_mapping(pdb)
         for row in self.annotations(pdb):
             entry = known.get((row['loop_id'], row['position']), {})
             if not entry:
                 self.logger.info("New loop %s found", row['loop_id'])
+
+            if row['unit_id'] not in mapping[row['loop_id']]:
+                raise core.InvalidState("Unit not part of expected units")
 
             entry.update(row)
             entry['loop_id'] = row['loop_id']
