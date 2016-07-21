@@ -29,7 +29,7 @@ class UtilsTest(StageTest):
     loader_class = Correcter
 
     def test_can_turn_a_unit_id_to_unit(self):
-        unit = Unit(model=2, chain='A', component_number=6,
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6,
                     insertion_code=None, alt_id=None, symmetry='6_765')
         assert self.loader.as_unit('1Z7F|2|A|C|6||||6_765') == unit
 
@@ -38,43 +38,43 @@ class CorrectorsTest(StageTest):
     loader_class = Correcter
 
     def test_will_set_model_to_one_if_needed(self):
-        unit = Unit(model=2, chain='A', component_number=6,
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6,
                     insertion_code=None, alt_id=None, symmetry='6_765')
-        ans = Unit(model=1, chain='A', component_number=6, insertion_code=None,
+        ans = Unit(pdb='1Z7F', model=1, chain='A', component_number=6, insertion_code=None,
                    alt_id=None, symmetry='6_765')
         assert self.loader.correct_model(unit) == ans
 
     def test_will_set_model_to_one_if_not_needed(self):
-        unit = Unit(model=2, chain='A', component_number=6,
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6,
                     insertion_code=None, alt_id=None, symmetry='1_555')
         assert self.loader.correct_model(unit) is None
 
     def test_will_correct_alt_id_if_needed(self):
-        unit = Unit(model=2, chain='A', component_number=6,
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6,
                     insertion_code=None, alt_id=None, symmetry='6_765')
-        ans = Unit(model=2, chain='A', component_number=6,
-                   insertion_code=None, alt_id='a', symmetry='6_765')
+        ans = Unit(pdb='1Z7F', model=2, chain='A', component_number=6,
+                   insertion_code=None, alt_id='A', symmetry='6_765')
         assert self.loader.correct_alt_id(unit) == ans
 
     def will_not_correct_alt_id_if_not_needed(self):
-        unit = Unit(model=2, chain='A', component_number=6,
-                    insertion_code=None, alt_id='b', symmetry='6_765')
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6,
+                    insertion_code=None, alt_id='B', symmetry='6_765')
         assert self.loader.correct_alt_id(unit) is None
 
     def test_will_correct_alt_id_and_model_if_needed(self):
-        unit = Unit(model=2, chain='A', component_number=6,
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6,
                     insertion_code=None, alt_id=None, symmetry='6_765')
-        ans = Unit(model=1, chain='A', component_number=6,
-                   insertion_code=None, alt_id='a', symmetry='6_765')
+        ans = Unit(pdb='1Z7F', model=1, chain='A', component_number=6,
+                   insertion_code=None, alt_id='A', symmetry='6_765')
         assert self.loader.correct_model_and_alt_id(unit) == ans
 
     def test_will_not_correct_alt_id_and_model_if_not_needed(self):
-        unit = Unit(model=1, chain='A', component_number=6,
-                    insertion_code=None, alt_id='b', symmetry='6_765')
+        unit = Unit(pdb='1Z7F', model=1, chain='A', component_number=6,
+                    insertion_code=None, alt_id='B', symmetry='6_765')
         assert self.loader.correct_model_and_alt_id(unit) is None
 
     def test_can_do_nothing_to_unit(self):
-        unit = Unit(model=2, chain='A', component_number=6, insertion_code=None,
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
                     alt_id=None, symmetry='6_765')
         assert self.loader.correct_nothing(unit) == unit
 
@@ -91,7 +91,7 @@ class CorrectingTest(StageTest):
     def correct(self, unit_id):
         mapping = self.build('1Z7F|1|A|A|10', '1Z7F|1|A|A|10||||6_765',
                              '1Z7F|1|A|A|11', '1Z7F|1|A|A|11||||6_765',
-                             '1Z7F|1|A|A|12||a', '1Z7F|1|A|A|12||a||6_765',
+                             '1Z7F|1|A|A|12||A', '1Z7F|1|A|A|12||A||6_765',
                              )
         unit = self.loader.as_unit(unit_id)
         corrected = self.loader.correct(mapping, unit)
@@ -106,13 +106,59 @@ class CorrectingTest(StageTest):
         assert self.correct('1Z7F|2|A|A|11||||6_765') == '1Z7F|1|A|A|11||||6_765'
 
     def test_it_will_correct_alt_id(self):
-        assert self.correct('1Z7F|1|A|A|12') == '1Z7F|1|A|A|12||a'
+        assert self.correct('1Z7F|1|A|A|12') == '1Z7F|1|A|A|12||A'
 
     def test_it_will_correct_model_and_alt_id(self):
-        assert self.correct('1Z7F|2|A|A|12||||6_765') == '1Z7F|1|A|A|12||a||6_765'
+        assert self.correct('1Z7F|2|A|A|12||||6_765') == '1Z7F|1|A|A|12||A||6_765'
 
     def test_will_fail_if_cannot_correct(self):
         self.correct('bob') == None
+
+
+class CorrectingStructureTest(StageTest):
+    loader_class = Correcter
+
+    def build(self, *unit_ids):
+        mapping = {}
+        for unit_id in unit_ids:
+            mapping[self.loader.as_unit(unit_id)] = unit_id
+        return mapping
+
+    def correct_structure(self, *unit_ids):
+        mapping = self.build('1Z7F|1|A|A|10', '1Z7F|1|A|A|10||||6_765',
+                             '1Z7F|1|A|A|11', '1Z7F|1|A|A|11||||6_765',
+                             '1Z7F|1|A|A|12||A', '1Z7F|1|A|A|12||A||6_765',
+                             )
+        units = [self.loader.as_unit(uid) for uid in unit_ids]
+        corrected = self.loader.correct_structure('1Z7F', mapping, units)
+        return [mapping[unit] for unit in corrected]
+
+    def test_it_can_correct_a_structure(self):
+        val = self.correct_structure('1Z7F|1|A|A|10',
+                                     '1Z7F|2|A|A|10||||6_765',
+                                     '1Z7F|2|A|A|12||||6_765',
+                                     '1Z7F|1|A|A|12')
+        assert val == ['1Z7F|1|A|A|10',
+                       '1Z7F|1|A|A|10||||6_765',
+                       '1Z7F|1|A|A|12||A||6_765',
+                       '1Z7F|1|A|A|12||A']
+
+    def test_it_will_skip_units_from_different_structure(self):
+        val = self.correct_structure('1Z7F|1|A|A|10',
+                                     '2XXX|1|A|A|10',
+                                     '1Z7F|2|A|A|10||||6_765',
+                                     '1Z7F|1|A|A|12')
+        assert val == ['1Z7F|1|A|A|10',
+                       '1Z7F|1|A|A|10||||6_765',
+                       '1Z7F|1|A|A|12||A']
+
+    def test_it_will_fail_if_not_all_corrected(self):
+        with pytest.raises(core.InvalidState):
+            self.correct_structure('1Z7F|2|A|A|12||||6_765', '1Z7F|1|A|A|1')
+
+    def test_it_will_fail_if_not_unique_mapping(self):
+        with pytest.raises(core.InvalidState):
+            self.correct_structure('1Z7F|2|A|A|12||||6_765', '1Z7F|2|A|A|12||||6_765')
 
 
 class RealDataTest(StageTest):

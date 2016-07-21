@@ -9,7 +9,7 @@ from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
 
-Unit = coll.namedtuple('Unit', ['model', 'chain', 'component_number',
+Unit = coll.namedtuple('Unit', ['pdb', 'model', 'chain', 'component_number',
                                 'insertion_code', 'alt_id', 'symmetry'])
 
 
@@ -26,6 +26,7 @@ class Correcter(core.Base):
         """
         with self.session() as session:
             query = session.query(mod.UnitInfo.unit_id,
+                                  mod.UnitInfo.pdb_id.label('pdb'),
                                   mod.UnitInfo.model,
                                   mod.UnitInfo.chain,
                                   mod.UnitInfo.number.label('component_number'),
@@ -56,30 +57,51 @@ class Correcter(core.Base):
 
         parts = fuid.decode(unit_id)
         del parts['component_id']
-        del parts['pdb']
         del parts['atom_name']
         return Unit(**parts)
 
     def correct_nothing(self, unit):
-        return unit
+        """Do nothing to unit.
+
+        :param: The unit
+        :returns: The same unit.
+        """
+        return Unit(*unit)
 
     def correct_model(self, unit):
+        """If the model is not 1 and the symmetry operator is not 1_555 then
+        create a unit with model as 1. If that is not true this will return
+        None.
+
+        :param: The unit
+        """
+
         if unit.model != 1 and unit.symmetry != '1_555':
             return unit._replace(model=1)
         return None
 
     def correct_alt_id(self, unit):
+        """If the alt id is None, then try create a new unit with with alt id
+        'A', otherwise return None.
+        """
+
         if unit.alt_id is None:
-            return unit._replace(alt_id='a')
+            return unit._replace(alt_id='A')
         return None
 
     def correct_model_and_alt_id(self, unit):
+        """Alter a model and alt id if needed, if not returns None.
+        """
+
         if unit.alt_id is None and unit.model != 1 and \
                 unit.symmetry != '1_555':
-            return unit._replace(alt_id = 'a', model=1)
+            return unit._replace(alt_id = 'A', model=1)
         return None
 
     def correct(self, mapping, unit):
+        """Attempt to correct a single unit.
+        """
+
         corrections = [self.correct_nothing, self.correct_model,
                        self.correct_alt_id, self.correct_model_and_alt_id]
         for correction in corrections:
@@ -92,6 +114,35 @@ class Correcter(core.Base):
                 self.logger.debug("Attempt failed")
         return None
 
+    def correct_structure(self, pdb, mapping, units, require_all=True):
+        """Correct units from a single structure.
+
+        :param str pdb: The PDB id to use.
+        :param dict mapping: The mapping to use.
+        :param list units: The list of Unit's to correct.
+        :returns: A list of the corrected units.
+        """
+
+        valid = []
+        for unit in units:
+            if unit.pdb != pdb:
+                continue
+
+            fixed = self.correct(mapping, unit)
+            if not fixed:
+                msg = "Could not correct {unit}".format(unit=str(unit))
+                if require_all:
+                    raise core.InvalidState(msg)
+                else:
+                    self.logger.error(msg)
+                continue
+            valid.append(fixed)
+
+        if len(valid) != len(set(valid)):
+            raise core.InvalidState("Did not produce unique normalization")
+
+        return valid
+
     def __call__(self, unit_ids, require_all=True):
         units = [self.as_unit(uid) for uid in unit_ids]
         pdbs = set(unit.pdb for unit in units)
@@ -99,20 +150,7 @@ class Correcter(core.Base):
         valid = []
         for pdb in pdbs:
             normalization = self.normalization(pdb)
-            for unit in units:
-                if unit.pdb != pdb:
-                    continue
-
-                fixed = self.correct(unit)
-                if not fixed:
-                    msg = "Could not correct %s" % unit
-                    if require_all:
-                        raise core.InvalidState(msg)
-                    else:
-                        self.logger.error(msg)
-                valid.append(fixed)
-
-        if len(valid) != len(set(valid)):
-            raise core.InvalidState("Did not produce unique normalization")
+            valid.extend(self.correct_structure(pdb, normalization, units,
+                                                require_all=require_all))
 
         return valid
