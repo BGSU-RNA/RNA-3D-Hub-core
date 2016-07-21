@@ -4,6 +4,7 @@ extract the loops and place them into the database.
 
 import os
 import csv
+import functools as ft
 
 from pymotifs import core
 from pymotifs import utils
@@ -121,6 +122,23 @@ class Loader(core.Loader):
                 mapping[result.loop_id] = set(result.unit_ids.split(','))
             return mapping
 
+    def normalizer(self, pdb):
+        """Create a callable that will normalize a comma seperated string of
+        unit ids for a particular structure.
+
+        :param str pdb: The PDB id to use for normalization.
+        :returns: A callable that will translate a comma seperated string of
+        unit ids in the structure.
+        """
+
+        correcter = Correcter(self.config, self.session)
+        mapping = corrector.normalized_mapping(pdb)
+        def fn(unit_id):
+            unit = correcter.as_unit(unit_id)
+            valid = correcter.correct(pdb, mapping, unit, require_all=True)
+            return mapping[valid]
+        return fn
+
     def data(self, pdb, **kwargs):
         """Update loop_positions table by loading data from the mat files
         stored in the PrecomputedData folder
@@ -131,11 +149,13 @@ class Loader(core.Loader):
         data = []
         known = self.known(pdb)
         mapping = self.loop_units_mapping(pdb)
+        normalizer = self.normalizer(pdb)
         for row in self.annotations(pdb):
             entry = known.get((row['loop_id'], row['position']), {})
             if not entry:
                 self.logger.info("New loop %s found", row['loop_id'])
 
+            row['unit_id'] = normalizer(row['unit_id'])
             if row['unit_id'] not in mapping[row['loop_id']]:
                 raise core.InvalidState("Unit not part of expected units")
 
