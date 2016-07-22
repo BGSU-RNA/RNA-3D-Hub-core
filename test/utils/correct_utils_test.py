@@ -78,6 +78,18 @@ class CorrectorsTest(StageTest):
                     alt_id=None, symmetry='6_765')
         assert self.loader.correct_nothing(unit) == unit
 
+    def test_can_correct_to_viral_operator(self):
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
+                    alt_id=None, symmetry='1_555')
+        ans = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
+                   alt_id=None, symmetry='P_1')
+        assert self.loader.correct_to_viral_p_1_operator(unit) == ans
+
+    def test_will_not_alter_if_non_standard_operator(self):
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
+                    alt_id=None, symmetry='6_765')
+        assert self.loader.correct_to_viral_p_1_operator(unit) is None
+
 
 class CorrectingTest(StageTest):
     loader_class = Correcter
@@ -92,6 +104,7 @@ class CorrectingTest(StageTest):
         mapping = self.build('1Z7F|1|A|A|10', '1Z7F|1|A|A|10||||6_765',
                              '1Z7F|1|A|A|11', '1Z7F|1|A|A|11||||6_765',
                              '1Z7F|1|A|A|12||A', '1Z7F|1|A|A|12||A||6_765',
+                             '1Z7F|2|A|A|12||A||P_1'
                              )
         unit = self.loader.as_unit(unit_id)
         corrected = self.loader.correct(mapping, unit)
@@ -111,9 +124,11 @@ class CorrectingTest(StageTest):
     def test_it_will_correct_model_and_alt_id(self):
         assert self.correct('1Z7F|2|A|A|12||||6_765') == '1Z7F|1|A|A|12||A||6_765'
 
+    def test_will_correct_viral_if_needed(self):
+        assert self.correct('1Z7F|2|A|A|12||A') == '1Z7F|2|A|A|12||A||P_1'
+
     def test_will_fail_if_cannot_correct(self):
         self.correct('bob') == None
-
 
 class CorrectingStructureTest(StageTest):
     loader_class = Correcter

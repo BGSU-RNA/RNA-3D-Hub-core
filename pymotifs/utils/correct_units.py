@@ -86,6 +86,11 @@ class Correcter(core.Base):
             return unit._replace(model=1)
         return None
 
+    def correct_to_viral_p_1_operator(self, unit):
+        if unit.symmetry == '1_555':
+            return unit._replace(symmetry='P_1')
+        return None
+
     def correct_alt_id(self, unit):
         """If the alt id is None, then try create a new unit with with alt id
         'A', otherwise return None.
@@ -109,7 +114,8 @@ class Correcter(core.Base):
         """
 
         corrections = [self.correct_nothing, self.correct_model,
-                       self.correct_alt_id, self.correct_model_and_alt_id]
+                       self.correct_alt_id, self.correct_model_and_alt_id,
+                       self.correct_to_viral_p_1_operator]
         for correction in corrections:
             norm = correction(unit)
             if norm:
