@@ -117,6 +117,11 @@ class Correcter(core.Base):
             return unit._replace(symmetry='P_1', alt_id='A')
         return None
 
+    def correct_model_only(self, unit):
+        if unit.model == 2:
+            return unit._replace(model=1)
+        return None
+
     def correct(self, mapping, unit):
         """Attempt to correct a single unit.
         """
@@ -124,7 +129,8 @@ class Correcter(core.Base):
         corrections = [self.correct_nothing, self.correct_model,
                        self.correct_alt_id, self.correct_model_and_alt_id,
                        self.correct_to_viral_p_1_operator,
-                       self.correct_viral_and_alt]
+                       self.correct_viral_and_alt,
+                       self.correct_model_only]
         for correction in corrections:
             norm = correction(unit)
             if norm:
