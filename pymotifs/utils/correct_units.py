@@ -139,7 +139,7 @@ class Correcter(core.Base):
                     self.logger.debug("Attempt worked")
                     if norm != unit:
                         self.logger.info("Corrected %s to %s using: %s", unit,
-                                         norm, correction)
+                                         norm, correction.__name__)
                     return norm
                 self.logger.debug("Attempt failed")
         return None
