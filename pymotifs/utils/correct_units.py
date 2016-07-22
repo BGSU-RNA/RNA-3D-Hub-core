@@ -122,6 +122,9 @@ class Correcter(core.Base):
                 self.logger.debug("Attempting %s", correction.__name__)
                 if norm in mapping:
                     self.logger.debug("Attempt worked")
+                    if norm != unit:
+                        self.logger.info("Corrected %s to %s using: %s", unit,
+                                         norm, correction)
                     return norm
                 self.logger.debug("Attempt failed")
         return None
