@@ -85,6 +85,20 @@ class CorrectorsTest(StageTest):
                    alt_id=None, symmetry='P_1')
         assert self.loader.correct_to_viral_p_1_operator(unit) == ans
 
+    def test_can_alter_to_viral_with_alt_id(self):
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
+                    alt_id=None, symmetry='1_555')
+        ans = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
+                   alt_id='A', symmetry='P_1')
+        assert self.loader.correct_viral_and_alt(unit) == ans
+
+    def test_knows_not_to_alter_viral_and_alt(self):
+        unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
+                    alt_id=None, symmetry='6_555')
+        alt = unit._replace(symmetry='1_555', alt_id='B')
+        assert self.loader.correct_viral_and_alt(unit) is None
+        assert self.loader.correct_viral_and_alt(alt) is None
+
     def test_will_not_alter_if_non_standard_operator(self):
         unit = Unit(pdb='1Z7F', model=2, chain='A', component_number=6, insertion_code=None,
                     alt_id=None, symmetry='6_765')
@@ -126,6 +140,9 @@ class CorrectingTest(StageTest):
 
     def test_will_correct_viral_if_needed(self):
         assert self.correct('1Z7F|2|A|A|12||A') == '1Z7F|2|A|A|12||A||P_1'
+
+    def test_will_correct_to_viral_with_alt(self):
+        assert self.correct('1Z7F|2|A|A|12') == '1Z7F|2|A|A|12||A||P_1'
 
     def test_will_fail_if_cannot_correct(self):
         self.correct('bob') == None

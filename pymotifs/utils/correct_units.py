@@ -109,13 +109,22 @@ class Correcter(core.Base):
             return unit._replace(alt_id = 'A', model=1)
         return None
 
+    def correct_viral_and_alt(self, unit):
+        """Alter the symmetry to P_1 and alt id to A if possible.
+        """
+
+        if unit.symmetry == '1_555' and unit.alt_id is None:
+            return unit._replace(symmetry='P_1', alt_id='A')
+        return None
+
     def correct(self, mapping, unit):
         """Attempt to correct a single unit.
         """
 
         corrections = [self.correct_nothing, self.correct_model,
                        self.correct_alt_id, self.correct_model_and_alt_id,
-                       self.correct_to_viral_p_1_operator]
+                       self.correct_to_viral_p_1_operator,
+                       self.correct_viral_and_alt]
         for correction in corrections:
             norm = correction(unit)
             if norm:
