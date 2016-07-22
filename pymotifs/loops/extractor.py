@@ -13,13 +13,14 @@ from pymotifs.utils.correct_units import Correcter
 
 from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
+from pymotifs.units.info import Loader as UnitLoader
 
 
 class Loader(core.SimpleLoader):
     loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
-    dependencies = set([ReleaseLoader, PdbLoader])
+    dependencies = set([ReleaseLoader, PdbLoader, UnitLoader])
     save_loops = True
 
     def query(self, session, pdb):
