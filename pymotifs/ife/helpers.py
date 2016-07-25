@@ -209,8 +209,9 @@ class IfeGroup(object):
     def id(self):
         if self.is_structured:
             chains = self.chains(structured=True)
-            return IFE_SEPERATOR.join(c.id for c in chains)
-        return self.chains()[0].id
+        else:
+            chains = self.chains()
+        return IFE_SEPERATOR.join(c.id for c in chains)
 
     def chains(self, structured=None):
         fn = lambda c: True

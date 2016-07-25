@@ -99,17 +99,17 @@ class IfeGroupTest(TestCase):
                        IfeChain(pdb='0111', chain='D', internal=6, model=10))
         self.assertEquals('0111|10|D+0111|10|A', val.id)
 
-    def test_if_no_structured_in_id_uses_first(self):
+    def test_if_no_structured_in_id_uses_all(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=2, model=1),
                        IfeChain(pdb='0111', chain='C', internal=0, model=2),
                        IfeChain(pdb='0111', chain='D', internal=2, model=3))
-        self.assertEquals('0111|1|A', val.id)
+        self.assertEquals('0111|1|A+0111|3|D+0111|2|C', val.id)
 
     def test_duplicate_additions_do_nothing(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4, model=4),
                        IfeChain(pdb='0111', chain='C', internal=0, model=4))
         val.add(IfeChain(pdb='0111', chain='A', internal=4, model=4))
-        self.assertEquals('0111|4|A', val.id)
+        self.assertEquals('0111|4|A+0111|4|C', val.id)
 
     def test_dispatches_length_to_integral(self):
         val = IfeGroup(IfeChain(pdb='0111', chain='A', internal=4, length=5))
