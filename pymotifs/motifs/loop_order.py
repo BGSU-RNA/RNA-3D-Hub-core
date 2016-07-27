@@ -1,7 +1,10 @@
 """Load the loop ordering data.
 """
 
+from pymotifs import core
 from pymotifs import models as mod
+
+from pymotifs.constants import NR_CACHE_NAME
 
 from pymotifs.motifs.utils import BaseLoader
 from pymotifs.motifs.info import Loader as InfoLoader
@@ -25,8 +28,9 @@ class Loader(BaseLoader):
                 })
         return data
 
-    def data(self, release, **kwargs):
-        data = self.cached(NR_CACHE_NAME)
-        if not data:
-            raise core.InvalidState("Missing cached data")
+    def data(self, pair, **kwargs):
+        loop_type, release = pair
+        cached = self.cached(loop_type)
+        if not cached:
+            raise core.InvalidState("Missing cached data: %s", loop_type)
         return self.ordering(cached)

@@ -26,6 +26,11 @@ class Loader(BaseLoader):
                 })
         return data
 
+    def no_parents(self, data):
+        classes = [d['motifs'] for d in data['parent_counts']]
+        counts = [abs(d['unchanged']) + abs(d['updated']) for d in classes]
+        return not sum(counts)
+
     def data(self, release, **kwargs):
         data = self.cached(NR_CACHE_NAME)
         if not data:
@@ -33,5 +38,7 @@ class Loader(BaseLoader):
 
         if data['release'] == data['parent']:
             raise core.Skip("No parents for first release")
+        if self.no_parents(data):
+            raise core.Skip("Parent counts show no parents")
 
         return self.parents(data)

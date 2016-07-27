@@ -303,7 +303,7 @@ class Builder(core.Base):
         return {
             'motifs': motifs,
             'loop_type': loop_type,
-            'counts': self.parent_counts(parents, motifs),
+            'parent_counts': self.parent_counts(parents, motifs),
             'discrepancies': self.mutual_discrepancy(directory),
             'release': release_id,
             'parent': parent_id,

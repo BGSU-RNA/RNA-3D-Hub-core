@@ -21,7 +21,10 @@ class BaseLoader(core.SimpleLoader):
 
     __metaclass__ = abc.ABCMeta
 
-    def to_process(self, *pdbs, **kwargs):
+    def mark_processed(self, pair, **kwargs):
+        super(BaseLoader, self).mark_processed(pair[0], **kwargs)
+
+    def to_process(self, pdbs, **kwargs):
         current, _ = ReleaseLoader(self.config, self.session).current_id()
         data = []
         for loop_type in ReleaseLoader.types:
@@ -29,13 +32,22 @@ class BaseLoader(core.SimpleLoader):
             if not cached:
                 raise core.InvalidState("No cached data")
 
-            if cached[0]['release_id'] != current:
+            if cached['release'] != current:
                 raise core.InvalidState("Caching does not match excepted ID")
             data.append((loop_type, current))
         return data
 
+    def __self_query__(self, session, pair):
+        info = mod.MlMotifsInfo
+        return session.query(info).\
+            filter(info.type == pair[0]).\
+            filter(info.ml_release_id == pair[1])
+
     def query(self, session, pair):
-        info = mod.MlMotifInfo
+        info = mod.MlMotifsInfo
+        if self.table == info:
+            return self.__self_query__(session, pair)
+
         return session.query(self.table).\
             join(info, (info.motif_id == self.table.motif_id &
                         info.ml_release_id == self.table.ml_release_id)).\
