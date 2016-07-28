@@ -156,8 +156,13 @@ class Loader(core.Loader):
                 self.logger.info("New loop %s found", row['loop_id'])
 
             row['unit_id'] = normalizer(row['unit_id'])
+            if row['loop_id'] not in mapping:
+                raise core.InvalidState("Unknown loop: %s" % row['loop_id'])
+
             if row['unit_id'] not in mapping[row['loop_id']]:
-                raise core.InvalidState("Unit not part of expected units")
+                msg = "Unit %s not part of expected units %s"
+                entry = (row['unit_id'], mapping[row['loop_id']])
+                raise core.InvalidState(msg % entry)
 
             entry.update(row)
             entry['loop_id'] = row['loop_id']
