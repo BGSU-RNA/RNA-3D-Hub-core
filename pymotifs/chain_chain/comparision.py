@@ -333,8 +333,9 @@ class Loader(core.Loader):
         """
 
         data = []
-        for ife1, ife2 in self.aligned_ifes(corr_id):
-            self.logger.info("Comparing %s, %s",
-                             ife1['name'], ife2['name'])
+        ifes = self.aligned_ifes(corr_id)
+        for index, (ife1, ife2) in enumerate(ifes):
+            self.logger.info("Comparing %i: %s, %s",
+                             index, ife1['name'], ife2['name'])
             data.extend(self.entry(ife1, ife2, corr_id))
         return data
