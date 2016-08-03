@@ -22,6 +22,7 @@ from pymotifs import models as mod
 from pymotifs import config as conf
 from pymotifs.version import __VERSION__
 from pymotifs.dispatcher import Dispatcher
+from pymotifs import reports
 
 
 def run(ctx, name, ids, config=None, engine=None, **kwargs):
@@ -227,3 +228,27 @@ def ss_align(ctx, pdb, **kwargs):
     """
     kwargs.update(ctx.parent.objs)
     run(ctx, 'ss.position_mapping', [pdb], **kwargs)
+
+
+@cli.group(short_help='Create reports')
+@click.pass_context
+def report(ctx):
+    """Commands dealing with creating reports
+    """
+    ctx.objs = ctx.parent.objs
+
+
+@report.command('nr', short_help='Create a report for an nr set')
+@click.option('--resolution', default='all', type=str,
+              help='The resolution cutoff to use')
+@click.argument('version')
+@click.pass_context
+def report_nr(ctx, **kwargs):
+    """Create a report of the NR set.
+
+    This will detail the memebers of each set and information about them. It
+    creates a CSV that is written to stdout.
+    """
+
+    kwargs.update(ctx.parent.objs)
+    reports.nr(**kwargs)
