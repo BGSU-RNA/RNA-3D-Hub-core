@@ -249,6 +249,18 @@ def report_nr(ctx, **kwargs):
     This will detail the memebers of each set and information about them. It
     creates a CSV that is written to stdout.
     """
-
     kwargs.update(ctx.parent.objs)
     reports.nr(**kwargs)
+
+
+@report.command('species', short_help='Create report about species assignments')
+@click.pass_context
+def report_species(ctx, **kwargs):
+    """Create a report about the species assignments.
+
+    This will look for sequences assigned to species that seem unlikely or are
+    assigned to more than one species. It attempts to find assignments that
+    seem unlikely.
+    """
+    kwargs.update(ctx.parent.objs)
+    reports.species(**kwargs)

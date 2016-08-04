@@ -5,7 +5,6 @@ import collections as coll
 
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
-from pymotifs.reports.setup import setup
 
 from sqlalchemy.sql.expression import func
 
@@ -170,11 +169,10 @@ def sorter(entry):
     pass
 
 
-def report(release, resolution, **kwargs):
+def report(maker, release, resolution, **kwargs):
     """Create a report about the NR set
     """
 
-    maker = setup(kwargs['engine'])
     info = Info(maker)
     with maker() as session:
         classes = mod.NrClasses
