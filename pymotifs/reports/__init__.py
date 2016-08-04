@@ -7,6 +7,7 @@ from pymotifs.core import Session
 from pymotifs import models as mod
 
 from pymotifs.reports import nr as _nr
+from pymotifs.reports.setup import setup
 from pymotifs.reports import species as _species
 
 
