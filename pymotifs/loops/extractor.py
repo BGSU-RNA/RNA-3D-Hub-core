@@ -9,7 +9,6 @@ import functools as ft
 from pymotifs import core
 from pymotifs.utils import matlab
 from pymotifs import models as mod
-from pymotifs.utils.correct_units import Correcter
 
 from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
@@ -42,16 +41,9 @@ class Loader(core.SimpleLoader):
         unit ids in the structure.
         """
 
-        corrector = Correcter(self.config, self.session)
-        mapping = corrector.normalized_mapping(pdb)
-
         def fn(unit_string):
             unit_ids = unit_string.split(',')
-            units = [corrector.as_unit(uid) for uid in unit_ids]
-            corrected = corrector.correct_structure(pdb, mapping, units,
-                                                    require_all=True)
-            return tuple(sorted(mapping[unit] for unit in corrected))
-
+            return tuple(sorted(unit for unit in unit_ids))
         return fn
 
     def _next_loop_number_string(self, current):
