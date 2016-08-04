@@ -23,6 +23,7 @@ from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
+from pymotifs.constants import NR_MAX_DISCREPANCY
 
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
@@ -203,7 +204,10 @@ class Loader(core.Loader):
                      mod.ChainInfo.chain_id == mod.IfeChains.chain_id).\
                 join(exp_mapping,
                      exp_mapping.chain_id == mod.IfeChains.chain_id).\
+                join(mod.PdbInfo,
+                     mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.IfeInfo.new_style == 1).\
+                filter(mod.PdbInfo.resolution <= NR_MAX_DISCREPANCY).\
                 filter(mod.ExpSeqChainMapping.exp_seq_id == exp_seq_id)
 
             pdbs = set()

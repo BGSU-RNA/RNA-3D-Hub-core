@@ -127,3 +127,6 @@ MOTIF_GROUP_NAME = '{type}_{handle}.{version}'
 
 """Filename to cache to NR data to"""
 NR_CACHE_NAME = 'nr'
+
+"""Max discrepancy to allow for chain chain discrepancies"""
+NR_MAX_DISCREPANCY = 4.0
