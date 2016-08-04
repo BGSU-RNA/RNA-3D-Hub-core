@@ -1,6 +1,8 @@
 """This is a module to find the species assignments that look suspicious. The
 goal is to produce a report that PDB can use to fix these sorts of issues.
 """
+import re
+
 from pymotifs import models as mod
 
 from pymotifs.utils import row2dict
@@ -13,7 +15,7 @@ HEADERS = [
     'Problem',
 ]
 
-BAD_SPECIES = re.pattern('^\w+ sp\.')
+BAD_SPECIES = re.compile('^\w+ sp\.')
 
 
 def assignments(maker, **kwargs):
