@@ -8,6 +8,7 @@ from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 from pymotifs.constants import EQUIVELANT_PAIRS
 from pymotifs.constants import SYNTHENIC_SPECIES_ID
 from pymotifs.constants import NR_MIN_HOMOGENEOUS_SIZE
+from pymotifs.constants import NR_MAX_DISCREPANCY
 
 from pymotifs.models import PdbInfo
 from pymotifs.models import ChainInfo
@@ -215,6 +216,10 @@ class Grouper(core.Base):
     def has_good_discrepancy(self, all_discrepancy, group1, group2):
         db_id1 = group1['db_id']
         db_id2 = group2['db_id']
+        if group1['resolution'] > NR_MAX_DISCREPANCY or \
+                group2['resolution'] > NR_MAX_DISCREPANCY:
+            return True
+
         if not all_discrepancy:
             return True
 
