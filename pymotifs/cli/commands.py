@@ -18,11 +18,13 @@ from pymotifs.cli.params import PDB
 from pymotifs.constants import BOOTSTRAPPING
 from pymotifs.email import Emailer
 
+from pymotifs import reports
+from pymotifs.core import Session
 from pymotifs import models as mod
 from pymotifs import config as conf
 from pymotifs.version import __VERSION__
 from pymotifs.dispatcher import Dispatcher
-from pymotifs import reports
+from pymotifs.utils.correct_units import TableCorrector
 
 
 def run(ctx, name, ids, config=None, engine=None, **kwargs):
@@ -228,6 +230,48 @@ def ss_align(ctx, pdb, **kwargs):
     """
     kwargs.update(ctx.parent.objs)
     run(ctx, 'ss.position_mapping', [pdb], **kwargs)
+
+@cli.group(short_help="A group of commands for correcting issues in the db")
+@click.pass_context
+def correct(ctx):
+    """Correct isues in the database.
+
+    During the migration in the format of the database there were a variety of
+    issues found and raised. For example, it was found that not all old style
+    ids were translated to correct new style. This group of commands exists to
+    make correcting these issues easy.
+    """
+    ctx.objs = ctx.parent.objs
+
+
+@correct.command('units', short_help='Correct unit ids in some table')
+@click.option('--size', default=1000, type=int,
+              help='Number of rows to change at once')
+@click.option('--translate', default=False, is_flag=True,
+              help='If unit ids should be translated to new style as well')
+@click.argument('column', type=str)
+@click.pass_context
+def correct_units(ctx, column, **kwargs):
+    """Correct a column of unit ids in the database.
+
+    This will go through a column in the database and attempt to correct the
+    unit ids. This is useful because some old style ids were translated in
+    correctly. In addition, we can also try to translate old style if needed.
+    This will fail if any unit id in the column is unfixable. It can also
+    handle a column that is a comma seperated string of unit ids.
+
+    Running translation requires that the __pdb_unit_id_correspondence table
+    exists. Running correction requires that the unit_info table is populated
+    with all units from all structures that will be corrected.
+    """
+    kwargs.update(ctx.parent.objs)
+    mod.reflect(kwargs['engine'])
+    table_name, name = column.split('.')
+    table_name = mod.camelize_classname(table_name)
+    table = getattr(mod, table_name)
+    session = Session(sessionmaker(kwargs['engine']))
+    corrector = TableCorrector(kwargs['config'], session)
+    corrector(table, name, **kwargs)
 
 
 @cli.group(short_help='Create reports')

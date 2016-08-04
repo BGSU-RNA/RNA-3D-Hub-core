@@ -1,6 +1,7 @@
 """This package contains tools to try and correct poorly translated unit ids.
 """
 
+import itertools as it
 import collections as coll
 
 import fr3d.unit_ids as fuid
@@ -8,6 +9,7 @@ import fr3d.unit_ids as fuid
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
+from pymotifs.utils import grouper
 
 Unit = coll.namedtuple('Unit', ['pdb', 'model', 'chain', 'component_number',
                                 'insertion_code', 'alt_id', 'symmetry'])
@@ -140,7 +142,7 @@ class Correcter(core.Base):
                     if norm != unit:
                         self.logger.info("Corrected %s to %s using: %s", unit,
                                          norm, correction.__name__)
-                    return norm
+                    return mapping[norm]
                 self.logger.debug("Attempt failed")
         return None
 
@@ -179,7 +181,7 @@ class Correcter(core.Base):
 
         valid = []
         for pdb in pdbs:
-            normalization = self.normalization(pdb)
+            normalization = self.normalized_mapping(pdb)
             valid.extend(self.correct_structure(pdb, normalization, units,
                                                 require_all=require_all))
 
@@ -222,3 +224,41 @@ class TranslateCorrectly(core.Base):
         if sort:
             return sorted(corrected)
         return corrected
+
+
+class TableCorrector(core.Base):
+    """A class which will correct the unit ids in a column of a table in the
+    DB. It can also optionally translate old to new style ids.
+    """
+    seperator = ','
+
+    def unit_ids(self, row, name):
+        return getattr(row, name).split(self.seperator)
+
+    def __call__(self, table, column, size=1000, translate=False, **kwargs):
+        corrector = Correcter(self.config, self.session)
+        if translate:
+            corrector = TranslateCorrectly(self.config, self.session)
+
+        with self.session() as session:
+            query = session.query(table)
+
+            for chunk in grouper(size, query):
+                chunk = list(chunk)
+                unit_ids = [self.unit_ids(entry, column) for entry in chunk]
+                unit_ids = list(set(it.chain.from_iterable(unit_ids)))
+
+                try:
+                    corrected = corrector(unit_ids)
+                except Exception as err:
+                    self.logger.exception(err)
+                    self.logger.error("Could not translate all unit ids: %s",
+                                      '; '.join(unit_ids))
+                    raise err
+
+                mapping = dict(zip(unit_ids, corrected))
+                for row in chunk:
+                    old = self.unit_ids(row, column)
+                    updated = self.seperator.join([mapping[uid] for uid in old])
+                    setattr(row, column, updated)
+                session.commit()
