@@ -18,13 +18,12 @@ from pymotifs.cli.params import PDB
 from pymotifs.constants import BOOTSTRAPPING
 from pymotifs.email import Emailer
 
+from pymotifs import correct as _correct
 from pymotifs import reports
-from pymotifs.core import Session
 from pymotifs import models as mod
 from pymotifs import config as conf
 from pymotifs.version import __VERSION__
 from pymotifs.dispatcher import Dispatcher
-from pymotifs.utils.correct_units import TableCorrector
 
 
 def run(ctx, name, ids, config=None, engine=None, **kwargs):
@@ -265,13 +264,20 @@ def correct_units(ctx, column, **kwargs):
     with all units from all structures that will be corrected.
     """
     kwargs.update(ctx.parent.objs)
-    mod.reflect(kwargs['engine'])
-    table_name, name = column.split('.')
-    table_name = mod.camelize_classname(table_name)
-    table = getattr(mod, table_name)
-    session = Session(sessionmaker(kwargs['engine']))
-    corrector = TableCorrector(kwargs['config'], session)
-    corrector(table, name, **kwargs)
+    _correct.units(column, **kwargs)
+
+
+@correct.command('nr', short_help='Correct NR history counts')
+@click.argument('version', type=str)
+@click.pass_context
+def correct_nr_history(ctx, version, **kwargs):
+    """Correct NR history counts.
+
+    When we transitioned the logic of building NR sets, we messed up the logic
+    for getting the counts of changes correctly. This recomputes the counts for
+    a given NR release.
+    """
+    pass
 
 
 @cli.group(short_help='Create reports')
