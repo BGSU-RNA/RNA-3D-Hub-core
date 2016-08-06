@@ -67,10 +67,22 @@ def unlikely_species(data):
 
 
 def conflicting_species(chains):
-    species = set(c['species_name'] for c in chains)
-    species -= set([None, 'synthetic construct'])
+    species = coll.defaultdict(list)
+    for chain in chains:
+        current = chain['species_name']
+        species[current].append(chain)
+
+    species.pop(None, None)
+    species.pop('synthetic construct', None)
+
     if len(species) > 1:
-        return 'Multiple species assigned to this sequence'
+        data = []
+        for name, entries in species.items():
+            ids = [e['pdb_id'] + '|' + e['chain_name'] for e in entries]
+            ids = ' '.join(ids)
+            data.append('%s: (%s)' % (name, ids))
+        data = ', '.join(data)
+        return 'Multiple species assigned to this sequence: %s' % data
     return None
 
 
