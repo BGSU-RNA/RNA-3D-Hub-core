@@ -51,7 +51,7 @@ class LoadingSequencesTest(StageTest):
     loader_class = Loader
 
     def test_it_can_load_an_experimental_sequence(self):
-        ans = {'ids': [14174, 14175, 14176], 'sequence': 'AAA'}
+        ans = {'ids': [14174, 14175, 14176], 'sequence': 'CA'}
         assert self.loader.sequence(1) == ans
 
     def test_it_fails_given_invalid_id(self):
