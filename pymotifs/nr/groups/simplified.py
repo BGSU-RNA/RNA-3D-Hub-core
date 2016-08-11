@@ -1,38 +1,36 @@
+"""This is a module to compute a simple NR grouping. This grouping method uses
+the basic approach where each chains must have similar sequence, similar source
+organism and similar geometry. Other groups are possible, but this is simple
+one that shows the behavior we generally like.
+
+For details of this approach read:
+"""
+
 import functools as ft
 import itertools as it
 import collections as coll
+import operator as op
 
 from pymotifs import core
+from pymotifs import models as mod
 from pymotifs.utils import result2dict
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
-from pymotifs.constants import EQUIVELANT_PAIRS
+from pymotifs.constants import EQUIVALENT_PAIRS
 from pymotifs.constants import SYNTHENIC_SPECIES_ID
 from pymotifs.constants import NR_MIN_HOMOGENEOUS_SIZE
-from pymotifs.constants import NR_MAX_DISCREPANCY
-
-from pymotifs.models import PdbInfo
-from pymotifs.models import ChainInfo
-from pymotifs.models import ChainSpecies
-from pymotifs.models import IfeInfo
-from pymotifs.models import IfeChains
-from pymotifs.models import ChainChainSimilarity
-from pymotifs.models import ExpSeqInfo
-from pymotifs.models import ExpSeqPdb
+from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
+from pymotifs.constants import MIN_NT_DISCREPANCY
 
 from pymotifs.utils import connectedsets as cs
 from pymotifs.utils import correspondence as cr
 from pymotifs.utils.structures import SYNTHEIC
 
 
-def class_ordering(group):
-    rep = group['members'][0]['chains'][0]
-    return (rep['length'], rep['sequence'])
-
-
 def ranking_key(chain):
     """Compute a key to order members of each group. The ordering produced
     should place the representative structure as the first one in the
-    ordering.
+    ordering. This is the initial ordering which may be changed later when
+    computing the representative.
 
     :chain: The chain to produce a key for.
     :returns: A value that can be used to sort the chains in descending
@@ -55,7 +53,11 @@ class Grouper(core.Base):
     does make a note about those other chains.
     """
 
+    """A flag to determine if we should use discrepancies when splitting"""
     use_discrepancy = True
+
+    """A flag to force groups to have distinct species"""
+    must_enforce_single_species = True
 
     def valid_ife(self, ife):
         """Check if the given ife is valid. If not a warning statement will be
@@ -84,42 +86,42 @@ class Grouper(core.Base):
         """
 
         with self.session() as session:
-            query = session.query(ChainInfo.sequence,
-                                  ChainInfo.chain_name.label('name'),
-                                  IfeChains.chain_id.label('db_id'),
-                                  IfeChains.is_integral,
-                                  IfeChains.is_accompanying,
-                                  IfeInfo.ife_id.label('id'),
-                                  IfeInfo.bp_count.label('bp'),
-                                  IfeInfo.pdb_id.label('pdb'),
-                                  IfeInfo.length,
-                                  PdbInfo.resolution,
-                                  PdbInfo.experimental_technique.label('method'),
-                                  ChainSpecies.species_id.label('species')).\
-                join(IfeInfo,
-                     IfeInfo.pdb_id == ChainInfo.pdb_id).\
-                join(IfeChains,
-                     (IfeChains.ife_id == IfeInfo.ife_id) &
-                     (IfeChains.chain_id == ChainInfo.chain_id)).\
-                join(PdbInfo,
-                     PdbInfo.pdb_id == ChainInfo.pdb_id).\
-                join(ChainSpecies,
-                     ChainSpecies.chain_id == ChainInfo.chain_id).\
-                join(ExpSeqPdb,
-                     ExpSeqPdb.chain_id == ChainInfo.chain_id).\
-                join(ExpSeqInfo,
-                     ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
-                filter(IfeInfo.pdb_id == pdb).\
-                filter(IfeInfo.new_style == True).\
-                filter(ExpSeqInfo.was_normalized == 1).\
-                order_by(IfeChains.ife_id, IfeChains.index)
+            query = session.query(mod.ChainInfo.sequence,
+                                  mod.ChainInfo.chain_name.label('name'),
+                                  mod.IfeChains.chain_id.label('db_id'),
+                                  mod.IfeChains.is_integral,
+                                  mod.IfeChains.is_accompanying,
+                                  mod.IfeInfo.ife_id.label('id'),
+                                  mod.IfeInfo.bp_count.label('bp'),
+                                  mod.IfeInfo.pdb_id.label('pdb'),
+                                  mod.IfeInfo.length,
+                                  mod.PdbInfo.resolution,
+                                  mod.PdbInfo.experimental_technique.label('method'),
+                                  mod.ChainSpecies.species_id.label('species')).\
+                join(mod.IfeInfo,
+                     mod.IfeInfo.pdb_id == mod.ChainInfo.pdb_id).\
+                join(mod.IfeChains,
+                     (mod.IfeChains.ife_id == mod.IfeInfo.ife_id) &
+                     (mod.IfeChains.chain_id == mod.ChainInfo.chain_id)).\
+                join(mod.PdbInfo,
+                     mod.PdbInfo.pdb_id == mod.ChainInfo.pdb_id).\
+                join(mod.ChainSpecies,
+                     mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
+                join(mod.ExpSeqPdb,
+                     mod.ExpSeqPdb.chain_id == mod.ChainInfo.chain_id).\
+                join(mod.ExpSeqInfo,
+                     mod.ExpSeqInfo.exp_seq_id == mod.ExpSeqPdb.exp_seq_id).\
+                filter(mod.IfeInfo.pdb_id == pdb).\
+                filter(mod.IfeInfo.new_style == True).\
+                filter(mod.ExpSeqInfo.was_normalized == 1).\
+                order_by(mod.IfeChains.ife_id, mod.IfeChains.index)
 
             if query.count() == 0:
                 self.logger.warn("No ifes found for %s" % pdb)
                 return []
 
-            grouped = it.groupby(it.imap(result2dict, query),
-                                 lambda g: g['id'])
+            grouped = it.imap(result2dict, query)
+            grouped = it.groupby(grouped, op.itemgetter('id'))
             groups = []
             for ife_id, chains in grouped:
                 chains = list(chains)
@@ -142,15 +144,28 @@ class Grouper(core.Base):
         self.logger.info("Found %i ifes for %s", len(groups), pdb)
         return groups
 
-    def discrepancy(self, groups):
+    def discrepancies(self, groups):
+        """Load the discrepancies for the given groups. If use_discrepancy is
+        False this will return an empty dictionary. The returned data structure
+        will be a dictionary of dictionaries where the final values are Bools.
+        The keys in each dictionary are the chain ids which have been aligned.
+
+        :param list groups: The list of groups to use.
+        :returns: A nested dictionary of dictionaries.
+        """
+
+        if not self.use_discrepancy:
+            return {}
+
         chain_ids = []
         for group in groups:
             chain_ids.append(group['db_id'])
 
         with self.session() as session:
-            query = session.query(ChainChainSimilarity).\
-                filter(ChainChainSimilarity.chain_id_1.in_(chain_ids)).\
-                filter(ChainChainSimilarity.chain_id_2.in_(chain_ids))
+            sim = mod.ChainChainSimilarity
+            query = session.query(sim).\
+                filter(sim.chain_id_1.in_(chain_ids)).\
+                filter(sim.chain_id_2.in_(chain_ids))
 
             discrepancy = coll.defaultdict(dict)
             for result in query:
@@ -159,7 +174,10 @@ class Grouper(core.Base):
                 discrepancy[id1][id2] = result.discrepancy
                 discrepancy[id2][id1] = result.discrepancy
 
-        return dict(discrepancy)
+        discrepancy = dict(discrepancy)
+        if not discrepancy and self.use_discrepancy:
+            raise core.InvalidState("No discrepancy data to cluster with")
+        return discrepancy
 
     def alignments(self, chains):
         """Load the data about alignments between all pairs of chains.
@@ -170,10 +188,22 @@ class Grouper(core.Base):
 
         pdbs = list(set(chain['pdb'] for chain in chains))
         helper = cr.Helper(self.config, self.session.maker)
-        return helper.aligned_chains(pdbs)
+        alignments = helper.aligned_chains(pdbs)
+        if not alignments:
+            raise core.InvalidState("No alignments loaded")
+        return alignments
 
     def has_good_alignment(self, all_alignments, group1, group2):
         """Check if the longest chain of the two groups align well.
+
+        If there no alignments for the first group, or if there is no alignment
+        between the first and second we return False. Otherwise we return True
+        if there is a good alignment between the two groups.
+
+        :param dict all_alignments: The dictionary of alignments
+        :param dict group1: The first group.
+        :param dict group2: The second group.
+        :returns: True if there is a good alignment.
         """
 
         db_id1 = group1['db_id']
@@ -198,7 +228,13 @@ class Grouper(core.Base):
         return True
 
     def are_similar_species(self, group1, group2):
-        """Check if the longest chains of the two groups agree.
+        """Check if the longest chains of the two groups agree. Species are
+        similar if they are the same, or if either one is either synthetic or
+        None.
+
+        :param dict group1: The first group.
+        :param dict group2: The second group.
+        :returns: True if the two species are similar.
         """
 
         species1 = group1['species']
@@ -206,7 +242,7 @@ class Grouper(core.Base):
         if species1 != SYNTHEIC[0] and species2 != SYNTHEIC[0] and \
                 species1 is not None and species2 is not None \
                 and species1 != species2:
-            self.logger.debug("Splitting %s, %s: Different speciess (%i, %i)",
+            self.logger.debug("Splitting %s, %s: Different species (%i, %i)",
                               group1['id'], group2['id'], species1, species2)
             return False
 
@@ -214,13 +250,47 @@ class Grouper(core.Base):
         return True
 
     def has_good_discrepancy(self, all_discrepancy, group1, group2):
-        db_id1 = group1['db_id']
-        db_id2 = group2['db_id']
-        if group1['resolution'] > NR_MAX_DISCREPANCY or \
-                group2['resolution'] > NR_MAX_DISCREPANCY:
+        """Check if two groups have a good discrepancy or not. The discrepancy
+        matrix should be a nested dictionary as produced by the `discrepancy`
+        method. This only uses the longest chain of each group.
+
+        Because discrepancies were not always computed, there are some special
+        cases to consider. If use_discrepancy is False, or if not discrepancies
+        are computed then this always returns True. If either group has fewer
+        NTs then MIN_NT_DISCREPANCY, or the resolution is larger than
+        MAX_RESOLUTION_DISCREPANCY this will return True. If no discrepancies
+        are computed for the first then this returns True.
+
+        Otherwise, if no discrepancy has been computed between two the two groups then
+        this returns False. We return true if the discrepancy is less than
+        NR_DISCREPANCY_CUTOFF.
+
+        :param dict all_discrepancy: The dictionary of all discrepancies.
+        :param dict group1: The first group.
+        :param dict group2: The second group.
+        :returns: True if there is a good discrepancy between the two groups.
+        """
+
+        if not self.use_discrepancy:
             return True
 
+        db_id1 = group1['db_id']
+        db_id2 = group2['db_id']
+        if 'resolution' in group1 and 'resolution' in group2:
+            if group1['resolution'] > MAX_RESOLUTION_DISCREPANCY or \
+                    group2['resolution'] > MAX_RESOLUTION_DISCREPANCY or \
+                    not group1['resolution'] or not group2['resolution']:
+                self.logger.debug("Bad resolution, thus good discrepancy")
+                return True
+
+        if 'length' in group1 and 'length' in group2:
+            if group1['length'] < MIN_NT_DISCREPANCY or \
+                    group2['length'] < MIN_NT_DISCREPANCY:
+                self.logger.debug("Too few nts for useful discrepancy")
+                return True
+
         if not all_discrepancy:
+            self.logger.debug("No discrepancies, so ignoring")
             return True
 
         if db_id1 not in all_discrepancy:
@@ -238,44 +308,57 @@ class Grouper(core.Base):
                               group1['id'], group2['id'], discrepancy[db_id2])
             return False
 
-        self.logger.debug("Good discrepancy: %s, %s",
-                          group1['id'], group2['id'])
+        self.logger.debug("Good discrepancy %s %s", group1['id'], group2['id'])
         return True
 
     def is_hard_coded_join(self, group1, group2):
+        """Check if two groups have a hard coded joining. This uses
+        EQUIVALENT_PAIRS from the constants. This should be a set of pairs of
+        semi IFE is like ('pdb1|chain1', 'pdb2|chain2'). Note the lack of model
+        in the semi IFE id.
+
+        :param dict group1: The first group.
+        :param dict group2: The second group.
+        :returns: True if there has been a hard coded join between two groups.
+        """
+
         def simple(ife_id):
             parts = ife_id.split('|')
             return (parts[0], parts[-1])
 
         id1 = (simple(group1['id']), simple(group2['id']))
         id2 = (simple(group2['id']), simple(group1['id']))
-        return id1 in EQUIVELANT_PAIRS or id2 in EQUIVELANT_PAIRS
+        return id1 in EQUIVALENT_PAIRS or id2 in EQUIVALENT_PAIRS
 
     def are_equivalent(self, alignments, discrepancies, group1, group2):
         """Determine if two chains are equivalent. This requires that the
         chains align well and are not of conflicting species.
 
-        :alignments: A dictionary of dictionaries about the alignment between
-        chains.
-        :chain1: The first chain.
-        :chain2: The second chain.
+        :param dict alignments: A dictionary of dictionaries about the
+        alignment between chains.
+        :param dict discrepancies: The alignments dictionaries.
+        :param dict group1: The first chain.
+        :param dict group2: The second chain.
         :returns: True if the two chains are equivalent, False otherwise
         """
+
+        if group1 == group2:
+            return True
 
         if self.is_hard_coded_join(group1, group2):
             return True
 
-        if not self.are_similar_species(group1, group2) or not \
-                self.has_good_alignment(alignments, group1, group2):
-            return False
-
-        if self.use_discrepancy and not \
-                self.has_good_discrepancy(discrepancies, group1, group2):
-            return False
-
-        return True
+        return self.are_similar_species(group1, group2) \
+            and self.has_good_alignment(alignments, group1, group2) \
+            and self.has_good_discrepancy(discrepancies, group1, group2)
 
     def validate(self, connections, group):
+        """This validates all groups to check if all pairs are connected.
+
+        :param dict connections: All pairs of connections
+        :param list group: The group to validate.
+        """
+
         pairs = it.product(group, group)
         pairs = it.ifilter(lambda (a, b): a != b, pairs)
         pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)
@@ -321,13 +404,18 @@ class Grouper(core.Base):
         """For groups over the NR_MIN_HOMOGENEOUS_SIZE we require that all
         members of the group have the same species (excluding unknown or
         synthetic species of course). We enforce this requirement here. The
-        splitting is done in spilt_by_species.
+        splitting is done in spilt_by_species. If must_enforce_single_species
+        is False then this will simply return the given group.
 
         :param list group: List of chains in a single group.
-        :yields: Each subgroup with consistent species, in no particular order.
+        :returns: A list of each subgroup with consistent species, in no
+        particular order.
         """
 
-        max_length = max(group, key=lambda e: e['length'])
+        if not self.must_enforce_single_species:
+            return [group]
+
+        max_length = max(group, key=op.itemgetter('length'))
         max_length = max_length['length']
         if max_length < NR_MIN_HOMOGENEOUS_SIZE or len(group) == 1:
             return [group]
@@ -335,6 +423,17 @@ class Grouper(core.Base):
         self.logger.debug("Enforcing species splitting of %s",
                           ', '.join(c['id'] for c in group))
         return self.split_by_species(group)
+
+    def missing_ifes(self, matrix, ifes):
+        """Check if there are any missing
+
+        :param dict matrix: A dictonary where
+        :returns: The list of db_ids whic are not in the matrix.
+        """
+
+        missing = it.imap(op.itemgetter('db_id'), ifes)
+        missing = it.ifilterfalse(lambda c: c in matrix, missing)
+        return bool(list(missing))
 
     def pairs(self, chains, alignments, discrepancies):
         """Generate an iterator of all equivalent pairs of chains.
@@ -345,52 +444,49 @@ class Grouper(core.Base):
         :returns: An iterable of all valid pairs.
         """
 
-        mapping = {}
-        for chain in chains:
-            db_id = chain['db_id']
-            if db_id in mapping:
-                self.logger.error("db_id of entry already in mapping")
-                self.logger.error("Entry: %s", chain)
-                self.logger.error("Mapping: %s", mapping)
-                raise core.InvalidState("Invalid mapping duplicated %i", db_id)
-            mapping[db_id] = chain
+        # mapping = {}
+        # for chain in chains:
+        #     db_id = chain['db_id']
+        #     if db_id in mapping:
+        #         self.logger.error("db_id of entry already in mapping")
+        #         self.logger.error("Entry: %s", chain)
+        #         self.logger.error("Mapping: %s", mapping)
+        #         raise core.InvalidState("Invalid mapping duplicated %i", db_id)
+        #     mapping[db_id] = chain
+        # pairs = it.imap(op.itemgetter('db_id'), chains)
+        # pairs = it.ifilter(is_mapped(0), pairs)
+        # pairs = it.ifilter(is_mapped(1), pairs)
+        # pairs = it.ifilter(lambda p: p[0] != p[1], pairs)
+        # pairs = it.imap(lambda p: (mapping[p[0]], mapping[p[1]]), pairs)
 
-        def is_mapped(index):
-            def fn(p):
-                known = p[index] in mapping
-                if not known:
-                    self.logger.warning("Unmapped db_id %i", p[index])
-                return known
-            return fn
+        missing = self.missing_ifes(alignments, chains)
+        if missing:
+            self.logger.error("Detected %i chains not in alignments", len(missing))
+            self.logger.error("Chains: %s", ', '.join(str(m) for m in missing))
+            raise core.InvalidState("Not all chains in alignments")
 
-        missing = it.imap(lambda c: c['db_id'], chains)
-        missing = it.ifilterfalse(lambda c: c in alignments, missing)
-        missing = it.product(missing, repeat=2)
-        missing = list(missing)
-        self.logger.info("Detected %i chains not in alignments", len(missing))
-
+        # It should be possible to rewrite this section such that it only
+        # iterates over the chains which have been aligned. In addition, it is
+        # possible to change the alignment loading to only load the good
+        # alignments. If both these changes are done the run time is decreased
+        # greatly (I think ~30 min). For some reason this produces the
+        # incorrect results though. This is may have been due to bugs that have
+        # been fixed now.
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
-        pairs = it.imap(lambda c: c['db_id'], chains)
-        pairs = it.product(pairs, repeat=2)
-        pairs = it.ifilter(is_mapped(0), pairs)
-        pairs = it.ifilter(is_mapped(1), pairs)
-        pairs = it.ifilter(lambda p: p[0] != p[1], pairs)
-        pairs = it.imap(lambda p: (mapping[p[0]], mapping[p[1]]), pairs)
-        pairs = it.ifilter(lambda p: p[0] == p[1] or equiv(*p), pairs)
+        pairs = it.combinations(chains, r=2)
+        return it.ifilter(lambda p: equiv(*p), pairs)
 
-        return pairs
+    def connections(self, chains, alignments, discrepancies):
+        """Create a graph connections between all chains.
 
-    def group(self, chains, alignments, discrepancies):
-        """Group all chains into connected components.
-
-        :chains: A list of chains to group.
-        :returns: A list of lists of the connected components.
+        :param list chains: This chains to build connections with.
+        :param dict alignments: The alignments to use.
+        :param dict discrepancies: The discrepancies to use.
+        :returns: A dictionary of connections to use.
         """
 
-        mapping = {}
         graph = coll.defaultdict(set)
         for chain in chains:
-            mapping[chain['id']] = chain
             graph[chain['id']].add(chain['id'])
 
         for chain1, chain2 in self.pairs(chains, alignments, discrepancies):
@@ -399,20 +495,56 @@ class Grouper(core.Base):
             graph[chain2['id']].add(chain1['id'])
 
         self.logger.info("Created %i connections", len(graph))
+        return graph
+
+    def build_groups(self, graph):
+        """Group the ifes based upon the given graph. This will group the ifes
+        based upon transitivity.
+
+        :param dict graph: A dictionary of id -> set(id...)
+        :returns: A list of lists where the inner list is a list of the ife ids
+        in a group.
+        """
+
+        return cs.find_connected(graph).values()
+
+    def group(self, chains, alignments, discrepancies):
+        """Group all chains into connected components.
+
+        :param list chains: A list of chains to group.
+        :param dict alignments: The loaded alignments.
+        :param dict discrepancies: The loaded discrepancies.
+        :returns: A list of lists of the connected components.
+        """
+
+        mapping = {}
+        for chain in chains:
+            mapping[chain['id']] = chain
+
         groups = []
-        for ids in cs.find_connected(graph).values():
+        graph = self.connections(chains, alignments, discrepancies)
+        for ids in self.build_groups(graph):
             self.validate(graph, list(ids))
             group = [mapping[id] for id in ids]
-            split_groups = self.enforce_species_splitting(group)
-            for subgroup in split_groups:
+            for subgroup in self.enforce_species_splitting(group):
                 groups.append(subgroup)
 
         return groups
 
-    def __call__(self, pdbs, **kwargs):
-        """Group all chains in the given list of pdbs.
+    def all_ifes(self, pdbs):
+        ifes = it.imap(self.ifes, pdbs)
+        ifes = it.chain.from_iterable(ifes)
+        ifes = it.ifilter(self.valid_ife, ifes)
+        ifes = list(ifes)
+        if not ifes:
+            raise core.InvalidState("No ifes found in given pdbs")
+        return ifes
 
-        :pdbs: A list of pdb ids to group the chains in.
+    def __call__(self, pdbs, **kwargs):
+        """Group all chains in the given list of pdbs to form equivalence
+        classes.
+
+        :param list pdbs: A list of pdb ids to group the chains in.
         :returns: A list of groups dictionaries. These will contain one entry,
         'members' a list of chains in this group. These chains will be sorted
         by quality as defined by ranking_key. The chain data structure will
@@ -421,39 +553,34 @@ class Grouper(core.Base):
         """
 
         self.logger.info("Will group %i pdbs", len(pdbs))
-        ifes = it.imap(self.ifes, pdbs)
-        ifes = it.chain.from_iterable(ifes)
-        ifes = it.ifilter(self.valid_ife, ifes)
-        ifes = list(ifes)
-        if not ifes:
-            raise core.InvalidState("No ifes found in given pdbs")
+        ifes = self.ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
-
         alignments = self.alignments(ifes)
-        if not alignments:
-            raise core.InvalidState("No alignments loaded")
+        discrepancy = self.discrepancies(ifes)
 
-        discrepancy = self.discrepancy(ifes)
-        if not discrepancy:
-            self.logger.warning("No discrepancy data to cluster with")
-
+        grouped = set()
         groups = []
         for group in self.group(ifes, alignments, discrepancy):
             members = []
             sorted_group = sorted(group, key=ranking_key)
             for index, member in enumerate(sorted_group):
+                grouped.add(member['id'])
                 member['rank'] = index
                 members.append(member)
 
             groups.append({'members': members})
 
-        grouped_count = it.imap(lambda g: len(g['members']), groups)
-        grouped_count = sum(grouped_count)
-        if grouped_count != len(ifes):
-            raise core.InvalidState("Only %i of %i ifes were grouped" %
-                                    (grouped_count, len(ifes)))
+        ife_ids = set(ife['id'] for ife in ifes)
+        if ife_ids != grouped:
+            msg = ("Only {grouped} of {total} ifes were grouped, "
+                   "missing: {missing}")
+            raise core.InvalidState(msg.format(
+                grouped=len(grouped),
+                total=len(ife_ids),
+                missing=sorted(ife_ids - grouped),
+            ))
 
         self.logger.info("Created %i groups with %i ifes",
-                         len(groups), grouped_count)
+                         len(groups), len(grouped))
 
         return groups
