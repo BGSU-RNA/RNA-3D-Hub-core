@@ -23,7 +23,10 @@ from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
-from pymotifs.constants import NR_MAX_DISCREPANCY
+from pymotifs.nr.builder import Loader as ReleaseLoader
+
+from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
+from pymotifs.constants import MIN_NT_DISCREPANCY
 
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
@@ -59,7 +62,8 @@ class Loader(core.Loader):
     mark = False
     allow_no_data = True
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
-                        IfeLoader, CenterLoader, RotationLoader])
+                        ReleaseLoader, IfeLoader, CenterLoader,
+                        RotationLoader])
 
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
@@ -207,7 +211,8 @@ class Loader(core.Loader):
                 join(mod.PdbInfo,
                      mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.IfeInfo.new_style == 1).\
-                filter(mod.PdbInfo.resolution <= NR_MAX_DISCREPANCY).\
+                filter(mod.PdbInfo.resolution != None).\
+                filter(mod.PdbInfo.resolution <= MAX_RESOLUTION_DISCREPANCY).\
                 filter(mod.ExpSeqChainMapping.exp_seq_id == exp_seq_id)
 
             pdbs = set()
@@ -216,7 +221,8 @@ class Loader(core.Loader):
                 mapping[result.chain_id] = ut.row2dict(result)
 
         if not mapping:
-            raise core.InvalidState("Loaded no possible ifes")
+            self.logger.warning("Loaded no possible ifes in: %s", exp_seq_id_1)
+            return []
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.sym_op,
