@@ -107,47 +107,41 @@ class LoadingResiduesTest(StageTest):
                                           [0.140197, -0.83386, -0.533876],
                                           [0.986404, 0.0709304, 0.148245]])
 
-    # def test_it_can_load_matrices
-# INFO:chain_chain.comparision:2016-06-16 07:00:05,815:Comparing 4V9Q|1|CB+1_555, 4V42|1|BB+1_555
-# WARNING:chain_chain.comparision:2016-06-16 07:00:05,904:Missing matrix data for 4V42|1|BB+1_555
+class ComputingDataTest(StageTest):
+    loader_class = Loader
 
-#     def test_will_give_empty_for_unknown(self):
-#         c1, c2, r1, r2 = self.loader.matrices(None, self.info1, self.info2)
-#         assert_array_almost_equal(c1, np.array([]))
-#         assert_array_almost_equal(c2, np.array([]))
-#         assert_array_almost_equal(r1, np.array([]))
-#         assert_array_almost_equal(r2, np.array([]))
+    def chain_id(self, pdb, name):
+        with self.loader.session() as session:
+            return session.query(mod.ChainInfo).\
+                filter_by(pdb_id=pdb, chain_name=name).\
+                one().\
+                chain_id
 
+    def corr_id(self, chain1, chain2):
+        return self.loader.corr_id(chain1, chain2)
 
-# class ComputingDataTest(StageTest):
-#     loader_class = Loader
-
-#     def corr_id(self, info1, info2):
-#         with self.loader.session() as session:
-#             pdbs = mod.CorrespondencePdbs
-#             return session.query(pdbs.correspondence_id).\
-#                 filter(pdbs.pdb_id_1 == info1['pdb']).\
-#                 filter(pdbs.pdb_id_2 == info2['pdb']).\
-#                 filter(pdbs.chain_name_1 == info1['chain_name']).\
-#                 filter(pdbs.chain_name_2 == info2['chain_name']).\
-#                 one().\
-#                 correspondence_id
-
-#     def test_computes_both_discrepancies(self):
-#         corr_id = self.corr_id({'pdb': '1X8W', 'chain_name': 'D'},
-#                                {'pdb': '1GRZ', 'chain_name': 'B'})
-#         val = self.loader.data(('1X8W|1|D', '1GRZ|1|B', corr_id))
-#         self.assertTrue(len(val), 2)
-
-#     def test_it_increments_new_counts(self):
-#         corr_id = self.corr_id({'pdb': '1X8W', 'chain_name': 'D'},
-#                                {'pdb': '1GRZ', 'chain_name': 'B'})
-#         assert self.loader.new_updates['1X8W|1|D'] == 0
-#         self.loader.data(('1X8W|1|D', '1GRZ|1|B', corr_id))
-#         assert self.loader.new_updates['1X8W|1|D'] == 1
-
-#     def test_it_can_handle_nan_discrepancy(self):
-#         corr_id = self.corr_id({'pdb': '1FCW', 'chain_name': 'A'},
-#                                {'pdb': '1FCW', 'chain_name': 'B'})
-#         val = self.loader.data(('1FCW|1|A', '1FCW|1|B', corr_id))
-#         assert_almost_equal(7.266e-05, val[0].discrepancy)
+    def test_computes_both_discrepancies(self):
+        c1 = self.chain_id('1X8W', 'D')
+        c2 = self.chain_id('1GRZ', 'B')
+        corr_id = self.corr_id(c1, c2)
+        val = self.loader.data((c1, c2))
+        assert len(val) == 2
+        # Remove discrepancy since it needs a different method
+        assert_almost_equal(val[0].pop('discrepancy'), 0.227388, decimal=6)
+        assert_almost_equal(val[1].pop('discrepancy'), 0.227388, decimal=6)
+        assert val[0] == {
+            'chain_id_1': c1,
+            'chain_id_2': c2,
+            'model_1': 1,
+            'model_2': 1,
+            'correspondence_id': corr_id,
+            'num_nucleotides': 242
+        }
+        assert val[1] == {
+            'chain_id_1': c2,
+            'chain_id_2': c1,
+            'model_1': 1,
+            'model_2': 1,
+            'correspondence_id': corr_id,
+            'num_nucleotides': 242
+        }

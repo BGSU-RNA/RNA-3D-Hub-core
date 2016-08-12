@@ -61,6 +61,7 @@ class Loader(core.SimpleLoader):
 
     mark = False
     allow_no_data = True
+    table = mod.ChainChainSimilarity
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         ReleaseLoader, IfeLoader, CenterLoader,
                         RotationLoader])
@@ -343,8 +344,8 @@ class Loader(core.SimpleLoader):
         reversed['model_2'] = compare['model_1']
 
         return [
-            mod.ChainChainSimilarity(**compare),
-            mod.ChainChainSimilarity(**reversed)
+            compare,
+            reversed
         ]
 
     def data(self, pair, **kwargs):
