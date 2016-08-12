@@ -120,13 +120,14 @@ class Builder(core.Base):
     release as well as determine the representative.
     """
 
-    def group(self, pdbs, use_discrepancy=True, **kwargs):
+    def group(self, pdbs, use_discrepancy=True, use_species=True, **kwargs):
         """Group all pdbs into nr sets.
         """
         if not pdbs:
             raise core.InvalidState("Must give pdbs to group")
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = use_discrepancy
+        grouper.use_species = use_species
         return grouper(pdbs, **kwargs)
 
     def named(self, groups, parents):
@@ -271,7 +272,9 @@ class Builder(core.Base):
 
         known = Known(self.config, self.session)
         groups = self.group(pdbs)
-        sequence_only = self.group(pdbs, use_discrepancy=False)
+        sequence_only = self.group(pdbs,
+                                   use_discrepancy=False,
+                                   use_species=False)
 
         parents = {}
         for cutoff in cutoffs:
