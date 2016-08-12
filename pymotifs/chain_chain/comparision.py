@@ -23,7 +23,7 @@ from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
-from pymotifs.nr.builder import Loader as ReleaseLoader
+from pymotifs.nr.release import Loader as ReleaseLoader
 
 from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 from pymotifs.constants import MIN_NT_DISCREPANCY
@@ -65,6 +65,10 @@ class Loader(core.SimpleLoader):
                         ReleaseLoader, IfeLoader, CenterLoader,
                         RotationLoader])
 
+    def good_resolution(self, chain):
+        return chain['resolution'] is not None and \
+            chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY
+
     def to_process(self, *args, **kwargs):
         """This will compute all pairs to compare. It works by loading the
         current NR groupings then, using the sequence_only part, will create a
@@ -77,7 +81,8 @@ class Loader(core.SimpleLoader):
 
         possible = []
         for group in data['sequence_only']:
-            chains = it.imap(op.itemgetter('db_id'), group['members'])
+            chains = it.ifilter(self.good_resolution, group['members'])
+            chains = it.imap(op.itemgetter('db_id'), chains)
             possible.extend(it.combinations(chains))
         return possible
 
@@ -89,8 +94,8 @@ class Loader(core.SimpleLoader):
 
         sim = mod.ChainChainSimilarity
         return session.query(sim).\
-            filter((sim.chain_id_1=pair[0], chain_id_2=[1]) |
-                   (sim.chain_id_1=pair[1], chain_id_2=[0]))
+            filter((sim.chain_id_1 == pair[0], chain_id_2 == [1]) |
+                   (sim.chain_id_1 == pair[1], chain_id_2 == [0]))
 
     def matrices(self, corr_id, info1, info2, name='base'):
         """Load the matrices used to compute discrepancies.
@@ -196,7 +201,6 @@ class Loader(core.SimpleLoader):
     def info(self, chain_id):
         mapping = {}
         with self.session() as session:
-            exp_mapping = mod.ExpSeqChainMapping
             query = session.query(mod.ChainInfo.chain_name,
                                   mod.ChainInfo.chain_id,
                                   mod.IfeInfo.pdb_id.label('pdb'),
@@ -204,17 +208,11 @@ class Loader(core.SimpleLoader):
                                   mod.IfeInfo.ife_id,
                                   ).\
                 join(mod.IfeChains,
-                     mod.IfeChains.ife_id == mod.ChainInfo.chain_id).\
+                     mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
                 join(mod.IfeInfo,
                      mod.IfeInfo.ife_id == mod.IfeChains.ife_id).\
-                join(exp_mapping,
-                     exp_mapping.chain_id == mod.IfeChains.chain_id).\
-                join(mod.PdbInfo,
-                     mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.IfeInfo.new_style == 1).\
-                filter(mod.PdbInfo.resolution != None).\
-                filter(mod.PdbInfo.resolution <= MAX_RESOLUTION_DISCREPANCY).\
-                filter(mod.ExpSeqChainMapping.exp_seq_id == exp_seq_id)
+                filter(mod.ChainInfo.chain_id == chain_id)
 
         if not query.count():
             raise core.InvalidState("Could not load chain with id %s" %
@@ -240,12 +238,28 @@ class Loader(core.SimpleLoader):
                     ife['name'] = ife['ife_id'] + '+' + pref
                     return ife
 
-            sym = possible.pop()
+            sym = sorted(possible)[0]
             ife['sym_op'] = sym
-            ife['name'] = ife['ife_id'] + '+' + pref
+            ife['name'] = ife['ife_id'] + '+' + sym
             return ife
 
-    def corr_id(self, chain_id_1, chain_id_2):
+    def __correspondence_query__(self, chain1, chain2):
+        with self.session() as session:
+            info = mod.CorrespondenceInfo
+            mapping1 = aliased(mod.ExpSeqChainMapping)
+            mapping2 = aliased(mod.ExpSeqChainMapping)
+            query = session.query(info.correspondence_id).\
+                join(mapping1, mapping1.exp_seq_id == info.exp_seq_id_1).\
+                join(mapping2, mapping2.exp_seq_id == info.exp_seq_id_2).\
+                filter(mapping1.chain_id == chain1).\
+                filter(mapping2.chain_id == chain2)
+
+            result = query.first()
+            if result:
+                return result.correspondence_id
+            return None
+
+    def corr_id(self, chain_id1, chain_id2):
         """Given two chain ids, load the correspondence id between them. This
         will raise an exception if these chains have not been aligned, or if
         there is more than one alignment between these chains. The chain ids
@@ -257,18 +271,14 @@ class Loader(core.SimpleLoader):
         two chains.
         """
 
-        with self.session() as session:
-            info = mod.CorrespondenceInfo
-            mapping1 = aliased(mod.ExpSeqChainMapping)
-            mapping2 = aliased(mod.ExpSeqChainMapping)
-            result = session.query(info.correspondence_id).\
-                join(mapping1, mapping1.exp_seq_id == info.exp_seq_id).\
-                join(mapping2, mapping2.exp_seq_id == info.exp_seq_id).\
-                filter(mapping1.chain_id == chain_id_1).\
-                filter(mapping2.chain_id == chain_id_2).\
-                one()
+        corr_id = self.__correspondence_query__(chain_id1, chain_id2)
+        if corr_id is None:
+            corr_id = self.__correspondence_query__(chain_id2, chain_id1)
 
-            return result.correspondence_id
+        if corr_id is None:
+            raise core.InvalidState("No correspondence for %s %s" %
+                                    (chain_id1, chain_id2))
+        return corr_id
 
     def __check_matrices__(self, table, info):
         """Check the that required matrices exist.
