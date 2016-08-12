@@ -24,6 +24,22 @@ class QueryTest(StageTest):
         assert self.loader.has_data((1671, 240)) is True
 
 
+class ToProcessTest(StageTest):
+    loader_class = Loader
+
+    @pytest.mark.skip()
+    def test_it_creates_all_groups(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_filters_out_high_resolution(self):
+        pass
+
+    @pytest.mark.skip()
+    def test_it_filters_out_no_resolution(self):
+        pass
+
+
 class LoadingInfoTest(StageTest):
     loader_class = Loader
 
