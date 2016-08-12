@@ -258,7 +258,7 @@ class Builder(core.Base):
         return data
 
     def __call__(self, pdbs, parent_release, current_release,
-                 cutoffs=RESOLUTION_GROUPS, **kwargs):
+                 cutoffs=RESOLUTION_GROUPS, sequence_only=False, **kwargs):
         """Build the nr set.
 
         :pdbs: The list of pdbs to process.
@@ -270,13 +270,14 @@ class Builder(core.Base):
 
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
-        known = Known(self.config, self.session)
-        groups = self.group(pdbs)
-        sequence_only = self.group(pdbs,
-                                   use_discrepancy=False,
-                                   use_species=False)
+        groups = []
+        if sequence_only:
+            groups = self.group(pdbs, use_discrepancy=False, use_species=False)
+        else:
+            groups = self.group(pdbs)
 
         parents = {}
+        known = Known(self.config, self.session)
         for cutoff in cutoffs:
             parents[cutoff] = known.classes(parent_release, cutoff)
 
