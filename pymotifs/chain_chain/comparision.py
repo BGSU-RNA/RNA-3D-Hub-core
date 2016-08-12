@@ -95,8 +95,8 @@ class Loader(core.SimpleLoader):
 
         sim = mod.ChainChainSimilarity
         return session.query(sim).\
-            filter((sim.chain_id_1 == pair[0], chain_id_2 == [1]) |
-                   (sim.chain_id_1 == pair[1], chain_id_2 == [0]))
+            filter(((sim.chain_id_1 == pair[0]) & (sim.chain_id_2 == pair[1])) |
+                   ((sim.chain_id_1 == pair[1]) & (sim.chain_id_2 == pair[0])))
 
     def matrices(self, corr_id, info1, info2, name='base'):
         """Load the matrices used to compute discrepancies.

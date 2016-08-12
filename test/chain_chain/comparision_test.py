@@ -11,6 +11,19 @@ from pymotifs.core import InvalidState
 from pymotifs.chain_chain.comparision import Loader
 
 
+class QueryTest(StageTest):
+    loader_class = Loader
+
+    def test_it_knows_if_data_exists(self):
+        assert self.loader.has_data((240, 1671)) is True
+
+    def test_it_knows_if_no_data_exists(self):
+        assert self.loader.has_data((-1, 1)) is False
+
+    def test_it_knows_if_reversed_data_exists(self):
+        assert self.loader.has_data((1671, 240)) is True
+
+
 class LoadingInfoTest(StageTest):
     loader_class = Loader
 
