@@ -56,6 +56,9 @@ class Grouper(core.Base):
     """A flag to determine if we should use discrepancies when splitting"""
     use_discrepancy = True
 
+    """A flag to determine if we should use sepcies when splitting"""
+    use_species = True
+
     """A flag to force groups to have distinct species"""
     must_enforce_single_species = True
 
@@ -236,6 +239,10 @@ class Grouper(core.Base):
         :param dict group2: The second group.
         :returns: True if the two species are similar.
         """
+
+        if not self.use_species:
+            self.logger.debug("Ignoring species assignments")
+            return True
 
         species1 = group1['species']
         species2 = group2['species']
