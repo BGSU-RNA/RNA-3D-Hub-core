@@ -1,6 +1,7 @@
 """This is a module to find the species assignments that look suspicious. The
 goal is to produce a report that PDB can use to fix these sorts of issues.
 """
+
 import re
 import operator as op
 import itertools as it
@@ -20,6 +21,10 @@ HEADERS = [
 
 BAD_SPECIES = re.compile('^\w+ sp\..*$')
 
+KNOWN_SPECIES = {
+    '': set([])
+}
+
 
 def assignments(maker, **kwargs):
     with maker() as session:
@@ -30,6 +35,7 @@ def assignments(maker, **kwargs):
         chain_species = mod.ChainSpecies
         query = session.query(exp.length,
                               exp.exp_seq_id,
+                              exp.md5,
                               chains.pdb_id,
                               chains.chain_name,
                               chains.chain_id.label('id'),
@@ -56,7 +62,7 @@ def empty_problem(chain):
 
 def unnnamed_species(data):
     if not data['species_name'] and data['species_id'] is not None:
-        return 'Unnamed species'
+        return 'Species with no assigned name'
     return None
 
 
@@ -66,7 +72,28 @@ def unlikely_species(data):
     return None
 
 
-def conflicting_species(chains):
+def unexpected_assignments(exp_seq_hash, chains):
+    species = coll.defaultdict(list)
+    for chain in chains:
+        current = chain['species_name']
+        species[current].append(chain)
+    species.pop(None, None)
+    species.pop('synthetic construct', None)
+
+    possible = KNOWN_SPECIES[exp_seq_hash]
+    unexpected = sorted(set(species.keys()) - possible)
+    if unexpected:
+        return ('Unexpected species {unexpected} assigned to this sequence'
+                ' Expected one of {expected}'.format(
+                    unexpected=', '.join(unexpected),
+                    expected=', '.join(sorted(possible)),
+                ))
+
+
+def conflicting_species(exp_seq_hash, chains):
+    if exp_seq_hash in KNOWN_SPECIES:
+        return None
+
     species = coll.defaultdict(list)
     for chain in chains:
         current = chain['species_name']
@@ -99,13 +126,13 @@ def check_individual(data, problems):
 
 
 def check_aggregate(data, problems):
-    key = op.itemgetter('exp_seq_id')
+    key = op.itemgetter('md5')
     aggregate = it.groupby(sorted(data, key=key), key)
-    checkers = [conflicting_species]
-    for seq_id, chains in aggregate:
+    checkers = [conflicting_species, unexpected_assignments]
+    for key, chains in aggregate:
         chains = list(chains)
         for checker in checkers:
-            problem = checker(chains)
+            problem = checker(key, chains)
             if problem:
                 for chain in chains:
                     if chain['id'] not in problems:
