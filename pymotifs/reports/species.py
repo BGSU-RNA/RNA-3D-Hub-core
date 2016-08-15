@@ -61,18 +61,22 @@ def empty_problem(chain):
 
 
 def unnnamed_species(data):
-    if not data['species_name'] and data['species_id'] is not None:
-        return 'Species with no assigned name'
+    id = data['species_id']
+    if not data['species_name'] and id is not None:
+        return 'Species with no assigned name. Taxon id: %s' % id
     return None
 
 
 def unlikely_species(data):
-    if data['species_name'] and re.match(BAD_SPECIES, data['species_name']):
-        return 'Unlikely species name'
+    if data['species_name'] and 'sp.' in data['species_name']:
+        return 'Unlikely species name: (%s)' % data['species_name']
     return None
 
 
 def unexpected_assignments(exp_seq_hash, chains):
+    if exp_seq_hash not in KNOWN_SPECIES:
+        return None
+
     species = coll.defaultdict(list)
     for chain in chains:
         current = chain['species_name']
@@ -88,6 +92,7 @@ def unexpected_assignments(exp_seq_hash, chains):
                     unexpected=', '.join(unexpected),
                     expected=', '.join(sorted(possible)),
                 ))
+    return None
 
 
 def conflicting_species(exp_seq_hash, chains):
@@ -119,8 +124,6 @@ def check_individual(data, problems):
         for checker in checkers:
             problem = checker(chain)
             if problem:
-                if chain['id'] not in problems:
-                    problems[chain['id']] = empty_problem(chain)
                 problems[chain['id']]['Problem'].append(problem)
     return problems
 
@@ -135,22 +138,26 @@ def check_aggregate(data, problems):
             problem = checker(key, chains)
             if problem:
                 for chain in chains:
-                    if chain['id'] not in problems:
-                        problems[chain['id']] = empty_problem(chain)
                     problems[chain['id']]['Problem'].append(problem)
     return problems
 
 
 def suspicious(data):
     problems = {}
+    for entry in data:
+        problems[entry['id']] =  empty_problem(entry)
+
     problems = check_individual(data, problems)
     problems = check_aggregate(data, problems)
     problems = problems.values()
 
+    finalized = []
     for entry in problems:
-        entry['Problem'] = '; '.join(entry['Problem'])
+        if entry['Problem']:
+            entry['Problem'] = '; '.join(entry['Problem'])
+            finalized.append(entry)
 
-    return problems
+    return finalized
 
 
 def report(maker, **kwargs):
