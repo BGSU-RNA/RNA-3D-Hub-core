@@ -23,10 +23,10 @@ from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
-from pymotifs.nr.release import Loader as ReleaseLoader
 
 from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 from pymotifs.constants import MIN_NT_DISCREPANCY
+from pymotifs.constants import NR_SEQUENCE_ONLY
 
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
@@ -63,25 +63,29 @@ class Loader(core.SimpleLoader):
     allow_no_data = True
     table = mod.ChainChainSimilarity
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
-                        ReleaseLoader, IfeLoader, CenterLoader,
-                        RotationLoader])
+                        IfeLoader, CenterLoader, RotationLoader])
 
     def good_resolution(self, chain):
         return chain['resolution'] is not None and \
             chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY
 
-    def to_process(self, *args, **kwargs):
-        """This will compute all pairs to compare. It works by loading the
-        current NR groupings then, using the sequence_only part, will create a
-        list of all chain ids to compare.
+    def to_process(self, pdbs, **kwargs):
+        """This will compute all pairs to compare. This will compute a grouping
+        based upon sequence only and then go through
+
+        :params list pdbs: The list of pdbs to use.
+        :returns: A list of pairs of chain ids to compare.
         """
 
-        data = self.cached(NR_CACHE_NAME)
-        if not data:
-            raise core.InvalidState("No precomputed grouping to store")
+        grouper = Grouper(self.config, self.session)
+        grouper.use_discrepancy = False
+        grouper.must_enforce_single_species = False
+        groups = grouper(pdbs)
+        if not groups:
+            raise core.InvalidState("No groups produced")
 
         possible = []
-        for group in data['sequence_only']:
+        for group in groups:
             chains = it.ifilter(self.good_resolution, group['members'])
             chains = it.imap(op.itemgetter('db_id'), chains)
             possible.extend(it.combinations(chains))
@@ -298,11 +302,20 @@ class Loader(core.SimpleLoader):
             return bool(query.count())
 
     def has_matrices(self, info):
+        """Check if the given info has all the required matrices.
+        """
+
         return self.__check_matrices__(mod.UnitCenters, info) and \
             self.__check_matrices__(mod.UnitRotations, info)
 
     def entry(self, info1, info2, corr_id):
         """Compute the discrepancy between two given chains.
+
+        :param dict info1: The first chain to use.
+        :param dict info2: The second chain to use.
+        :param int corr_id: The correspondence id between the chains.
+        :returns: A list of dictonaries with the discrepancies betweeen these
+        chains.
         """
 
         if not self.has_matrices(info1):
