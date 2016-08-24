@@ -23,7 +23,10 @@ from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
-from pymotifs.constants import NR_MAX_DISCREPANCY
+
+from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
+from pymotifs.constants import MIN_NT_DISCREPANCY
+from pymotifs.constants import NR_SEQUENCE_ONLY
 
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
@@ -51,41 +54,53 @@ def label_rotation(table, number):
     ]
 
 
-class Loader(core.Loader):
+class Loader(core.SimpleLoader):
     """A Loader to get all chain to chain similarity data. This will use the
     correspondences between ifes to compute the discrepancy between them.
     """
 
     mark = False
     allow_no_data = True
+    table = mod.ChainChainSimilarity
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         IfeLoader, CenterLoader, RotationLoader])
 
-    def to_process(self, pdbs, **kwargs):
-        with self.session() as session:
-            info = mod.CorrespondenceInfo
-            query = session.query(info).\
-                filter(info.good_alignment == True)
-            return [result.correspondence_id for result in query]
+    def good_resolution(self, chain):
+        return chain['resolution'] is not None and \
+            chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY
 
-    def remove(self, corr_id, **kwargs):
+    def to_process(self, pdbs, **kwargs):
+        """This will compute all pairs to compare. This will compute a grouping
+        based upon sequence only and then go through
+
+        :params list pdbs: The list of pdbs to use.
+        :returns: A list of pairs of chain ids to compare.
+        """
+
+        grouper = Grouper(self.config, self.session)
+        grouper.use_discrepancy = False
+        grouper.must_enforce_single_species = False
+        groups = grouper(pdbs)
+        if not groups:
+            raise core.InvalidState("No groups produced")
+
+        possible = []
+        for group in groups:
+            chains = it.ifilter(self.good_resolution, group['members'])
+            chains = it.imap(op.itemgetter('db_id'), chains)
+            possible.extend(it.combinations(chains))
+        return possible
+
+    def query(self, session, pair):
         """This will delete *all* entires with the given correspondence id,
         which is likely too many. Better safe than sorry. It's probably ok, I
         think.
         """
 
-        with self.session() as session:
-            session.query(mod.ChainChainSimilarity).\
-                filter_by(correspondence_id=corr_id).\
-                delete(synchronize_session=False)
-
-    def has_data(self, *args, **kwargs):
-        """We always pretend as if we have no data for this correspondence id
-        as it is can take a long time to compute if we have any chains that
-        need to be aligned. Thus we pretend we always need to compute stuff and
-        then allow this stage to produce no data.
-        """
-        return False
+        sim = mod.ChainChainSimilarity
+        return session.query(sim).\
+            filter(((sim.chain_id_1 == pair[0]) & (sim.chain_id_2 == pair[1])) |
+                   ((sim.chain_id_1 == pair[1]) & (sim.chain_id_2 == pair[0])))
 
     def matrices(self, corr_id, info1, info2, name='base'):
         """Load the matrices used to compute discrepancies.
@@ -188,87 +203,92 @@ class Loader(core.Loader):
 
         return disc, len(centers1)
 
-    def ifes(self, exp_seq_id):
+    def info(self, chain_id):
         mapping = {}
         with self.session() as session:
-            exp_mapping = mod.ExpSeqChainMapping
-            query = session.query(mod.IfeInfo.pdb_id.label('pdb'),
-                                  mod.ChainInfo.chain_name,
+            query = session.query(mod.ChainInfo.chain_name,
                                   mod.ChainInfo.chain_id,
+                                  mod.IfeInfo.pdb_id.label('pdb'),
                                   mod.IfeInfo.model,
                                   mod.IfeInfo.ife_id,
                                   ).\
                 join(mod.IfeChains,
-                     mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
-                join(mod.ChainInfo,
-                     mod.ChainInfo.chain_id == mod.IfeChains.chain_id).\
-                join(exp_mapping,
-                     exp_mapping.chain_id == mod.IfeChains.chain_id).\
-                join(mod.PdbInfo,
-                     mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
+                     mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
+                join(mod.IfeInfo,
+                     mod.IfeInfo.ife_id == mod.IfeChains.ife_id).\
                 filter(mod.IfeInfo.new_style == 1).\
-                filter(mod.PdbInfo.resolution <= NR_MAX_DISCREPANCY).\
-                filter(mod.ExpSeqChainMapping.exp_seq_id == exp_seq_id)
+                filter(mod.ChainInfo.chain_id == chain_id)
 
-            pdbs = set()
-            for result in query:
-                pdbs.add(result.pdb)
-                mapping[result.chain_id] = ut.row2dict(result)
-
-        if not mapping:
-            raise core.InvalidState("Loaded no possible ifes")
+        if not query.count():
+            raise core.InvalidState("Could not load chain with id %s" %
+                                    chain_id)
+        ife = ut.row2dict(query.first())
 
         with self.session() as session:
-            query = session.query(mod.UnitInfo.sym_op,
-                                  mod.ChainInfo.chain_id).\
+            query = session.query(mod.UnitInfo.sym_op).\
                 join(mod.ChainInfo,
                      (mod.ChainInfo.pdb_id == mod.UnitInfo.pdb_id) &
                      (mod.ChainInfo.chain_name == mod.UnitInfo.chain)).\
-                filter(mod.UnitInfo.pdb_id.in_(pdbs)).\
+                filter(mod.ChainInfo.chain_id == chain_id).\
                 distinct()
 
-            for result in query:
-                if result.chain_id in mapping:
-                    current = mapping[result.chain_id]
-                    current['sym_op'] = result.sym_op
-                    current['name'] = current['ife_id'] + '+' + result.sym_op
+            if not query.count():
+                raise core.InvalidState("Could not get sym info for chain %s" %
+                                        chain_id)
 
-        return mapping.values()
+            possible = set(result.sym_op for result in query)
+            for pref in ['1_555', 'P_1']:
+                if pref in possible:
+                    ife['sym_op'] = pref
+                    ife['name'] = ife['ife_id'] + '+' + pref
+                    return ife
 
-    def known(self, corr_id):
+            sym = sorted(possible)[0]
+            ife['sym_op'] = sym
+            ife['name'] = ife['ife_id'] + '+' + sym
+            return ife
+
+    def __correspondence_query__(self, chain1, chain2):
         with self.session() as session:
-            query = session.query(mod.ChainChainSimilarity).\
-                filter_by(correspondence_id=corr_id)
-            return set([(r.chain_id_1, r.chain_id_2) for r in query])
+            info = mod.CorrespondenceInfo
+            mapping1 = aliased(mod.ExpSeqChainMapping)
+            mapping2 = aliased(mod.ExpSeqChainMapping)
+            query = session.query(info.correspondence_id).\
+                join(mapping1, mapping1.exp_seq_id == info.exp_seq_id_1).\
+                join(mapping2, mapping2.exp_seq_id == info.exp_seq_id_2).\
+                filter(mapping1.chain_id == chain1).\
+                filter(mapping2.chain_id == chain2)
 
-    def is_known(self, known, pair):
-        key = (pair[0]['chain_id'], pair[1]['chain_id'])
-        return key in known
+            result = query.first()
+            if result:
+                return result.correspondence_id
+            return None
 
-    def aligned_ifes(self, corr_id):
-        with self.session() as session:
-            corr = session.query(mod.CorrespondenceInfo).\
-                filter_by(correspondence_id=corr_id).\
-                one()
-            exp1, exp2 = corr.exp_seq_id_1, corr.exp_seq_id_2
-        ife1 = self.ifes(exp1)
-        ife2 = self.ifes(exp2)
+    def corr_id(self, chain_id1, chain_id2):
+        """Given two chain ids, load the correspondence id between them. This
+        will raise an exception if these chains have not been aligned, or if
+        there is more than one alignment between these chains. The chain ids
+        should be the ids used in the database.
 
-        possible = it.product(ife1, ife2)
-        known = self.known(corr_id)
-        is_known = ft.partial(self.is_known, known)
-        pairs = it.ifilterfalse(is_known, possible)
-        pairs = it.ifilter(lambda p: p[0] != p[1], pairs)
-        pairs = list(pairs)
+        :param int chain_id_1: The first chain id.
+        :param int chain_id_2: The second chain id.
+        :returns: A int for the correspondence id for an alignment between the
+        two chains.
+        """
 
-        if not len(pairs):
-            raise core.Skip("Done all chains")
+        corr_id = self.__correspondence_query__(chain_id1, chain_id2)
+        if corr_id is None:
+            corr_id = self.__correspondence_query__(chain_id2, chain_id1)
 
-        self.logger.info("Found %i possible ife pairs to compare", len(pairs))
-
-        return pairs
+        if corr_id is None:
+            raise core.InvalidState("No correspondence for %s %s" %
+                                    (chain_id1, chain_id2))
+        return corr_id
 
     def __check_matrices__(self, table, info):
+        """Check the that required matrices exist.
+        """
+
         with self.session() as session:
             query = session.query(table).\
                 join(mod.UnitInfo,
@@ -282,10 +302,22 @@ class Loader(core.Loader):
             return bool(query.count())
 
     def has_matrices(self, info):
+        """Check if the given info has all the required matrices.
+        """
+
         return self.__check_matrices__(mod.UnitCenters, info) and \
             self.__check_matrices__(mod.UnitRotations, info)
 
     def entry(self, info1, info2, corr_id):
+        """Compute the discrepancy between two given chains.
+
+        :param dict info1: The first chain to use.
+        :param dict info2: The second chain to use.
+        :param int corr_id: The correspondence id between the chains.
+        :returns: A list of dictonaries with the discrepancies betweeen these
+        chains.
+        """
+
         if not self.has_matrices(info1):
             self.logger.warning("Missing matrix data for %s", info1['name'])
             return []
@@ -325,21 +357,19 @@ class Loader(core.Loader):
         reversed['model_2'] = compare['model_1']
 
         return [
-            mod.ChainChainSimilarity(**compare),
-            mod.ChainChainSimilarity(**reversed)
+            compare,
+            reversed
         ]
 
-    def data(self, corr_id, **kwargs):
+    def data(self, pair, **kwargs):
         """Compute all chain to chain similarity data. This will get all
         corresponding chains to chain alignment for all chains in this pdb and
         determine the geometric similarity for the chains, if the alignment is
         a good one.
         """
 
-        data = []
-        ifes = self.aligned_ifes(corr_id)
-        for index, (ife1, ife2) in enumerate(ifes):
-            self.logger.info("Comparing %i: %s, %s",
-                             index, ife1['name'], ife2['name'])
-            data.extend(self.entry(ife1, ife2, corr_id))
-        return data
+        chain1, chain2 = pair
+        info1 = self.info(chain1)
+        info2 = self.info(chain2)
+        corr_id = self.corr_id(chain1, chain2)
+        return self.entry(info1, info2, corr_id)

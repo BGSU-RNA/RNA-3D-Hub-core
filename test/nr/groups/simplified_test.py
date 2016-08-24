@@ -203,7 +203,9 @@ class DiscrepancyTest(StageTest):
         super(DiscrepancyTest, self).setUp()
         self.disc = {
             1: {2: 0.4, 4: 1},
-            3: {3: 0, 5: 0.1}
+            2: {1: 0.4, 2: 0.0, 3: 5.0, 4: 5.0},
+            3: {3: 0, 5: 0.1},
+            4: {},
         }
         self.method = ft.partial(self.loader.has_good_discrepancy, self.disc)
 
@@ -227,6 +229,27 @@ class DiscrepancyTest(StageTest):
         g2 = {'id': 2, 'db_id': 2, 'chains': [{'db_id': 2}]}
         self.assertTrue(self.method(g1, g2))
 
+    def test_says_true_if_too_big_resolution(self):
+        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}], 'resolution': 5.0}
+        g2 = {'id': 2, 'db_id': 4, 'chains': [{'db_id': 4}], 'resolution': 1.0}
+        assert self.method(g1, g2) is True
+        assert self.method(g2, g1) is True
+        assert self.method(g1, g1) is True
+
+    def test_says_true_if_no_resolution(self):
+        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}], 'resolution': None}
+        g2 = {'id': 2, 'db_id': 4, 'chains': [{'db_id': 4}], 'resolution': 1.0}
+        assert self.method(g1, g2) is True
+        assert self.method(g2, g1) is True
+        assert self.method(g1, g1) is True
+
+    def test_says_true_if_too_short(self):
+        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}], 'length': 2}
+        g2 = {'id': 2, 'db_id': 4, 'chains': [{'db_id': 4}], 'length': 10}
+        assert self.method(g1, g2) is True
+        assert self.method(g2, g1) is True
+        assert self.method(g1, g1) is True
+
 
 class AlignmentTest(StageTest):
     loader_class = Grouper
@@ -235,6 +258,7 @@ class AlignmentTest(StageTest):
         super(AlignmentTest, self).setUp()
         self.align = {
             1: {2: True, 3: False},
+            2: {1: True, 3: False},
             3: {5: False, 1: False}
         }
         self.method = ft.partial(self.loader.has_good_alignment, self.align)
@@ -348,8 +372,11 @@ class PairsTest(StageTest):
             3: {3: 0, 5: 0.1}
         }
         self.align = {
-            1: {2: True, 3: False, 5: True},
-            3: {5: False, 1: False, 4: True}
+            1: {1: True, 2: True, 3: False, 4: False, 5: False},
+            2: {},
+            3: {1: False, 2: False, 3: True, 4: True, 5: False},
+            4: {},
+            5: {},
         }
         self.chains = [
             {'id': '0', 'db_id': 1, 'chains': [{'db_id': 1}], 'species': None},
@@ -394,18 +421,27 @@ class SpeciesSplittingTest(StageTest):
         groups = []
         self.loader.use_discrepancy = False
         for group in self.loader(pdbs):
-            groups.append(set(ife['id'] for ife in group['members']))
+            groups.append(sorted(set(ife['id'] for ife in group['members'])))
         self.loader.use_discrepancy = True
-        return groups
+        return sorted(groups)
 
     def test_it_leaves_a_group_with_small_members_alone(self):
-        groups = self.group('4A3J', '4A3G', '3J9M')
-        assert set(['4A3J|1|P', '4A3G|1|P', '3J9M|1|u']) in groups
+        assert self.group('4A3J', '4A3G', '3J9M') == [
+            ['3J9M|1|A'],
+            ['3J9M|1|AA'],
+            ['3J9M|1|B'],
+            sorted(['4A3J|1|P', '4A3G|1|P', '3J9M|1|u'])
+        ]
 
     def test_it_splits_large_by_species(self):
-        groups = self.group('4V9Q', '3CW5', '4TUE')
-        assert set(['4TUE|1|QV', '4TUE|1|XV']) in groups
-        assert set(['4TUE|1|QA', '4TUE|1|XA', '4V9Q|1|BA', '4V9Q|1|DA']) in groups
+        assert self.group('4V9Q', '3CW5', '4TUE') == [
+            ['3CW5|1|A'],
+            sorted(['4TUE|1|QA', '4TUE|1|XA', '4V9Q|1|BA', '4V9Q|1|DA']),  # Tt SSU
+            sorted(['4TUE|1|QV', '4TUE|1|XV']),  # Limbella pachyloma tRNA
+            ['4TUE|1|RA', '4TUE|1|YA', '4V9Q|1|AA', '4V9Q|1|CA'],
+            ['4TUE|1|RB', '4TUE|1|YB', '4V9Q|1|AB', '4V9Q|1|CB'],
+            ['4V9Q|1|BV', '4V9Q|1|BW', '4V9Q|1|DV', '4V9Q|1|DW'],
+        ]
 
     @pytest.mark.skip()
     def test_it_puts_synthenic_with_largest_group(self):

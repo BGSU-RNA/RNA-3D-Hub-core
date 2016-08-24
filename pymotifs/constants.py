@@ -91,7 +91,7 @@ CORRESPONDENCE_SMALL_CUTOFF = 36
 CORRESPONDENCE_HUGE_CUTOFF = 2000
 
 """Set of pairs that must be joined by into a equivelance class"""
-EQUIVELANT_PAIRS = set([
+EQUIVALENT_PAIRS = set([
     (('1S72', '0'), ('1FG0', 'A')),
     (('1S72', '0'), ('1FFZ', 'A')),
 ])
@@ -129,4 +129,7 @@ MOTIF_GROUP_NAME = '{type}_{handle}.{version}'
 NR_CACHE_NAME = 'nr'
 
 """Max discrepancy to allow for chain chain discrepancies"""
-NR_MAX_DISCREPANCY = 4.0
+MAX_RESOLUTION_DISCREPANCY = 4.0
+
+"""Min number of nts to need for computing discrepancies"""
+MIN_NT_DISCREPANCY = 3

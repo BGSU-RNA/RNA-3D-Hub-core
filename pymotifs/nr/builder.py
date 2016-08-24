@@ -123,8 +123,6 @@ class Builder(core.Base):
     def group(self, pdbs, **kwargs):
         """Group all pdbs into nr sets.
         """
-        if not pdbs:
-            raise core.InvalidState("Must give pdbs to group")
         grouper = Grouper(self.config, self.session)
         return grouper(pdbs, **kwargs)
 
@@ -266,12 +264,15 @@ class Builder(core.Base):
         :returns: A list of nr classes with their memebers and parents.
         """
 
+        if not pdbs:
+            raise core.InvalidState("Must give pdbs to group")
+
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
-        known = Known(self.config, self.session)
         groups = self.group(pdbs)
 
         parents = {}
+        known = Known(self.config, self.session)
         for cutoff in cutoffs:
             parents[cutoff] = known.classes(parent_release, cutoff)
 
