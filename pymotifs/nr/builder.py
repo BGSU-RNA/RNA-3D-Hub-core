@@ -120,14 +120,10 @@ class Builder(core.Base):
     release as well as determine the representative.
     """
 
-    def group(self, pdbs, use_discrepancy=True, use_species=True, **kwargs):
+    def group(self, pdbs, **kwargs):
         """Group all pdbs into nr sets.
         """
-        if not pdbs:
-            raise core.InvalidState("Must give pdbs to group")
         grouper = Grouper(self.config, self.session)
-        grouper.use_discrepancy = use_discrepancy
-        grouper.use_species = use_species
         return grouper(pdbs, **kwargs)
 
     def named(self, groups, parents):
@@ -258,7 +254,7 @@ class Builder(core.Base):
         return data
 
     def __call__(self, pdbs, parent_release, current_release,
-                 cutoffs=RESOLUTION_GROUPS, sequence_only=False, **kwargs):
+                 cutoffs=RESOLUTION_GROUPS, **kwargs):
         """Build the nr set.
 
         :pdbs: The list of pdbs to process.
@@ -268,13 +264,12 @@ class Builder(core.Base):
         :returns: A list of nr classes with their memebers and parents.
         """
 
+        if not pdbs:
+            raise core.InvalidState("Must give pdbs to group")
+
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
-        groups = []
-        if sequence_only:
-            groups = self.group(pdbs, use_discrepancy=False, use_species=False)
-        else:
-            groups = self.group(pdbs)
+        groups = self.group(pdbs)
 
         parents = {}
         known = Known(self.config, self.session)
@@ -288,7 +283,6 @@ class Builder(core.Base):
         return {
             'parent_counts': self.counts(parents, with_reps),
             'groups': with_reps,
-            'sequence_only': sequence_only,
             'release': current_release,
             'parent': parent_release,
         }
