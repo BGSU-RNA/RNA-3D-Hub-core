@@ -9,19 +9,6 @@
         "password": false
     },
 
-    "recalculate": {
-        "distances": false,
-        "coordinates": false,
-        "interactions": false,
-        "IL": false,
-        "Hl": false,
-        "J3": false,
-        "redundant_nts": false,
-        "best_chains_and_models": false,
-        "unit_ids": false,
-        "ordering": false
-    },
-
     "db": {
         "uri": "mysql://user:pass@127.0.0.1/database-name"
     },
@@ -33,16 +20,8 @@
     },
 
     "locations": {
-        "loops_mat_files": "/home/pipeline/hub-core/MotifAtlas/PrecomputedData",
-        "loops_search_dir": "/home/pipelinehub-core/MotifAtlas/aAa",
-        "log_dir": "/home/pipeline/hub-core/MotifAtlas/logs",
-        "releases_dir": "/home/pipeline/hub-core/MotifAtlas/Releases",
-        "nrlists_dir": "/home/pipeline/nrlist/lists",
-        "fr3d_root": "/home/pipeline/hub-core/FR3D/",
-        "2ds_destination":  "/home/pipeline/hub-core/MotifAtlas/2d",
         "mlab_app": "/usr/local/bin/matlab",
         "interactions_gz": "/home/pipeline/hub-core/pymotifs/interactions.gz",
-        "cache": "/home/pipeline/hub-core/cache",
         "loops_gz": "/home/pipeline/hub-core/MotifAtlas/loops.gz"
     }
 
