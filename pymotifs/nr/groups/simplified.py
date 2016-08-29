@@ -480,7 +480,7 @@ class Grouper(core.Base):
         # incorrect results though. This is may have been due to bugs that have
         # been fixed now.
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
-        pairs = it.combinations(chains, r=2)
+        pairs = it.combinations(chains, 2)
         return it.ifilter(lambda p: equiv(*p), pairs)
 
     def connections(self, chains, alignments, discrepancies):
@@ -560,7 +560,7 @@ class Grouper(core.Base):
         """
 
         self.logger.info("Will group %i pdbs", len(pdbs))
-        ifes = self.ifes(pdbs)
+        ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
         alignments = self.alignments(ifes)
         discrepancy = self.discrepancies(ifes)
