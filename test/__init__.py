@@ -12,7 +12,7 @@ from pymotifs.config import load as config_loader
 
 from pymotifs.utils.matlab import exists as has_matlab
 
-CONFIG = config_loader('conf/test.json', )
+CONFIG = config_loader('conf/bootstrap.json')
 engine = create_engine(CONFIG['db']['uri'])
 models.reflect(engine)
 Session = sessionmaker(bind=engine)
