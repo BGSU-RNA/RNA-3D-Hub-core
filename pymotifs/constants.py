@@ -20,7 +20,7 @@ BOOTSTRAPPING = {
     'steps': [
         {
             'stage': 'update',
-            'args': {'skip_dependencies': True},
+            'args': {},
             'pdbs': ["157D", "1CGM", "1DUH", "1EIY", "1EKD", "1ET4", "1F5H",
                      "1G59", "1GID", "1I9K", "1IBK", "1J5E", "1KOG", "1MDG",
                      "1UTD", "1VY4", "1WMQ", "1X8W", "2G32", "2HOJ", "2HOK",
