@@ -5,8 +5,8 @@ from copy import deepcopy
 
 
 def merge(a, b):
-    """recursively merges dict's. not just simple a['key'] = b['key'], if
-    both a and b have a key who's value is a dict then dict_merge is
+    """Recursively merges dict's. not just simple a['key'] = b['key'], if
+    both a and b have a key who's value is a dict then merge is
     called on both values and the result stored in the returned
     dictionary.
 
@@ -52,7 +52,8 @@ def defaults():
             "releases_dir": os.path.join(base, "MotifAtlas", "Releases"),
             "fr3d_root": os.path.join(base, "FR3D"),
             "2ds_destination":  os.path.join(base, "MotifAtlas", "2d"),
-        }
+        },
+        'recaculate': collections.defaultdict(lambda: False)
     }
 
 
