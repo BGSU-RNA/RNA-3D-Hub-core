@@ -10,6 +10,7 @@ it is run it will only add 10 new connections to the database.
 import sys
 import itertools as it
 import functools as ft
+import operator as op
 
 import numpy as np
 from sqlalchemy.orm import aliased
@@ -24,9 +25,11 @@ from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
 
+from pymotifs.nr.groups.simplified import Grouper
+
 from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 from pymotifs.constants import MIN_NT_DISCREPANCY
-from pymotifs.constants import NR_SEQUENCE_ONLY
+# from pymotifs.constants import NR_SEQUENCE_ONLY
 
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
@@ -88,7 +91,7 @@ class Loader(core.SimpleLoader):
         for group in groups:
             chains = it.ifilter(self.good_resolution, group['members'])
             chains = it.imap(op.itemgetter('db_id'), chains)
-            possible.extend(it.combinations(chains))
+            possible.extend(it.combinations(chains, 2))
         return possible
 
     def query(self, session, pair):
