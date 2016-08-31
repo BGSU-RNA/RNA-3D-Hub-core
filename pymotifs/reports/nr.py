@@ -168,12 +168,26 @@ class Info(object):
         return self._chains
 
 
-def sorter(entry):
-    pass
+def sort_groups(data):
+    key = op.attrgetter('group')
+    grouped = it.groupby(sorted(data, key=key), key)
+    ordering = []
+    mapping = {}
+    for name, members in grouped:
+        members = sorted(members, key=op.attrgetter('rank'))
+        mapping[name] = members
+        rep_size = members[0].experimental
+        ordering.append((name, rep_size))
+
+    ordering.sort(key=op.itemgetter(1))
+    ordered = []
+    for name, _ in ordering:
+        ordered.extend(mapping[name])
+    return ordered
 
 
 def report(maker, release, resolution, **kwargs):
-    """Create a report about the NR set
+    """Create a report about the NR set.
     """
 
     info = Info(maker)
@@ -212,4 +226,4 @@ def report(maker, release, resolution, **kwargs):
                             )
             current.add_info(info)
             data.append(current)
-    return [d.named() for d in data]
+    return [d.named() for d in sort_groups(data)]
