@@ -10,6 +10,7 @@ from sqlalchemy.sql.expression import func
 
 
 HEADERS = [
+    'Group',
     'Rank',
     'Type',
     'IFE id',
@@ -39,7 +40,8 @@ ChainInfo = coll.namedtuple('ChainInfo', ['name', 'species', 'compound',
 
 
 class Entry(object):
-    def __init__(self, rank, ife_id, pdb_id, chain_ids):
+    def __init__(self, group, rank, ife_id, pdb_id, chain_ids):
+        self.group = group
         self.rank = rank
         self.ife_id = ife_id
         self.pdb_id = pdb_id
@@ -82,6 +84,7 @@ class Entry(object):
             proteins = []
             protein_species = []
         return {
+            'Group': self.group,
             'Rank': self.rank,
             'Type': self.type,
             'IFE id': self.ife_id,
@@ -201,7 +204,8 @@ def report(maker, release, resolution, **kwargs):
             chain_ids = set(name(c) for c in chains)
             chain_ids = sorted(chain_ids, key=op.itemgetter(1))
             chain_ids = [n[0] for n in chain_ids]
-            current = Entry(result['rank'],
+            current = Entry(result['name'],
+                            result['rank'],
                             result['ife_id'],
                             result['pdb_id'],
                             chain_ids,
