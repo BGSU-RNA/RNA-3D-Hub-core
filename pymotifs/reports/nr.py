@@ -203,7 +203,7 @@ def report(maker, release, resolution, **kwargs):
                               ife_chains.chain_id,
                               ife_chains.index,
                               ).\
-            join(chains, chains.nr_chain_id == classes.nr_class_id).\
+            join(chains, chains.nr_class_id == classes.nr_class_id).\
             join(ife, ife.ife_id == chains.ife_id).\
             join(ife_chains, ife.ife_id == ife_chains.ife_id).\
             filter(classes.nr_release_id == release).\
