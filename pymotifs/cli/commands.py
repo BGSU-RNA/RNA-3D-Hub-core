@@ -22,6 +22,7 @@ from pymotifs import correct as _correct
 from pymotifs import reports
 from pymotifs import models as mod
 from pymotifs import config as conf
+from pymotifs import transfer as _transfer
 from pymotifs.version import __VERSION__
 from pymotifs.dispatcher import Dispatcher
 
@@ -314,3 +315,36 @@ def report_species(ctx, **kwargs):
     """
     kwargs.update(ctx.parent.objs)
     reports.species(**kwargs)
+
+
+@cli.group(short_help='Dump/Import data')
+@click.pass_context
+def transfer(ctx):
+    """Make dumping data from one database to another easier. This can't easily
+    be done using something like mysql-dump because several tables use integer
+    primary keys which may be different between different versions of the
+    database. This will dump data out and translate the ids as needed.
+    """
+    ctx.objs = ctx.parent.objs
+
+
+@transfer.group('cc', short_help='Dump/Import chain chain data')
+@click.pass_context
+def transfer_chain_chain(ctx):
+    ctx.objs = ctx.parent.objs
+
+
+@transfer_chain_chain.command('export', short_help='Dump chain chain data')
+@click.argument('filename')
+@click.pass_context
+def transfer_chain_chain_dump(ctx, **kwargs):
+    kwargs.update(ctx.parent.objs)
+    _transfer.chain_chain.dump(**kwargs)
+
+
+@transfer_chain_chain.command('import', short_help='Import chain chain data')
+@click.argument('filename')
+@click.pass_context
+def transfer_chain_chain_import(ctx, **kwargs):
+    kwargs.update(ctx.parent.objs)
+    _transfer.chain_chain.load(**kwargs)
