@@ -15,6 +15,8 @@ import operator as op
 import numpy as np
 from sqlalchemy.orm import aliased
 
+from fr3d.geometry.discrepancy import matrix_discrepancy
+
 from pymotifs import core
 from pymotifs import models as mod
 import pymotifs.utils as ut
@@ -29,9 +31,8 @@ from pymotifs.nr.groups.simplified import Grouper
 
 from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 from pymotifs.constants import MIN_NT_DISCREPANCY
-# from pymotifs.constants import NR_SEQUENCE_ONLY
 
-from fr3d.geometry.discrepancy import matrix_discrepancy
+from memory_profiler import profile
 
 
 def label_center(table, number):
@@ -72,6 +73,7 @@ class Loader(core.SimpleLoader):
         return chain['resolution'] is not None and \
             chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY
 
+    @profile
     def to_process(self, pdbs, **kwargs):
         """This will compute all pairs to compare. This will compute a grouping
         based upon sequence only and then go through
@@ -284,8 +286,8 @@ class Loader(core.SimpleLoader):
             corr_id = self.__correspondence_query__(chain_id2, chain_id1)
 
         if corr_id is None:
-            raise core.InvalidState("No correspondence for %s %s" %
-                                    (chain_id1, chain_id2))
+            raise core.Skip("No correspondence between %s, %s" %
+                            (chain_id1, chain_id2))
         return corr_id
 
     def __check_matrices__(self, table, info):

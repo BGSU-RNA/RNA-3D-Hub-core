@@ -343,6 +343,8 @@ def transfer_chain_chain_dump(ctx, **kwargs):
 
 
 @transfer_chain_chain.command('import', short_help='Import chain chain data')
+@click.option('--ignore-missing', is_flag=True,
+              help="Ignore any chains that are missing from this DB")
 @click.argument('filename')
 @click.pass_context
 def transfer_chain_chain_import(ctx, **kwargs):
