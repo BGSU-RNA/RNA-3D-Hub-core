@@ -1,5 +1,5 @@
 """This contains all command line interface commands that the pipeline script
-can run. This is effectively the main function for the pipeline.
+can run. This is effectively the main entry point for the pipeline.
 """
 
 import random
@@ -155,10 +155,12 @@ def bootstrap(ctx, **kwargs):
 @cli.command(short_help="List stages")
 @click.pass_context
 def list(ctx, **kwargs):
-    """List all known stages.
+    """This will output each stage name along with the short documentation on
+    the stage, if any is available. This will only list stages which are part
+    of the 'update' stage.
     """
-    mod.reflect(ctx.parent.objs['engine'])
 
+    mod.reflect(ctx.parent.objs['engine'])
     formatter = click.HelpFormatter(width=90)
     formatter.write_dl((s[0], s[1]) for s in introspect.stages())
     click.echo(formatter.getvalue(), nl=False)
@@ -168,7 +170,8 @@ def list(ctx, **kwargs):
 @click.argument('name', type=str)
 @click.pass_context
 def about(ctx, name=None, **kwargs):
-    """Display help for a stage.
+    """Display help for a stage. This will write out the complete documentation
+    for each stage with the given name.
     """
 
     mod.reflect(ctx.parent.objs['engine'])
@@ -187,7 +190,7 @@ def about(ctx, name=None, **kwargs):
 @cli.group(short_help="Run commands for 2d diagrams")
 @click.pass_context
 def ss(ctx):
-    """Commands dealing with importing 2D diagrams
+    """Commands dealing with importing 2D diagrams.
     """
     ctx.objs = ctx.parent.objs
 
@@ -222,7 +225,7 @@ def ss_import(ctx, **kwargs):
 def ss_align(ctx, pdb, **kwargs):
     """Align a chain to a secondary structure.
 
-    This will determine the expermental sequence of the given chain and then
+    This will determine the experimental sequence of the given chain and then
     align it to the secondary structure in the given file. The 2D will be
     imported as needed. Doing one such import can allow the inference of
     positions across many structures since experimental sequences are often
@@ -234,7 +237,7 @@ def ss_align(ctx, pdb, **kwargs):
 @cli.group(short_help="A group of commands for correcting issues in the db")
 @click.pass_context
 def correct(ctx):
-    """Correct isues in the database.
+    """Correct issues in the database.
 
     During the migration in the format of the database there were a variety of
     issues found and raised. For example, it was found that not all old style
@@ -297,8 +300,9 @@ def report(ctx):
 def report_nr(ctx, **kwargs):
     """Create a report of the NR set.
 
-    This will detail the memebers of each set and information about them. It
-    creates a CSV that is written to stdout.
+    This will detail the members of each set and information about them. It
+    creates a CSV that is written to stdout. This report is meant to be useful
+    for evaluating the grouping of an NR set.
     """
     kwargs.update(ctx.parent.objs)
     reports.nr(**kwargs)
@@ -331,6 +335,8 @@ def transfer(ctx):
 @transfer.group('cc', short_help='Dump/Import chain chain data')
 @click.pass_context
 def transfer_chain_chain(ctx):
+    """A group of commands for dealing export/import of chain-chain comparisons.
+    """
     ctx.objs = ctx.parent.objs
 
 
@@ -338,6 +344,11 @@ def transfer_chain_chain(ctx):
 @click.argument('filename')
 @click.pass_context
 def transfer_chain_chain_dump(ctx, **kwargs):
+    """Export the chain chain data for import later. Chain-chain comparisions
+    can take a long time to compute and so sometimes we want to transfer them
+    between machines. This dumps the data into the given file for future
+    import.
+    """
     kwargs.update(ctx.parent.objs)
     _transfer.chain_chain.dump(**kwargs)
 
@@ -348,5 +359,13 @@ def transfer_chain_chain_dump(ctx, **kwargs):
 @click.argument('filename')
 @click.pass_context
 def transfer_chain_chain_import(ctx, **kwargs):
+    """This imports exported chain chain comparison data. This will attempt to
+    import all data in the given dump file, while ignoring data that already
+    exists. It will not error check to see if the database and dump file agree
+    on an already existing discrepancy. If it cannot find all chains that are
+    in the dump file it will fail, unless the ignore-missing flag is given.
+    This is useful when importing a dump from a database that is newer than the
+    one that is being imported to.
+    """
     kwargs.update(ctx.parent.objs)
     _transfer.chain_chain.load(**kwargs)
