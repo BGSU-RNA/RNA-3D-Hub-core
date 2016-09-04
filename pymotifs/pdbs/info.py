@@ -16,7 +16,6 @@ class Loader(core.MassLoader):
 
     merge_data = True
     dependencies = set()
-    table = mod.PdbInfo
 
     names = {
         'structureId': 'pdb_id',
@@ -64,4 +63,4 @@ class Loader(core.MassLoader):
         if len(data) != len(pdbs):
             self.logger.error("Could not get all data for all pdbs")
 
-        return [self.rename(report) for report in data]
+        return [mod.PdbInfo(**self.rename(report)) for report in data]

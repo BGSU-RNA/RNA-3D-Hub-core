@@ -1,7 +1,7 @@
 from Bio.Alphabet import ThreeLetterProtein
 
 from pymotifs import core
-from pymotifs.models import _PdbUnitIdCorrespondence as PdbUnitIdCorrespondence
+from pymotifs import models as mod
 
 AA = [seq.upper() for seq in ThreeLetterProtein().letters]
 
@@ -32,15 +32,15 @@ class Translator(object):
 
     def translate(self, raw):
         mapping = {}
+        corr = mod._PdbUnitIdCorrespondence
         with self.session() as session:
-            query = session.query(PdbUnitIdCorrespondence.unit_id,
-                                  PdbUnitIdCorrespondence.old_id)
+            query = session.query(corr.unit_id, corr.old_id)
 
             nt_ids = raw
             if isinstance(raw, str):
                 nt_ids = raw.split(',')
 
-            query = query.filter(PdbUnitIdCorrespondence.old_id.in_(nt_ids))
+            query = query.filter(corr.old_id.in_(nt_ids))
 
             for result in query:
                 mapping[result.old_id] = result.unit_id

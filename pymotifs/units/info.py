@@ -4,7 +4,7 @@ import pymotifs.core as core
 
 from Bio.Alphabet import ThreeLetterProtein
 
-from pymotifs.models import UnitInfo
+from pymotifs import models as mod
 from pymotifs.utils import units
 from pymotifs.download import Downloader
 from pymotifs.pdbs.info import Loader as PdbLoader
@@ -23,17 +23,17 @@ class Loader(core.SimpleLoader):
         return units.component_type(unit)
 
     def as_unit(self, nt):
-        return UnitInfo(unit_id=nt.unit_id(),
-                        pdb_id=nt.pdb,
-                        model=nt.model,
-                        chain=nt.chain,
-                        unit=nt.sequence,
-                        number=nt.number,
-                        alt_id=getattr(nt, 'alt_id', None),
-                        ins_code=nt.insertion_code,
-                        sym_op=nt.symmetry,
-                        chain_index=nt.index,
-                        unit_type_id=self.type(nt))
+        return mod.UnitInfo(unit_id=nt.unit_id(),
+                            pdb_id=nt.pdb,
+                            model=nt.model,
+                            chain=nt.chain,
+                            unit=nt.sequence,
+                            number=nt.number,
+                            alt_id=getattr(nt, 'alt_id', None),
+                            ins_code=nt.insertion_code,
+                            sym_op=nt.symmetry,
+                            chain_index=nt.index,
+                            unit_type_id=self.type(nt))
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)

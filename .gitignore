@@ -48,3 +48,5 @@ tags
 .opengrok/
 cache/
 ss-diagrams/
+
+doc/build/
