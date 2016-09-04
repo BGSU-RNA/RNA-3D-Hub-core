@@ -125,7 +125,7 @@ def known_comparisions(session):
     return known
 
 
-def load(filename, **kwargs):
+def load(filename, ignore_missing=False, **kwargs):
     """Load the data in the given file. This will import all new data in the
     given file to the database. If the comparison has already been done it
     will not be loaded. The file should contain the data to write in the format
@@ -138,8 +138,10 @@ def load(filename, **kwargs):
         data = pickle.load(raw)
 
     session = setup(**kwargs)
-    chain_mapping = chain_id_mapping(session, data)
-    correspondence_mapping = correspondence_id_mapping(session, data)
+    chain_mapping = chain_id_mapping(session, data,
+                                     ignore_missing=ignore_missing)
+    correspondence_mapping = correspondence_id_mapping(session, data,
+                                                       ignore_missing=ignore_missing)
     known = known_comparisions(session)
     savable = []
     for entry in data:
