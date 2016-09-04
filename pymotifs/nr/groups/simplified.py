@@ -287,7 +287,7 @@ class Grouper(core.Base):
             if group1['resolution'] > MAX_RESOLUTION_DISCREPANCY or \
                     group2['resolution'] > MAX_RESOLUTION_DISCREPANCY or \
                     not group1['resolution'] or not group2['resolution']:
-                self.logger.debug("Bad resolution, thus good discrepancy")
+                self.logger.debug("Resolution too high for discrepancy")
                 return True
 
         if 'length' in group1 and 'length' in group2:
