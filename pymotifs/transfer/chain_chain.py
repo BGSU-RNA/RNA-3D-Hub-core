@@ -54,8 +54,11 @@ def chain_id_mapping(session, data, ignore_missing=False):
             mapping[entry] = result.chain_id
             entries.remove(entry)
 
-    if entries and not ignore_missing:
-        raise ValueError("Not all entries mapped: %s" % str(entries))
+    if entries:
+        msg = "Not all entries mapped: %s" % str(entries)
+        logger.error(msg)
+        if not ignore_missing:
+            raise ValueError(msg)
 
     return mapping
 
