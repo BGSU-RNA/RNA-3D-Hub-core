@@ -8,6 +8,9 @@ from pymotifs import core
 from pymotifs.utils import row2dict
 from pymotifs import models as mod
 
+import pickle
+from memory_profiler import profile
+
 
 class Helper(core.Base):
     """A helper to load correspondence information. For example, getting what
@@ -129,6 +132,13 @@ class Helper(core.Base):
         produce a dictionary of dictionaries where the final values are a
         boolean indicating a good alignment or not.
 
+        If good is given and not None then this will only load the alignments
+        which have alignments marked good, or those bad. This means that the
+        produced matrix will not contain all possible pairs of values. Specifically
+        it will not contain pairs of chains that were never aligned when good
+        is False. We will have entries at the top level for all given chains
+        though, even if they have no matching alignments.
+
         :param list ids: A list of pdb ids to use.
         :param bool good: Bool to control if this should only load good
         alignments. True means only good alignments, False means only bad, and
@@ -155,6 +165,9 @@ class Helper(core.Base):
             info = mod.CorrespondenceInfo
             query = session.query(info)
 
+            if good is not None:
+                query = query.filter(info.good_alignment == good)
+
             mapping = coll.defaultdict(dict)
             for result in query:
                 is_good = bool(result.good_alignment)
@@ -165,21 +178,19 @@ class Helper(core.Base):
                     mapping[name1][name2] = is_good
                     mapping[name2][name1] = is_good
 
-        ids = it.chain.from_iterable(exp_mapping.values())
-        pairs = it.product(ids, repeat=2)
-        pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
-        pairs = list(pairs)
-        for name1, name2 in pairs:
-            if name2 not in mapping[name1]:
-                mapping[name1][name2] = False
-                mapping[name2][name1] = False
-
-        if good is not None:
+        if good is None:
+            ids = it.chain.from_iterable(exp_mapping.values())
+            pairs = it.product(ids, repeat=2)
+            pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
+            pairs = list(pairs)
             for name1, name2 in pairs:
-                if mapping[name1][name2] != good:
-                    mapping[name1].pop(name2)
-                if not mapping[name1]:
-                    mapping.pop(name1)
+                if name2 not in mapping[name1]:
+                    mapping[name1][name2] = False
+                    mapping[name2][name1] = False
+        else:
+            for name in it.chain.from_iterable(exp_mapping.itervalues()):
+                if name not in mapping:
+                    mapping[name] = {}
 
         return dict(mapping)
 

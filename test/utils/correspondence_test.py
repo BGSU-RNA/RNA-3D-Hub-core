@@ -42,16 +42,21 @@ class AlignedChainsTest(StageTest):
 
     def test_can_load_only_good_alignments(self):
         val = self.aligned(['1GID', '124D', '3T4B'], good=True)
-        ans = {'1GID||A': {'1GID||B': True}, '1GID||B': {'1GID||A': True}}
+        ans = {
+            '1GID||A': {'1GID||B': True},
+            '1GID||B': {'1GID||A': True},
+            '3T4B||A': {},
+            '124D||B': {},
+        }
         assert val == ans
 
     def test_can_load_only_bad_alignments(self):
         val = self.aligned(['1GID', '124D', '3T4B'], good=False)
         assert val == {
-            '3T4B||A': {'1GID||A': False, '1GID||B': False, '124D||B': False},
-            '1GID||A': {'3T4B||A': False, '124D||B': False},
-            '1GID||B': {'3T4B||A': False, '124D||B': False},
-            '124D||B': {'1GID||A': False, '1GID||B': False, '3T4B||A': False},
+            '3T4B||A': {'1GID||A': False, '1GID||B': False},
+            '1GID||A': {'3T4B||A': False},
+            '1GID||B': {'3T4B||A': False},
+            '124D||B': {},
         }
 
 
