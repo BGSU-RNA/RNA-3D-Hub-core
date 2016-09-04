@@ -451,33 +451,12 @@ class Grouper(core.Base):
         :returns: An iterable of all valid pairs.
         """
 
-        # mapping = {}
-        # for chain in chains:
-        #     db_id = chain['db_id']
-        #     if db_id in mapping:
-        #         self.logger.error("db_id of entry already in mapping")
-        #         self.logger.error("Entry: %s", chain)
-        #         self.logger.error("Mapping: %s", mapping)
-        #         raise core.InvalidState("Invalid mapping duplicated %i", db_id)
-        #     mapping[db_id] = chain
-        # pairs = it.imap(op.itemgetter('db_id'), chains)
-        # pairs = it.ifilter(is_mapped(0), pairs)
-        # pairs = it.ifilter(is_mapped(1), pairs)
-        # pairs = it.ifilter(lambda p: p[0] != p[1], pairs)
-        # pairs = it.imap(lambda p: (mapping[p[0]], mapping[p[1]]), pairs)
-
-        missing = self.missing_ifes(alignments, chains)
-        if missing:
-            self.logger.error("Detected %i chains not in alignments", len(missing))
-            self.logger.error("Chains: %s", ', '.join(str(m) for m in missing))
-            raise core.InvalidState("Not all chains in alignments")
-
         # It should be possible to rewrite this section such that it only
         # iterates over the chains which have been aligned. In addition, it is
         # possible to change the alignment loading to only load the good
         # alignments. If both these changes are done the run time is decreased
-        # greatly (I think ~30 min). For some reason this produces the
-        # incorrect results though. This is may have been due to bugs that have
+        # greatly (I think to ~30 min). For some reason this produces the
+        # incorrect results though. This is likely been due to bugs that have
         # been fixed now.
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
         pairs = it.combinations(chains, 2)
