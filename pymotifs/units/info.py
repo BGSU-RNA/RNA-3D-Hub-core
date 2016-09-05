@@ -17,9 +17,21 @@ class Loader(core.SimpleLoader):
     dependencies = set([Downloader, PdbLoader])
 
     def query(self, session, pdb):
-        return session.query(UnitInfo).filter_by(pdb_id=pdb)
+        """Create a query for all units for the given PDB.
+
+        :param Session session: The session to use.
+        :param str pdb: The PDB Id to use.
+        :returns: A query to find all units from the given structure.
+        """
+        return session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
 
     def type(self, unit):
+        """Compute the component type, ie A, C, G, U is RNA, DA, DC, etc is DNA
+        and so forth.
+
+        :param Component unit: The unit to get the component for
+        :returns: The component type.
+        """
         return units.component_type(unit)
 
     def as_unit(self, nt):
