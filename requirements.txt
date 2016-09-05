@@ -3,8 +3,6 @@ SQLAlchemy==0.9.4
 argparse==1.1
 biopython==1.66
 click==6.2
-## FIXME: could not find svn URL in dependency_links for this package:
-elementtree==1.2.6-20050316
 -e git+git@github.com:BGSU-RNA/fr3d-python.git@f79c7e21645bb0330dc0c207cce8fa44c90ee6a3#egg=fr3d-origin/develop
 mailer==0.8.1
 mlabwrap==1.1
