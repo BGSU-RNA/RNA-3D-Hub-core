@@ -49,4 +49,4 @@ tags
 cache/
 ss-diagrams/
 
-doc/build/
+docs/build/*
