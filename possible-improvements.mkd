@@ -34,3 +34,7 @@ Here is a list of some possible improvements. They are in no particular order.
    constraint to interaction columns. Also, the tables wouldn't be filled with
    columns that have lots of NULL's as they are currently. A view could be made
    to preserve the previous querying method.
+
+9. Cleanup and simplify the hierarchy in pymotifs.core.stages. Currently, there
+   are too many levels of inheritance. This can be cut down quite a bit using
+   composition instead.
