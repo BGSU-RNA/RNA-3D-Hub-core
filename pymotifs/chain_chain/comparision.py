@@ -1,15 +1,12 @@
-"""This is a loader to load the chain to chain discrepancies into the database.
-This will look at good correspondences for a given structure and extract all
-the aligned chains and then compute the geometric discrepancy between them and
-then place them in the database.
+"""Load the chain to chain discrepancies. This will look at good
+correspondences and extracts all the aligned chains and then compute the
+geometric discrepancy between them and then place them in the database.
 
 This will only compare chains which are an integral part of an IFE. Each time
 it is run it will only add 10 new connections to the database.
 """
 
-import sys
 import itertools as it
-import functools as ft
 import operator as op
 
 import numpy as np
