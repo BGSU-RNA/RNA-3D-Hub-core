@@ -32,8 +32,6 @@ from pymotifs.nr.groups.simplified import Grouper
 from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 from pymotifs.constants import MIN_NT_DISCREPANCY
 
-from memory_profiler import profile
-
 
 def label_center(table, number):
     return [
@@ -73,7 +71,6 @@ class Loader(core.SimpleLoader):
         return chain['resolution'] is not None and \
             chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY
 
-    @profile
     def to_process(self, pdbs, **kwargs):
         """This will compute all pairs to compare. This will compute a grouping
         based upon sequence only and then go through
