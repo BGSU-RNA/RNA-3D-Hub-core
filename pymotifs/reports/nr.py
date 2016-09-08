@@ -1,5 +1,7 @@
+"""This module contains the logic to create the NR reports.
+"""
+
 import operator as op
-import functools as ft
 import itertools as it
 import collections as coll
 
@@ -9,6 +11,7 @@ from pymotifs.utils import row2dict
 from sqlalchemy.sql.expression import func
 
 
+"""The list of headers to write in the report."""
 HEADERS = [
     'Group',
     'Rank',
@@ -40,7 +43,55 @@ ChainInfo = coll.namedtuple('ChainInfo', ['name', 'species', 'compound',
 
 
 class Entry(object):
+    """A class to represent the
+
+    Attributes
+    ----------
+    group : str
+        The name of the equivlance class this
+    rank : int
+        The rank of the IFE in it's class
+    ife_id : str
+        The IFE id.
+    pdb_id : str
+        The PDB id of the ife.
+    chains : list
+        A list of chain ids, that are a part of this IFE id.
+    names : list
+        List of chain names in this IFE.
+    proteins : list
+        List of protein names in this structure.
+    protein_species : list
+        List of species assignments for proteins in this structure.
+    species : list
+        List of species assignments for the RNA chains in this IFE.
+    compound : str
+        Name of the largest chain in the IFE.
+    observed : int
+        Number of observed residues in the ife
+    experimental : int
+        Number of residues in the experimental sequence
+    sequence : str
+        The experimental sequence
+    """
+
     def __init__(self, group, rank, ife_id, pdb_id, chain_ids):
+        """Create a new `Entity`.
+
+        Parameters
+        ----------
+        group : str
+            The name of the equivlance class this
+        rank : int
+            The rank of the IFE in it's class
+        ife_id : str
+            The IFE id.
+        pdb_id : str
+            The PDB id of the ife.
+        chain_ids : list
+            A list of chain ids, that are a part of this IFE id.
+        """
+
         self.group = group
         self.rank = rank
         self.ife_id = ife_id
@@ -56,6 +107,16 @@ class Entry(object):
         self.sequence = ''
 
     def add_info(self, info):
+        """Use the given `Info` object to update the attributes of this object.
+        This will update `proteins`, `protein_species`, `species`, `compound`,
+        `observed`, `experimental` and `sequence` attributes.
+
+        Parameters
+        ----------
+        info : Info
+            The info object to use.
+        """
+
         pdb_info = info.pdbs[self.pdb_id]
         prot_chains = pdb_info.protein_chains
         self.proteins = [info.chains[c].compound for c in prot_chains]
@@ -77,12 +138,30 @@ class Entry(object):
             return 'rep'
         return 'member'
 
-    def named(self, max_proteins=2):
+    def named(self, max_proteins=5):
+        """Turn this `Entity` into a dictonary with named columns for the
+        report.
+
+        Parameters
+        ----------
+        max_proteins : 5, optional
+            The maximal number of proteins in the structure to allow before not
+            writing protein level information. If set to None, this will always
+            write protein information.
+
+        Returns
+        -------
+        named : dict
+            A dictonary with the keys from `HEADERS` and values suitable for
+            writing to the report.
+        """
+
         protein_species = self.protein_species
         proteins = self.proteins
-        if len(protein_species) > max_proteins:
+        if max_proteins is not None and len(protein_species) >= max_proteins:
             proteins = []
             protein_species = []
+
         return {
             'Group': self.group,
             'Rank': self.rank,
@@ -188,6 +267,22 @@ def sort_groups(data):
 
 def report(maker, release, resolution, **kwargs):
     """Create a report about the NR set.
+
+    Parameters
+    ----------
+    maker : Session
+        The session to use
+
+    release : str
+        The NR release to report on.
+
+    resolution : str
+        The resolution to use.
+
+    Returns
+    -------
+    rows : list
+        A list of dicts to write for the report.
     """
 
     info = Info(maker)
