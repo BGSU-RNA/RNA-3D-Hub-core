@@ -92,6 +92,9 @@ class Loader(core.SimpleLoader):
                 filter_by(nr_class_id=class_id)
             members = [(r.ife_id, r.nr_chain_id) for r in query]
 
+        if len(members) == 1:
+            raise core.Skip("Skip group of size 1")
+
         if not members:
             raise core.InvalidState("No members in NR class: %i" % class_id)
 
@@ -171,7 +174,7 @@ class Loader(core.SimpleLoader):
             for index2, member2 in enumerate(members):
                 dist[index1, index2] = distances[member1][member2]
 
-        ordering = orderWithPathLengthFromDistanceMatrix(dist, self.trials)
+        ordering, _ = orderWithPathLengthFromDistanceMatrix(dist, self.trials)
         return [members[index] for index in ordering]
 
     def data(self, class_id, **kwargs):
@@ -196,10 +199,10 @@ class Loader(core.SimpleLoader):
         """
 
         members = self.members(class_id)
-        distances = self.distances(class_id)
+        distances = self.distances(class_id, members)
         ordered = self.ordered(members, distances)
         data = []
-        for index, chain_id in enumerate(ordered):
+        for index, (ife_id, chain_id) in enumerate(ordered):
             data.append(mod.NrOrdering(
                 nr_chain_id=chain_id,
                 nr_class_id=class_id,
