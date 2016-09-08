@@ -31,7 +31,7 @@ HEADERS = [
 
 compound = op.itemgetter('compound')
 species = op.itemgetter('source')
-macro_type = op.itemgetter('macromolecule_type')
+macro_type = op.itemgetter('entity_macromolecule_type')
 is_type = lambda t: lambda c: macro_type(c) == t
 is_protein = is_type('Polypeptide(L)')
 is_rna = is_type('Polyribonucleotide (RNA)')
@@ -169,8 +169,8 @@ class Entry(object):
             'IFE id': self.ife_id,
             'PDB': self.pdb_id,
             'Chains': ', '.join(self.names),
-            'Protein Species': ', '.join(protein_species),
-            'Protein Compound': ', '.join(proteins),
+            'Protein Species': ', '.join(str(p) for p in protein_species),
+            'Protein Compound': ', '.join(str(p) for p in proteins),
             'RNA Species': self.species,
             'Nucleic Acid Compound': self.compound,
             'Name': '',
@@ -223,17 +223,16 @@ class Info(object):
                                   chain.compound,
                                   chain.sequence,
                                   func.count(units.unit_id).label('observed'),
-                                  # exp.normalized_length.label('observed'),
                                   exp.length.label('experimental'),
                                   ).\
                 outerjoin(species, species.chain_id == chain.chain_id).\
                 outerjoin(mapping, mapping.species_id == species.species_id).\
                 outerjoin(exp_map, exp_map.chain_id == chain.chain_id).\
                 outerjoin(exp, exp.exp_seq_id == exp_map.exp_seq_id).\
-                join(units,
-                     (units.pdb_id == chain.pdb_id) &
-                     (units.chain == chain.chain_name)).\
-                filter(units.unit_type_id == 'rna').\
+                outerjoin(units,
+                          (units.pdb_id == chain.pdb_id) &
+                          (units.chain == chain.chain_name) &
+                          (units.unit_type_id.in_(['rna', 'aa']))).\
                 group_by(chain.chain_id)
 
             for result in query:
