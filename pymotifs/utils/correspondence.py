@@ -5,11 +5,7 @@ import collections as coll
 from sqlalchemy.orm import aliased
 
 from pymotifs import core
-from pymotifs.utils import row2dict
 from pymotifs import models as mod
-
-import pickle
-from memory_profiler import profile
 
 
 class Helper(core.Base):
