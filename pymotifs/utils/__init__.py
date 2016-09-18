@@ -1,13 +1,19 @@
+"""A module containing general utility functions. This are common utilities
+that show up across the pipeline.
+"""
+
 import os
+import gzip
 import logging
 from ftplib import FTP
-import cStringIO as sio
 import itertools as it
+import cStringIO as sio
 import collections as coll
-import gzip
 
 import requests
 
+
+"""Generic logger for all utilities."""
 logger = logging.getLogger(__name__)
 
 
@@ -21,16 +27,19 @@ class MissingFileException(Exception):
 class WebRequestFailed(Exception):
     """Raised when we have failed all attempts at getting a url.
     """
+    pass
 
 
 class EmptyResponse(Exception):
     """Raised when processing an empty response.
     """
+    pass
 
 
 class RetryFailedException(Exception):
     """Raised when all attempts at retrying something have failed.
     """
+    pass
 
 
 class GetAllRnaPdbsError(Exception):
@@ -48,9 +57,17 @@ class GetCustomReportError(Exception):
 def grouper(n, iterable):
     """Group an iterable in chunks of a max size.
 
-    :n: The max size.
-    :iterable: The iterable to group.
-    :returns: A iterable with at most n entries per chunk.
+    Parameters
+    ----------
+    n : int
+        The max size.
+    iterable : iterable
+        The iterable to group.
+
+    Returns
+    -------
+    chunks : iterable
+        A iterable with at most `n` entries per chunk.
     """
 
     iterator = iter(iterable)
@@ -65,8 +82,15 @@ def list_or_tuple(obj):
     """Detect if something is a list or a tuple. This is useful when flattening
     lists with flatten.
 
-    :param obj: An object
-    :returns: True if the object is a list or tuple.
+    Parameters
+    ----------
+    obj : object
+        An object
+
+    Returns
+    -------
+    result : bool
+        True if the object is a list or tuple.
     """
 
     return isinstance(obj, (list, tuple))
@@ -74,10 +98,22 @@ def list_or_tuple(obj):
 
 def flatten(sequence, predicate=list_or_tuple):
     """Flatten deeply nested lists. This produces a generator which will
-    flatten deepely nested lists. Modified from: https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch04s07.html
+    flatten deepely nested lists. Modified from:
+    https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch04s07.html
 
-    :param lst: A list, tuple or generator to flatten.
-    :yeilds: The individual components from the nested iterator.
+    Parameters
+    ----------
+    sequence: list or tuple or generator
+        A list, tuple or generator to flatten.
+
+    predicate : function, optional
+        The predicate to use to detect if we should flatten the contents of
+        each object in the sequence.
+
+    Yields
+    ------
+    component : object
+        The individual components from the nested iterator.
     """
 
     for obj in sequence:
@@ -89,16 +125,28 @@ def flatten(sequence, predicate=list_or_tuple):
 
 
 def row2dict(row):
+    """Convert an sqlalchemy object into a dictionary. This should either be
+    the result of querying or an object that is to be saved. It must have
+    either a '__table__' property or a '_feilds' property.
+
+    Parameters
+    ----------
+    row
+        Object to convert.
+
+    Returns
+    -------
+    result : dict
+        A dictionary built from the contents of the object.
+    """
+
     if row is None:
         return None
     d = {}
     if hasattr(row, '__table__'):
         for column in row.__table__.columns:
             value = getattr(row, column.name)
-            # if value is not None:
             d[column.name] = value
-            # else:
-            # d[column.name] = None
     elif hasattr(row, '_fields'):
         for column in row._fields:
             d[column] = getattr(row, column)
@@ -106,13 +154,47 @@ def row2dict(row):
 
 
 def result2dict(result):
+    """Turn a result from a query into a dictionary
+
+    Parameters
+    ----------
+    result : object
+        A result from a sqlalchemy query.
+
+    Returns
+    -------
+    data : dict
+        A dictionary with the keys from the query.
+    """
+
     d = {}
     for name in result.keys():
         d[name] = getattr(result, name)
     return d
 
 
-def known(config, pdb=True, cif=True, pdb1=False):
+def known(config, pdb=False, cif=True, pdb1=False):
+    """Find all known mmCIF, pdb and/or PDB1 files. Giving all flags means
+    getting all PDB, mmCIF or PDB1 files. This will check if we have a copy of
+    the file downloaded with the correct extension.
+
+    Parameters
+    ----------
+    config : defaultdict
+        The configuration object that species the 'fr3d_root'.
+    pdb : bool, optional
+        A flag if we should get known PDB files.
+    cif : bool, optional
+        A flag if we should get known mmCIF files.
+    pdb1 : bool, optional
+        A flag if we should get known pdb1 files.
+
+    Yields
+    ------
+    filename : str
+        A PDB id that is known.
+    """
+
     path = os.path.join(config['locations']['fr3d_root'], 'PDBFiles')
     names = coll.defaultdict(dict)
 
@@ -131,15 +213,35 @@ def known(config, pdb=True, cif=True, pdb1=False):
 
 
 class RetryHelper(object):
-    """A base class for retrying an action.
+    """A base class for retrying an action. Some actions, like making an HTTP
+    request can fail because of intermittent issues, like network failure.
+    For things like this it makes sense to
+
+    Attributes
+    ----------
+    retries : int
+        The number of retries.
+    allow_fail : bool
+    log_last_only : bool
+        Only log the last failure, not all the initial ones.
     """
 
     def __init__(self, retries=3, allow_fail=False, log_last_only=True):
+        """Create a new Retry helper.
+        """
         self.retries = retries
         self.allow_fail = allow_fail
         self.log_last_only = log_last_only
 
+    def action(self, *args, **kwargs):
+        """The action method that all retry helpers should implement.
+        """
+        pass
+
     def __call__(self, *args, **kwargs):
+        """Attempt the action with the given number of retries.
+        """
+
         for index in xrange(self.retries):
             try:
                 return self.action(*args, **kwargs)
@@ -162,9 +264,30 @@ class WebRequestHelper(RetryHelper):
     and making sure the response body is not empty. If the max number of
     retries is reached we raise an exception. In addition, all steps are
     logged.
+
+    Attributes
+    ----------
+    allow_empty : bool
+        Flag to indicate if we should allow an empty response.
+    method : str
+        HTTP method to use.
+    parser : function
+        A function to parse the response body with.
     """
 
     def __init__(self, allow_empty=False, method='get', parser=None, **kwargs):
+        """Create a new WebRequest helper.
+
+        Parameters
+        ----------
+        allow_empty : bool
+            Flag to indicate if we should allow an empty response.
+        method : str
+            HTTP method to use.
+        parser : function
+            A function to parse the response body with.
+        """
+
         self.method = method
         self.allow_empty = allow_empty
         self.parser = parser
@@ -218,12 +341,13 @@ class CifFileFinder(StructureFileFinder):
     or raise an exception if it could not be found in strict mode. If not
     strict it returns None.
     """
+
+    """File extension to find."""
     extension = 'cif'
 
 
 class PickleFileFinder(StructureFileFinder):
     extension = 'pickle'
-    pass
 
 
 class FTPFetchHelper(RetryHelper):
@@ -260,12 +384,3 @@ class GzipFetchHelper(WebRequestHelper):
         fileobj = sio.StringIO(response.content)
         unzipped = gzip.GzipFile(fileobj=fileobj)
         return unzipped.read()
-
-
-class classproperty(object):
-
-    def __init__(self, fget):
-        self.fget = fget
-
-    def __get__(self, owner_self, owner_cls):
-        return self.fget(owner_cls)

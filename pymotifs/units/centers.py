@@ -3,7 +3,7 @@
 
 import pymotifs.core as core
 
-from pymotifs.models import UnitCenters
+from pymotifs import models as mod
 
 from pymotifs.units.info import Loader as InfoLoader
 
@@ -16,8 +16,8 @@ class Loader(core.SimpleLoader):
     allow_no_data = True
 
     def query(self, session, pdb):
-        return session.query(UnitCenters).\
-            filter(UnitCenters.pdb_id == pdb)
+        return session.query(mod.UnitCenters).\
+            filter(mod.UnitCenters.pdb_id == pdb)
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
@@ -25,9 +25,9 @@ class Loader(core.SimpleLoader):
             for name in residue.centers.definitions():
                 center = residue.centers[name]
                 if len(center) == 3:
-                    yield UnitCenters(unit_id=residue.unit_id(),
-                                      name=name,
-                                      pdb_id=pdb,
-                                      x=center[0],
-                                      y=center[1],
-                                      z=center[2])
+                    yield mod.UnitCenters(unit_id=residue.unit_id(),
+                                          name=name,
+                                          pdb_id=pdb,
+                                          x=center[0],
+                                          y=center[1],
+                                          z=center[2])
