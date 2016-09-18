@@ -13,15 +13,18 @@ RNA-3D-Hub-core contains:
    releases into the database, and id assignment to motifs and non-redundant
    equivalence classes.
 
+## Documentation
+
+Detailed documentation on this can be found at [readthedocs](http://rna-3d-hub-core.readthedocs.io/).
+
 ## Requirements
-* python 2.6 or newer (not tested with Python 3)
+* python 2.7 or newer (not tested with Python 3)
 * matlab R2007b or newer
 * MySQL server
 * [mlabwap](http://mlabwrap.sourceforge.net) for linking Matlab with Python
 * SQLAlchemy for connecting to the database
-* [rnastructure-utils](https://github.com/BGSU-RNA/RNA-Structure-utils)
 * [fr3d.py](https://github.com/BGSU-RNA/fr3d-python)
-* _optional_: nosetests for running Python unit tests
+* _optional_: py.test for running Python unit tests
 
 ## Installation
 
@@ -38,7 +41,6 @@ in `conf/motifatlas.json`, but this can be changed.
 4. Create the MySQL database(s) specified in the config file.
 
 5. Submodule initialization
-
         git submodule init
         git submodule update
 
@@ -52,15 +54,15 @@ The software suite includes test datasets for motifs and non-redundant lists.
 
 Unit tests create a special testing environment and shouldn't interfere with the
 development or the production versions of the resource. Testing requires that a
-`conf/test.json` config file exists. This will be read for all configuration
+`conf/bootstrap.json` config file exists. This will be read for all configuration
 information. It is strongly recommended that this be a separate database from
 the production database.
 
-To run unit tests with nosetests:
+To run unit tests with py.test:
 
-    nosetests test
-
-Just running `nosetests` will run some stuff that isn't a test, which will fail.
+```sh
+$ py.test
+```
 
 ## Logging and email notifications
 
