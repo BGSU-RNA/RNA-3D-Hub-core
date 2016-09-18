@@ -9,9 +9,7 @@ import itertools as it
 import collections as coll
 
 from pymotifs import core
-
-from pymotifs.models import NrChains
-from pymotifs.models import NrClasses
+from pymotifs import models as mod
 
 from pymotifs.utils.naming import Namer
 from pymotifs.utils.naming import ChangeCounter
@@ -28,7 +26,7 @@ class Known(core.Base):
         """Return a set of all known handles for the nr set.
         """
         with self.session() as session:
-            query = session.query(NrClasses.handle).distinct()
+            query = session.query(mod.NrClasses.handle).distinct()
             return set(result.handle for result in query)
 
     def classes(self, release_id, cutoff):
@@ -55,17 +53,17 @@ class Known(core.Base):
             }
 
         with self.session() as session:
-            query = session.query(NrChains.ife_id.label('id'),
-                                  NrClasses.handle.label('handle'),
-                                  NrClasses.version.label('version'),
-                                  NrClasses.nr_class_id.label('class_id'),
-                                  NrClasses.name.label('full_name'),
+            query = session.query(mod.NrChains.ife_id.label('id'),
+                                  mod.NrClasses.handle.label('handle'),
+                                  mod.NrClasses.version.label('version'),
+                                  mod.NrClasses.nr_class_id.label('class_id'),
+                                  mod.NrClasses.name.label('full_name'),
                                   ).\
-                join(NrClasses,
-                     NrChains.nr_class_id == NrClasses.nr_class_id).\
-                filter(NrClasses.nr_release_id == release_id).\
-                filter(NrClasses.resolution == cutoff).\
-                order_by(NrClasses.nr_class_id)
+                join(mod.NrClasses,
+                     mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
+                filter(mod.NrClasses.nr_release_id == release_id).\
+                filter(mod.NrClasses.resolution == cutoff).\
+                order_by(mod.NrClasses.nr_class_id)
 
             results = coll.defaultdict(empty)
             for result in query:
@@ -94,11 +92,11 @@ class Known(core.Base):
             raise core.InvalidState("Must give names and release id")
 
         with self.session() as session:
-            query = session.query(NrClasses.nr_class_id,
-                                  NrClasses.name,
+            query = session.query(mod.NrClasses.nr_class_id,
+                                  mod.NrClasses.name,
                                   ).\
-                filter(NrClasses.name.in_(names)).\
-                filter(NrClasses.nr_release_id == release_id)
+                filter(mod.NrClasses.name.in_(names)).\
+                filter(mod.NrClasses.nr_release_id == release_id)
 
             if query.count() == 0:
                 self.logger.info(names)

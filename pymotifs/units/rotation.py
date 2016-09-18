@@ -1,9 +1,8 @@
 """A module to load unit rotation matrices for RNA into the database.
 """
 
-import pymotifs.core as core
-
-from pymotifs.models import UnitRotations
+from pymotifs import core
+from pymotifs import models as mod
 
 from pymotifs.units.info import Loader as InfoLoader
 
@@ -23,7 +22,7 @@ class Loader(core.SimpleLoader):
         :returns: A query to get rotation matrices.
         """
 
-        return session.query(UnitRotations).\
+        return session.query(mod.UnitRotations).\
             filter_by(pdb_id=pdb)
 
     def data(self, pdb, **kwargs):
@@ -38,14 +37,14 @@ class Loader(core.SimpleLoader):
         for residue in structure.residues():
             if hasattr(residue, 'rotation_matrix'):
                 matrix = residue.rotation_matrix
-                yield UnitRotations(unit_id=residue.unit_id(),
-                                    pdb_id=pdb,
-                                    cell_0_0=matrix[0, 0],
-                                    cell_0_1=matrix[0, 1],
-                                    cell_0_2=matrix[0, 2],
-                                    cell_1_0=matrix[1, 0],
-                                    cell_1_1=matrix[1, 1],
-                                    cell_1_2=matrix[1, 2],
-                                    cell_2_0=matrix[2, 0],
-                                    cell_2_1=matrix[2, 1],
-                                    cell_2_2=matrix[2, 2])
+                yield mod.UnitRotations(unit_id=residue.unit_id(),
+                                        pdb_id=pdb,
+                                        cell_0_0=matrix[0, 0],
+                                        cell_0_1=matrix[0, 1],
+                                        cell_0_2=matrix[0, 2],
+                                        cell_1_0=matrix[1, 0],
+                                        cell_1_1=matrix[1, 1],
+                                        cell_1_2=matrix[1, 2],
+                                        cell_2_0=matrix[2, 0],
+                                        cell_2_1=matrix[2, 1],
+                                        cell_2_2=matrix[2, 2])

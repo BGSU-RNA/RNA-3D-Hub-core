@@ -32,12 +32,32 @@ class SaveFailed(Exception):
 class Saver(Base):
     """This is a base class for saving. This cannot be used directly, it is
     just a base class for all other savers.
+
+    Attributes
+    ----------
+    stage : pymotifs.core.stages.Stage
+        The stage this saver is a part of
+    allow_no_data : bool
+        A flag to control if we should fail if no data is written
+    merge : bool
+        If we should merge instead of saveing normally.
+    insert_max : int
+        The maximum number of entries to write at once.
     """
 
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, config, session, stage=None, **kwargs):
         """Create a new saver.
+
+        Parameters
+        ----------
+        config : dict
+            The configuration dict
+        session : pymotifs.core.db.Session
+            The session wrapper
+        stage : pymotifs.core.stages.Stage
+            The stage this saver is a part of
         """
 
         super(Saver, self).__init__(config, session)
@@ -70,6 +90,13 @@ class Saver(Base):
 
     def __call__(self, pdb, data, **kwargs):
         """Save data for the given pdb.
+
+        Parameters
+        ----------
+        pdb : str
+            The pdb this a part of
+        data : list or dict
+            The data to save
         """
 
         to_save = data

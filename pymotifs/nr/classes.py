@@ -1,7 +1,11 @@
+"""Store the nr classes (equivelance sets). This requires cached NR data to
+process and then store.
+"""
+
 import datetime as dt
 
 from pymotifs import core
-from pymotifs.models import NrClasses
+from pymotifs import models as mod
 from pymotifs.constants import NR_CACHE_NAME
 
 from pymotifs.nr.utils import BaseLoader
@@ -16,7 +20,10 @@ class Loader(BaseLoader):
     dependencies = set([ReleaseLoader, ChainLoader, InteractionLoader,
                         IfeLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
-    table = NrClasses
+
+    @property
+    def table(self):
+        return mod.NrClasses
 
     def classes(self, data):
         result = []

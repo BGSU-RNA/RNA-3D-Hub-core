@@ -1,3 +1,7 @@
+"""The common exceptions that show up across the pipeline.
+"""
+
+
 class StageFailed(Exception):
     """This is raised when one stage of the pipeline fails.
     """
@@ -15,6 +19,7 @@ class InvalidState(Exception):
 
 
 class Skip(Exception):
-    """Class to indicate that the processing should be skipped.
+    """Class to indicate that the processing of one input in for one stage
+    should be skipped.
     """
     pass

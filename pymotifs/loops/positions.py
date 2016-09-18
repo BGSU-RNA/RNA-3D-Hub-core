@@ -4,13 +4,11 @@ extract the loops and place them into the database.
 
 import os
 import csv
-import functools as ft
 
 from pymotifs import core
 from pymotifs import utils
+from pymotifs import models as mod
 from pymotifs.utils import matlab
-from pymotifs.models import LoopPositions
-from pymotifs.models import LoopInfo
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
 from pymotifs.loops.release import Loader as ReleaseLoader
@@ -27,24 +25,25 @@ class Loader(core.Loader):
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(LoopInfo).filter_by(pdb_id=pdb)
+            query = session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
             ids = [result.loop_id for result in query]
 
         if not ids:
             return True
 
         with self.session() as session:
-            return session.query(LoopPositions).\
-                filter(LoopPositions.loop_id.in_(ids)).\
+            return session.query(mod.LoopPositions).\
+                filter(mod.LoopPositions.loop_id.in_(ids)).\
                 delete(synchronize_session=False)
 
         return True
 
     def has_data(self, pdb, **kwargs):
         with self.session() as session:
-            query = session.query(LoopPositions).\
-                join(LoopInfo, LoopInfo.loop_id == LoopPositions.loop_id).\
-                filter(LoopInfo.pdb_id == pdb)
+            query = session.query(mod.LoopPositions).\
+                join(mod.LoopInfo,
+                     mod.LoopInfo.loop_id == mod.LoopPositions.loop_id).\
+                filter(mod.LoopInfo.pdb_id == pdb)
             return bool(query.count())
 
     def parse(self, filename):
@@ -67,9 +66,10 @@ class Loader(core.Loader):
 
         mapping = {}
         with self.session() as session:
-            query = session.query(LoopPositions).\
-                join(LoopInfo, LoopInfo.loop_id == LoopPositions.loop_id).\
-                filter(LoopInfo.pdb_id == pdb)
+            query = session.query(mod.LoopPositions).\
+                join(mod.LoopInfo,
+                     mod.LoopInfo.loop_id == mod.LoopPositions.loop_id).\
+                filter(mod.LoopInfo.pdb_id == pdb)
 
             for result in query:
                 data = utils.row2dict(result)
@@ -114,7 +114,7 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(LoopInfo).\
+            query = session.query(mod.LoopInfo).\
                 filter_by(pdb_id=pdb)
 
             mapping = {}
@@ -147,6 +147,6 @@ class Loader(core.Loader):
 
             entry.update(row)
             entry['loop_id'] = row['loop_id']
-            data.append(LoopPositions(**entry))
+            data.append(mod.LoopPositions(**entry))
 
         return data

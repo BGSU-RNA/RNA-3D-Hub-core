@@ -8,16 +8,30 @@ Welcome to BGSU RNA Pipeline's documentation!
 
 This is the data pipeline used by BGSU RNA to populate our database.
 
-Contents:
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
+
+Installing
+----------
+
+The pipeline itself is not meant to be installed, but it's dependences should
+be easily installable.
+
+Running
+-------
+
+The pipeline can be inspected using `bin/pipeline.py --help`. For details read
+`Running`.
 
 Contribute
 ----------
 
 - Source Code: https://github.com/BGSU-RNA/RNA-3D-Hub-core
 
+For more details read `contributing :ref:contributing`.
 
 Indices and tables
 ==================

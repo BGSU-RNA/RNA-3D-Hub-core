@@ -1,3 +1,8 @@
+"""A module for loading configuration data. This has a function to load and
+apply the default values for pipeline configuration. It does not check if the
+configuration is valid however.
+"""
+
 import os
 import json
 import collections
@@ -8,13 +13,22 @@ def merge(a, b):
     """Recursively merges dict's. not just simple a['key'] = b['key'], if
     both a and b have a key who's value is a dict then merge is
     called on both values and the result stored in the returned
-    dictionary.
+    dictionary. This will not modify either input.
 
     Taken from:
     https://www.xormedia.com/recursively-merge-dictionaries-in-python/
 
-    :a: A dictionary.
-    :b: Another dictionary.
+    Parameters
+    ----------
+    a : dict
+        A dictionary.
+    b : dict
+        Another dictionary.
+
+    Returns
+    -------
+    merged : dict
+        The merge dictonary.
     """
 
     if not isinstance(b, dict):
@@ -35,7 +49,13 @@ def merge(a, b):
 
 def defaults():
     """A function to create a dictionary with the default values for the
-    pipeline.
+    pipeline. Notably, this will compute the paths to most places as well as
+    setting recaculate for all stages to False.
+
+    Returns
+    -------
+    defaults : dict
+        A dictonary of default values.
     """
 
     here = os.path.dirname(__file__)
@@ -58,6 +78,20 @@ def defaults():
 
 
 def load(filename):
+    """Load the configuration from the given file. This will load the JSON file
+    at the specified path as well as merge in the default values.
+
+    Parameters
+    ----------
+    filename : str
+        The filename to load configuration from.
+
+    Returns
+    -------
+    configuration : collections.defaultdict
+        The configuration.
+    """
+
     config = collections.defaultdict(dict)
     with open(filename, 'rb') as raw:
         config.update(merge(defaults(), json.load(raw)))

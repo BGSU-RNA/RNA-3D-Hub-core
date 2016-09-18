@@ -1,4 +1,6 @@
-"""This modules contains the classes for building stages of the pipeline.
+"""This modules contains the classes for building stages of the pipeline. These
+are the basic building blocks that all stages are built from and thus contain
+the basic logic for all stages.
 """
 
 import os
@@ -27,31 +29,42 @@ class Stage(base.Base):
     """This is a base class for both loaders and exporters to inherit from. It
     contains the functionality common to all things that are part of our
     pipeline.
+
+    Attributes
+    ----------
+    skip : set
+        A set of all structures to skip.
     """
 
-    """ Maximum length of time between updates. False for forever. """
     update_gap = None
+    """Maximum length of time between updates. False for forever. """
 
-    """ What stages this stage depends upon. """
     dependencies = set()
+    """What stages this stage depends upon. """
 
-    """Flag if we should mark stuff as processed."""
     mark = True
+    """Flag if we should mark stuff as processed."""
 
-    """If we should skip complex operators"""
     skip_complex = True
+    """If we should skip complex operators"""
 
-    """Collection of ids to skip"""
     skip = []
+    """Collection of ids to always skip"""
 
-    """Class to save with"""
     saver = None
+    """Class to use for saving"""
 
     def __init__(self, *args, **kwargs):
         """Build a new Stage.
 
-        :config: The config object to build with.
-        :session_maker: The Session object to handle database connections.
+        Parameters
+        ----------
+        *args : object
+            Arguments to base to `pymotifs.core.base.Base`.
+        skip_pdbs : list, optional
+            A list of pdb ids to skip.
+        **kwargs : dict
+            Arguments to base to `pymotifs.core.base.Base`.
         """
         super(Stage, self).__init__(*args, **kwargs)
         self._cif = ut.CifFileFinder(self.config)
@@ -62,11 +75,20 @@ class Stage(base.Base):
     @abc.abstractmethod
     def is_missing(self, entry, **kwargs):
         """Determine if we do not have any data. If we have no data then we
-        will recompute.
+        will recompute. This method must be implemented by inhering classes
+        and is how we determine if we have data or not.
 
-        :entry: The thing to check for.
-        :kwargs: Generic keyword arguments
-        :returns: True or False
+        Parameters
+        ----------
+        entry : object
+            The data to check
+        **kwargs : dict
+            Generic keyword arguments
+
+        Returns
+        -------
+        missing : bool
+            True if the data is missing.
         """
         pass
 
@@ -74,23 +96,49 @@ class Stage(base.Base):
     def process(self, entry, **kwargs):
         """Process this entry. In the case of loaders this will parse the data
         and put it into the database, exporters may go to the database and then
-        generate the file.
+        generate the file. Inheriting classes must implement this.
 
-        :entry: The entry to process.
-        :kwargs: Generic keyword arguments.
-        :returns: Nothing and is ignored.
+        Parameters
+        ----------
+        entry : object
+            The entry to process.
+        **kwargs : dict
+            Generic keyword arguments.
         """
         pass
 
     def remove(self, entry, **kwargs):
+        """A method to cleanup if writing data failed. This should be
+        implemented by inheriting classes, because this version does nothing.
+        Generally it is a good idea if the method uses `dry_run` option and
+        then does nothing given True. In general this method should **never**
+        raise anything as we use it when exceptions have been raised in other
+        parts.
+
+        Parameters
+        ----------
+        entry : object
+            The data to clean up the result of.
+        **kwargs : dict
+            Generic keyword arguments.
+        """
         pass
 
     def cif(self, pdb):
-        """A method to load the cif file for a given pdb id.
+        """A method to load the cif file for a given pdb id. If given a CIF
+        file this will return the given CIF file.
 
-        :pdb: PDB id to parse.
-        :returns: A parsed cif file.
+        Parameters
+        ----------
+        pdb : str or fr3d.cif.reader.CIF
+            PDB id to parse or the file to return.
+
+        Returns
+        -------
+        cif : fr3d.cif.reader.Cif
+            The parsed mmCIF file.
         """
+
         if isinstance(pdb, Cif):
             return pdb
 
@@ -105,10 +153,22 @@ class Stage(base.Base):
             raise err
 
     def structure(self, pdb):
-        """A method to load the cif file and get the structure for the given
+        """A method to load the cif file and get a `fr3d.data.structure.Structure`
+        for. This will find the CIF file, if it exists and then parse it to get
+        the Structure data. If given a `fr3d.data.structure.Structure`, then
+        this will simply return it. If given a `fr3d.reader.cif.Cif` data
+        structure then this will return the structure that is part of that
+        file.
 
-        :pdb: The pdb id to get the structure for.
-        :returns: The FR3D structure for the given PDB.
+        Parameters
+        ----------
+        pdb : str
+            The PDB id to get a structure for.
+
+        Returns
+        -------
+        structure : fr3d.data.Structure
+            The structure for the given PDB id.
         """
         if isinstance(pdb, Structure):
             return pdb
@@ -116,6 +176,22 @@ class Stage(base.Base):
         return self.cif(pdb).structure()
 
     def cache_filename(self, name):
+        """Determine the path to cache file for the given name. This will
+        compute the full path to the configured cache directory and create the
+        directory if needed. If the pipeline does not have permission to do so
+        it will raise an error.
+
+        Parameters
+        ----------
+        name : str
+            The name of the cache file.
+
+        Returns
+        -------
+        path : str
+            The path to the cache file.
+        """
+
         cache_dir = self.config['locations']['cache']
         if not os.path.isdir(cache_dir):
             os.mkdir(cache_dir)
@@ -123,10 +199,16 @@ class Stage(base.Base):
         return os.path.join(cache_dir, name + '.pickle')
 
     def cache(self, name, data):
-        """Cache some data under a name.
+        """Cache some data under a name. This will write the given data to a
+        file in the configured 'cache' directory using the given name.
 
-        :name: The name to cache under.
-        :data: The data to cache.
+        Parameters
+        ----------
+        name : str
+            The name to use.
+
+        data : object
+            The data to cache.
         """
 
         filename = self.cache_filename(name)
@@ -134,11 +216,15 @@ class Stage(base.Base):
             pickle.dump(data, raw)
 
     def evict(self, name):
-        """Clear cached data. This will remove cached data if it exists,
-        otherwise it will emit a warning.
+        """Clear cached data for the given name. This will remove cached data
+        if it exists, otherwise it will log a warning.
 
-        :param str name: The name of the cached data.
+        Parameters
+        ----------
+        name : str
+            The name of the cache to remove
         """
+
         filename = self.cache_filename(name)
         if not os.path.exists(filename):
             self.logger.warning("Attempt to remove nonexisting cache %s", name)
@@ -146,10 +232,20 @@ class Stage(base.Base):
         os.remove(filename)
 
     def cached(self, name, remove=False):
-        """Load some cached data.
+        """Load some cached data. This will load the cache file if it exists.
+        If not it will return `None`.
 
-        :name: Name of the cached data.
-        :returns: The data or None if no cached data of that name exists
+        Parameters
+        ----------
+        name : str
+            The cache file name.
+        remove : bool, optional
+            If we should delete the file after loading it.
+
+        Returns
+        -------
+        data : object
+            The cached object.
         """
 
         filename = self.cache_filename(name)
@@ -163,8 +259,29 @@ class Stage(base.Base):
 
         return data
 
-    def must_recompute(self, pdb, recalculate=False, **kwargs):
+    def must_recompute(self, entry, recalculate=False, **kwargs):
         """Detect if we have been told to recompute this stage for this pdb.
+        This can be done by either passing in a bool which will always be
+        interpreted as meaning to recalculate. If recalculate is a `set`,
+        `tuple`, or `list` that contains the name of this stage then this will
+        also recalculate. This may also be done by setting the configuration
+        value of 'recalculate' for the name of stage to True.
+
+        Parameters
+        ----------
+        entry : object
+            The entry to check
+
+        recalculate : bool or set or list or tuple, optional
+            A flag to indicate if we must recompute.
+
+        **kwargs : dict
+            Other keyword arguments, ignored.
+
+        Returns
+        -------
+        must : bool
+            True if we must recompute.
         """
         if recalculate is True:
             return True
@@ -220,9 +337,17 @@ class Stage(base.Base):
         not produce data we will skip running it if we have a mark for the
         stage.
 
-        :entry: The entry to check.
-        :kwargs: Some keyword arguments for determining if we should process
-        :returns: True or False
+        Parameters
+        ----------
+        entry : obj
+            The entry to check.
+        **kwargs : dict
+            Some keyword arguments for determining if we should process
+
+        Returns
+        -------
+        should : bool
+            `True` if we should process this entry, `False` otherwise.
         """
         try:
             if entry in self.skip:
@@ -347,20 +472,20 @@ class Loader(Stage):
 
     __metaclass__ = abc.ABCMeta
 
-    """ Max number of things to insert at once. """
     insert_max = 1000
+    """ Max number of things to insert at once. """
 
-    """ A flag to indicate it is ok to produce no data. """
     allow_no_data = False
+    """ A flag to indicate it is ok to produce no data. """
 
-    """ A flag to indicate if we should use sessions .merge instead of .add """
     merge_data = False
+    """ A flag to indicate if we should use sessions .merge instead of .add """
 
-    """Sqlalchmey model to save to"""
     table = None
+    """Sqlalchmey model to save to"""
 
-    """Class to use for saving"""
     saver = savers.DatabaseSaver
+    """Use a `pymotifs.core.savers.DatabaseSaver` """
 
     @abc.abstractmethod
     def data(self, pdb, **kwargs):
@@ -480,13 +605,23 @@ class SimpleLoader(Loader):
                 session.delete(row)
 
     @abc.abstractmethod
-    def query(self, session, args):
+    def query(self, session, entry):
         """
         A method to generate the query that can be used to access data for this
         loader. The resutling query is used in remove and has_data.
 
-        :session: The session object to use.
-        :*args: Arguments from process.
+        Parameters
+        ----------
+        session : pymotifs.core.db.Session
+            The session object to use.
+        entry : obj
+            An object from `to_process` to create a query for.
+
+        Returns
+        -------
+        query : Query
+            The query to lookup all entries in the database for the given
+            entry.
         """
         pass
 
@@ -544,12 +679,21 @@ class StageContainer(Stage):
     other loaders this depends on. All stages which inherit from this will do
     nothing by themselves other than to run other stages. Do not try to add
     behavior to these loaders.
+
+    Attributes
+    ----------
+    _args : obj
+        Arguments used to build this object with
+    _kwargs : dict
+        Keyword arguments used to build the object
     """
 
-    """The list of stages that are children of this loader"""
     stages = []
+    """The list of stages that are children of this loader"""
 
     def __init__(self, *args, **kwargs):
+        """Create a new StageContainer.
+        """
         self._args = args
         self._kwargs = kwargs
         super(StageContainer, self).__init__(*args, **kwargs)
@@ -558,27 +702,41 @@ class StageContainer(Stage):
         """Return a list of objects built from the stages, using the same
         arguments this was built with.
 
-        :returns: A list of the stage objects.
+        Returns
+        -------
+        stages : list
+            A list of `Stage` objects from the stages that are a part of this
+            `StageContainer`.
         """
         return [s(*self._args, **self._kwargs) for s in self.stages]
 
 
 class Exporter(Loader):
-    """A class that saves to CSV files.
+    """A class that saves to CSV files. This has the common utilities and logic
+    that all exporting stages need, such as a correct saver and a correct
+    has_data method.
     """
+
     __metaclass__ = abc.ABCMeta
 
-    """List of headers to save."""
     headers = []
+    """List of headers to save."""
 
-    """Class to use for writing to csv files."""
     saver = savers.CsvSaver
+    """The class for writing CSV files."""
 
     @abc.abstractmethod
     def filename(self, entry, **kwargs):
         """Compute the filename for the given entry.
 
-        :entry: The entry to write out.
+        Parameters
+        ----------
+        entry : The entry to write out.
+
+        Returns
+        -------
+        filename : str
+            The filename to write to.
         """
         pass
 
@@ -587,9 +745,17 @@ class Exporter(Loader):
         otherwise just use the ones we are given. This will turn all the given
         pdbs into a list of lists, so they are all processed in one go.
 
-        :pdbs: The list of pdbs to get interactions for.
-        :kwargs: All keyword arguments.
-        :returns: The list of pdbs to get interactions for.
+        Parameters
+        ----------
+        pdbs : list
+            The list of pdbs to process.
+        **kwargs : dict
+            All keyword arguments.
+
+        Returns
+        -------
+        input : list
+            The list of pdbs to attempt to process.
         """
 
         if not kwargs.get('all'):
@@ -600,11 +766,16 @@ class Exporter(Loader):
             return [tuple([result.pdb_id for result in query])]
 
     def has_data(self, *args, **kwargs):
-        """We always recompute when exporting.
+        """We always recompute when exporting, so this returns False.
+
+        Returns
+        -------
+        missing : bool
+            This is always False.
         """
         return False
 
     def remove(self, *args, **kwargs):
-        """We never remove exported files automatically.
+        """Does nothing. We never remove exported files automatically.
         """
         self.logger.info("No automatic removal in exporters")

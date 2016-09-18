@@ -1,5 +1,4 @@
-"""
-Import information about redundancy between nucleotides within a PDB file
+"""Import information about redundancy between nucleotides within a PDB file.
 """
 
 import os
