@@ -34,7 +34,7 @@ GROUP_HEADERS = [
 
 PAIRS_HEADERS = [
     'Group',
-    'Release Id',
+    'Release',
     'IFE1',
     'IFE2',
     'Discrepancy',
@@ -352,14 +352,14 @@ def pairs(maker, release, resolution, **kwargs):
     exp2 = aliased(mod.ExpSeqInfo)
     with maker() as session:
         query = session.query(classes.name.label('Group'),
-                              classes.nr_release_id,
+                              classes.nr_release_id.label('Release'),
                               chains1.ife_id.label('IFE1'),
                               chains2.ife_id.label('IFE2'),
                               ccs.discrepancy.label('Discrepancy'),
-                              corr.match.label('forward_match'),
-                              rev_corr.match.label('rev_match'),
-                              exp1.normalizd_length.label('len1'),
-                              exp2.normalizd_length.label('len1'),
+                              corr.match_count.label('forward_match'),
+                              rev_corr.match_count.label('rev_match'),
+                              exp1.normalized_length.label('len1'),
+                              exp2.normalized_length.label('len2'),
                               ).\
             join(chains1, chains1.nr_class_id == classes.nr_class_id).\
             join(chains2, chains2.nr_class_id == classes.nr_class_id).\
@@ -367,17 +367,19 @@ def pairs(maker, release, resolution, **kwargs):
             join(ife2, ife2.ife_id == chains2.ife_id).\
             join(mapping1, mapping1.chain_id == ife1.chain_id).\
             join(mapping2, mapping2.chain_id == ife2.chain_id).\
+            join(exp1, exp1.exp_seq_id == mapping1.exp_seq_id).\
+            join(exp2, exp2.exp_seq_id == mapping2.exp_seq_id).\
             outerjoin(ccs,
                       (ccs.chain_id_1 == ife1.chain_id) &
                       (ccs.chain_id_2 == ife2.chain_id),
                       ).\
             outerjoin(corr,
-                      (corr.chain_id_1 == mapping1.exp_seq_id) &
-                      (corr.chain_id_2 == mapping2.exp_seq_id),
+                      (corr.exp_seq_id_1 == mapping1.exp_seq_id) &
+                      (corr.exp_seq_id_2 == mapping2.exp_seq_id),
                       ).\
             outerjoin(rev_corr,
-                      (rev_corr.chain_id_1 == mapping1.exp_seq_id) &
-                      (rev_corr.chain_id_2 == mapping2.exp_seq_id),
+                      (rev_corr.exp_seq_id_1 == mapping1.exp_seq_id) &
+                      (rev_corr.exp_seq_id_2 == mapping2.exp_seq_id),
                       ).\
             filter(chains1.nr_chain_id != chains2.nr_chain_id).\
             filter(ife1.chain_id != ife2.chain_id).\
