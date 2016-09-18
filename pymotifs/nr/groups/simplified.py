@@ -191,7 +191,7 @@ class Grouper(core.Base):
 
         pdbs = list(set(chain['pdb'] for chain in chains))
         helper = cr.Helper(self.config, self.session.maker)
-        alignments = helper.aligned_chains(pdbs)
+        alignments = helper.aligned_chains(pdbs, good=True)
         if not alignments:
             raise core.InvalidState("No alignments loaded")
         return alignments
