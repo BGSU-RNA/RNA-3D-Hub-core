@@ -2,11 +2,8 @@
 between each nucleotide.
 """
 
-from pymotifs import core as core
-
-from pymotifs.models import ExpSeqPosition
-from pymotifs.models import CorrespondenceInfo as Info
-from pymotifs.models import CorrespondencePositions as Position
+from pymotifs import core
+from pymotifs import models as mod
 
 from pymotifs.correspondence.info import Loader as CorrLoader
 from pymotifs.exp_seq.info import Loader as InfoLoader
@@ -35,7 +32,7 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(Info.correspondence_id)
+            query = session.query(mod.CorrespondenceInfo.correspondence_id)
             if not query.count():
                 raise core.Skip("Skipping positions, no new correspondences")
             return [result.correspondence_id for result in query]
@@ -51,7 +48,7 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            corr = session.query(Info).\
+            corr = session.query(mod.CorrespondenceInfo).\
                 filter_by(correspondence_id=corr_id)
 
             if not corr.count():
@@ -70,7 +67,7 @@ class Loader(core.Loader):
             return True
 
         with self.session() as session:
-            session.query(Position).\
+            session.query(mod.CorrespondencePositions).\
                 filter_by(correspondence_id=corr_id).\
                 delete(synchronize_session=False)
 
@@ -86,9 +83,9 @@ class Loader(core.Loader):
         ids = []
         sequence = []
         with self.session() as session:
-            query = session.query(ExpSeqPosition).\
-                filter(ExpSeqPosition.exp_seq_id == exp_id).\
-                order_by(ExpSeqPosition.index)
+            query = session.query(mod.ExpSeqPosition).\
+                filter(mod.ExpSeqPosition.exp_seq_id == exp_id).\
+                order_by(mod.ExpSeqPosition.index)
 
             if not query.count():
                 raise core.InvalidState("Could not get sequence for %s" % exp_id)
@@ -132,7 +129,8 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(Info).filter_by(correspondence_id=corr_id)
+            query = session.query(mod.CorrespondenceInfo).\
+                filter_by(correspondence_id=corr_id)
             if not query.count():
                 raise core.InvalidState("Unknown correspondence %s" % corr_id)
 
@@ -152,7 +150,7 @@ class Loader(core.Loader):
         sequence2 = self.sequence(exp_id2)
 
         for position in self.correlate(corr_id, sequence1, sequence2):
-            yield Position(**position)
+            yield mod.CorrespondencePositions(**position)
 
             pos1 = position['exp_seq_position_id_1']
             pos2 = position['exp_seq_position_id_2']
@@ -161,4 +159,4 @@ class Loader(core.Loader):
                 rev['exp_seq_position_id_1'] = pos2
                 rev['exp_seq_position_id_2'] = pos1
 
-                yield Position(**rev)
+                yield mod.CorrespondencePositions(**rev)

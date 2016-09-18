@@ -7,11 +7,10 @@ from sqlalchemy.orm import aliased
 
 from pymotifs import core
 from pymotifs import utils
+from pymotifs import models as mod
 
-from pymotifs.models import ExpSeqInfo as ExpInfo
-from pymotifs.models import ExpSeqPosition as ExpPosition
-from pymotifs.models import CorrespondenceInfo as Info
-from pymotifs.models import CorrespondencePositions as Position
+# from pymotifs.models import CorrespondenceInfo as Info
+# from pymotifs.models import CorrespondencePositions as Position
 from pymotifs.correspondence.positions import Loader as PositionLoader
 
 
@@ -31,7 +30,7 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(Info.correspondence_id)
+            query = session.query(mod.CorrespondenceInfo.correspondence_id)
             return [result.correspondence_id for result in query]
 
     def remove(self, corr_id, **kwargs):
@@ -69,8 +68,8 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            e1 = aliased(ExpInfo)
-            e2 = aliased(ExpInfo)
+            e1 = aliased(mod.ExpSeqInfo)
+            e2 = aliased(mod.ExpSeqInfo)
 
             query = session.query(Info.correspondence_id,
                                   e1.length.label('first'),
@@ -108,8 +107,8 @@ class Loader(core.Loader):
 
     def alignment(self, corr_id):
         with self.session() as session:
-            p1 = aliased(ExpPosition)
-            p2 = aliased(ExpPosition)
+            p1 = aliased(mod.ExpSeqPosition)
+            p2 = aliased(mod.ExpSeqPosition)
             query = session.query(Position.correspondence_positions_id,
                                   p1.unit.label('unit1'),
                                   p2.unit.label('unit2')).\

@@ -2,7 +2,7 @@ import os
 import csv
 
 from pymotifs import core
-from pymotifs.models import MlReleases
+from pymotifs import models as mod
 from pymotifs.utils.releases import Release
 
 
@@ -31,7 +31,7 @@ class CsvLoader(core.MassLoader):
     def base(self, loop_type):
         release = self.release()
         with self.session() as session:
-            return session.query(MlReleases).\
+            return session.query(mod.MlReleases).\
                 filter_by(id=release, type=loop_type).\
                 one().description
 

@@ -3,7 +3,6 @@ want to copy chain chain data from one machine to another. This module is meant
 to have the logic for doing so in one place.
 """
 
-import sys
 import pickle
 import logging
 import operator as op
@@ -23,7 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 def setup(engine, **kwargs):
-    """Create a session wrapper.
+    """Reflect the models and create a session wrapper.
+
+    Parameters
+    ----------
+    engine : Engine
+        An engine to use to reflect models.
+
+    Returns
+    session : pymotifs.core.Session
+        The session wrapper to use.
     """
     mod.reflect(engine)
     return Session(sessionmaker(engine))
@@ -34,11 +42,19 @@ def chain_id_mapping(session, data, ignore_missing=False):
     By default, this will map all entries in data or it will fail with a value
     error.
 
-    :param Session session: The session to use.
-    :param list data: A list of dictionaries with pdb_id1, chain_name1,
-    pdb_id2, chain_name2 keys.
-    :returns: A dict mapping from (pdb, chain_name) to chain id for all entries
-    in data.
+    Parameters
+    ----------
+    session : pymotifs.core.Session
+        The session to use
+    data : list
+        A list of dictionaries with pdb_id1, chain_name1, pdb_id2, chain_name2
+        keys.
+
+    Returns
+    -------
+    mapping : dict
+        A dict mapping from (pdb, chain_name) to chain id for all entries in
+        data.
     """
 
     mapping = {}
@@ -55,7 +71,7 @@ def chain_id_mapping(session, data, ignore_missing=False):
             entries.remove(entry)
 
     if entries:
-        msg = "Not all entries mapped: %s" % str(entries)
+        msg = "Not all entries mapped to chain ids: %s" % str(entries)
         logger.error(msg)
         if not ignore_missing:
             raise ValueError(msg)
@@ -65,14 +81,25 @@ def chain_id_mapping(session, data, ignore_missing=False):
 
 def correspondence_id_mapping(session, data, ignore_missing=False):
     """Create a mapping from compared chain chain to correspondence ids. This
-    will fail if not all chains in the input data could be mapped.
+    will fail if not all chains in the input data could be mapped, if
+    ignore_missing is False (the default behavior), otherwise it will only log
+    the error.
 
-    :param Session session: The session to use.
-    :param list data: A list of dictionaries with pdb_id1, chain_name1, pdb_id2, chain_name2
-    entries.
-    :param Bool ignore_missing: A flag to make this ignore missing chains. In
-    this case errors are logged instead.
-    :returns: A dictionary mapping (chain_id, chain_id) to correspondence id.
+    Parameters
+    ----------
+    session : pymotifs.core.Session
+        The sesson to use
+    data : list
+        A list of dictionaries with pdb_id1, chain_name1, pdb_id2, chain_name2
+        entries.
+    ignore_missing : bool, optional
+        A flag to make this ignore missing chains. In this case errors are only
+        logged.
+
+    Returns
+    -------
+    mapping : dict
+        A dictionary mapping (chain_id, chain_id) to correspondence id.
     """
 
     entries = {(chain1(e), chain2(e)) for e in data}
@@ -102,19 +129,27 @@ def correspondence_id_mapping(session, data, ignore_missing=False):
 
     logger.info("Found %i/%i correspondences", len(mapping), len(entries))
     if entries:
-        self.logger.error("Could not map all correspondences %s", str(entries))
+        logger.error("Could not map all correspondences %s", str(entries))
         if not ignore_missing:
-            raise ValueError("Could not map all correspondences %s" % str(entries))
+            raise ValueError("Could not map all correspondences %s" %
+                             str(entries))
 
     return mapping
 
 
 def known_comparisions(session):
-    """Get a set of all known chain chain comparisons. This can be used to
-    skip importing existing comparisons.
+    """Get a set of all known chain chain comparisons. This can be used to skip
+    importing existing comparisons.
 
-    :param Session session: The session to use.
-    :returns: A set of all known (chain_id, chain_id) comparisons.
+    Parameters
+    ----------
+    session : pymotifs.core.Session
+        The session to use.
+
+    Returns
+    -------
+    known : set
+        A set of all known (chain_id, chain_id) comparisons.
     """
 
     known = set()
@@ -127,11 +162,20 @@ def known_comparisions(session):
 
 def load(filename, ignore_missing=False, **kwargs):
     """Load the data in the given file. This will import all new data in the
-    given file to the database. If the comparison has already been done it
-    will not be loaded. The file should contain the data to write in the format
+    given file to the database. If the comparison has already been done it will
+    not be loaded. The file should contain the data to write in the format
     produced by dump.
 
-    :param str filename: The name of the file to load data from.
+    Parameters
+    ----------
+    filename : str
+        The name of the file to load data from.
+
+    Raises
+    ------
+    ValueError
+        If either any chain is not mapped or there is not correspondence
+        between a compared pair of chains and ignore_mapping is False.
     """
 
     with open(filename, 'rb') as raw:
@@ -140,17 +184,33 @@ def load(filename, ignore_missing=False, **kwargs):
     session = setup(**kwargs)
     chain_mapping = chain_id_mapping(session, data,
                                      ignore_missing=ignore_missing)
-    correspondence_mapping = correspondence_id_mapping(session, data,
-                                                       ignore_missing=ignore_missing)
+    corr_mapping = correspondence_id_mapping(session, data,
+                                             ignore_missing=ignore_missing)
     known = known_comparisions(session)
     savable = []
     for entry in data:
+        if chain1(entry) not in chain_mapping:
+            logger.error("Chain %s not in chain mapping", chain1(entry))
+            if not ignore_missing:
+                raise ValueError("Missing chain id")
+
+        if chain2(entry) not in chain_mapping:
+            logger.error("Chain %s not in chain mapping", chain2(entry))
+            if not ignore_missing:
+                raise ValueError("Missing chain id")
+
         chain_id_1 = chain_mapping[chain1(entry)]
         chain_id_2 = chain_mapping[chain2(entry)]
         ids = (chain_id_1, chain_id_2)
         if ids in known:
             logger.info("Not importing known correspondence between %s %s",
                         chain1(entry), chain2(entry))
+            continue
+
+        if ids not in corr_mapping:
+            logger.error("Missing correspondence between %s", ids)
+            if not ignore_missing:
+                raise ValueError("Missing correspondence")
             continue
 
         to_save = dict(entry)
@@ -161,7 +221,7 @@ def load(filename, ignore_missing=False, **kwargs):
         to_save.update({
             'chain_id_1': chain_id_1,
             'chain_id_2': chain_id_2,
-            'correspondence_id': correspondence_mapping[ids],
+            'correspondence_id': corr_mapping[ids],
         })
         logger.debug("Importing %s", to_save)
         savable.append(mod.ChainChainSimilarity(**to_save))
@@ -174,9 +234,13 @@ def load(filename, ignore_missing=False, **kwargs):
 
 def dump(filename, **kwargs):
     """Dump chain chain comparison data to a file. This will dump all chain
-    chain comparison data to a file for later import.
+    chain comparison data to a file for later import. The data is pickled for
+    easy reading and writing in python.
 
-    :param str filename: Name of the file to write to.
+    Parameters
+    ----------
+    filename : str
+        Name of the file to write to.
     """
 
     session = setup(**kwargs)

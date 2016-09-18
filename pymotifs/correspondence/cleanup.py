@@ -8,9 +8,8 @@ lots of space.
 """
 
 from pymotifs import core
+from pymotifs import models as mod
 
-from pymotifs.models import CorrespondenceInfo as Info
-from pymotifs.models import CorrespondencePositions as Position
 from pymotifs.correspondence.info import Loader as InfoLoader
 from pymotifs.correspondence.summary import Loader as SummaryLoader
 
@@ -28,13 +27,15 @@ class Loader(core.Stage):
         """
 
         with self.session() as session:
-            subquery = session.query(Position.correspondence_id).\
+            position = mod.CorrespondencePositions
+            info = mod.CorrespondenceInfo
+            subquery = session.query(position.correspondence_id).\
                 distinct().\
                 subquery()
 
-            query = session.query(Info).\
+            query = session.query(info).\
                 join(subquery,
-                     subquery.c.correspondence_id == Info.correspondence_id)
+                     subquery.c.correspondence_id == info.correspondence_id)
             return [result.correspondence_id for result in query]
 
     def should_process(self, corr_id, **kwargs):
@@ -44,7 +45,7 @@ class Loader(core.Stage):
         """
 
         with self.session() as session:
-            corr = session.query(Info).get(corr_id)
+            corr = session.query(mod.CorrespondenceInfo).get(corr_id)
             return not bool(corr.good_alignment)
 
     def process(self, corr_id, **kwargs):
@@ -57,6 +58,7 @@ class Loader(core.Stage):
             return False
 
         with self.session() as session:
-            session.query(Position).\
-                filter(Position.correspondence_id == corr_id).\
+            positions = mod.CorrespondencePositions
+            session.query(positions).\
+                filter(positions.correspondence_id == corr_id).\
                 delete(synchronize_session=False)
