@@ -1,5 +1,4 @@
 {
-    "environment": "prod",
     "email": {
         "subject": "Pipeline results",
         "host": "your-host",
