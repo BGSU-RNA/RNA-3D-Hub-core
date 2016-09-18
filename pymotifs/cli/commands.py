@@ -102,7 +102,9 @@ def cli(ctx, **options):
     config = conf.load(options['config'])
     ctx.objs.update({
         'config': config,
-        'engine': create_engine(config['db']['uri'])
+        'engine': create_engine(config['db']['uri'],
+                                pool_size=config['db'].get('pool_size', 20),
+                                max_overflow=config['db'].get('max_overflow', 0))
     })
 
 
@@ -291,11 +293,16 @@ def correct_nr_history(ctx, version, **kwargs):
 
 
 @cli.group(short_help='Create reports')
+@click.option('--hide-headers', is_flag=True,
+              help="Hide headers in output")
+@click.option('--delimiter', default='\t', type=str,
+              help='Delimeter to separate  columns with')
 @click.pass_context
-def report(ctx):
+def report(ctx, **kwargs):
     """Commands dealing with creating reports
     """
     ctx.objs = ctx.parent.objs
+    ctx.objs.update(kwargs)
 
 
 @report.group('nr', short_help='Reports about the NR set')
