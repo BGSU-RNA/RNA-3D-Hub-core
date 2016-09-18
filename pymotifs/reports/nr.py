@@ -358,8 +358,8 @@ def pairs(maker, release, resolution, **kwargs):
                               ccs.discrepancy.label('Discrepancy'),
                               corr.match_count.label('forward_match'),
                               rev_corr.match_count.label('rev_match'),
-                              exp1.normalized_length.label('len1'),
-                              exp2.normalized_length.label('len2'),
+                              exp1.length.label('len1'),
+                              exp2.length.label('len2'),
                               ).\
             join(chains1, chains1.nr_class_id == classes.nr_class_id).\
             join(chains2, chains2.nr_class_id == classes.nr_class_id).\
@@ -368,7 +368,7 @@ def pairs(maker, release, resolution, **kwargs):
                  (ife1.index == 0)
                  ).\
             join(ife2,
-                 (ife2.ife_id == chains2.ife_id)
+                 (ife2.ife_id == chains2.ife_id) &
                  (ife2.index == 0)
                  ).\
             join(mapping1, mapping1.chain_id == ife1.chain_id).\

@@ -15,9 +15,10 @@ def setup(engine):
     return Session(sessionmaker(engine))
 
 
-def write(headers, rows):
-    writer = csv.DictWriter(sys.stdout, headers, delimiter="\t")
-    writer.writerow(dict(zip(headers, headers)))
+def write(headers, rows, hide_headers=True, delimiter='\t', **kwargs):
+    writer = csv.DictWriter(sys.stdout, headers, delimiter=str(delimiter))
+    if not hide_headers:
+        writer.writerow(dict(zip(headers, headers)))
     for row in rows:
         writer.writerow(row)
 
@@ -27,7 +28,7 @@ def nr_groups(**kwargs):
     version = kwargs.pop('version')
     resolution = kwargs.pop('resolution')
     data = _nr.groups(session, version, resolution, **kwargs)
-    write(data.headers, data.rows)
+    write(data.headers, data.rows, **kwargs)
 
 
 def nr_pairs(**kwargs):
@@ -35,10 +36,10 @@ def nr_pairs(**kwargs):
     version = kwargs.pop('version')
     resolution = kwargs.pop('resolution')
     data = _nr.pairs(session, version, resolution, **kwargs)
-    write(data.headers, data.rows)
+    write(data.headers, data.rows, **kwargs)
 
 
 def species(**kwargs):
     session = setup(kwargs['engine'])
     data = _species.report(session, **kwargs)
-    write(_species.HEADERS, data)
+    write(_species.HEADERS, data, **kwargs)
