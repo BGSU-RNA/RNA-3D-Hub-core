@@ -363,8 +363,14 @@ def pairs(maker, release, resolution, **kwargs):
                               ).\
             join(chains1, chains1.nr_class_id == classes.nr_class_id).\
             join(chains2, chains2.nr_class_id == classes.nr_class_id).\
-            join(ife1, ife1.ife_id == chains1.ife_id).\
-            join(ife2, ife2.ife_id == chains2.ife_id).\
+            join(ife1,
+                 (ife1.ife_id == chains1.ife_id) &
+                 (ife1.index == 0)
+                 ).\
+            join(ife2,
+                 (ife2.ife_id == chains2.ife_id)
+                 (ife2.index == 0)
+                 ).\
             join(mapping1, mapping1.chain_id == ife1.chain_id).\
             join(mapping2, mapping2.chain_id == ife2.chain_id).\
             join(exp1, exp1.exp_seq_id == mapping1.exp_seq_id).\
@@ -384,7 +390,9 @@ def pairs(maker, release, resolution, **kwargs):
             filter(chains1.nr_chain_id != chains2.nr_chain_id).\
             filter(ife1.chain_id != ife2.chain_id).\
             filter(classes.resolution == resolution).\
-            filter(classes.nr_release_id == release)
+            filter(classes.nr_release_id == release).\
+            distinct().\
+            order_by(classes.name, ife1.ife_id, ife2.ife_id)
 
         data = []
         for result in query:
