@@ -1,13 +1,11 @@
 """Import all flanking interactions.
 
-Runs fr3d on the given files to determine all flankng interactions and then imports
-them into the database.
+Runs fr3d on the given files to determine all flankng interactions and then
+imports them into the database.
 """
 
-import re
 import os
 import csv
-import collections as coll
 
 
 from pymotifs import core
@@ -27,7 +25,10 @@ class Loader(core.SimpleLoader):
     allow_no_data = True
 
     dependencies = set([MatLoader, UnitLoader, PdbLoader])
-    table = mod.UnitPairsFlanking
+
+    @property
+    def table(self):
+        return mod.UnitPairsFlanking
 
     def query(self, session, pdb):
         """Create a query to access interaction data for the given pdb.

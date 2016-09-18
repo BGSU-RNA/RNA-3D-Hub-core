@@ -8,37 +8,125 @@ as for general querying and summarizing.
 import collections as coll
 
 from pymotifs import core
+from pymotifs import models as mod
 from pymotifs.constants import LONG_RANGE
 
-from pymotifs.models import UnitInfo
-from pymotifs.models import UnitPairsInteractions
-from pymotifs.models import UnitInteractionSummary
-
 from pymotifs.interactions.pairwise import Loader as InterLoader
+from pymotifs.units.info import Loader as UnitLoader
+from pymotifs.pdbs.info import Loader as PdbLoader
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([InterLoader])
-    table = UnitInteractionSummary
+    dependencies = set([InterLoader, UnitLoader, PdbLoader])
+
+    ignore_bp = set(['wat'])
+    """A list of basepair families to ignore the counts of."""
+
+    @property
+    def table(self):
+        return mod.UnitInteractionSummary
 
     def query(self, session, pdb):
-        return session.query(UnitInteractionSummary).\
+        """Build a query to find all summary entries for the given PDB.
+
+        Parameters
+        ----------
+        session : pymotifs.core.db.Session
+            The session to use
+        pdb : str
+            The pdb id to use
+
+        Returns
+        -------
+        query : Query
+            The query to use.
+        """
+
+        return session.query(mod.UnitInteractionSummary).\
             filter_by(pdb_id=pdb)
 
     def increment_bp(self, current, bp, crossing):
-        if bp == 'wat':
+        """Increment the count of the current bp. If the base pair is in
+        `Loader.ignore_bp` we return the current counts.
+
+        Parameters
+        ----------
+        current : dict
+            The current dictonary of counts
+        bp : str
+            The type of basepair to increment
+        crossing : int
+            The crossing number to increment
+
+        Returns
+        -------
+        counts : dict
+            The updated counts.
+        """
+
+        if bp in self.ignore_bp:
             return current
         return self.increment(current, 'bps', bp, crossing)
 
     def increment_stacks(self, current, stack, crossing):
+        """Increment the counts for the given stack annotation.
+
+        Parameters
+        ----------
+        current : dict
+            The current counts
+        stack : str
+            The stacking annotation
+        crossing : int
+            The crossing number
+
+        Returns
+        -------
+        counts : dict
+            The updated number of counts.
+        """
         return self.increment(current, 'stacks', stack, crossing)
 
     def increment_bphs(self, current, unit1, unit2, bph, crossing):
+        """Increment the counts for the given base phosphate annotation. We do
+        not count self 0BPh interactions as those are very common.
+
+        Parameters
+        ----------
+        current : dict
+            The current counts
+        bph : str
+            The base phosphaate annotation
+        crossing : int
+            The crossing number
+
+        Returns
+        -------
+        counts : dict
+            The updated number of counts.
+        """
         if unit1 != unit2 and bph != '0BPh':
             return self.increment(current, 'bphs', bph, crossing)
         return current
 
     def increment(self, current, family, name, crossing):
+        """Increment the the counts of the given annotation for the given name.
+        This will increment totals as well as the long range counts if the
+        given annotation is long range. We do not increment counts if the
+        interaction is near which we can tell by it starting with 'n'.
+
+        Parameters
+        ----------
+        current : dict
+            The current counts
+        family : str
+            The family of interaction, like 'bp', or 'bph', etc
+        name : str
+            The annotation to increment
+        crossing : int
+            The corssing number.
+        """
+
         if name and name[0] != 'n':
             current[name] += 1
             current['total'] += 1
@@ -50,22 +138,36 @@ class Loader(core.SimpleLoader):
         return current
 
     def data(self, pdb_id, **kwargs):
+        """Compute the summary for all units in the given pdb. This will look
+        up all RNA bases in the given structure and compute a summary of the
+        number of interactions for each unit.
+
+        Parameters
+        ----------
+        pdb_id : str
+            The pdb id.
+
+        Returns
+        -------
+        summaries : list
+            A list of dictonaries as from 'increment'.
+        """
 
         with self.session() as session:
-            query = session.query(UnitInfo.unit_id.label('unit_id_1'),
-                                  UnitInfo.model,
-                                  UnitInfo.chain,
-                                  UnitInfo.pdb_id,
-                                  UnitPairsInteractions.unit_id_2,
-                                  UnitPairsInteractions.f_lwbp,
-                                  UnitPairsInteractions.f_bphs,
-                                  UnitPairsInteractions.f_stacks,
-                                  UnitPairsInteractions.f_crossing,
+            query = session.query(mod.UnitInfo.unit_id.label('unit_id_1'),
+                                  mod.UnitInfo.model,
+                                  mod.UnitInfo.chain,
+                                  mod.UnitInfo.pdb_id,
+                                  mod.UnitPairsInteractions.unit_id_2,
+                                  mod.UnitPairsInteractions.f_lwbp,
+                                  mod.UnitPairsInteractions.f_bphs,
+                                  mod.UnitPairsInteractions.f_stacks,
+                                  mod.UnitPairsInteractions.f_crossing,
                                   ).\
-                outerjoin(UnitPairsInteractions,
-                          UnitInfo.unit_id == UnitPairsInteractions.unit_id_1).\
-                filter(UnitInfo.pdb_id == pdb_id).\
-                filter(UnitInfo.unit_type_id == 'rna')
+                outerjoin(mod.UnitPairsInteractions,
+                          mod.UnitInfo.unit_id == mod.UnitPairsInteractions.unit_id_1).\
+                filter(mod.UnitInfo.pdb_id == pdb_id).\
+                filter(mod.UnitInfo.unit_type_id == 'rna')
 
             data = coll.defaultdict(lambda: coll.defaultdict(int))
             for result in query:
