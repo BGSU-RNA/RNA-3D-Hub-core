@@ -5,13 +5,8 @@ from fr3d import geometry as geo
 
 from pymotifs import core
 from pymotifs import utils
+from pymotifs import models as mod
 from pymotifs.utils.structures import Structure as StructureUtil
-
-from pymotifs.models import ExpSeqInfo as ExpSeq
-from pymotifs.models import CorrespondenceLoops as Loops
-from pymotifs.models import CorrespondenceInfo as Info
-from pymotifs.models import LoopOverlapInfo
-from pymotifs.models import LoopLoopComparisions
 
 
 class MissingNucleotideException(Exception):
@@ -33,7 +28,7 @@ class Loader(core.Loader):
     def overlap(self, coverage):
         if not self._overlaps:
             with self.session() as session:
-                for overlap in session.query(LoopOverlapInfo):
+                for overlap in session.query(mod.LoopOverlapInfo):
                     self._overlaps[overlap.name] = overlap.id
 
         if coverage not in self._overlaps:
@@ -106,17 +101,17 @@ class Loader(core.Loader):
 
     def loop_comparision_id(self, loop1, loop2, discrepancy):
         with self.session() as session:
-            query = session.query(LoopLoopComparisions).\
+            query = session.query(mod.LoopLoopComparisions).\
                 filter_by(loop1_id=loop1, loop2_id=loop2)
 
             if query.count() == 0:
-                session.add(LoopLoopComparisions(loop1_id=loop1,
-                                                 loop2_id=loop2,
-                                                 discrepancy=discrepancy))
+                session.add(mod.LoopLoopComparisions(loop1_id=loop1,
+                                                     loop2_id=loop2,
+                                                     discrepancy=discrepancy))
                 session.commit()
 
         with self.session() as session:
-            return session.query(LoopLoopComparisions).\
+            return session.query(mod.LoopLoopComparisions).\
                 filter_by(loop1_id=loop1, loop2_id=loop2).\
                 one().\
                 id
@@ -143,7 +138,7 @@ class Loader(core.Loader):
                                                   disc)
 
             overlapping.append((loop['id'],
-                                Loops(
+                                mod.CorrespondenceLoops(
                                     loop_loop_comparisions_id=compare_id,
                                     correspondence_id=corr_id,
                                     loop_overlap_info_id=self.overlap(cover))))
@@ -162,7 +157,7 @@ class Loader(core.Loader):
 
             else:
                 compare_id = self.loop_comparision_id(ref['id'], None, None)
-                yield Loops(
+                yield mod.CorrespondenceLoops(
                     loop_loop_comparisions_id=compare_id,
                     correspondence_id=corr_id,
                     loop_overlap_info_id=self.overlap('unique'))
@@ -170,7 +165,7 @@ class Loader(core.Loader):
         for loop in unseen_loops:
             compare_id = self.loop_comparision_id(None, loop, None)
 
-            yield Loops(
+            yield mod.CorrespondenceLoops(
                 loop_loop_comparisions_id=compare_id,
                 correspondence_id=corr_id,
                 loop_overlap_info_id=self.overlap('unique'))
@@ -182,17 +177,18 @@ class Loader(core.Loader):
 
     def remove(self, pdb):
         with self.session() as session:
-            session.query(Loops).\
-                join(Info, Info.correspondence_id == Loops.correspondence_id).\
-                filter(Info.pdb_id_1 == pdb).\
+            session.query(mod.CorrespondenceLoops).\
+                join(mod.CorrespondenceInfo,
+                     mod.CorrespondenceInfo.correspondence_id == mod.CorrespondenceLoops.correspondence_id).\
+                filter(mod.CorrespondenceInfo.pdb_id_1 == pdb).\
                 delete()
 
     def transform(self, pdb):
         cif = self.cif(pdb)
         with self.session() as session:
-            query = session.query(Info).\
-                join(ExpSeq, ExpSeq.exp_seq_id == Info.exp_seq_id_1).\
-                filter(ExpSeq.pdb_id == pdb)
+            query = session.query(mod.CorrespondenceInfo).\
+                join(mod.ExpSeqInfo, mod.ExpSeqInfo.exp_seq_id == mod.CorrespondenceInfo.exp_seq_id_1).\
+                filter(mod.ExpSeqInfo.pdb_id == pdb)
             return [(cif, result.id) for result in query]
 
     def data(self, entry, **kwargs):

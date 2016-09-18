@@ -2,6 +2,7 @@
 """
 
 from pymotifs import core
+from pymotifs import models as mod
 
 from pymotifs.models import UnitPairsInteractions as Ints
 from pymotifs.models import CorrespondenceInteractions as CorrInts
