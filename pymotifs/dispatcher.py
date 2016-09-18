@@ -22,14 +22,20 @@ class Dispatcher(object):
     def __init__(self, name, *args, **kwargs):
         """Create a new dispatcher.
 
-        :name: String name of the stage to run. Should be like 'update', which
-        will load pymotifs.update.
-        :*args: Arguments to build the stage with
-        :skip_dependencies: Flag to indicate if all dependencies should be
-        skipped.
-        :exclude: A list, set or tuple of stage names to exclude. This will
-        also exclude all dependencies of the stage if they are only used for
-        the stage.
+        Parameters
+        ----------
+        name : str
+            String name of the stage to run. Should be like 'update', which
+            will load pymotifs.update.
+        *args : obj
+            Arguments to build the stage with
+        skip_dependencies : bool, optional
+            Flag to indicate if all dependencies should be skipped. Defaults to
+            False.
+        exclude : list
+            A list, set or tuple of stage names to exclude. This will also
+            exclude all dependencies of the stage if they are only used for the
+            stage.
         """
 
         self.name = name
@@ -60,8 +66,15 @@ class Dispatcher(object):
     def dependencies(self, stages):
         """Compute the dependency graph for the given stages.
 
-        :param list stages: The list of stages to process.
-        :returns: A dictonary with the dependency graph.
+        Parameters
+        ----------
+        stages : list
+            The list of stages to process.
+
+        Returns
+        --------
+        deps :dict
+            A dictonary with the dependency graph.
         """
 
         def process_stage(stage):
@@ -102,7 +115,14 @@ class Dispatcher(object):
 
         for level in topo.levels(dependencies):
             current = []
-            stages = [k(*self._args) for k in level]
+            stages = []
+            for k in level:
+                try:
+                    stages.append(k(*self._args))
+                except:
+                    self.logger.error("Failed building stage %s", k)
+                    raise
+
             for stage in sorted(stages, key=lambda c: c.name):
                 name = stage.name
                 if exclude is True or name in exclude:
