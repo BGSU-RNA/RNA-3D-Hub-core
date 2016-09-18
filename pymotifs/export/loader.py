@@ -1,3 +1,13 @@
+"""Run all exporting functionality. This contains the:
+
+export.cif_atom
+    Write cifatom files.
+export.interactions
+    Write the interaction CSV
+export.loops
+    Write the loops CSV
+"""
+
 from pymotifs.core import StageContainer
 
 from pymotifs.export.cifatom import Exporter as CifAtom
@@ -6,4 +16,6 @@ from pymotifs.export.loops import Exporter as LoopExporter
 
 
 class Exporter(StageContainer):
-    stages = [CifAtom, InteractionExporter]
+    """The actual stage to run."""
+
+    stages = set([CifAtom, InteractionExporter, LoopExporter])
