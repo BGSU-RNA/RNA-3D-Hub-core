@@ -7,8 +7,12 @@ from pymotifs.core import Session
 from pymotifs import models as mod
 
 from pymotifs.reports import nr as _nr
-from pymotifs.reports.setup import setup
 from pymotifs.reports import species as _species
+
+
+def setup(engine):
+    mod.reflect(engine)
+    return Session(sessionmaker(engine))
 
 
 def write(headers, rows):
@@ -17,12 +21,21 @@ def write(headers, rows):
     for row in rows:
         writer.writerow(row)
 
-def nr(**kwargs):
+
+def nr_groups(**kwargs):
     session = setup(kwargs['engine'])
-    version =  kwargs.pop('version')
+    version = kwargs.pop('version')
     resolution = kwargs.pop('resolution')
-    data = _nr.report(session, version, resolution, **kwargs)
-    write(_nr.HEADERS, data)
+    data = _nr.groups(session, version, resolution, **kwargs)
+    write(data.headers, data.rows)
+
+
+def nr_pairs(**kwargs):
+    session = setup(kwargs['engine'])
+    version = kwargs.pop('version')
+    resolution = kwargs.pop('resolution')
+    data = _nr.pairs(session, version, resolution, **kwargs)
+    write(data.headers, data.rows)
 
 
 def species(**kwargs):

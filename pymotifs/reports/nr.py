@@ -8,11 +8,14 @@ import collections as coll
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
 
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import func
+
+Report = coll.namedtuple('Report', ['headers', 'rows'])
 
 
 """The list of headers to write in the report."""
-HEADERS = [
+GROUP_HEADERS = [
     'Group',
     'Rank',
     'Type',
@@ -27,6 +30,15 @@ HEADERS = [
     'Observed Length',
     'Experimental Length',
     'Experimental Sequence',
+]
+
+PAIRS_HEADERS = [
+    'Group',
+    'Release Id',
+    'IFE1',
+    'IFE2',
+    'Discrepancy',
+    'Alignment',
 ]
 
 compound = op.itemgetter('compound')
@@ -264,7 +276,7 @@ def sort_groups(data):
     return ordered
 
 
-def report(maker, release, resolution, **kwargs):
+def groups(maker, release, resolution, **kwargs):
     """Create a report about the NR set.
 
     Parameters
@@ -320,4 +332,69 @@ def report(maker, release, resolution, **kwargs):
                             )
             current.add_info(info)
             data.append(current)
-    return [d.named() for d in sort_groups(data)]
+    return Report(GROUP_HEADERS, [d.named() for d in sort_groups(data)])
+
+
+def pairs(maker, release, resolution, **kwargs):
+    """Create a report about pairs in the NR set.
+    """
+    classes = mod.NrClasses
+    chains1 = aliased(mod.NrChains)
+    chains2 = aliased(mod.NrChains)
+    ife1 = aliased(mod.IfeChains)
+    ife2 = aliased(mod.IfeChains)
+    mapping1 = aliased(mod.ExpSeqChainMapping)
+    mapping2 = aliased(mod.ExpSeqChainMapping)
+    ccs = mod.ChainChainSimilarity
+    corr = aliased(mod.CorrespondenceInfo)
+    rev_corr = aliased(mod.CorrespondenceInfo)
+    exp1 = aliased(mod.ExpSeqInfo)
+    exp2 = aliased(mod.ExpSeqInfo)
+    with maker() as session:
+        query = session.query(classes.name.label('Group'),
+                              classes.nr_release_id,
+                              chains1.ife_id.label('IFE1'),
+                              chains2.ife_id.label('IFE2'),
+                              ccs.discrepancy.label('Discrepancy'),
+                              corr.match.label('forward_match'),
+                              rev_corr.match.label('rev_match'),
+                              exp1.normalizd_length.label('len1'),
+                              exp2.normalizd_length.label('len1'),
+                              ).\
+            join(chains1, chains1.nr_class_id == classes.nr_class_id).\
+            join(chains2, chains2.nr_class_id == classes.nr_class_id).\
+            join(ife1, ife1.ife_id == chains1.ife_id).\
+            join(ife2, ife2.ife_id == chains2.ife_id).\
+            join(mapping1, mapping1.chain_id == ife1.chain_id).\
+            join(mapping2, mapping2.chain_id == ife2.chain_id).\
+            outerjoin(ccs,
+                      (ccs.chain_id_1 == ife1.chain_id) &
+                      (ccs.chain_id_2 == ife2.chain_id),
+                      ).\
+            outerjoin(corr,
+                      (corr.chain_id_1 == mapping1.exp_seq_id) &
+                      (corr.chain_id_2 == mapping2.exp_seq_id),
+                      ).\
+            outerjoin(rev_corr,
+                      (rev_corr.chain_id_1 == mapping1.exp_seq_id) &
+                      (rev_corr.chain_id_2 == mapping2.exp_seq_id),
+                      ).\
+            filter(chains1.nr_chain_id != chains2.nr_chain_id).\
+            filter(ife1.chain_id != ife2.chain_id).\
+            filter(classes.resolution == resolution).\
+            filter(classes.nr_release_id == release)
+
+        data = []
+        for result in query:
+            entry = row2dict(result)
+            for_match = entry.pop('forward_match')
+            rev_match = entry.pop('rev_match')
+            len1 = entry.pop('len1')
+            len2 = entry.pop('len2')
+            entry['Alignment'] = None
+            if for_match or rev_match:
+                match = float(for_match or rev_match)
+                entry['Alignment'] = match / float(min(len1, len2))
+            data.append(entry)
+
+    return Report(PAIRS_HEADERS, data)

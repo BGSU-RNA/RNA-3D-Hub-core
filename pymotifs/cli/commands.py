@@ -1,5 +1,5 @@
 """This contains all command line interface commands that the pipeline script
-can run. This is effectively the main entry point for the pipeline.
+can run. This contains all the functions that will be run.
 """
 
 import random
@@ -29,15 +29,21 @@ from pymotifs.dispatcher import Dispatcher
 
 def run(ctx, name, ids, config=None, engine=None, **kwargs):
     """Actually run the pipeline. This is the main function which will load and
-    run the stages.
+    run the stages requested. It fetch PDBs to run if needed, reflect the
+    models, run stages, and send an email as needed.
 
-    :param str name: The name of the stage to run.
-    :param list ids: The PDB ids to use.
-    :param dict config: The configuration dictionary as produced by
-    pymotifs.config.load.
-    :param engine: The SQL Alchemy engine connection.
-    :param dict **kwargs: The other keyword arguments which will be passed to
-    dispatcher.
+    Parameters
+    ----------
+    name : str
+        The name of the stage to run.
+    ids : list
+        The PDB ids to use.
+    config : dict
+        The configuration dictionary as produced by pymotifs.config.load.
+    engine : Engine
+    The SQL Alchemy engine connection.
+    **kwargs : dict, optional
+        The other keyword arguments which will be passed to dispatcher.
     """
 
     if kwargs.get('seed', None) is not None:
@@ -292,12 +298,20 @@ def report(ctx):
     ctx.objs = ctx.parent.objs
 
 
-@report.command('nr', short_help='Create a report for an nr set')
+@report.group('nr', short_help='Reports about the NR set')
+@click.pass_context
+def report_nr(ctx):
+    """Create reports about NR groups
+    """
+    ctx.objs = ctx.parent.objs
+
+
+@report_nr.command('groups', short_help='Create a report for an nr set')
 @click.option('--resolution', default='all', type=str,
               help='The resolution cutoff to use')
 @click.argument('version')
 @click.pass_context
-def report_nr(ctx, **kwargs):
+def report_nr_groups(ctx, **kwargs):
     """Create a report of the NR set.
 
     This will detail the members of each set and information about them. It
@@ -305,10 +319,30 @@ def report_nr(ctx, **kwargs):
     for evaluating the grouping of an NR set.
     """
     kwargs.update(ctx.parent.objs)
-    reports.nr(**kwargs)
+    reports.nr_groups(**kwargs)
 
 
-@report.command('species', short_help='Create report about species assignments')
+@report_nr.command('pairs',
+                   short_help='Create a report about pairs in EQ sets')
+@click.option('--resolution', default='all', type=str,
+              help='The resolution cutoff to use')
+@click.argument('version')
+@click.pass_context
+def report_nr_pairs(ctx, **kwargs):
+    """Create a report about pairs in the NR set.
+
+    This will create a report about the alignment and discrepancy values for
+    all pairs within all equivleance sets in the requested NR set. Singleton
+    groups do not appear because they have no pairs within them.
+
+    This will produce a CSV that is written to stdout.
+    """
+    kwargs.update(ctx.parent.objs)
+    reports.nr_pairs(**kwargs)
+
+
+@report.command('species',
+                short_help='Create report about species assignments')
 @click.pass_context
 def report_species(ctx, **kwargs):
     """Create a report about the species assignments.
