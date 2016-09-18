@@ -1,5 +1,12 @@
+"""Fetch, parse and store validation reports. This module contains a loader to
+get validation reports from PDB's FTP site and extract quality data.
+"""
+
 import gzip
 import hashlib
+import operator as op
+import itertools as it
+import functools as ft
 import cStringIO as sio
 import collections as coll
 import xml.etree.ElementTree as ET
@@ -13,17 +20,39 @@ except:
 import pymotifs.utils as ut
 import pymotifs.core as core
 from pymotifs import models as mod
-# import UnitInfo as Unit
-# from pymotifs.models import UnitQuality as Quality
 from pymotifs.units.info import Loader as InfoLoader
 
 from fr3d.unit_ids import encode
 
 
+"""A `operator.itemgetter` for defining a key for mapping between unit ids and
+entries in the validation report.
+"""
+as_key = op.itemgetter('chain', 'component_number', 'insertion_code', 'alt_id')
+
+
 class FileHelper(object):
+    """Class to help computing the path to the validation report on PDB's FTP
+    site.
+    """
+
+    """The template for paths to the validation report"""
     path = 'pub/pdb/validation_reports/{short}/{pdb}/{pdb}_validation.xml.gz'
 
     def __call__(self, pdb):
+        """Compute the path to the validation report for the given file.
+
+        Parameters
+        ----------
+        pdb : str
+            The pdb id to get a report for.
+
+        Returns
+        -------
+        path : str
+            The path on the FTP server to use.
+        """
+
         if not pdb:
             raise ValueError("Must give a pdb")
 
@@ -33,7 +62,18 @@ class FileHelper(object):
 class Parser(object):
     """A class to parse the results of getting the quality file. Right now it
     only processes the RsR related data.
+
+    Attributes
+    ----------
+    generator : fr3d.unit_ids.encode
+        A function to generate unit ids from dictionaries.
+    digest : str
+        The md5 hash of the content
+    root : ElementTree
+        The parsed XML tree for processing.
     """
+
+    """List of keys from the validation report to extract"""
     entry_keys = [
         'absolute-percentile-percent-RSRZ-outliers',
         'high-resol-relative-percentile-percent-RSRZ-outliers',
@@ -43,6 +83,15 @@ class Parser(object):
     ]
 
     def __init__(self, gz_content):
+        """Create a new `Parser` to parse the given gz_content. This parser
+        will extract the residue level entries from the content.
+
+        Parameters
+        ----------
+        gz_content : str
+            A gzip'ed string of the file to parse.
+        """
+
         filehandle = sio.StringIO(gz_content)
         content = gzip.GzipFile(fileobj=filehandle).read()
         md5 = hashlib.md5()
@@ -52,14 +101,40 @@ class Parser(object):
         self.root = ET.fromstring(content)
 
     def has_dcc(self):
+        """Check if this report has DCC data.
+
+        Returns
+        -------
+        has_dcc : bool
+            True if this report has DCC data.
+        """
+
         entry = self.root.find("Entry")
         return 'DCC_R' in entry.attrib
 
     def has_rsr(self):
+        """Check if this report has RSR data.
+
+        Returns
+        -------
+        True if this report has RSR data
+        """
+
         entry = self.root.find("Entry")
         return 'absolute-percentile-percent-RSRZ-outliers' in entry.attrib
 
     def nts(self):
+        """Get all nucleotide data from the parsed tree. This will extract all
+        residue level quality data and produce an iterator over the resulting
+        dictionaries. This will extract data for all entries, RNA, DNA, and all
+        ligands.
+
+        Yields
+        ------
+        nt : dict
+            A dictionary of nt level data.
+        """
+
         pdb = self.root.find("Entry").attrib['pdbid'].upper()
         for residue in self.root.findall("ModelledSubgroup"):
             data = {}
@@ -70,13 +145,35 @@ class Parser(object):
                 data['z_score'] = float(residue.attrib['rsrz'])
 
             if 'DCC' in residue.attrib:
-                pass
+                data['density_correlation'] = float(residue['DCC'])
 
             if data:
                 data['id'] = self._unit_id(pdb, residue.attrib)
                 yield data
 
     def _unit_id(self, pdb, attributes):
+        """Compute a dictionary that can be used to find and compute unit ids.
+        This does not create a real unit id string but instead creates a
+        dictionary that can later be used to generate one. This does not add
+        data like the symmetry operator as this cannot be determined from the
+        validation report alone. That has to be inferred by finding all
+        symmetry operators for units that this unit id data can refer to.
+
+        Parameters
+        ----------
+        pdb : str
+            The PDB Id
+        attributes : dict
+            Dictionary that includes 'model', 'chain', 'resnum', 'resname', and
+            optionally, 'icode' and 'altcode'.
+
+        Returns
+        -------
+        unit_id : dict
+            A dictionary with keys, 'pdb', 'model', 'chain', component_number',
+            'component_id', 'insertion_code', and 'alt_id'.
+        """
+
         insertion_code = attributes['icode'].strip()
         if insertion_code == '':
             insertion_code = None
@@ -97,36 +194,83 @@ class Parser(object):
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([InfoLoader])
-    allow_no_data = True
-    table = mod.UnitQuality
+    """The loader to fetch and store quality data for structures.
+    """
 
-    def __init__(self, *args):
-        super(Loader, self).__init__(*args)
-        self.fetcher = ut.FTPFetchHelper('ftp.wwpdb.org')
-        self.finder = FileHelper()
+    dependencies = set([InfoLoader])
 
     def query(self, session, pdb):
+        """Generate a query to find all entries in units_quality for the given
+        PDB id.
+
+        Attributes
+        ----------
+        session : Session
+            The `Session` to use.
+
+        pdb : str
+            The PDB id to use.
+
+        Returns
+        -------
+        query : Query
+            Returns an SqlAlchemy query for all entires in units_quality with
+            the given PDB id.
+        """
+
         return session.query(mod.UnitQuality).\
-            join(mod.UnitInfo, mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
+            join(mod.UnitInfo,
+                 mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
             filter(mod.UnitInfo.pdb_id == pdb)
 
     def mapping(self, pdb):
+        """Create a dictionary that maps from data produced by `as_key` to unit
+        ids that are in the database. This will lookup all unit ids in the
+        database and create the required mapping.
+
+        Parameters
+        ----------
+        pdb : str
+            The pdb id to look up a mapping for
+
+        Returns
+        -------
+        mapping : dict
+            The mapping dictionary to use.
+        """
+
         mapping = coll.defaultdict(list)
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
                 filter_by(pdb_id=pdb)
 
             for result in query:
-                key = (result.chain, result.number, result.ins_code,
-                       result.alt_id)
+                key = as_key(ut.row2dict(result))
                 mapping[key].append(result.unit_id)
 
         return mapping
 
-    def as_quality(self, entry, mapping):
-        key = (entry['id']['chain'], entry['id']['component_number'],
-               entry['id']['insertion_code'], entry['id']['alt_id'])
+    def as_quality(self, mapping, entry):
+        """Convert an entry from the parser into a form suitable for writing to
+        the units_quality table. Since some entries from the parser expand to
+        more than one unit due to symmetry operators this will produce an
+        iterator that may have more than 1 value.
+
+        Parameters
+        ----------
+        mapping : dict
+            The mapping as produced by `mapping`.
+        entry : dict
+            A dictionary from `Parser.nts`.
+
+        Yields
+        ------
+        entry : dict
+            A dictionary of 'unit_id', 'real_space_r', 'density_correlation',
+            'z_score'.
+        """
+
+        key = as_key(entry['id'])
 
         if not mapping[key]:
             raise core.InvalidState("Could not find unit id for %s" % entry)
@@ -140,9 +284,27 @@ class Loader(core.SimpleLoader):
             }
 
     def data(self, pdb, **kwargs):
-        filename = self.finder(pdb)
+        """Compute the quality assignments for residues in the structure. This
+        will fetch the validation report from PDB and convert the entries there
+        into forms suitable to write to the database. If the report has no RSR
+        or DCC data then a `core.Skip` exception will be raised.
+
+        Parameters
+        ----------
+        pdb : str
+            The pdb id to use.
+
+        Returns
+        -------
+        data: iterable
+            An iterable of a quality assignments to store in the database.
+        """
+
+        finder = FileHelper()
+        filename = finder(pdb)
         try:
-            response = self.fetcher(filename)
+            fetcher = ut.FTPFetchHelper('ftp.wwpdb.org')
+            response = fetcher(filename)
         except ut.RetryFailedException:
             raise core.Skip("Could not download data for %s" % pdb)
 
@@ -151,7 +313,7 @@ class Loader(core.SimpleLoader):
             raise core.Skip("No RsR found for %s" % pdb)
 
         mapping = self.mapping(pdb)
-        data = []
-        for entry in parser.nts():
-            data.extend(quality for quality in self.as_quality(entry, mapping))
-        return data
+        as_quality = ft.partial(self.as_quality, mapping)
+        data = it.imap(as_quality, parser.nts())
+        data = it.chain.from_iterable(data)
+        return it.imap(mod.UnitQuality)
