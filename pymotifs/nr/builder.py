@@ -119,9 +119,32 @@ class Builder(core.Base):
     """
 
     def group(self, pdbs, **kwargs):
-        """Group all pdbs into nr sets.
+        """Group all pdbs into nr sets. This will look at the 'nr key in the
+        config dict to determine if grouping should use discrepancy (key:
+        use_discrepancy, deafult True), use species (key: use_species, default
+        True) and enforce single species per group (key: enforce_species,
+        default: True). This uses the grouper in pymotifs.nr.groups.simplified
+        to group.
+
+        Parameters
+        ----------
+        pdbs : list
+            List of PDB ids to group.
+
+        Returns
+        -------
+        groups : list
+            List of grouped IFE's.
         """
         grouper = Grouper(self.config, self.session)
+        conf = self.config['nr']
+        grouper.use_discrepancy = conf.get('use_discrepancy',
+                                           grouper.use_discrepancy)
+        grouper.use_species = conf.get('use_species', grouper.use_species)
+        if not grouper.use_species:
+            enforce = conf.get('enforce_species',
+                               grouper.must_enforce_single_species)
+            grouper.must_enforce_single_species = enforce
         return grouper(pdbs, **kwargs)
 
     def named(self, groups, parents):
