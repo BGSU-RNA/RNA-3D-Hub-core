@@ -18,6 +18,8 @@ from fr3d.ordering.greedyInsertion import orderWithPathLengthFromDistanceMatrix
 from pymotifs import core
 from pymotifs import models as mod
 
+from pymotifs.constants import NR_CACHE_NAME
+
 from pymotifs.nr.chains import Loader as NrChainLoader
 from pymotifs.nr.classes import Loader as NrClassLoader
 from pymotifs.chain_chain.comparision import Loader as SimilarityLoader
@@ -46,9 +48,14 @@ class Loader(core.SimpleLoader):
         classes : list
             A list of all NR class ids.
         """
+        data = self.cached(NR_CACHE_NAME)
+        if not data:
+            raise core.InvalidState("No precomputed grouping to store")
+        latest = data['release']
 
         with self.session() as session:
-            query = session.query(mod.NrClasses.nr_class_id)
+            query = session.query(mod.NrClasses.nr_class_id).\
+                filter_by(nr_release_id=latest)
             return [r.nr_class_id for r in query]
 
     def query(self, session, class_id):
