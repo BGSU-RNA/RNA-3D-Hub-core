@@ -17,6 +17,7 @@ Report = coll.namedtuple('Report', ['headers', 'rows'])
 """The list of headers to write in the report."""
 GROUP_HEADERS = [
     'Group',
+    'Release',
     'Rank',
     'Type',
     'IFE id',
@@ -61,6 +62,8 @@ class Entry(object):
     ----------
     group : str
         The name of the equivlance class this
+    release : str
+        The nr release id used.
     rank : int
         The rank of the IFE in it's class
     ife_id : str
@@ -87,13 +90,15 @@ class Entry(object):
         The experimental sequence
     """
 
-    def __init__(self, group, rank, ife_id, pdb_id, chain_ids):
+    def __init__(self, group, release, rank, ife_id, pdb_id, chain_ids):
         """Create a new `Entity`.
 
         Parameters
         ----------
         group : str
             The name of the equivlance class this
+        release : str
+            The NR release id used.
         rank : int
             The rank of the IFE in it's class
         ife_id : str
@@ -105,6 +110,7 @@ class Entry(object):
         """
 
         self.group = group
+        self.release = release
         self.rank = rank
         self.ife_id = ife_id
         self.pdb_id = pdb_id
@@ -176,6 +182,7 @@ class Entry(object):
 
         return {
             'Group': self.group,
+            'Release': self.release,
             'Rank': self.rank,
             'Type': self.type,
             'IFE id': self.ife_id,
@@ -325,6 +332,7 @@ def groups(maker, release, resolution, **kwargs):
             chain_ids = sorted(chain_ids, key=op.itemgetter(1))
             chain_ids = [n[0] for n in chain_ids]
             current = Entry(result['name'],
+                            release,
                             result['rank'],
                             result['ife_id'],
                             result['pdb_id'],
