@@ -403,8 +403,8 @@ def pairs(maker, release, resolution, **kwargs):
                       (corr.exp_seq_id_2 == mapping2.exp_seq_id),
                       ).\
             outerjoin(rev_corr,
-                      (rev_corr.exp_seq_id_1 == mapping1.exp_seq_id) &
-                      (rev_corr.exp_seq_id_2 == mapping2.exp_seq_id),
+                      (rev_corr.exp_seq_id_1 == mapping2.exp_seq_id) &
+                      (rev_corr.exp_seq_id_2 == mapping1.exp_seq_id),
                       ).\
             filter(chains1.nr_chain_id != chains2.nr_chain_id).\
             filter(ife1.chain_id != ife2.chain_id).\
@@ -427,7 +427,7 @@ def pairs(maker, release, resolution, **kwargs):
                     res2 is None or res2 > MAX_RESOLUTION_DISCREPANCY:
                 entry['Discrepancy'] = None
 
-            if for_match or rev_match:
+            if for_match is not None or rev_match is not None:
                 match = float(for_match or rev_match)
                 entry['Alignment'] = match / float(min(len1, len2))
             data.append(entry)
