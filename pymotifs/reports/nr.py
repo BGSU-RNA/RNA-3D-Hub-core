@@ -7,6 +7,7 @@ import collections as coll
 
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
+from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import func
@@ -358,6 +359,10 @@ def pairs(maker, release, resolution, **kwargs):
     rev_corr = aliased(mod.CorrespondenceInfo)
     exp1 = aliased(mod.ExpSeqInfo)
     exp2 = aliased(mod.ExpSeqInfo)
+    pdb1 = aliased(mod.PdbInfo)
+    pdb2 = aliased(mod.PdbInfo)
+    chain_info1 = aliased(mod.ChainInfo)
+    chain_info2 = aliased(mod.ChainInfo)
     with maker() as session:
         query = session.query(classes.name.label('Group'),
                               classes.nr_release_id.label('Release'),
@@ -368,6 +373,8 @@ def pairs(maker, release, resolution, **kwargs):
                               rev_corr.match_count.label('rev_match'),
                               exp1.length.label('len1'),
                               exp2.length.label('len2'),
+                              pdb1.resolution.label('res1'),
+                              pdb2.resolution.label('res2'),
                               ).\
             join(chains1, chains1.nr_class_id == classes.nr_class_id).\
             join(chains2, chains2.nr_class_id == classes.nr_class_id).\
@@ -379,6 +386,10 @@ def pairs(maker, release, resolution, **kwargs):
                  (ife2.ife_id == chains2.ife_id) &
                  (ife2.index == 0)
                  ).\
+            join(chain_info1, chain_info1.chain_id == ife1.chain_id).\
+            join(chain_info2, chain_info2.chain_id == ife2.chain_id).\
+            join(pdb1, pdb1.pdb_id == chain_info1.pdb_id).\
+            join(pdb2, pdb2.pdb_id == chain_info2.pdb_id).\
             join(mapping1, mapping1.chain_id == ife1.chain_id).\
             join(mapping2, mapping2.chain_id == ife2.chain_id).\
             join(exp1, exp1.exp_seq_id == mapping1.exp_seq_id).\
@@ -410,6 +421,12 @@ def pairs(maker, release, resolution, **kwargs):
             len1 = entry.pop('len1')
             len2 = entry.pop('len2')
             entry['Alignment'] = None
+            res1 = entry.pop('res1')
+            res2 = entry.pop('res2')
+            if res1 is None or res1 > MAX_RESOLUTION_DISCREPANCY or \
+                    res2 is None or res2 > MAX_RESOLUTION_DISCREPANCY:
+                entry['Discrepancy'] = None
+
             if for_match or rev_match:
                 match = float(for_match or rev_match)
                 entry['Alignment'] = match / float(min(len1, len2))
