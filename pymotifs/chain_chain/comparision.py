@@ -97,7 +97,7 @@ class Loader(core.SimpleLoader):
 
     def possible_chain(self, chain):
         """Check if the chain can be used. This means it has enough nucleotides
-        and it has a good enough resolution.
+        and it has a good enough resolution, unless it is NMR
 
         Parameters
         ----------
@@ -110,9 +110,13 @@ class Loader(core.SimpleLoader):
         possible : bool
             True if this chain could be used.
         """
-        return chain['resolution'] is not None and \
-            chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY and \
-            chain['length'] > MIN_NT_DISCREPANCY
+        if chain['length'] < MIN_NT_DISCREPANCY:
+            return False
+
+        if chain['method'] != 'SOLUTION NMR':
+            return chain['resolution'] is not None and \
+                chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY
+        return True
 
     def to_process(self, pdbs, **kwargs):
         """This will compute all pairs to compare. This will group all pdbs
