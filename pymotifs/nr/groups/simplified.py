@@ -14,12 +14,11 @@ import operator as op
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import result2dict
+from pymotifs.utils import discrepancy as disc
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 from pymotifs.constants import EQUIVALENT_PAIRS
 from pymotifs.constants import SYNTHENIC_SPECIES_ID
 from pymotifs.constants import NR_MIN_HOMOGENEOUS_SIZE
-from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
-from pymotifs.constants import MIN_NT_DISCREPANCY
 
 from pymotifs.utils import connectedsets as cs
 from pymotifs.utils import correspondence as cr
@@ -263,14 +262,15 @@ class Grouper(core.Base):
 
         Because discrepancies were not always computed, there are some special
         cases to consider. If use_discrepancy is False, or if not discrepancies
-        are computed then this always returns True. If either group has fewer
-        NTs then MIN_NT_DISCREPANCY, or the resolution is larger than
-        MAX_RESOLUTION_DISCREPANCY this will return True. If no discrepancies
-        are computed for the first then this returns True.
+        are computed then this always returns True.  If either chain is not
+        valid for discrepancy as defined by
+        `pymotifs.utils.discrepancy.valid_chain` then this will return True.
 
-        Otherwise, if no discrepancy has been computed between two the two groups then
-        this returns False. We return true if the discrepancy is less than
-        NR_DISCREPANCY_CUTOFF.
+        If no discrepancies are computed for the first then this returns True.
+
+        Otherwise, if no discrepancy has been computed between two the two
+        groups then this returns False. We return true if the discrepancy is
+        less than NR_DISCREPANCY_CUTOFF.
 
         :param dict all_discrepancy: The dictionary of all discrepancies.
         :param dict group1: The first group.
@@ -283,18 +283,9 @@ class Grouper(core.Base):
 
         db_id1 = group1['db_id']
         db_id2 = group2['db_id']
-        if 'resolution' in group1 and 'resolution' in group2:
-            if group1['resolution'] > MAX_RESOLUTION_DISCREPANCY or \
-                    group2['resolution'] > MAX_RESOLUTION_DISCREPANCY or \
-                    not group1['resolution'] or not group2['resolution']:
-                self.logger.debug("Resolution too high for discrepancy")
-                return True
-
-        if 'length' in group1 and 'length' in group2:
-            if group1['length'] < MIN_NT_DISCREPANCY or \
-                    group2['length'] < MIN_NT_DISCREPANCY:
-                self.logger.debug("Too few nts for useful discrepancy")
-                return True
+        if not disc.valid_chain(group1) or not disc.valid_chain(group2):
+            self.logger.debug("Chains not valid for discrepancy")
+            return True
 
         if not all_discrepancy:
             self.logger.debug("No discrepancies, so ignoring")
