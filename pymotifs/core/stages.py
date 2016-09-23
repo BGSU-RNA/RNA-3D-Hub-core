@@ -5,8 +5,10 @@ the basic logic for all stages.
 
 import os
 import abc
+import sys
 import pickle
 import datetime
+from contextlib import contextmanager
 
 from fr3d.data import Structure
 from fr3d.cif.reader import Cif
@@ -779,3 +781,17 @@ class Exporter(Loader):
         """Does nothing. We never remove exported files automatically.
         """
         self.logger.info("No automatic removal in exporters")
+
+
+class Reporter(Exporter):
+    mark = False
+    csv_options = {
+        'delimiter': "\t"
+    }
+
+    @contextmanager
+    def handle(self, *args, **kwargs):
+        yield sys.stdout
+
+    def filename(self, *args, **kwargs):
+        raise ValueError("Should never be called")

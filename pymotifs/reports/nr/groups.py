@@ -5,43 +5,11 @@ import operator as op
 import itertools as it
 import collections as coll
 
+from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
-from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 
-from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import func
-
-Report = coll.namedtuple('Report', ['headers', 'rows'])
-
-
-"""The list of headers to write in the report."""
-GROUP_HEADERS = [
-    'Group',
-    'Release',
-    'Rank',
-    'Type',
-    'IFE id',
-    'PDB',
-    'Chains',
-    'Protein Species',
-    'Protein Compound',
-    'RNA Species',
-    'Nucleic Acid Compound',
-    'Name',
-    'Observed Length',
-    'Experimental Length',
-    'Experimental Sequence',
-]
-
-PAIRS_HEADERS = [
-    'Group',
-    'Release',
-    'IFE1',
-    'IFE2',
-    'Discrepancy',
-    'Alignment',
-]
 
 compound = op.itemgetter('compound')
 species = op.itemgetter('source')
@@ -225,10 +193,12 @@ class Info(object):
 
     @property
     def chains(self, **kwargs):
-        if hasattr(self, '_chains'):
-            return self._chains
+        if not hasattr(self, '_chains'):
+            self._chains = self.__chains__(**kwargs)
+        return self._chains
 
-        self._chains = {}
+    def __chains__(self, **kwargs):
+        chains = {}
         with self.session() as session:
             chain = mod.ChainInfo
             species = mod.ChainSpecies
@@ -262,174 +232,102 @@ class Info(object):
                                  result.observed,
                                  result.experimental,
                                  result.sequence)
-                self._chains[result.chain_id] = info
-        return self._chains
+                chains[result.chain_id] = info
+        return chains
 
 
-def sort_groups(data):
-    key = op.attrgetter('group')
-    grouped = it.groupby(sorted(data, key=key), key)
-    ordering = []
-    mapping = {}
-    for name, members in grouped:
-        members = sorted(members, key=op.attrgetter('rank'))
-        mapping[name] = members
-        rep_size = members[0].experimental
-        ordering.append((name, rep_size))
+class Groups(core.Reporter):
+    headers = [
+        'Group',
+        'Release',
+        'Rank',
+        'Type',
+        'IFE id',
+        'PDB',
+        'Chains',
+        'Protein Species',
+        'Protein Compound',
+        'RNA Species',
+        'Nucleic Acid Compound',
+        'Name',
+        'Observed Length',
+        'Experimental Length',
+        'Experimental Sequence',
+    ]
 
-    ordering.sort(key=op.itemgetter(1))
-    ordered = []
-    for name, _ in ordering:
-        ordered.extend(mapping[name])
-    return ordered
+    def sort_groups(self, data):
+        key = op.attrgetter('group')
+        grouped = it.groupby(sorted(data, key=key), key)
+        ordering = []
+        mapping = {}
+        for name, members in grouped:
+            members = sorted(members, key=op.attrgetter('rank'))
+            mapping[name] = members
+            rep_size = members[0].experimental
+            ordering.append((name, rep_size))
 
+        ordering.sort(key=op.itemgetter(1))
+        ordered = []
+        for name, _ in ordering:
+            ordered.extend(mapping[name])
+        return ordered
 
-def groups(maker, release, resolution, **kwargs):
-    """Create a report about the NR set.
+    def data(self, entry, **kwargs):
+        """Create a report about the NR set.
 
-    Parameters
-    ----------
-    maker : Session
-        The session to use
+        Parameters
+        ----------
+        maker : Session
+            The session to use
 
-    release : str
-        The NR release to report on.
+        release : str
+            The NR release to report on.
 
-    resolution : str
-        The resolution to use.
+        resolution : str
+            The resolution to use.
 
-    Returns
-    -------
-    rows : list
-        A list of dicts to write for the report.
-    """
+        Returns
+        -------
+        rows : list
+            A list of dicts to write for the report.
+        """
 
-    info = Info(maker)
-    with maker() as session:
-        classes = mod.NrClasses
-        chains = mod.NrChains
-        ife = mod.IfeInfo
-        ife_chains = mod.IfeChains
-        query = session.query(classes.name,
-                              chains.rank,
-                              chains.ife_id,
-                              ife.pdb_id,
-                              ife_chains.chain_id,
-                              ife_chains.index,
-                              ).\
-            join(chains, chains.nr_class_id == classes.nr_class_id).\
-            join(ife, ife.ife_id == chains.ife_id).\
-            join(ife_chains, ife.ife_id == ife_chains.ife_id).\
-            filter(classes.nr_release_id == release).\
-            filter(classes.resolution == resolution).\
-            order_by(ife.ife_id)
+        release, resolution = entry
+        info = Info(self.session)
+        with self.session() as session:
+            classes = mod.NrClasses
+            chains = mod.NrChains
+            ife = mod.IfeInfo
+            ife_chains = mod.IfeChains
+            query = session.query(classes.name,
+                                  chains.rank,
+                                  chains.ife_id,
+                                  ife.pdb_id,
+                                  ife_chains.chain_id,
+                                  ife_chains.index,
+                                  ).\
+                join(chains, chains.nr_class_id == classes.nr_class_id).\
+                join(ife, ife.ife_id == chains.ife_id).\
+                join(ife_chains, ife.ife_id == ife_chains.ife_id).\
+                filter(classes.nr_release_id == release).\
+                filter(classes.resolution == resolution).\
+                order_by(ife.ife_id)
 
-        data = []
-        for ife_id, group in it.groupby(query, op.attrgetter('ife_id')):
-            chains = [row2dict(g) for g in group]
-            result = chains[0]
-            name = op.itemgetter('chain_id', 'index')
-            chain_ids = set(name(c) for c in chains)
-            chain_ids = sorted(chain_ids, key=op.itemgetter(1))
-            chain_ids = [n[0] for n in chain_ids]
-            current = Entry(result['name'],
-                            release,
-                            result['rank'],
-                            result['ife_id'],
-                            result['pdb_id'],
-                            chain_ids,
-                            )
-            current.add_info(info)
-            data.append(current)
-    return Report(GROUP_HEADERS, [d.named() for d in sort_groups(data)])
-
-
-def pairs(maker, release, resolution, **kwargs):
-    """Create a report about pairs in the NR set.
-    """
-    classes = mod.NrClasses
-    chains1 = aliased(mod.NrChains)
-    chains2 = aliased(mod.NrChains)
-    ife1 = aliased(mod.IfeChains)
-    ife2 = aliased(mod.IfeChains)
-    mapping1 = aliased(mod.ExpSeqChainMapping)
-    mapping2 = aliased(mod.ExpSeqChainMapping)
-    ccs = mod.ChainChainSimilarity
-    corr = aliased(mod.CorrespondenceInfo)
-    rev_corr = aliased(mod.CorrespondenceInfo)
-    exp1 = aliased(mod.ExpSeqInfo)
-    exp2 = aliased(mod.ExpSeqInfo)
-    pdb1 = aliased(mod.PdbInfo)
-    pdb2 = aliased(mod.PdbInfo)
-    chain_info1 = aliased(mod.ChainInfo)
-    chain_info2 = aliased(mod.ChainInfo)
-    with maker() as session:
-        query = session.query(classes.name.label('Group'),
-                              classes.nr_release_id.label('Release'),
-                              chains1.ife_id.label('IFE1'),
-                              chains2.ife_id.label('IFE2'),
-                              ccs.discrepancy.label('Discrepancy'),
-                              corr.match_count.label('forward_match'),
-                              rev_corr.match_count.label('rev_match'),
-                              exp1.length.label('len1'),
-                              exp2.length.label('len2'),
-                              pdb1.resolution.label('res1'),
-                              pdb2.resolution.label('res2'),
-                              ).\
-            join(chains1, chains1.nr_class_id == classes.nr_class_id).\
-            join(chains2, chains2.nr_class_id == classes.nr_class_id).\
-            join(ife1,
-                 (ife1.ife_id == chains1.ife_id) &
-                 (ife1.index == 0)
-                 ).\
-            join(ife2,
-                 (ife2.ife_id == chains2.ife_id) &
-                 (ife2.index == 0)
-                 ).\
-            join(chain_info1, chain_info1.chain_id == ife1.chain_id).\
-            join(chain_info2, chain_info2.chain_id == ife2.chain_id).\
-            join(pdb1, pdb1.pdb_id == chain_info1.pdb_id).\
-            join(pdb2, pdb2.pdb_id == chain_info2.pdb_id).\
-            join(mapping1, mapping1.chain_id == ife1.chain_id).\
-            join(mapping2, mapping2.chain_id == ife2.chain_id).\
-            join(exp1, exp1.exp_seq_id == mapping1.exp_seq_id).\
-            join(exp2, exp2.exp_seq_id == mapping2.exp_seq_id).\
-            outerjoin(ccs,
-                      (ccs.chain_id_1 == ife1.chain_id) &
-                      (ccs.chain_id_2 == ife2.chain_id),
-                      ).\
-            outerjoin(corr,
-                      (corr.exp_seq_id_1 == mapping1.exp_seq_id) &
-                      (corr.exp_seq_id_2 == mapping2.exp_seq_id),
-                      ).\
-            outerjoin(rev_corr,
-                      (rev_corr.exp_seq_id_1 == mapping2.exp_seq_id) &
-                      (rev_corr.exp_seq_id_2 == mapping1.exp_seq_id),
-                      ).\
-            filter(chains1.nr_chain_id != chains2.nr_chain_id).\
-            filter(ife1.chain_id != ife2.chain_id).\
-            filter(classes.resolution == resolution).\
-            filter(classes.nr_release_id == release).\
-            distinct().\
-            order_by(classes.name, ife1.ife_id, ife2.ife_id)
-
-        data = []
-        for result in query:
-            entry = row2dict(result)
-            for_match = entry.pop('forward_match')
-            rev_match = entry.pop('rev_match')
-            len1 = entry.pop('len1')
-            len2 = entry.pop('len2')
-            entry['Alignment'] = None
-            res1 = entry.pop('res1')
-            res2 = entry.pop('res2')
-            if res1 is None or res1 > MAX_RESOLUTION_DISCREPANCY or \
-                    res2 is None or res2 > MAX_RESOLUTION_DISCREPANCY:
-                entry['Discrepancy'] = None
-
-            if for_match is not None or rev_match is not None:
-                match = float(for_match or rev_match)
-                entry['Alignment'] = match / float(min(len1, len2))
-            data.append(entry)
-
-    return Report(PAIRS_HEADERS, data)
+            data = []
+            for ife_id, group in it.groupby(query, op.attrgetter('ife_id')):
+                chains = [row2dict(g) for g in group]
+                result = chains[0]
+                name = op.itemgetter('chain_id', 'index')
+                chain_ids = set(name(c) for c in chains)
+                chain_ids = sorted(chain_ids, key=op.itemgetter(1))
+                chain_ids = [n[0] for n in chain_ids]
+                current = Entry(result['name'],
+                                release,
+                                result['rank'],
+                                result['ife_id'],
+                                result['pdb_id'],
+                                chain_ids,
+                                )
+                current.add_info(info)
+                data.append(current)
+        return [d.named() for d in self.sort_groups(data)]

@@ -24,19 +24,19 @@ def write(headers, rows, hide_headers=True, delimiter='\t', **kwargs):
 
 
 def nr_groups(**kwargs):
-    session = setup(kwargs['engine'])
+    config = kwargs.pop('config')
     version = kwargs.pop('version')
     resolution = kwargs.pop('resolution')
-    data = _nr.groups(session, version, resolution, **kwargs)
-    write(data.headers, data.rows, **kwargs)
+    stage = _nr.Groups(config, setup(kwargs['engine']))
+    stage((version, resolution), **kwargs)
 
 
 def nr_pairs(**kwargs):
-    session = setup(kwargs['engine'])
+    config = kwargs.pop('config')
     version = kwargs.pop('version')
     resolution = kwargs.pop('resolution')
-    data = _nr.pairs(session, version, resolution, **kwargs)
-    write(data.headers, data.rows, **kwargs)
+    stage = _nr.Pairs(config, setup(kwargs['engine']))
+    stage((version, resolution), **kwargs)
 
 
 def species(**kwargs):

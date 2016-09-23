@@ -162,35 +162,60 @@ class FileHandleSaver(Saver):
         super(FileHandleSaver, self).__init__(*args, **kwargs)
         self.compressed = getattr(self.stage, 'compressed', False)
 
-    def filename(self, pdb, **kwargs):
-        """This will use the stage's filename method for computing the filename
-        to save to.
+    @contextmanager
+    def file_handle(self, *args, **kwargs):
+        """Get a handle to the file to write to.
         """
-        return self.stage.filename(pdb, **kwargs)
 
-    def mode(self, pdb, **kwargs):
+        filename = self.stage.filename(*args, **kwargs)
+        mode = self.mode(*args, **kwargs)
         if not self.merge and not kwargs.get('index'):
-            return 'wb'
-        return 'ab'
+            mode = 'wb'
+        mode = 'ab'
+        with open(filename, mode) as raw:
+            yield filename, raw
 
     @contextmanager
-    def writer(self, pdb, **kwargs):
-        """Creates a new writer to save to.
+    def handle(self, *args, **kwargs):
+        """Determine the filehandle to write to. If the stage this is a part of
+        has a 'handle' method this will use that method to determine the
+        filehandle. If not it will use file_handle to get the handle.
+
+        Parameters
+        ----------
+        *args : obj
+            Arguments pass on to the
         """
-        filename = self.filename(pdb, **kwargs)
-        mode = self.mode(pdb, **kwargs)
-        with open(filename, mode) as raw:
-            yield raw
+        if hasattr(self.stage, 'handle'):
+            with self.stage.handle(*args, **kwargs) as handle:
+                yield None, handle
+        else:
+            with self.file_handle(*args, **kwargs) as handle:
+                yield handle
 
-        if not os.path.isfile(filename):
-            if not self.allow_no_data:
-                raise SaveFailed("No file created")
-            self.logger.warn("%s not created", filename)
+    @contextmanager
+    def writer(self, entry, **kwargs):
+        """Creates a new writer to save to.
 
-        if not os.path.getsize(filename):
-            if not self.allow_no_data:
-                raise SaveFailed("Nothing written")
-            self.logger.warn("Nothing written to %s", filename)
+        Parameters
+        ----------
+        entry : obj
+            The object to get a writer for.
+        """
+
+        with self.handle(entry, **kwargs) as (filename, handle):
+            yield handle
+
+        if filename is not None:
+            if not os.path.isfile(filename):
+                if not self.allow_no_data:
+                    raise SaveFailed("No file created")
+                self.logger.warn("%s not created", filename)
+
+            if not os.path.getsize(filename):
+                if not self.allow_no_data:
+                    raise SaveFailed("Nothing written")
+                self.logger.warn("Nothing written to %s", filename)
 
     def compress(self, pdb, data, **kwargs):
         """Compress the file for the given pdb and data.
@@ -222,20 +247,49 @@ class CsvSaver(FileHandleSaver):
     belongs to.
     """
 
+    csv_options = {
+        'quotechar': '"',
+        'delimiter': ',',
+        'quoting': csv.QUOTE_ALL
+    }
+
     def __init__(self, *args, **kwargs):
         super(CsvSaver, self).__init__(*args, **kwargs)
         self.headers = getattr(self.stage, 'headers')
         self._headers_written = False
+        self.csv_options.update(getattr(self.stage, 'csv_options', {}))
 
     @contextmanager
-    def writer(self, pdb, **kwargs):
+    def writer(self, entry, **kwargs):
         """This will create a csv writer with the standard options we use.
-        """
-        with super(CsvSaver, self).writer(pdb, **kwargs) as handle:
-            writer = csv.DictWriter(handle, self.headers, quotechar='"',
-                                    quoting=csv.QUOTE_ALL)
 
-            if self._headers_written:
-                writer.writerow(dict(zip(self.headers, self.headers)))
+        Parameters
+        ----------
+        entry : obj
+            The entry to write data for.
+        quotechar : str
+            Quouting character to use
+        delimiter : str
+            Delimter character to use.
+        quoting : int
+            Quoting option to use
+
+        Yields
+        ------
+        writer : function
+            A function that accepts a dictonary to write to the file.
+        """
+
+        options = {}
+        for key, value in self.csv_options.items():
+            options[key] = kwargs.get(key, value)
+            if isinstance(options[key], basestring):
+                options[key] = str(options[key])
+
+        with super(CsvSaver, self).writer(entry, **kwargs) as handle:
+            writer = csv.DictWriter(handle, self.headers, **options)
+
+            if not kwargs.get('hide_headers', False) and self._headers_written:
+                writer.writeheader()
 
             yield writer.writerow

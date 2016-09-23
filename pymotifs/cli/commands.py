@@ -303,6 +303,8 @@ def report(ctx, **kwargs):
     """
     ctx.objs = ctx.parent.objs
     ctx.objs.update(kwargs)
+    base = logging.getLogger()
+    base.setLevel(logging.CRITICAL)
 
 
 @report.group('nr', short_help='Reports about the NR set')
@@ -326,7 +328,8 @@ def report_nr_groups(ctx, **kwargs):
     for evaluating the grouping of an NR set.
     """
     kwargs.update(ctx.parent.objs)
-    reports.nr_groups(**kwargs)
+    ids = (kwargs.pop('version'), kwargs.pop('resolution'))
+    run(ctx, 'reports.nr.groups', ids, **kwargs)
 
 
 @report_nr.command('pairs',
@@ -345,7 +348,8 @@ def report_nr_pairs(ctx, **kwargs):
     This will produce a CSV that is written to stdout.
     """
     kwargs.update(ctx.parent.objs)
-    reports.nr_pairs(**kwargs)
+    ids = (kwargs.pop('version'), kwargs.pop('resolution'))
+    run(ctx, 'reports.nr.pairs', ids, **kwargs)
 
 
 @report.command('species',
@@ -359,7 +363,8 @@ def report_species(ctx, **kwargs):
     seem unlikely.
     """
     kwargs.update(ctx.parent.objs)
-    reports.species(**kwargs)
+    run(ctx, 'reports.species', [], **kwargs)
+    # reports.species(**kwargs)
 
 
 @cli.group(short_help='Dump/Import data')
