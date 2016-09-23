@@ -5,8 +5,9 @@ geometric discrepancy between them and then place them in the database.
 This will only compare the first chain in each IFE.
 """
 
-import itertools as it
 import operator as op
+import itertools as it
+import functools as ft
 
 import numpy as np
 from sqlalchemy.orm import aliased
@@ -14,8 +15,9 @@ from sqlalchemy.orm import aliased
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
 from pymotifs import core
-from pymotifs import models as mod
 import pymotifs.utils as ut
+from pymotifs import models as mod
+from pymotifs.utils import discrepancy as disc
 
 from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
@@ -25,8 +27,16 @@ from pymotifs.units.rotation import Loader as RotationLoader
 
 from pymotifs.nr.groups.simplified import Grouper
 
-from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
-from pymotifs.constants import MIN_NT_DISCREPANCY
+
+def pick(preferences, key, iterable):
+    possible = set(getattr(result, key) for result in iterable)
+    if not possible:
+        raise core.InvalidState("Nothing to pick from")
+
+    for pref in preferences:
+        if pref in possible:
+            return pref
+    return sorted(possible)[0]
 
 
 def label_center(table, number):
@@ -95,28 +105,25 @@ class Loader(core.SimpleLoader):
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         IfeLoader, CenterLoader, RotationLoader])
 
-    def possible_chain(self, chain):
-        """Check if the chain can be used. This means it has enough nucleotides
-        and it has a good enough resolution, unless it is NMR
+    def known_unit_entries(self, table):
+        with self.session() as session:
+            info = mod.UnitInfo
+            query = session.query(info.pdb_id,
+                                  info.chain,
+                                  ).\
+                join(table, table.unit_id == info.unit_id).\
+                distinct()
+            return set((r.pdb_id, r.chain) for r in query)
 
-        Parameters
-        ----------
-        chain : dict
-            The chain dict to test, it should have a 'resolution' and 'length'
-            entry.
+    def known_centers(self):
+        return self.have_unit_entries(mod.UnitCenters)
 
-        Returns
-        -------
-        possible : bool
-            True if this chain could be used.
-        """
-        if chain['length'] < MIN_NT_DISCREPANCY:
-            return False
+    def known_rotations(self):
+        return self.have_unit_entries(mod.UnitRotations)
 
-        if chain['method'] != 'SOLUTION NMR':
-            return chain['resolution'] is not None and \
-                chain['resolution'] <= MAX_RESOLUTION_DISCREPANCY
-        return True
+    def is_member(self, known, chain):
+        getter = op.itemgetter('pdb', 'name')
+        return getter(chain) in known
 
     def to_process(self, pdbs, **kwargs):
         """This will compute all pairs to compare. This will group all pdbs
@@ -149,9 +156,13 @@ class Loader(core.SimpleLoader):
         if not groups:
             raise core.InvalidState("No groups produced")
 
+        has_rotations = ft.partial(self.is_member, self.known_rotations())
+        has_centers = ft.partial(self.is_member, self.known_centers())
         possible = []
         for group in groups:
-            chains = it.ifilter(self.possible_chain, group['members'])
+            chains = it.ifilter(disc.valid_chain, group['members'])
+            chains = it.ifilter(has_rotations, chains)
+            chains = it.ifilter(has_centers, chains)
             chains = it.imap(op.itemgetter('db_id'), chains)
             possible.extend(it.combinations(chains, 2))
         return sorted(possible)
@@ -212,43 +223,47 @@ class Loader(core.SimpleLoader):
             rot1 = aliased(mod.UnitRotations)
             rot2 = aliased(mod.UnitRotations)
             corr_units = mod.CorrespondenceUnits
+            corr = mod.CorrespondencePdbs
 
-            columns = []
+            columns = [corr.correspondence_id]
             columns.extend(label_center(centers1, 1))
             columns.extend(label_center(centers2, 2))
             columns.extend(label_rotation(rot1, 1))
             columns.extend(label_rotation(rot2, 2))
 
-            results = session.query(*columns).\
-                join(corr_units, corr_units.unit_id_1 == centers1.unit_id).\
-                join(centers2, corr_units.unit_id_2 == centers2.unit_id).\
+            query = session.query(*columns).\
+                join(corr_units,
+                     corr.correspondence_id == corr_units.correspondence_id).\
                 join(units1, units1.unit_id == corr_units.unit_id_1).\
                 join(units2, units2.unit_id == corr_units.unit_id_2).\
-                join(rot1, rot1.unit_id == units1.unit_id).\
-                join(rot2, rot2.unit_id == units2.unit_id).\
+                join(centers1, centers1.unit_id == corr_units.unit_id_1).\
+                join(centers2, centers2.unit_id == corr_units.unit_id_2).\
+                join(rot1, rot1.unit_id == corr_units.unit_id_1).\
+                join(rot2, rot2.unit_id == corr_units.unit_id_2).\
+                filter(corr.pdb_id_1 == corr_units.pdb_id_1).\
+                filter(corr.pdb_id_2 == corr_units.pdb_id_2).\
+                filter(corr.chain_name_1 == corr_units.chain_name_1).\
+                filter(corr.chain_name_2 == corr_units.chain_name_2).\
                 filter(centers1.name == centers2.name).\
                 filter(centers1.name == name).\
-                filter(corr_units.correspondence_id == corr_id).\
-                filter(units1.pdb_id == info1['pdb']).\
+                filter(corr.correspondence_id == corr_id).\
+                filter(corr.chain_id_1 == info1['chain_id']).\
+                filter(corr.chain_id_2 == info2['chain_id']).\
                 filter(units1.sym_op == info1['sym_op']).\
-                filter(units1.model == info1['model']).\
-                filter(units1.chain == info1['chain_name']).\
-                filter(units2.pdb_id == info2['pdb']).\
                 filter(units2.sym_op == info2['sym_op']).\
-                filter(units2.model == info2['model']).\
-                filter(units2.chain == info2['chain_name']).\
-                filter(rot1.unit_id == centers1.unit_id).\
-                filter(rot2.unit_id == centers2.unit_id).\
-                filter((units1.alt_id == None) | (units1.alt_id == 'A')).\
-                filter((units2.alt_id == None) | (units2.alt_id == 'A')).\
+                filter(units1.alt_id == info1['alt_id']).\
+                filter(units2.alt_id == info2['alt_id']).\
                 order_by(corr_units.correspondence_index)
+
+            if not query.count():
+                raise core.InvalidState("Could not load any geometric data")
 
             c1 = []
             c2 = []
             r1 = []
             r2 = []
             seen = set()
-            for r in results:
+            for r in query:
                 if r.unit1 in seen:
                     raise core.InvalidState("Got duplicate unit %s" % r.unit1)
                 seen.add(r.unit1)
@@ -266,18 +281,6 @@ class Loader(core.SimpleLoader):
 
                 c1.append(np.array([r.x1, r.y1, r.z1]))
                 c2.append(np.array([r.x2, r.y2, r.z2]))
-
-            if not len(c1):
-                self.logger.error("No aligned centers for %s", info1['name'])
-
-            if not len(c2):
-                self.logger.error("No aligned centers for %s", info2['name'])
-
-            if not len(r1):
-                self.logger.error("No aligned rotations for %s", info1['name'])
-
-            if not len(r2):
-                self.logger.error("No aligned rotations for %s", info2['name'])
 
         return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
@@ -350,27 +353,26 @@ class Loader(core.SimpleLoader):
         ife = ut.row2dict(query.first())
 
         with self.session() as session:
-            query = session.query(mod.UnitInfo.sym_op).\
+            query = session.query(mod.UnitInfo.sym_op,
+                                  mod.UnitInfo.alt_id,
+                                  ).\
                 join(mod.ChainInfo,
                      (mod.ChainInfo.pdb_id == mod.UnitInfo.pdb_id) &
                      (mod.ChainInfo.chain_name == mod.UnitInfo.chain)).\
+                join(mod.UnitCenters,
+                     mod.UnitCenters.unit_id == mod.UnitInfo.unit_id).\
+                join(mod.UnitRotations,
+                     mod.UnitRotations.unit_id == mod.UnitInfo.unit_id).\
                 filter(mod.ChainInfo.chain_id == chain_id).\
                 distinct()
 
             if not query.count():
-                raise core.InvalidState("Could not get sym info for chain %s" %
+                raise core.InvalidState("Could not get info for chain %s" %
                                         chain_id)
 
-            possible = set(result.sym_op for result in query)
-            for pref in ['1_555', 'P_1']:
-                if pref in possible:
-                    ife['sym_op'] = pref
-                    ife['name'] = ife['ife_id'] + '+' + pref
-                    return ife
-
-            sym = sorted(possible)[0]
-            ife['sym_op'] = sym
-            ife['name'] = ife['ife_id'] + '+' + sym
+            ife['sym_op'] = pick(['1_555', 'P_1'], 'sym_op', query)
+            ife['alt_id'] = pick([None, 'A', 'B'], 'alt_id', query)
+            ife['name'] = ife['ife_id'] + '+' + ife['sym_op']
             return ife
 
     def __correspondence_query__(self, chain1, chain2):
