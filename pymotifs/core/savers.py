@@ -165,13 +165,18 @@ class FileHandleSaver(Saver):
     @contextmanager
     def file_handle(self, *args, **kwargs):
         """Get a handle to the file to write to.
+
+        Yields
+        ------
+        filename, handle : str, file
+            Yields a single tuple of the filename and the file object to write
+            to.
         """
 
         filename = self.stage.filename(*args, **kwargs)
-        mode = self.mode(*args, **kwargs)
+        mode = 'ab'
         if not self.merge and not kwargs.get('index'):
             mode = 'wb'
-        mode = 'ab'
         with open(filename, mode) as raw:
             yield filename, raw
 
