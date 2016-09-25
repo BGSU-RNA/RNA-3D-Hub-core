@@ -5,7 +5,7 @@ not mapped to unit ids as well.
 """
 
 from pymotifs import core
-from pymotifss import models as mod
+from pymotifs import models as mod
 
 from pymotifs.exp_seq.info import Loader as InfoLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
@@ -65,9 +65,9 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.chain).\
-                join(mod.UnitMapping, mod.UnitMapping.unit_id == mod.UnitInfo.unit_id).\
-                join(mod.ExpPosition,
-                     mod.ExpPosition.exp_seq_position_id == mod.UnitMapping.exp_seq_position_id).\
+                join(mod.ExpSeqUnitMapping, mod.ExpSeqUnitMapping.unit_id == mod.UnitInfo.unit_id).\
+                join(mod.ExpSeqPosition,
+                     mod.ExpSeqPosition.exp_seq_position_id == mod.ExpSeqUnitMapping.exp_seq_position_id).\
                 filter(mod.UnitInfo.pdb_id == pdb).\
                 distinct()
 
@@ -103,7 +103,7 @@ class Loader(core.Loader):
 
         Yeilds
         -------
-        mapping : UnitMapping
+        mapping : ExpSeqUnitMapping
             A series of unit mappings that map from experimental sequence
             position to unit id.
         """
@@ -118,10 +118,10 @@ class Loader(core.Loader):
                 raise core.InvalidState("No pos id for %s" % str(key))
 
             pos_id = exp_mapping[key]
-            yield mod.UnitMapping(unit_id=unit_id,
-                                  chain=chain,
-                                  exp_seq_position_id=pos_id,
-                                  )
+            yield mod.ExpSeqUnitMapping(unit_id=unit_id,
+                                        chain=chain,
+                                        exp_seq_position_id=pos_id,
+                                        )
 
     def exp_mapping(self, pdb, chains):
         """Compute a mapping from index in a chain to experimental sequence
@@ -142,12 +142,13 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(mod.ExpPosition.index,
-                                  mod.ExpPosition.exp_seq_position_id,
+            query = session.query(mod.ExpSeqPosition.index,
+                                  mod.ExpSeqPosition.exp_seq_position_id,
                                   mod.ChainInfo.chain_name).\
-                join(mod.ChainMapping,
-                     mod.ChainMapping.exp_seq_id == mod.ExpPosition.exp_seq_id).\
-                join(mod.ChainInfo, mod.ChainInfo.chain_id == mod.ChainMapping.chain_id).\
+                join(mod.ExpSeqChainMapping,
+                     mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqPosition.exp_seq_id).\
+                join(mod.ChainInfo,
+                     mod.ChainInfo.chain_id == mod.ExpSeqChainMapping.chain_id).\
                 filter(mod.ChainInfo.pdb_id == pdb).\
                 filter(mod.ChainInfo.chain_name.in_(chains))
 
@@ -181,8 +182,8 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name).\
-                join(mod.ChainMapping,
-                     mod.ChainMapping.chain_id == mod.ChainInfo.chain_id).\
+                join(mod.ExpSeqChainMapping,
+                     mod.ExpSeqChainMapping.chain_id == mod.ChainInfo.chain_id).\
                 filter(mod.ChainInfo.pdb_id == pdb).\
                 filter(mod.ChainInfo.entity_macromolecule_type == 'Polyribonucleotide (RNA)')
             return [result.chain_name for result in query]
@@ -193,7 +194,7 @@ class Loader(core.Loader):
 
         Yields
         ------
-        entry : UnitMapping
+        entry : ExpSeqUnitMapping
             An entry as from `Loader.chain_mapping`.
         """
 
