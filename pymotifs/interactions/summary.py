@@ -26,6 +26,14 @@ class Loader(core.SimpleLoader):
     def table(self):
         return mod.UnitInteractionSummary
 
+    def to_process(self, pdbs, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitPairsInteractions.pdb_id).\
+                distinct()
+            known = set(r.pdb_id for r in query)
+
+        return sorted(set(pdbs).intersection(known))
+
     def query(self, session, pdb):
         """Build a query to find all summary entries for the given PDB.
 
