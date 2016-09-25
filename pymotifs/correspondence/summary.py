@@ -46,9 +46,9 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(Info).\
-                filter(Info.correspondence_id == corr_id).\
-                filter(Info.length != None)
+            query = session.query(mod.CorrespondenceInfo).\
+                filter(mod.CorrespondenceInfo.correspondence_id == corr_id).\
+                filter(mod.CorrespondenceInfo.length != None)
             return bool(query.count())
 
     def current(self, corr_id):
@@ -56,7 +56,7 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            info = session.query(Info).get(corr_id)
+            info = session.query(mod.CorrespondenceInfo).get(corr_id)
             return utils.row2dict(info)
 
     def sizes(self, info):
@@ -71,12 +71,12 @@ class Loader(core.Loader):
             e1 = aliased(mod.ExpSeqInfo)
             e2 = aliased(mod.ExpSeqInfo)
 
-            query = session.query(Info.correspondence_id,
+            query = session.query(mod.CorrespondenceInfo.correspondence_id,
                                   e1.length.label('first'),
                                   e2.length.label('second')).\
-                join(e1, Info.exp_seq_id_1 == e1.exp_seq_id).\
-                join(e2, Info.exp_seq_id_2 == e2.exp_seq_id).\
-                filter(Info.correspondence_id == info['correspondence_id'])
+                join(e1, mod.CorrespondenceInfo.exp_seq_id_1 == e1.exp_seq_id).\
+                join(e2, mod.CorrespondenceInfo.exp_seq_id_2 == e2.exp_seq_id).\
+                filter(mod.CorrespondenceInfo.correspondence_id == info['correspondence_id'])
             result = query.one()
 
             return sorted([result.first, result.second])
@@ -109,14 +109,16 @@ class Loader(core.Loader):
         with self.session() as session:
             p1 = aliased(mod.ExpSeqPosition)
             p2 = aliased(mod.ExpSeqPosition)
-            query = session.query(Position.correspondence_positions_id,
+            query = session.query(mod.CorrespondencePositions.correspondence_positions_id,
                                   p1.unit.label('unit1'),
                                   p2.unit.label('unit2')).\
-                filter(Position.correspondence_id == corr_id).\
-                outerjoin(p1, p1.exp_seq_position_id == Position.exp_seq_position_id_1).\
-                outerjoin(p2, p2.exp_seq_position_id == Position.exp_seq_position_id_2).\
-                order_by(Position.index).\
-                group_by(Position.index)
+                filter(mod.CorrespondencePositions.correspondence_id == corr_id).\
+                outerjoin(p1,
+                          p1.exp_seq_position_id == mod.CorrespondencePositions.exp_seq_position_id_1).\
+                outerjoin(p2,
+                          p2.exp_seq_position_id == mod.CorrespondencePositions.exp_seq_position_id_2).\
+                order_by(mod.CorrespondencePositions.index).\
+                group_by(mod.CorrespondencePositions.index)
 
             results = []
             for result in query:
@@ -163,4 +165,4 @@ class Loader(core.Loader):
         data.update(self.summary(self.alignment(corr_id)))
         data['good_alignment'] = self.good_alignment(data, min_size, max_size)
 
-        return Info(**data)
+        return mod.CorrespondenceInfo(**data)
