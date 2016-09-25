@@ -45,8 +45,32 @@ COMPLEMENTARY = {
 class Loader(core.SimpleLoader):
     dependencies = set([ReleaseLoader, InfoLoader, PositionLoader,
                         ExpSeqPositionLoader, ExpSeqMappingLoader])
-    table = mod.LoopQa
-    allow_no_data = True
+
+    @property
+    def table(self):
+        return mod.LoopQa
+
+    def to_process(self, pdbs, **kwargs):
+        """Convert the list of pdbs to only those PDB's that have a loop. By
+        doing this this stage is able assert that this always data produced.
+
+        Parameters
+        ----------
+        pdbs : list
+            List of PDB ids
+
+        Returns
+        -------
+        pdbs : list
+            A list of PDBs from the original list that contain loops.
+        """
+
+        with self.session() as session:
+            query = session.query(mod.LoopInfo.pdb_id).\
+                distinct()
+            known = set(r.pdb_id for r in query)
+
+        return sorted(set(pdbs).intersection(known))
 
     def current_id(self):
         """Compute the current loop release id.
