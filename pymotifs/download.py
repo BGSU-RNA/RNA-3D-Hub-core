@@ -32,16 +32,10 @@ class Downloader(core.Loader):
                                      'PDBFiles')
 
     def filename(self, name, **kwargs):
-        ext = 'cif'
-        if kwargs.get('use_pdb'):
-            ext = 'pdb'
-        return os.path.join(self.location, name + '.' + ext)
+        return os.path.join(self.location, name + '.cif')
 
     def url(self, name, **kwargs):
-        ext = 'cif'
-        if kwargs.get('use_pdb'):
-            ext = 'pdb'
-        return '%s/%s.%s.gz' % (self.file_url, name, ext)
+        return '%s/%s.cif.gz' % (self.file_url, name)
 
     def remove(self, entry, **kwargs):
         if self.has_data(entry) and not kwargs.get('dry_run'):
