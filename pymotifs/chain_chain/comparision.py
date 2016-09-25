@@ -29,6 +29,24 @@ from pymotifs.nr.groups.simplified import Grouper
 
 
 def pick(preferences, key, iterable):
+    """Pick the most prefered value from a list of posibilities.
+
+    Parameters
+    ----------
+    preferences : list
+        A list of possibilities to select from.
+    key : str
+        Key to define the attribute
+    iterable : iterable
+        The iterable to get the unique values from.
+
+    Returns
+    -------
+    choice : obj
+        A member of preferences if any exist, otherwise the alphabetically
+        first choice from the iterable.
+    """
+
     possible = set(getattr(result, key) for result in iterable)
     if not possible:
         raise core.InvalidState("Nothing to pick from")
@@ -106,6 +124,20 @@ class Loader(core.SimpleLoader):
                         IfeLoader, CenterLoader, RotationLoader])
 
     def known_unit_entries(self, table):
+        """Create a set of (pdb, chain) tuples for all chains that have entries
+        in the given table. This relies upon the table having a unit_id column
+        that can be joined to unit_info.
+
+        Parameters
+        ----------
+        table : Table
+            The table to join against.
+
+        Returns
+        -------
+        known : set
+            A set of tuples of (pdb, chain).
+        """
         with self.session() as session:
             info = mod.UnitInfo
             query = session.query(info.pdb_id,
@@ -115,13 +147,21 @@ class Loader(core.SimpleLoader):
                 distinct()
             return set((r.pdb_id, r.chain) for r in query)
 
-    def known_centers(self):
-        return self.have_unit_entries(mod.UnitCenters)
-
-    def known_rotations(self):
-        return self.have_unit_entries(mod.UnitRotations)
-
     def is_member(self, known, chain):
+        """Check if a chain is a member of the set of knowns.
+
+        Parameters
+        ----------
+        known : set
+            A set of tuples as produced by known_unit_entries.
+        chain : dict
+            A dict with 'pdb' and 'name' entries for the pdb id and chain name.
+
+        Returns
+        -------
+        member : bool
+            True if the chain is a member of the set.
+        """
         getter = op.itemgetter('pdb', 'name')
         return getter(chain) in known
 
@@ -156,8 +196,10 @@ class Loader(core.SimpleLoader):
         if not groups:
             raise core.InvalidState("No groups produced")
 
-        has_rotations = ft.partial(self.is_member, self.known_rotations())
-        has_centers = ft.partial(self.is_member, self.known_centers())
+        has_rotations = ft.partial(self.is_member,
+                                   self.known_unit_entries(mod.UnitCenters))
+        has_centers = ft.partial(self.is_member,
+                                 self.known_unit_entries(mod.UnitRotations))
         possible = []
         for group in groups:
             chains = it.ifilter(disc.valid_chain, group['members'])
@@ -253,7 +295,8 @@ class Loader(core.SimpleLoader):
                 filter(units2.sym_op == info2['sym_op']).\
                 filter(units1.alt_id == info1['alt_id']).\
                 filter(units2.alt_id == info2['alt_id']).\
-                order_by(corr_units.correspondence_index)
+                order_by(corr_units.correspondence_index).\
+                distinct()
 
             if not query.count():
                 raise core.InvalidState("Could not load any geometric data")
@@ -526,6 +569,10 @@ class Loader(core.SimpleLoader):
             self.logger.warning("Did not load all data for %s, %s",
                                 info1['name'], info2['name'])
             return []
+
+        if len(matrices[0]) < 3:
+            raise core.Skip("Not enough centers for pair: %s, %s" %
+                            (info1, info2))
 
         try:
             disc, length = self.discrepancy(corr_id, *matrices)
