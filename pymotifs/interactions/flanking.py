@@ -69,7 +69,7 @@ class Loader(core.SimpleLoader):
         mlab = matlab.Matlab(str(self.config['locations']['fr3d_root']))
 
         self.logger.info('Running matlab on %s', pdb)
-        ifn, status, err_msg = mlab.loadInteractions(pdb, nout=3)
+        ifn, status, err_msg = mlab.loadFlankings(pdb, nout=3)
         status = status[0][0]
         if status == 0:
             data = self.parse(ifn, pdb)
