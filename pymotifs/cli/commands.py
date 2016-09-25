@@ -118,9 +118,9 @@ def cli(ctx, **options):
 @click.option('--all', is_flag=True, help="Use all RNA containing PDBS")
 @click.option('--known', is_flag=True, help="Use only downloaded files")
 @click.option('--after-date', default=None,
-              type=DATE, help='Get PDBs from after the date')
+              type=DATE, help='Get PDBs from after the date (YYYY-MM-DD)')
 @click.option('--before-date', default=None,
-              type=DATE, help='Get PDBs from before the date')
+              type=DATE, help='Get PDBs from before the date (YYYY-MM-DD)')
 @click.option('--exclude', multiple=True, type=PDB,
               help='Excluded PDB(s)')
 @click.option('--ignore-time', is_flag=True, help='Ignore time for rerunning')
