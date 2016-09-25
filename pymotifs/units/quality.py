@@ -28,7 +28,7 @@ from fr3d.unit_ids import encode
 """A `operator.itemgetter` for defining a key for mapping between unit ids and
 entries in the validation report.
 """
-as_key = op.itemgetter('chain', 'component_number', 'insertion_code', 'alt_id')
+as_key = op.itemgetter('chain', 'number', 'ins_code', 'alt_id')
 
 
 class FileHelper(object):
@@ -186,9 +186,9 @@ class Parser(object):
             'pdb': pdb,
             'model': int(attributes['model']),
             'chain': attributes['chain'],
-            'component_number': int(attributes['resnum']),
+            'number': int(attributes['resnum']),
             'component_id': attributes['resname'],
-            'insertion_code': insertion_code,
+            'ins_code': insertion_code,
             'alt_id': alt_id,
         }
 
@@ -316,4 +316,4 @@ class Loader(core.SimpleLoader):
         as_quality = ft.partial(self.as_quality, mapping)
         data = it.imap(as_quality, parser.nts())
         data = it.chain.from_iterable(data)
-        return it.imap(mod.UnitQuality)
+        return it.imap(lambda d: mod.UnitQuality(**d), data)
