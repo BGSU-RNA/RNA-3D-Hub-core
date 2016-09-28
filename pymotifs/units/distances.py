@@ -19,6 +19,9 @@ class Loader(core.SimpleLoader):
     """The actual loader for loading distances.
     """
 
+    max_insert = 5000
+    """Number of distances to write at once"""
+
     dependencies = set([InfoLoader])
     """Stages to depend on"""
 
