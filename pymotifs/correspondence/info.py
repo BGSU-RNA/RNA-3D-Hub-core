@@ -64,7 +64,7 @@ class Loader(core.MassLoader):
                 distinct()
 
             if not query.count():
-                raise core.InvalidState("No sequences for %s" % pdb)
+                self.logger.warning("No sequences for %s" % pdb)
 
             return [ut.row2dict(result) for result in query]
 
