@@ -351,6 +351,24 @@ def report_nr_pairs(ctx, **kwargs):
     run(ctx, 'reports.nr.pairs', ids, **kwargs)
 
 
+@report_nr.command('representative',
+                   short_help='Create a report about representative selection')
+@click.option('--resolution', default='all', type=str,
+              help='The resolution cutoff to use')
+@click.argument('version')
+@click.pass_context
+def report_nr_rep(ctx, **kwargs):
+    """Create a report about the selection of representative in the NR set.
+
+    This will create a report about the selection of the representative in the
+    NR set. It will write out all members of all groups selected and show the
+    number of BP, and NT that were considered in selecting the representative.
+    """
+    kwargs.update(ctx.parent.objs)
+    ids = (kwargs.pop('version'), kwargs.pop('resolution'))
+    run(ctx, 'reports.nr.bp_nt', ids, **kwargs)
+
+
 @report.command('species',
                 short_help='Create report about species assignments')
 @click.pass_context
