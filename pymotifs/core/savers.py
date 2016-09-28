@@ -294,7 +294,9 @@ class CsvSaver(FileHandleSaver):
         with super(CsvSaver, self).writer(entry, **kwargs) as handle:
             writer = csv.DictWriter(handle, self.headers, **options)
 
-            if not kwargs.get('hide_headers', False) and self._headers_written:
+            if not kwargs.get('hide_headers', False) and \
+                    self._headers_written is False:
                 writer.writeheader()
+                self._headers_written = True
 
             yield writer.writerow
