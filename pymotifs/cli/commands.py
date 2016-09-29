@@ -19,7 +19,6 @@ from pymotifs.constants import BOOTSTRAPPING
 from pymotifs.email import Emailer
 
 from pymotifs import correct as _correct
-from pymotifs import reports
 from pymotifs import models as mod
 from pymotifs import config as conf
 from pymotifs import transfer as _transfer
@@ -292,7 +291,7 @@ def correct_nr_history(ctx, version, **kwargs):
 
 
 @cli.group(short_help='Create reports')
-@click.option('--hide-headers', is_flag=True,
+@click.option('--hide-headers', is_flag=True, default=False,
               help="Hide headers in output")
 @click.option('--delimiter', default='\t', type=str,
               help='Delimeter to separate  columns with')
