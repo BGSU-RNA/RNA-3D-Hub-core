@@ -5,6 +5,14 @@ from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 from pymotifs.constants import MIN_NT_DISCREPANCY
 
 
+def should_compare_chain_discrepancy(chain):
+    return valid_chain(chain)
+
+
+def should_compute_chain_discrepancy(chain):
+    return valid_chain(chain)
+
+
 def valid_chain(chain):
     """Check if the chain can have a dsicrepancy computed. This means it has
     enough nucleotides and it has a good enough resolution, unless it is NMR,

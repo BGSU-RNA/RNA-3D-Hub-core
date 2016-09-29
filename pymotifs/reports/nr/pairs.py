@@ -1,9 +1,12 @@
 """This module contains the logic to create the NR reports.
 """
 
+import operator as op
+
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
+from pymotifs.utils.discrepancy import should_compare_chain_discrepancy
 from pymotifs.constants import MIN_NT_DISCREPANCY
 from pymotifs.constants import MAX_RESOLUTION_DISCREPANCY
 
@@ -49,6 +52,8 @@ class Pairs(core.Reporter):
                                   exp2.length.label('len2'),
                                   pdb1.resolution.label('res1'),
                                   pdb2.resolution.label('res2'),
+                                  pdb1.experimental_technique.label('meth1'),
+                                  pdb2.experimental_technique.label('meth2'),
                                   ).\
                 join(chains1, chains1.nr_class_id == classes.nr_class_id).\
                 join(chains2, chains2.nr_class_id == classes.nr_class_id).\
@@ -86,15 +91,18 @@ class Pairs(core.Reporter):
                 order_by(classes.name, ife1.ife_id, ife2.ife_id)
             return [row2dict(e) for e in query]
 
+    def as_chain(self, n, entry):
+        return {
+            'length': entry['len%s' % n],
+            'method': entry['meth%s' % n],
+            'resolution': entry['res%s' % n]
+        }
+
     def update_discrepancy(self, entry):
-        len1 = entry['len1']
-        len2 = entry['len2']
-        res1 = entry['res1']
-        res2 = entry['res2']
-        if res1 is None or res1 > MAX_RESOLUTION_DISCREPANCY or \
-                res2 is None or res2 > MAX_RESOLUTION_DISCREPANCY or \
-                len1 < MIN_NT_DISCREPANCY or \
-                len2 < MIN_NT_DISCREPANCY:
+        chain1 = self.as_chain(1, entry)
+        chain2 = self.as_chain(2, entry)
+        if not should_compare_chain_discrepancy(chain1) or \
+                not should_compare_chain_discrepancy(chain2):
             entry['Discrepancy'] = None
 
     def update_alignment(self, entry):
@@ -124,7 +132,6 @@ class Pairs(core.Reporter):
             A dict that can written for the report.
         """
 
-
         for entry in self.data_query(*entries):
             self.update_discrepancy(entry)
             self.update_alignment(entry)
@@ -134,4 +141,6 @@ class Pairs(core.Reporter):
             del entry['rev_match']
             del entry['len1']
             del entry['len2']
+            del entry['meth1']
+            del entry['meth2']
             yield entry
