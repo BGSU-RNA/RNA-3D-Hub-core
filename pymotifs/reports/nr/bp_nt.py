@@ -13,7 +13,7 @@ class Reporter(core.Reporter):
         'IFE',
         'BP',
         'NT',
-        'Representative',
+        'Type',
     ]
 
     def data(self, entry, **kwargs):
@@ -24,7 +24,7 @@ class Reporter(core.Reporter):
                                   mod.NrChains.ife_id.label('IFE'),
                                   mod.IfeInfo.bp_count.label('BP'),
                                   mod.IfeInfo.length.label('NT'),
-                                  mod.NrChains.rep.label('Representative'),
+                                  mod.NrChains.rep,
                                   ).\
                 join(mod.NrChains,
                      mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
@@ -32,4 +32,13 @@ class Reporter(core.Reporter):
                      mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
                 filter(mod.NrClasses.nr_release_id == release).\
                 filter(mod.NrClasses.resolution == resolution)
-            return [row2dict(r) for r in query]
+
+            data = []
+            for result in query:
+                entry = row2dict(result)
+                rep = entry.pop('rep')
+                entry['Type'] = 'Member'
+                if rep:
+                    entry['Type'] = 'Representative'
+                data.append(entry)
+            return data
