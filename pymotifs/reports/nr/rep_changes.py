@@ -1,6 +1,7 @@
 """This module contains the logic to build a report to describe the
 """
 
+import operator as op
 import collections as coll
 
 from pymotifs import core
@@ -21,9 +22,10 @@ class Reporter(core.Reporter):
 
     def release_index(self, release_id):
         with self.session() as session:
-            return session.query(mod.NrReleases).\
-                get(release_id).\
-                index
+            release = session.query(mod.NrReleases).get(release_id)
+            if not release:
+                raise core.InvalidState("Unknown release %s" % release_id)
+            return release.index
 
     def as_release_name(self, nr_release):
         return 'v' + nr_release
@@ -126,7 +128,7 @@ class Reporter(core.Reporter):
             entry.update(releases)
             entry['Changes'] = len(set(releases.values()))
             data.append(entry)
-        return data
+        return sorted(data, key=op.itemgetter('Handle', 'Method'))
 
     def data(self, entry, **kwargs):
         start, stop, resolution = entry
