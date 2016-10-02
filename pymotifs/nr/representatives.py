@@ -75,7 +75,7 @@ class Increase(Representative):
     the best in terms of bp/nt and attempt to find all those with more bp's and
     nts in the set.
     """
-    name = 'increase'
+    name = 'percent-increase'
 
     def naive_best(self, group):
         """Find the best chain terms of bps/nts. This is the starting point for
@@ -125,7 +125,8 @@ class Increase(Representative):
             return 100
         return (float(first[key]) / float(second[key]) - 1) * 100
 
-    def best_above_cutoffs(self, representative, candidates):
+    def best_above_cutoffs(self, representative, candidates, length_increase,
+                           bp_increase):
         """This will find the true representative given a current one and a
         list of candidates. This will attempt to maximize the number of bps and
         nts in the candidate as compared to the current representative. In
@@ -138,19 +139,16 @@ class Increase(Representative):
         :returns: The new representative.
         """
 
-        cutoff = (NR_LENGTH_PERCENT_INCREASE, NR_BP_PERCENT_INCREASE)
-        possible = []
+        cutoff = (length_increase, bp_increase)
         for candidate in candidates:
             length_change = self.increase(candidate, representative, 'length')
             bp_change = self.increase(candidate, representative, 'bp')
             if (length_change, bp_change) >= cutoff:
-                possible.append(candidate)
+                return candidate
+        return representative
 
-        if not possible:
-            return representative
-        return max(possible, key=bp_per_nt)
-
-    def __call__(self, possible):
+    def __call__(self, possible, length_increase=NR_LENGTH_PERCENT_INCREASE,
+                 bp_increase=NR_BP_PERCENT_INCREASE):
         """Find the representative for the group.
 
         :param list group: List of ifes to find the best for.
@@ -168,17 +166,34 @@ class Increase(Representative):
             raise core.InvalidState("No current representative")
         self.logger.debug("Naive representative: %s", best['id'])
 
-        candidates = self.candidates(best, group)
-        self.logger.debug("Found %i representative candidates",
-                          len(candidates))
+        rep = best
+        while True:
+            candidates = self.candidates(rep, group)
+            self.logger.debug("Found %i representative candidates",
+                              len(candidates))
+            new_rep = self.best_above_cutoffs(rep, candidates,
+                                              length_increase,
+                                              bp_increase)
+            if new_rep == rep:
+                break
+            self.logger.info("Changed representative from %s to %s",
+                             rep['id'], new_rep['id'])
+            rep = new_rep
 
-        rep = self.best_above_cutoffs(best, candidates)
         if not rep:
             raise core.InvalidState("No representative found")
 
-        if rep['id'] != best['id']:
-            self.logger.info("Changed representative from %s to %s",
-                             best['id'], rep['id'])
-
         self.logger.debug("Computed representative: %s", rep['id'])
         return rep
+
+
+class AnyIncrease(Increase):
+    """A modification of the percent-increase representative method that will
+    instead select the representative if it has any increase in length and bp.
+    """
+    name = 'any-increase'
+
+    def __call__(self, possible):
+        return super(AnyIncrease, self).__call__(possible,
+                                                 length_increase=0,
+                                                 bp_increase=0)

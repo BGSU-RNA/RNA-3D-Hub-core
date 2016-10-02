@@ -137,4 +137,5 @@ MAX_RESOLUTION_DISCREPANCY = 4.0
 """Min number of nts to need for computing discrepancies"""
 MIN_NT_DISCREPANCY = 3
 
-NR_REPRESENTATIVE_METHOD = 'increase'
+NR_REPRESENTATIVE_METHOD = 'percent-increase'
+"""What representative selection method to use"""
