@@ -13,6 +13,9 @@ from pymotifs import models as mod
 # from pymotifs.models import CorrespondencePositions as Position
 from pymotifs.correspondence.positions import Loader as PositionLoader
 
+from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
+from pymotifs.constants import CORRESPONDENCE_LIMITED_CHANGES
+
 
 class Loader(core.Loader):
     merge_data = True
@@ -70,13 +73,16 @@ class Loader(core.Loader):
         with self.session() as session:
             e1 = aliased(mod.ExpSeqInfo)
             e2 = aliased(mod.ExpSeqInfo)
+            corr = info['correspondence_id']
 
             query = session.query(mod.CorrespondenceInfo.correspondence_id,
                                   e1.length.label('first'),
                                   e2.length.label('second')).\
-                join(e1, mod.CorrespondenceInfo.exp_seq_id_1 == e1.exp_seq_id).\
-                join(e2, mod.CorrespondenceInfo.exp_seq_id_2 == e2.exp_seq_id).\
-                filter(mod.CorrespondenceInfo.correspondence_id == info['correspondence_id'])
+                join(e1,
+                     mod.CorrespondenceInfo.exp_seq_id_1 == e1.exp_seq_id).\
+                join(e2,
+                     mod.CorrespondenceInfo.exp_seq_id_2 == e2.exp_seq_id).\
+                filter(mod.CorrespondenceInfo.correspondence_id == corr)
             result = query.one()
 
             return sorted([result.first, result.second])
@@ -89,12 +95,12 @@ class Loader(core.Loader):
         if not info['aligned_count']:
             return False
 
-        if min_size < 19:
+        if min_size < CORRESPONDENCE_EXACT_CUTOFF:
             if min_size == max_size:
                 return info['mismatch_count'] == 0
             return False
 
-        if min_size < 80:
+        if min_size < CORRESPONDENCE_LIMITED_CHANGES:
             return info['mismatch_count'] <= 4
 
         if max_size > min_size * 2 or min_size > max_size * 2:
