@@ -109,17 +109,19 @@ class Reporter(core.Reporter):
             rep = finder(chains)
             rel_name = self.as_release_name(rep['nr_release_id'])
             handle = rep['handle']
-            update = int(rep['version'])
+            version = int(rep['version'])
             key = (handle, method)
             grouped[key][rel_name] = rep['id']
-            grouped[key]['Updates'] = max(grouped[key].get('Updates'), update)
+            grouped[key]['Updates'].append(version)
 
     def finalize(self, grouped):
         data = []
         for (handle, method), releases in grouped.items():
+            versions = releases.pop('Updates')
             entry = {
                 'Handle': handle,
                 'Method': method,
+                'Updates': max(versions) - min(versions),
             }
             entry.update(releases)
             entry['Changes'] = len(set(releases.values()))
@@ -129,7 +131,7 @@ class Reporter(core.Reporter):
     def data(self, entry, **kwargs):
         start, stop, resolution = entry
         self.headers = self.create_headers(start, stop, resolution)
-        grouped = coll.defaultdict(dict)
+        grouped = coll.defaultdict(lambda: {'Updates': []})
         for class_id in self.common_classes(start, stop, resolution):
             self.get_representatives(grouped, class_id)
         return self.finalize(grouped)
