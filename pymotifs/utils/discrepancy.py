@@ -6,10 +6,34 @@ from pymotifs.constants import MIN_NT_DISCREPANCY
 
 
 def should_compare_chain_discrepancy(chain):
+    """Check if we can compared discrepancies using this chain.
+
+    Parameters
+    ----------
+    chain : dict
+        The chain dict to test.
+
+    Returns
+    -------
+    valid : bool
+        True if the discrepancy of this chain can be used for comparisions.
+    """
     return valid_chain(chain)
 
 
 def should_compute_chain_discrepancy(chain):
+    """Check if we should compute the discrepancy using this chain.
+
+    Parameters
+    ----------
+    chain : dict
+        The chain dict to test.
+
+    Returns
+    -------
+    valid : bool
+        True if this chain should have a discrepancy computed using it.
+    """
     return valid_chain(chain)
 
 

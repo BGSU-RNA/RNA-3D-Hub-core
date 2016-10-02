@@ -90,6 +90,9 @@ CORRESPONDENCE_SMALL_CUTOFF = 36
 """Length cutoff before being matched as huge"""
 CORRESPONDENCE_HUGE_CUTOFF = 2000
 
+CORRESPONDENCE_EXACT_CUTOFF = 19
+CORRESPONDENCE_LIMITED_CHANGES = 80
+
 """Set of pairs that must be joined by into a equivelance class"""
 EQUIVALENT_PAIRS = set([
     (('1S72', '0'), ('1FG0', 'A')),
@@ -133,3 +136,5 @@ MAX_RESOLUTION_DISCREPANCY = 4.0
 
 """Min number of nts to need for computing discrepancies"""
 MIN_NT_DISCREPANCY = 3
+
+NR_REPRESENTATIVE_METHOD = 'increase'

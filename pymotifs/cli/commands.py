@@ -368,6 +368,30 @@ def report_nr_rep(ctx, **kwargs):
     run(ctx, 'reports.nr.bp_nt', ids, **kwargs)
 
 
+@report_nr.command('rep-changes',
+                   short_help='Report on changes in representatives')
+@click.option('--resolution', default='all', type=str,
+              help='The resolution cutoff to use')
+@click.option('--methods', default='*', type=str, multiple=True,
+              help='Methods to use for selecting representative')
+@click.argument('start-version')
+@click.argument('stop-version')
+@click.pass_context
+def report_nr_changes(ctx, **kwargs):
+    """Create a report that explores how the representatives change across
+    releases.
+
+    This will go over the specified range of releases and compute the
+    representatives will all known methods. It the produces a report on what
+    chain is a representative in each grouping. It will only use the classes
+    which exist in all releases in the range.
+    """
+    kwargs.update(ctx.parent.objs)
+    ids = (kwargs.pop('start_version'), kwargs.pop('stop_version'),
+           kwargs.pop('resolution'))
+    run(ctx, 'reports.nr.rep_changes', ids, **kwargs)
+
+
 @report.command('species',
                 short_help='Create report about species assignments')
 @click.pass_context

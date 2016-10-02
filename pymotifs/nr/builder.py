@@ -4,7 +4,6 @@ that class.
 """
 
 import copy
-import operator as op
 import itertools as it
 import collections as coll
 
@@ -12,11 +11,11 @@ from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.utils.naming import Namer
+from pymotifs.nr import representatives as reps
 from pymotifs.utils.naming import ChangeCounter
 from pymotifs.nr.groups.simplified import Grouper
 
-from pymotifs.constants import NR_BP_PERCENT_INCREASE
-from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
+from pymotifs.constants import NR_REPRESENTATIVE_METHOD
 from pymotifs.constants import RESOLUTION_GROUPS
 from pymotifs.constants import NR_CLASS_NAME
 
@@ -313,98 +312,28 @@ class RepresentativeFinder(core.Base):
     """A class to find the representative for a group of ifes. This will find
     the best in terms of bp/nt and attempt to find all those with more bp's and
     nts in the set.
+
+    Attributes
+    ----------
+    methods : set
+        A set of the known method names.
     """
 
-    def sorting_key(self, chain):
-        """Function to use for sorting by bps/nt. Deals with things where there
-        are 0 bps or nts. It must have bps, length and id entry.
-
-        :param dict chain: Chain to compute a sorting key for.
-        :returns: A tuple that can be used to sort the chains.
+    @property
+    def methods(self):
+        """Get the known methods for selecting a representative.
         """
+        if not hasattr(self, '_methods'):
+            self._methods = set(n for n, k in reps.known())
+        return self._methods
 
-        ratio = 0
-        if chain['bp'] and chain['length']:
-            ratio = float(chain['bp']) / float(chain['length'])
-        resolution = chain.get('resolution')
-        if resolution:
-            resolution = resolution * -1
-        return (ratio, resolution, chain['id'])
-
-    def naive_best(self, group):
-        """Find the best chain terms of bps/nts. This is the starting point for
-        finding the representative in a set of ifes. This method is naive
-        because it does not favor more complete structures. In addition, it is
-        very sensitive to minor changes in number of basepairs and nts.
-
-        :param list group: A list of dictonaries to find the naive
-        representative of.
-        :returns: The initial representative.
+    def method(self, name):
+        """Get a method
         """
-        return max(group, key=self.sorting_key)
+        finder = reps.fetch(name)
+        return finder(self.config, self.session)
 
-    def candidates(self, best, group):
-        """Find all possible candidates for a representative within the group,
-        given a current best ife. This finds all chains that have at least as
-        many basepairs and nucleotides as the best chain. The chains will be
-        returned in sorted order.
-
-        :param dict best: The current best.
-        :param list group: The list of dicts to search.
-        :returns: The list of candidates for the representative.
-        """
-
-        len = op.itemgetter('length')
-        bp = op.itemgetter('bp')
-        same = lambda c: bp(c) == bp(best) and len(c) == len(best)
-        possible = it.ifilter(lambda c: len(c) >= len(best), group)
-        possible = it.ifilter(lambda c: bp(c) >= bp(best), possible)
-        possible = it.ifilterfalse(same, possible)
-        return sorted(possible, key=self.sorting_key)
-
-    def increase(self, first, second, key):
-        """Compute the percent increase for the given set of dictionaries and
-        with the given key. If the second one is 0 then we return 100 for 100%
-        increase.
-
-        :param dict first: Dictionary to get the increase to.
-        :param dict second: Dictionary to get the increase from.
-        :param str key: Key to use
-        :returns: The percent increase.
-        """
-
-        if not second[key]:
-            if not first[key]:
-                return 0
-            return 100
-        return (float(first[key]) / float(second[key]) - 1) * 100
-
-    def best_above_cutoffs(self, representative, candidates):
-        """This will find the true representative given a current one and a
-        list of candidates. This will attempt to maximize the number of bps and
-        nts in the candidate as compared to the current representative. In
-        addition, it will only change representatives if we have have enough of
-        an increase. This adds stability to the process so minor improvements
-        are ignored, while large ones will lead to large changes.
-
-        :param dict representative: The current representative.
-        :param list candidates: A list of candidates to examine.
-        :returns: The new representative.
-        """
-
-        cutoff = (NR_LENGTH_PERCENT_INCREASE, NR_BP_PERCENT_INCREASE)
-        possible = []
-        for candidate in candidates:
-            length_change = self.increase(candidate, representative, 'length')
-            bp_change = self.increase(candidate, representative, 'bp')
-            if (length_change, bp_change) >= cutoff:
-                possible.append(candidate)
-
-        if not possible:
-            return representative
-        return max(possible, key=self.sorting_key)
-
-    def __call__(self, possible):
+    def __call__(self, possible, method=NR_REPRESENTATIVE_METHOD):
         """Find the representative for the group.
 
         :param list group: List of ifes to find the best for.
@@ -414,28 +343,8 @@ class RepresentativeFinder(core.Base):
         if not possible:
             raise core.InvalidState("No ifes given")
 
-        # Prefer any xray over any cyro em, as cyro modesl are generally built
-        # using x-ray and not yet carefully modeled.
-        group = [ife for ife in possible if ife['method'] == 'X-RAY DIFFRACTION']
-        if not group:
-            group = possible
+        if method not in self.methods:
+            raise core.InvalidState("Unknown method %s" % method)
 
-        best = self.naive_best(group)
-        if not best:
-            raise core.InvalidState("No current representative")
-        self.logger.debug("Naive representative: %s", best['id'])
-
-        candidates = self.candidates(best, group)
-        self.logger.debug("Found %i representative candidates",
-                          len(candidates))
-
-        rep = self.best_above_cutoffs(best, candidates)
-        if not rep:
-            raise core.InvalidState("No representative found")
-
-        if rep['id'] != best['id']:
-            self.logger.info("Changed representative from %s to %s",
-                             best['id'], rep['id'])
-
-        self.logger.debug("Computed representative: %s", rep['id'])
-        return rep
+        finder = self.method(method)
+        return finder(possible)
