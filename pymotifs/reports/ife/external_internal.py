@@ -33,6 +33,8 @@ class Reporter(core.Reporter):
     def to_process(self, pdbs, nr_release=None, **kwargs):
         if nr_release:
             return [tuple(self.pdbs_in_nr(nr_release, **kwargs))]
+        if not pdbs:
+            kwargs['all'] = True
         return super(Reporter, self).to_process(pdbs, **kwargs)
 
     def ifes(self, pdb):
