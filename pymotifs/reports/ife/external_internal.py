@@ -11,11 +11,12 @@ class Reporter(core.Reporter):
         'Pdb',
         'Chain1',
         'Chain2',
+        'Length',
         'Internal',
         'External',
     ]
 
-    def interactions(self, pdb):
+    def ifes(self, pdb):
         loader = IfeLoader(self.config, self.session)
         try:
             ifes, interactions = loader(pdb)
@@ -29,6 +30,7 @@ class Reporter(core.Reporter):
                 'Pdb': pdb,
                 'Chain1': ife1.chain,
                 'Chain2': ife2.chain,
+                'Length': min(ife1.length, ife2.length),
                 'Internal': min(ife1.internal, ife2.internal),
                 'External': interactions[ife1.chain][ife2.chain],
             })
@@ -37,5 +39,5 @@ class Reporter(core.Reporter):
     def data(self, pdbs, **kwargs):
         data = []
         for pdb in pdbs:
-            data.extend(self.interactions(pdb))
+            data.extend(self.ifes(pdb))
         return data
