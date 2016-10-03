@@ -1,3 +1,6 @@
+import operator as op
+import itertools as it
+
 from pymotifs import core
 
 from pymotifs.ife.helpers import IfeLoader
@@ -19,17 +22,16 @@ class Reporter(core.Reporter):
         except Exception:
             return []
         data = []
-        for ife1 in ifes:
-            if not ife1.is_structured:
-                continue
-            for ife2 in ifes:
-                data.append({
-                    'Pdb': pdb,
-                    'Chain1': ife1.chain,
-                    'Chain2': ife2.chain,
-                    'Internal': min(ife1.internal, ife2.internal),
-                    'External': interactions[ife1.chain][ife2.chain],
-                })
+
+        structured = it.ifilter(op.attrgetter('is_structured'), ifes)
+        for ife1, ife2 in it.combinations(structured, r=2):
+            data.append({
+                'Pdb': pdb,
+                'Chain1': ife1.chain,
+                'Chain2': ife2.chain,
+                'Internal': min(ife1.internal, ife2.internal),
+                'External': interactions[ife1.chain][ife2.chain],
+            })
         return data
 
     def data(self, pdbs, **kwargs):
