@@ -404,7 +404,26 @@ def report_species(ctx, **kwargs):
     """
     kwargs.update(ctx.parent.objs)
     run(ctx, 'reports.species', [], **kwargs)
-    # reports.species(**kwargs)
+
+
+@report.group('ife', short_help='Reports about IFEs')
+@click.pass_context
+def report_ife(ctx):
+    """Create reports about building IFE's
+    """
+    ctx.objs = ctx.parent.objs
+
+
+@report_ife.command('internal-external',
+                    short_help='Report the external vs internal interactions')
+@click.pass_context
+def report_ife_cross(ctx, **kwargs):
+    """This will iterate over all chains and show the number of internal vs
+    external basepairs for all chains in each PDB.
+    """
+    kwargs.update(ctx.parent.objs)
+    kwargs['all'] = True
+    run(ctx, 'reports.ife.external_internal', [], **kwargs)
 
 
 @cli.group(short_help='Dump/Import data')
