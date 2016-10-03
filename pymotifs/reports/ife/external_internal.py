@@ -2,6 +2,7 @@ import operator as op
 import itertools as it
 
 from pymotifs import core
+from pymotifs import models as mod
 
 from pymotifs.ife.helpers import IfeLoader
 
@@ -15,6 +16,24 @@ class Reporter(core.Reporter):
         'Internal',
         'External',
     ]
+
+    def pdbs_in_nr(self, release, resolution='all', **kwargs):
+        with self.session() as session:
+            classes = mod.NrClasses
+            chains = mod.NrChains
+            ifes = mod.IfeInfo
+            query = session.query(ifes.pdb_id).\
+                join(chains, ifes.ife_id == chains.ife_id).\
+                join(classes, classes.nr_class_id == chains.nr_class_id).\
+                filter(chains.nr_release_id == release).\
+                filter(classes.resolution == resolution).\
+                distinct()
+            return sorted({r.pdb_id for r in query})
+
+    def to_process(self, pdbs, nr_release=None, **kwargs):
+        if nr_release:
+            return [tuple(self.pdbs_in_nr(nr_release, **kwargs))]
+        return super(Reporter, self).to_process(pdbs, **kwargs)
 
     def ifes(self, pdb):
         loader = IfeLoader(self.config, self.session)
