@@ -302,8 +302,8 @@ def report(ctx, **kwargs):
     """
     ctx.objs = ctx.parent.objs
     ctx.objs.update(kwargs)
-    base = logging.getLogger()
-    base.setLevel(logging.CRITICAL)
+    # base = logging.getLogger()
+    # base.setLevel(logging.CRITICAL)
 
 
 @report.group('nr', short_help='Reports about the NR set')
@@ -441,19 +441,21 @@ def report_loop(ctx):
     ctx.objs = ctx.parent.objs
 
 
-@report_loop.command('quality',
+@report_loop.command('nt-quality',
                      short_help='Report on loop quality in a motif release')
 @click.option('--motif-release', default=None, type=str,
               help='Motif release to use. Default is latest')
 @click.option('--nr-release', default=None, type=str,
               help='Nr release to use, defaults to latest')
+@click.option('--resolution', default='all', type=str,
+              help='Resolution cutoff for NR release to use')
+@click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context
-def report_loop_quality(ctx, **kwargs):
+def report_loop_quality(ctx, ids, **kwargs):
     """Create a report on the quality of nucleotides within a loop.
     """
     kwargs.update(ctx.parent.objs)
-    kwargs['all'] = True
-    run(ctx, 'reports.loops.rsr', [], **kwargs)
+    run(ctx, 'reports.loops.quality', ids, **kwargs)
 
 
 @cli.group(short_help='Dump/Import data')
