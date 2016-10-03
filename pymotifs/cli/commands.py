@@ -240,6 +240,7 @@ def ss_align(ctx, pdb, **kwargs):
     kwargs.update(ctx.parent.objs)
     run(ctx, 'ss.position_mapping', [pdb], **kwargs)
 
+
 @cli.group(short_help="A group of commands for correcting issues in the db")
 @click.pass_context
 def correct(ctx):
@@ -416,14 +417,43 @@ def report_ife(ctx):
 
 @report_ife.command('internal-external',
                     short_help='Report the external vs internal interactions')
+@click.option('--nr-release', default=None, type=str,
+              help='Nr release to use')
+@click.option('--resolution', default='all', type=str,
+              help='Resolution cutoff for nr release to use.')
+@click.option('--all', default=False, is_flag=True,
+              help='Use all RNA containing pdbs')
+@click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context
-def report_ife_cross(ctx, **kwargs):
+def report_ife_cross(ctx, ids, **kwargs):
     """This will iterate over all chains and show the number of internal vs
     external basepairs for all chains in each PDB.
     """
     kwargs.update(ctx.parent.objs)
+    run(ctx, 'reports.ife.external_internal', ids, **kwargs)
+
+
+@report.group('loops', short_help='Reports about loops')
+@click.pass_context
+def report_loop(ctx):
+    """Create reports about loop information
+    """
+    ctx.objs = ctx.parent.objs
+
+
+@report_loop.command('quality',
+                     short_help='Report on loop quality in a motif release')
+@click.option('--motif-release', default=None, type=str,
+              help='Motif release to use. Default is latest')
+@click.option('--nr-release', default=None, type=str,
+              help='Nr release to use, defaults to latest')
+@click.pass_context
+def report_loop_quality(ctx, **kwargs):
+    """Create a report on the quality of nucleotides within a loop.
+    """
+    kwargs.update(ctx.parent.objs)
     kwargs['all'] = True
-    run(ctx, 'reports.ife.external_internal', [], **kwargs)
+    run(ctx, 'reports.loops.rsr', [], **kwargs)
 
 
 @cli.group(short_help='Dump/Import data')
