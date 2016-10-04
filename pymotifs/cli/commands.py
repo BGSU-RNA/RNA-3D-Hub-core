@@ -302,8 +302,8 @@ def report(ctx, **kwargs):
     """
     ctx.objs = ctx.parent.objs
     ctx.objs.update(kwargs)
-    # base = logging.getLogger()
-    # base.setLevel(logging.CRITICAL)
+    base = logging.getLogger()
+    base.setLevel(logging.CRITICAL)
 
 
 @report.group('nr', short_help='Reports about the NR set')
