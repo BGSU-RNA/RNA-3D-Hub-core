@@ -23,6 +23,25 @@ class PdbParamType(click.ParamType):
         self.fail("Invalid PDB id")
 
 
+class KeyValueType(click.ParamType):
+    name = 'key_value'
+
+    def convert(self, value, param, ctx):
+        if value is None:
+            return None
+        if re.match('\w+=\w+', value):
+            return value
+        self.fail("Invalid key value pair")
+
+    def finalize_dict(self, value):
+        data = {}
+        for entry in value:
+            key, value = entry.split('=')
+            data[key] = value
+        return data
+
+
 PDB = PdbParamType()
 DATE = DateParamType()
+KEY_VALUE = KeyValueType()
 FILE = click.Path(exists=True, dir_okay=False, resolve_path=True)
