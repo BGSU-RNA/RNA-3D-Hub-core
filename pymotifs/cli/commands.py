@@ -2,6 +2,7 @@
 can run. This contains all the functions that will be run.
 """
 
+import csv
 import random
 import logging
 
@@ -15,6 +16,7 @@ from pymotifs.cli import introspect
 from pymotifs.cli.params import FILE
 from pymotifs.cli.params import DATE
 from pymotifs.cli.params import PDB
+from pymotifs.cli.params import KEY_VALUE
 from pymotifs.constants import BOOTSTRAPPING
 from pymotifs.email import Emailer
 
@@ -123,6 +125,7 @@ def cli(ctx, **options):
 @click.option('--exclude', multiple=True, type=PDB,
               help='Excluded PDB(s)')
 @click.option('--ignore-time', is_flag=True, help='Ignore time for rerunning')
+@click.option('--manual', type=KEY_VALUE, multiple=True)
 @click.argument('name')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context
@@ -132,6 +135,7 @@ def do(ctx, name, ids, **kwargs):
     This accepts a stage to run and a list of PDB ids to import. It determines
     which if any dependencies must be run and runs them all.
     """
+    kwargs['manual'] = KEY_VALUE.finalize_dict(kwargs['manual'])
     kwargs.update(ctx.parent.objs)
     run(ctx, name, ids, **kwargs)
 
@@ -296,14 +300,23 @@ def correct_nr_history(ctx, version, **kwargs):
               help="Hide headers in output")
 @click.option('--delimiter', default='\t', type=str,
               help='Delimeter to separate  columns with')
+@click.option('--quotechar', default='"', type=str,
+              help='The quoting character to use')
+@click.option('--quoting', default='none',
+              type=click.Choice(['none', 'minimal', 'all', 'nonnumeric']),
+              help='Logic of quoting, as in the csv module.')
+@click.option('--filename', default=None, type=str,
+              help='Filename to write to')
 @click.pass_context
 def report(ctx, **kwargs):
     """Commands dealing with creating reports
     """
+    kwargs['quoting'] = getattr(csv, 'QUOTE_' + kwargs['quoting'].upper())
     ctx.objs = ctx.parent.objs
     ctx.objs.update(kwargs)
-    base = logging.getLogger()
-    base.setLevel(logging.CRITICAL)
+    if not kwargs['filename']:
+        base = logging.getLogger()
+        base.setLevel(logging.CRITICAL)
 
 
 @report.group('nr', short_help='Reports about the NR set')
