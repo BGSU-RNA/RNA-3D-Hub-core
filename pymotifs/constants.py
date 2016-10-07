@@ -139,3 +139,5 @@ MIN_NT_DISCREPANCY = 3
 
 NR_REPRESENTATIVE_METHOD = 'percent-increase'
 """What representative selection method to use"""
+
+RSRZ_PAIRED_OUTLIERS = 2
