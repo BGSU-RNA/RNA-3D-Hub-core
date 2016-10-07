@@ -24,7 +24,7 @@ class PdbParamType(click.ParamType):
 
 
 class KeyValueType(click.ParamType):
-    name = 'key_value'
+    name = 'key=value'
 
     def convert(self, value, param, ctx):
         if value is None:
