@@ -4,6 +4,7 @@ that show up across the pipeline.
 
 import os
 import gzip
+import inspect
 import logging
 from ftplib import FTP
 import itertools as it
@@ -171,6 +172,18 @@ def result2dict(result):
     for name in result.keys():
         d[name] = getattr(result, name)
     return d
+
+
+def known_subclasses(base, glob):
+    """Get the list of known subclasses from the given dictonary.
+    """
+    subclasses = []
+    for key, value in glob.items():
+        if inspect.isclass(value) and \
+                issubclass(value, base) and \
+                value is not base:
+            subclasses.append(value)
+    return subclasses
 
 
 def known(config, pdb=False, cif=True, pdb1=False):
