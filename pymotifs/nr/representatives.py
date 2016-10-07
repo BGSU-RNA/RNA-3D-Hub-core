@@ -3,6 +3,7 @@ import operator as op
 import itertools as it
 
 from pymotifs import core
+from pymotifs.utils import known_subclasses
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
@@ -33,10 +34,8 @@ class Representative(core.Base):
 
 def known():
     finders = []
-    for key, value in globals().items():
-        if inspect.isclass(value) and issubclass(value, Representative) and \
-                value is not Representative:
-            finders.append((value.name, value))
+    for subclass in known_subclasses(Representative, globals()):
+        finders.append((subclass.name, subclass))
     return finders
 
 
