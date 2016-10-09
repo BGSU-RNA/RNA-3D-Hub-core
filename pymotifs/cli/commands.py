@@ -462,12 +462,16 @@ def report_loop(ctx):
               help='Nr release to use, defaults to latest')
 @click.option('--resolution', default='all', type=str,
               help='Resolution cutoff for NR release to use')
+@click.option('--loop-release', default=None, type=str,
+              help='Loop release id to use. Infered otherwise')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context
 def report_loop_quality(ctx, ids, **kwargs):
     """Create a report on the quality of nucleotides within a loop.
     """
     kwargs.update(ctx.parent.objs)
+    if kwargs['loop_release'] is None:
+        del kwargs['loop_release']
     run(ctx, 'reports.loops.quality', ids, **kwargs)
 
 
