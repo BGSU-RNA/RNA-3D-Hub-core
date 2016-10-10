@@ -464,6 +464,8 @@ def report_loop(ctx):
               help='Resolution cutoff for NR release to use')
 @click.option('--loop-release', default=None, type=str,
               help='Loop release id to use. Infered otherwise')
+@click.option('--x-ray-only', default=False, is_flag=True,
+              help='Only use X-Ray structures')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context
 def report_loop_quality(ctx, ids, **kwargs):

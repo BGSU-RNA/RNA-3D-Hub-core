@@ -70,6 +70,12 @@ class Reporter(core.Reporter):
         raise core.InvalidState("No possible loop release for all PDBs")
 
     def group(self, results, **kwargs):
+        if kwargs['x_ray_only']:
+            info = mod.PdbInfo
+            results = results.join(info,
+                                   info.pdb_id == mod.LoopInfo.pdb_id).\
+                filter(info.experimental_technique == 'X-RAY DIFFRACTION')
+
         grouped = it.groupby(results, op.attrgetter('pdb_id'))
         data = []
         pdbs = []
