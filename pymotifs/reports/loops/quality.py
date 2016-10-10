@@ -3,6 +3,7 @@
 
 import operator as op
 import itertools as it
+import functools as ft
 import collections as coll
 
 from sqlalchemy import desc
@@ -188,8 +189,49 @@ class Reporter(core.Reporter):
                 positions[result.loop_id].add(result.unit_id)
         return positions
 
-    def loop_quality(self, loop_release, pdb, loop_ids, motif_release=None,
-                     **kwargs):
+    def as_status(self, loop_id, status):
+        if status == 1:
+            return 'Valid'
+        elif status == 2:
+            return 'Chain Breaks'
+        elif status == 3:
+            return 'Has Modifications'
+        elif status == 4:
+            return 'Too Many Chains'
+        elif status == 5:
+            return 'Incomplete Nucleotides'
+        elif status == 6:
+            return 'Complementary Sequence'
+        elif status == 7:
+            return 'Too Many Symmetries'
+        elif status == 8:
+            return 'RSRZ Outliers'
+        raise core.InvalidState("Unknown status for %s" % loop_id)
+
+    def as_result(self, pairs, known_positions, entry):
+        nts = known_positions[entry['Loop']]
+        entry['Internal Pairs'] = 0
+        entry['External Pairs'] = 0
+        entry['Internal Stacks'] = 0
+        entry['External Stacks'] = 0
+        entry['Internal Basephosphate'] = 0
+        entry['External Basephosphate'] = 0
+        entry['Total Interactions'] = 0
+        for key, curr in pairs[entry['Nt']].items():
+            entry['Internal ' + key] = len(curr.intersection(nts))
+            entry['External ' + key] = len(curr - nts)
+        entry['Internal Interactions'] = entry['Internal Pairs'] + \
+            entry['Internal Stacks'] + entry['Internal Basephosphate']
+        entry['External Interactions'] = entry['External Pairs'] + \
+            entry['External Stacks'] + entry['External Basephosphate']
+        entry['Total Interactions'] += entry['Internal Interactions']
+        entry['Total Interactions'] += entry['External Interactions']
+        status = self.as_status(entry['Loop'], entry['Status'])
+        entry['Status'] = status
+        return entry
+
+    def loop_quality(self, loop_release, pdb, loop_ids, **kwargs):
+
         if not loop_ids:
             raise core.InvalidState("No loops to get data for")
 
@@ -213,33 +255,14 @@ class Reporter(core.Reporter):
                 join(positions, positions.loop_id == info.loop_id).\
                 join(status, status.loop_id == info.loop_id).\
                 outerjoin(motifs, (motifs.loop_id == info.loop_id) &
-                          (motifs.ml_release_id == motif_release)).\
+                          (motifs.ml_release_id == kwargs['motif_release'])).\
                 outerjoin(quality, quality.unit_id == positions.unit_id).\
                 filter(info.pdb_id == pdb).\
                 filter(status.loop_release_id == loop_release).\
                 filter(info.loop_id.in_(loop_ids))
 
-            quality = []
-            for result in query:
-                entry = row2dict(result)
-                nts = known_positions[entry['Loop']]
-                entry['Internal Pairs'] = 0
-                entry['External Pairs'] = 0
-                entry['Internal Stacks'] = 0
-                entry['External Stacks'] = 0
-                entry['Internal Basephosphate'] = 0
-                entry['External Basephosphate'] = 0
-                entry['Total Interactions'] = 0
-                for key, curr in pairs[entry['Nt']].items():
-                    entry['Internal ' + key] = len(curr.intersection(nts))
-                    entry['External ' + key] = len(curr - nts)
-                entry['Internal Interactions'] = entry['Internal Pairs'] + \
-                    entry['Internal Stacks'] + entry['Internal Basephosphate']
-                entry['External Interactions'] = entry['External Pairs'] + \
-                    entry['External Stacks'] + entry['External Basephosphate']
-                entry['Total Interactions'] += entry['Internal Interactions']
-                entry['Total Interactions'] += entry['External Interactions']
-                quality.append(entry)
+            as_result = ft.partial(self.as_result, pairs, known_positions)
+            quality = [as_result(row2dict(r)) for r in query]
 
             found = {q['Loop'] for q in quality}
             required = set(loop_ids)
@@ -252,6 +275,8 @@ class Reporter(core.Reporter):
     def data(self, obj, **kwargs):
         data = []
         loop_release, entries = obj
+        keys = dict(kwargs)
+        del keys['loop_release']
         for entry in entries:
-            data.extend(self.loop_quality(loop_release, *entry, **kwargs))
+            data.extend(self.loop_quality(loop_release, *entry, **keys))
         return data
