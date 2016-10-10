@@ -790,8 +790,10 @@ class Reporter(Exporter):
     }
 
     @contextmanager
-    def handle(self, *args, **kwargs):
+    def file_handle(self, *args, **kwargs):
+        # if kwargs.get('filename', None):
+        #     with open
         yield sys.stdout
 
     def filename(self, *args, **kwargs):
-        raise ValueError("Should never be called")
+        return kwargs['filename']

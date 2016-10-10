@@ -191,12 +191,8 @@ class FileHandleSaver(Saver):
         *args : obj
             Arguments pass on to the
         """
-        if hasattr(self.stage, 'handle'):
-            with self.stage.handle(*args, **kwargs) as handle:
-                yield None, handle
-        else:
-            with self.file_handle(*args, **kwargs) as handle:
-                yield handle
+        with self.file_handle(*args, **kwargs) as handle:
+            yield handle
 
     @contextmanager
     def writer(self, entry, **kwargs):
