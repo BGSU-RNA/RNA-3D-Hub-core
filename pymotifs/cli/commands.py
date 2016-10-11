@@ -364,7 +364,7 @@ def report_nr_pairs(ctx, **kwargs):
     run(ctx, 'reports.nr.pairs', ids, **kwargs)
 
 
-@report_nr.command('representative',
+@report_nr.command('rep-selection',
                    short_help='Create a report about representative selection')
 @click.option('--resolution', default='all', type=str,
               help='The resolution cutoff to use')
@@ -382,7 +382,7 @@ def report_nr_rep(ctx, **kwargs):
     run(ctx, 'reports.nr.bp_nt', ids, **kwargs)
 
 
-@report_nr.command('rep-changes',
+@report_nr.command('rep-counts',
                    short_help='Report on changes in representatives')
 @click.option('--resolution', default='all', type=str,
               help='The resolution cutoff to use')
@@ -391,7 +391,7 @@ def report_nr_rep(ctx, **kwargs):
 @click.argument('start-version')
 @click.argument('stop-version')
 @click.pass_context
-def report_nr_changes(ctx, **kwargs):
+def report_nr_counts(ctx, **kwargs):
     """Create a report that explores how the representatives change across
     releases.
 
@@ -404,6 +404,22 @@ def report_nr_changes(ctx, **kwargs):
     ids = (kwargs.pop('start_version'), kwargs.pop('stop_version'),
            kwargs.pop('resolution'))
     run(ctx, 'reports.nr.rep_changes', ids, **kwargs)
+
+
+@report_nr.command('rep-changes',
+                   short_help='Report on changes in representatives')
+@click.option('--resolution', default='all', type=str,
+              help='The resolution cutoff to use')
+@click.option('--methods', default='*', type=str, multiple=True,
+              help='Methods to use for selecting representative')
+@click.argument('start-version')
+@click.argument('stop-version')
+@click.pass_context
+def report_nr_changes(ctx, **kwargs):
+    kwargs.update(ctx.parent.objs)
+    ids = (kwargs.pop('start_version'), kwargs.pop('stop_version'),
+           kwargs.pop('resolution'))
+    run(ctx, 'reports.nr.reps', ids, **kwargs)
 
 
 @report.command('species',
