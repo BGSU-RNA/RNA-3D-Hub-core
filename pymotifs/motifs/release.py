@@ -185,7 +185,20 @@ class Loader(core.MassLoader):
 
             return [result.ife_id for result in query]
 
-    def loops(self, loop_release_id, loop_type, ifes, size_limit=None):
+    def loops_to_exclude(self, **kwargs):
+        """Load the loops to exclude. Sometimes for testing usages we want to
+        exclude loops from analysis without updating the loop quality checks.
+        This adds such functionality.
+        """
+        exclude = BLACKLIST
+        exclude_file = kwargs.get('manual', {}).get('loop_exclude_file', None)
+        if exclude_file:
+            with open(exclude_file, 'rb') as raw:
+                exclude.update(line.strip() for line in raw)
+        return exclude
+
+    def loops(self, loop_release_id, loop_type, ifes, size_limit=None,
+              **kwargs):
         """Get the list of loop ids to use in clustering. These loops must be
         from IFE's in the given list and marked as valid in the loop quality
         step.
@@ -204,6 +217,8 @@ class Loader(core.MassLoader):
         loops: str
             A list of loop ids to process.
         """
+
+        exclude = self.loops_to_exclude(**kwargs)
 
         found = set()
         with self.session() as session:
@@ -232,7 +247,7 @@ class Loader(core.MassLoader):
             if size_limit is not None:
                 query = query.filter(loops.length < size_limit)
 
-            found.update(result.loop_id for result in query)
+            found.update(r.loop_id for r in query if r.loop_id not in exclude)
 
         if not loops:
             raise core.InvalidState("No loops to cluster for %s" %
@@ -288,8 +303,9 @@ class Loader(core.MassLoader):
                                   size_limit)
                 raise core.InvalidState("Bad size limit")
 
+
         loops = self.loops(releases.loop, loop_type, ifes,
-                           size_limit=size_limit)
+                           size_limit=size_limit, **kwargs)
         self.logger.info("Found %i loops", len(loops))
         self.logger.info("Starting to cluster all %s", loop_type)
         builder = Builder(self.config, self.session)
