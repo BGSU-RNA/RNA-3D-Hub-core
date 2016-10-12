@@ -12,12 +12,15 @@ from pymotifs import models as mod
 
 from pymotifs.utils import row2dict
 
+from pymotifs.units.info import Loader as InfoLoader
+
 Entry = coll.namedtuple('Entry', ['model', 'chain', 'number', 'sequence',
                                   'alt_id', 'insertion'])
 
 
 class Loader(core.SimpleLoader):
     allow_no_data = True
+    dependencies = set([InfoLoader])
 
     def query(self, session, pdb):
         return session.query(mod.UnitIncomplete).\
@@ -40,6 +43,7 @@ class Loader(core.SimpleLoader):
                 unit_id = r.pop('unit_id')
                 key = Entry(**r)
                 mapping[key].add(unit_id)
+        return mapping
 
     def missing_keys(self, pdb):
         cif = self.cif(pdb)
@@ -66,10 +70,10 @@ class Loader(core.SimpleLoader):
     def data(self, pdb, **kwargs):
         data = []
         mapping = self.mapping(pdb)
-        for missing in self.missing(pdb):
-            if missing not in mapping:
-                raise core.InvalidState("No unit ids found for %s" % missing)
-            for uid in mapping[missing]:
+        for key in self.missing_keys(pdb):
+            if key not in mapping:
+                self.logger.info("Skipping unobserved %s", str(key))
+            for uid in mapping[key]:
                 data.append(mod.UnitIncomplete(unit_id=uid,
                                                pdb_id=pdb,
                                                is_incomplete=True))
