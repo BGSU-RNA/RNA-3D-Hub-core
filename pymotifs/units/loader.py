@@ -17,6 +17,7 @@ from pymotifs.units.quality import Loader as QualityLoader
 # from pymotifs.units.redundant import RedundantNucleotidesLoader
 from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
+from pymotifs.units.incomplete import Loader as IncompleteLoader
 
 
 class Loader(core.StageContainer):
@@ -25,4 +26,4 @@ class Loader(core.StageContainer):
 
     """The `Stages` this will run"""
     stages = set([InfoLoader, QualityLoader, DistancesLoader, CenterLoader,
-                  RotationLoader, CoordinateLoader])
+                  RotationLoader, CoordinateLoader, IncompleteLoader])
