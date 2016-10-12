@@ -11,6 +11,10 @@ loop_release : str
     The Loop release to use, instead of the newest one.
 loop_size_limit : int
     The maximum loop size to use
+loop_exclude_file : str
+    Name of a file to that contains loops to exclude from clustering. This is
+    meant for testing out different excluding procedures without update loop
+    quality. The file should contain a single loop id per line, and only that.
 """
 
 import datetime as dt
@@ -302,7 +306,6 @@ class Loader(core.MassLoader):
                 self.logger.error("Give size limit %s was not an int",
                                   size_limit)
                 raise core.InvalidState("Bad size limit")
-
 
         loops = self.loops(releases.loop, loop_type, ifes,
                            size_limit=size_limit, **kwargs)
