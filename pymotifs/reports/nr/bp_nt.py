@@ -20,6 +20,7 @@ class Reporter(core.Reporter):
         return [
             'Group',
             'Release',
+            'PDB',
             'IFE',
             'BP',
             'NT',
@@ -73,6 +74,7 @@ class Reporter(core.Reporter):
                                   mod.NrClasses.nr_release_id.label('Release'),
                                   mod.NrChains.ife_id.label('IFE'),
                                   mod.IfeInfo.bp_count.label('BP'),
+                                  mod.IfeInfo.pdb_id.label('PDB'),
                                   mod.IfeInfo.length.label('NT'),
                                   mod.NrChains.rep,
                                   ).\
