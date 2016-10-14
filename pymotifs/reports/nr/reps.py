@@ -69,14 +69,10 @@ class Reporter(core.Reporter):
             found[entry['handle']].add(entry['nr_release_id'])
 
         common = set()
-        print(found)
-        print(releases)
         for handle, present_in in found.items():
             if present_in == releases:
-                print('MATCH', handle)
                 common.add(handle)
 
-        print(possible)
         return sorted(e['nr_class_id'] for e in possible if e['handle'] in common)
 
     def chains(self, class_id):
