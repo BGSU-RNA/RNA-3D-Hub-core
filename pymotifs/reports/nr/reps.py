@@ -15,6 +15,7 @@ class Reporter(core.Reporter):
     allow_no_data = True
     headers = [
         'Handle',
+        'Version',
         'Release',
         'Release Index',
         'Method',
@@ -83,6 +84,7 @@ class Reporter(core.Reporter):
                                   classes.name,
                                   classes.handle,
                                   classes.version,
+                                  classes.version,
                                   ife.ife_id.label('id'),
                                   ife.bp_count.label('bp'),
                                   ife.length,
@@ -113,15 +115,20 @@ class Reporter(core.Reporter):
             rep = finder(chains)
             rel_name = self.as_release_name(rep['nr_release_id'])
             handle = rep['handle']
-            key = (handle, method)
+            version = rep['version']
+            key = (handle, version, method)
             grouped[key][rel_name] = rep['id']
 
     def finalize(self, ordering, grouped):
         data = []
-        for (handle, method), releases in grouped.items():
+        for (handle, version, method), releases in grouped.items():
             last_entry = None
             for index, release in enumerate(ordering):
                 count = 0
+                if release not in releases:
+                    self.logger.error("Missing release %s for %s",
+                                      release, handle)
+                    break
                 curr = releases[release]
                 if index:
                     count = last_entry['Change Count']
@@ -131,6 +138,7 @@ class Reporter(core.Reporter):
 
                 last_entry = {
                     'Handle': handle,
+                    'Version': version,
                     'Method': method,
                     'Release': release,
                     'Release Index': index,
@@ -138,7 +146,8 @@ class Reporter(core.Reporter):
                     'Change Count': count,
                 }
                 data.append(last_entry)
-        return sorted(data, key=op.itemgetter('Release', 'Handle', 'Method'))
+        key = op.itemgetter('Release Index', 'Handle', 'Method')
+        return sorted(data, key=key)
 
     def data(self, entry, **kwargs):
         start, stop, resolution = entry
