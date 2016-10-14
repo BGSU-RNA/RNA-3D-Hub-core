@@ -135,7 +135,7 @@ class Reporter(core.Reporter):
                 version, curr = releases[release]
                 if index:
                     count = last_entry['Change Count']
-                    prev = releases[ordering[index - 1]]
+                    _, prev = releases[ordering[index - 1]]
                     if prev != curr:
                         count += 1
 
