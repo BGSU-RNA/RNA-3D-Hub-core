@@ -138,11 +138,10 @@ class Increase(Representative):
         :returns: The new representative.
         """
 
-        cutoff = (length_increase, bp_increase)
         for candidate in candidates:
             length_change = self.increase(candidate, representative, 'length')
             bp_change = self.increase(candidate, representative, 'bp')
-            if (length_change, bp_change) >= cutoff:
+            if length_change >= length_increase and bp_change >= bp_increase:
                 return candidate
         return representative
 
