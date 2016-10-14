@@ -61,18 +61,23 @@ class Reporter(core.Reporter):
             return [row2dict(r) for r in query]
 
     def common_classes(self, start, stop, resolution):
+        releases = self.release_order(start, stop)
+        releases = set(r.replace('v', '') for r in releases)
         possible = self.possible_classes(start, stop, resolution)
-        releases = {p['nr_release_id'] for p in possible}
         found = coll.defaultdict(set)
         for entry in possible:
             found[entry['handle']].add(entry['nr_release_id'])
 
         common = set()
+        print(found)
+        print(releases)
         for handle, present_in in found.items():
             if present_in == releases:
+                print('MATCH', handle)
                 common.add(handle)
 
-        return [e['nr_class_id'] for e in possible if e['handle'] in common]
+        print(possible)
+        return sorted(e['nr_class_id'] for e in possible if e['handle'] in common)
 
     def chains(self, class_id):
         with self.session() as session:
@@ -116,12 +121,12 @@ class Reporter(core.Reporter):
             rel_name = self.as_release_name(rep['nr_release_id'])
             handle = rep['handle']
             version = rep['version']
-            key = (handle, version, method)
-            grouped[key][rel_name] = rep['id']
+            key = (handle, method)
+            grouped[key][rel_name] = (version, rep['id'])
 
     def finalize(self, ordering, grouped):
         data = []
-        for (handle, version, method), releases in grouped.items():
+        for (handle, method), releases in grouped.items():
             last_entry = None
             entries = []
             for index, release in enumerate(ordering):
@@ -131,7 +136,7 @@ class Reporter(core.Reporter):
                                       release, handle)
                     entries = []
                     break
-                curr = releases[release]
+                version, curr = releases[release]
                 if index:
                     count = last_entry['Change Count']
                     prev = releases[ordering[index - 1]]
