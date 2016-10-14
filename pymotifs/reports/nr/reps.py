@@ -123,11 +123,13 @@ class Reporter(core.Reporter):
         data = []
         for (handle, version, method), releases in grouped.items():
             last_entry = None
+            entries = []
             for index, release in enumerate(ordering):
                 count = 0
                 if release not in releases:
                     self.logger.error("Missing release %s for %s",
                                       release, handle)
+                    entries = []
                     break
                 curr = releases[release]
                 if index:
@@ -145,7 +147,8 @@ class Reporter(core.Reporter):
                     'Representative': curr,
                     'Change Count': count,
                 }
-                data.append(last_entry)
+                entries.append(last_entry)
+            data.extend(entries)
         key = op.itemgetter('Release Index', 'Handle', 'Method')
         return sorted(data, key=key)
 
