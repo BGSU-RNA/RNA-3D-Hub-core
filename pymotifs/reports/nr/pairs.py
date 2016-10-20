@@ -21,6 +21,7 @@ class Pairs(core.Reporter):
         'IFE2',
         'Discrepancy',
         'Alignment',
+        'Good Alignment',
     ]
 
     def data_query(self, release, resolution):
@@ -48,6 +49,8 @@ class Pairs(core.Reporter):
                                   ccs.discrepancy.label('Discrepancy'),
                                   corr.match_count.label('forward_match'),
                                   rev_corr.match_count.label('rev_match'),
+                                  corr.good_alignment.label('forward_good'),
+                                  rev_corr.good_alignment.label('rev_good'),
                                   exp1.length.label('len1'),
                                   exp2.length.label('len2'),
                                   pdb1.resolution.label('res1'),
@@ -110,7 +113,10 @@ class Pairs(core.Reporter):
         rev_match = entry['rev_match']
         len1 = entry['len1']
         len2 = entry['len2']
+        for_good = entry['forward_good']
+        rev_good = entry['rev_good']
         entry['Alignment'] = None
+        entry['Good Alignment'] = int(for_good or rev_good)
 
         if for_match is not None or rev_match is not None:
             match = float(for_match or rev_match)
@@ -143,4 +149,6 @@ class Pairs(core.Reporter):
             del entry['len2']
             del entry['meth1']
             del entry['meth2']
+            del entry['forward_good']
+            del entry['rev_good']
             yield entry
