@@ -105,7 +105,7 @@ class Loader(core.MassLoader):
         species = set()
         for seq in pair:
             species.update(seq['species'])
-        return len(species) <= 1 or None in species or 32360 in species
+        return len(species) <= 1 or None in species or 32630 in species
 
     @property
     def known(self):
