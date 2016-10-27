@@ -280,6 +280,9 @@ class Loader(core.SimpleLoader):
         just a poorly modeled helix.
         """
 
+        if loop['type'] != 'IL':
+            return False
+
         return self.has_no_non_cWW(loop) and self.complementary_sequence(loop)
 
     def modified_bases(self, loop):
