@@ -48,10 +48,15 @@ class Loader(core.SimpleLoader):
         classes : list
             A list of all NR class ids.
         """
-        data = self.cached(NR_CACHE_NAME)
-        if not data:
-            raise core.InvalidState("No precomputed grouping to store")
-        latest = data['release']
+
+        latest = None
+        if kwargs['manual'].get('nr_release_id', False):
+            latest = kwargs['manual']['nr_release_id']
+        else:
+            data = self.cached(NR_CACHE_NAME)
+            if not data:
+                raise core.InvalidState("No precomputed grouping to store")
+            latest = data['release']
 
         with self.session() as session:
             query = session.query(mod.NrClasses.nr_class_id).\
