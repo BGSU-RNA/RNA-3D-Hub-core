@@ -16,7 +16,8 @@ from pymotifs.models import ChainSpecies
 from pymotifs.models import CorrespondenceInfo
 
 from pymotifs.constants import CORRESPONDENCE_HUGE_CUTOFF
-from pymotifs.constants import CORRESPONDENCE_SMALL_CUTOFF
+from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
+from pymotifs.constants import CORRESPONDENCE_LIMITED_CHANGES
 
 from pymotifs.exp_seq.loader import Loader as ExpSeqLoader
 from pymotifs.chains.info import Loader as ChainInfoLoader
@@ -34,7 +35,7 @@ class Loader(core.MassLoader):
     allow_no_data = True
     table = CorrespondenceInfo
 
-    small_cutoff = CORRESPONDENCE_SMALL_CUTOFF
+    exact_cutoff = CORRESPONDENCE_EXACT_CUTOFF
     huge_cutoff = CORRESPONDENCE_HUGE_CUTOFF
 
     def has_data(self, pdb, **kwargs):
