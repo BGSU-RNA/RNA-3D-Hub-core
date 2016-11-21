@@ -190,7 +190,7 @@ class Loader(core.SimpleLoader):
                     val = None
                 dist[index1, index2] = val
 
-        ordering, _ = orderWithPathLengthFromDistanceMatrix(dist, self.trials)
+        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist, self.trials)
         return [members[index] for index in ordering]
 
     def data(self, class_id, **kwargs):
