@@ -185,7 +185,7 @@ class Loader(core.SimpleLoader):
         for index1, member1 in enumerate(members):
             curr = distances.get(member1, {})
             for index2, member2 in enumerate(members):
-                dist = curr[member2]
+                dist = curr.get(member2, None)
                 if member2 not in curr:
                     dist = None
                 dist[index1, index2] = dist
