@@ -62,6 +62,10 @@ def defaults():
     base = os.path.abspath(os.path.join(here, '..'))
 
     return {
+        'db': {
+            'pool_size': 20,
+            'max_overflow': 10,
+        },
         "locations": {
             "base": base,
             "cache": os.path.join(base, "cache"),
