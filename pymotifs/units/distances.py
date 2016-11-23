@@ -49,9 +49,10 @@ class Loader(core.SimpleLoader):
         """
 
         with self.session() as session:
-            return session.query(mod.UnitPairsDistances).\
+            distances = mod.UnitPairsDistances
+            return session.query(distances).\
                 join(mod.UnitInfo,
-                     mod.UnitInfo.unit_id == mod.UnitPairsDistances.unit_id_1).\
+                     mod.UnitInfo.unit_id == distances.unit_id_1).\
                 filter(mod.UnitInfo.pdb_id == pdb)
 
     def center(self, residue):
