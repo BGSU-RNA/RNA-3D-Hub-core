@@ -105,7 +105,7 @@ class Reporter(core.Reporter):
                 order_by(mod.LoopInfo.pdb_id)
             return self.group(query, **kwargs)
 
-    def loops_in_nr(self, release, resolution='all', **kwargs):
+    def loops_in_nr(self, release, resolution='all', xray_only=False, **kwargs):
         with self.session() as session:
             ifes = mod.IfeInfo
             pos = mod.LoopPositions
@@ -131,6 +131,7 @@ class Reporter(core.Reporter):
                 filter(classes.resolution == resolution).\
                 distinct().\
                 order_by(mod.LoopInfo.pdb_id)
+
             return self.group(query, **kwargs)
 
     def all_loops(self, **kwargs):
