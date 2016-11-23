@@ -17,7 +17,6 @@ from pymotifs.models import CorrespondenceInfo
 
 from pymotifs.constants import CORRESPONDENCE_HUGE_CUTOFF
 from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
-from pymotifs.constants import CORRESPONDENCE_LIMITED_CHANGES
 
 from pymotifs.exp_seq.loader import Loader as ExpSeqLoader
 from pymotifs.chains.info import Loader as ChainInfoLoader
