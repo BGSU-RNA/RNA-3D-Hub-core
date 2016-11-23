@@ -104,8 +104,8 @@ def cli(ctx, **options):
     ctx.objs.update({
         'config': config,
         'engine': create_engine(config['db']['uri'],
-                                pool_size=config['db'].get('pool_size', 20),
-                                max_overflow=config['db'].get('max_overflow', 0))
+                                pool_size=config['db']['pool_size'],
+                                max_overflow=config['db']['max_overflow'])
     })
 
 
@@ -115,25 +115,27 @@ def cli(ctx, **options):
 @click.option('--skip-stage', multiple=True, help='Stage to skip')
 @click.option('--seed', type=int, help="Set the random seed")
 @click.option('--recalculate', multiple=True,
-              help="Recalculate data for the given stage(s)")
+              metavar='STAGE', help="Recalculate data for the given stage(s)")
 @click.option('--all', is_flag=True, help="Use all RNA containing PDBS")
 @click.option('--known', is_flag=True, help="Use only downloaded files")
 @click.option('--after-date', default=None,
-              type=DATE, help='Get PDBs from after the date (YYYY-MM-DD)')
+              type=DATE, help='Get files posted after DATE (YYYY-MM-DD)')
 @click.option('--before-date', default=None,
-              type=DATE, help='Get PDBs from before the date (YYYY-MM-DD)')
+              type=DATE, help='Get files posted before DATE (YYYY-MM-DD)')
 @click.option('--exclude', multiple=True, type=PDB,
               help='Excluded PDB(s)')
 @click.option('--ignore-time', is_flag=True, help='Ignore time for rerunning')
-@click.option('--manual', type=KEY_VALUE, multiple=True)
+@click.option('--manual', type=KEY_VALUE, multiple=True,
+              help='Define a variable')
 @click.argument('name')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context
 def do(ctx, name, ids, **kwargs):
-    """Run specific stages in the pipeline.
+    """Run specific stages of the pipeline.
 
-    This accepts a stage to run and a list of PDB ids to import. It determines
-    which if any dependencies must be run and runs them all.
+    'run' accepts as input the stage to run and a list of PDB ids to import and
+    process. It determines the order of dependences and executes them in the
+    correct order.
     """
     kwargs['manual'] = KEY_VALUE.finalize_dict(kwargs['manual'])
     kwargs.update(ctx.parent.objs)
