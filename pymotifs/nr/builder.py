@@ -41,6 +41,7 @@ class Known(core.Base):
         def empty():
             return {
                 'members': [],
+                'representative': None,
                 'name': {
                     'class_id': None,
                     'full': None,
@@ -57,16 +58,27 @@ class Known(core.Base):
                                   mod.NrClasses.version.label('version'),
                                   mod.NrClasses.nr_class_id.label('class_id'),
                                   mod.NrClasses.name.label('full_name'),
+                                  mod.NrChains.rep,
+                                  mod.IfeInfo.bp_count.label('bp'),
+                                  mod.IfeInfo.length.label('length'),
                                   ).\
                 join(mod.NrClasses,
                      mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
+                join(mod.IfeInfo,
+                     mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
-                order_by(mod.NrClasses.nr_class_id)
+                order_by(mod.NrClasses.nr_class_id, mod.NrChains.rank)
 
             results = coll.defaultdict(empty)
             for result in query:
                 results[result.class_id]['members'].append({'id': result.id})
+                if result.rep:
+                    results[result.class_id]['representative'] = {
+                        'id': result.id,
+                        'length': result.length,
+                        'bp': result.bp
+                    }
                 results[result.class_id]['name'] = {
                     'class_id': result.class_id,
                     'full': result.full_name,

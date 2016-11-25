@@ -10,7 +10,7 @@ class HandleTest(StageTest):
     loader_class = Known
 
     def test_can_get_all_known_handles(self):
-        assert len(self.loader.handles()) == 151
+        assert len(self.loader.handles()) == 88
 
 
 class ClassesTest(StageTest):
@@ -23,7 +23,7 @@ class ClassesTest(StageTest):
             self.data[klass['name']['full']] = klass
 
     def test_can_get_all_known_classes(self):
-        assert len(self.data) == 63
+        assert len(self.data) == 31
 
     def test_can_compute_correct_data(self):
         assert self.data['NR_4.0_13436.1'] == {
@@ -33,12 +33,15 @@ class ClassesTest(StageTest):
                 {'id': '4V7R|1|D2'},
                 {'id': '4V7R|1|B2'}
             ],
+            'representative': {'id': '4V88|1|A7', 'length': 121, 'bp': 53},
             'name': {
-                'class_id': 3,
+                'class_id': 97,
                 'full': 'NR_4.0_13436.1',
                 'handle': '13436',
+                'cutoff': '4.0',
                 'version': 1
-            }
+            },
+            'release': '1.0'
         }
 
 
@@ -47,7 +50,7 @@ class MappingTest(StageTest):
 
     def test_can_generate_mapping_for_names(self):
         assert self.loader.mapping('1.0', ['NR_4.0_13436.1']) == {
-            'NR_4.0_13436.1': 3
+            'NR_4.0_13436.1': 97
         }
 
     def test_complains_if_no_release(self):
