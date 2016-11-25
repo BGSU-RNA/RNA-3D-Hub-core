@@ -14,6 +14,7 @@ from pymotifs.utils.naming import Namer
 from pymotifs.nr import representatives as reps
 from pymotifs.utils.naming import ChangeCounter
 from pymotifs.nr.groups.simplified import Grouper
+from pymotifs.nr.groups.simplified import ranking_key
 
 from pymotifs.constants import NR_REPRESENTATIVE_METHOD
 from pymotifs.constants import RESOLUTION_GROUPS
@@ -52,6 +53,14 @@ class Known(core.Base):
                 'release': release_id,
             }
 
+        def as_member(result):
+            return {
+                'id': result.id,
+                'length': result.length,
+                'bp': result.bp,
+                'resolution': result.resolution,
+            }
+
         with self.session() as session:
             query = session.query(mod.NrChains.ife_id.label('id'),
                                   mod.NrClasses.handle.label('handle'),
@@ -61,24 +70,25 @@ class Known(core.Base):
                                   mod.NrChains.rep,
                                   mod.IfeInfo.bp_count.label('bp'),
                                   mod.IfeInfo.length.label('length'),
+                                  mod.PdbInfo.resolution,
                                   ).\
                 join(mod.NrClasses,
                      mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
                 join(mod.IfeInfo,
                      mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
+                join(mod.PdbInfo,
+                     mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrChains.rank)
 
             results = coll.defaultdict(empty)
             for result in query:
-                results[result.class_id]['members'].append({'id': result.id})
+                member = as_member(result)
+                results[result.class_id]['members'].append(member)
                 if result.rep:
-                    results[result.class_id]['representative'] = {
-                        'id': result.id,
-                        'length': result.length,
-                        'bp': result.bp
-                    }
+                    results[result.class_id]['representative'] = member
+
                 results[result.class_id]['name'] = {
                     'class_id': result.class_id,
                     'full': result.full_name,
@@ -129,6 +139,13 @@ class Builder(core.Base):
     release as well as determine the representative.
     """
 
+    def load_parents(self, parent_release, cutoffs):
+        parents = {}
+        known = Known(self.config, self.session)
+        for cutoff in cutoffs:
+            parents[cutoff] = known.classes(parent_release, cutoff)
+        return parents
+
     def group(self, pdbs, **kwargs):
         """Group all pdbs into nr sets. This will look at the 'nr key in the
         config dict to determine if grouping should use discrepancy (key:
@@ -158,8 +175,23 @@ class Builder(core.Base):
             grouper.must_enforce_single_species = enforce
         return grouper(pdbs, **kwargs)
 
-    def named(self, groups, parents):
-        """Compute the naming and parents of all groups.
+    def name_groups(self, groups, parents):
+        """Compute the naming and parents of all groups. Note that this will
+        assign parent entries to all groups. However, these parent entries will
+        be incorrect when the group is filtered to only those entries within
+        a resolution cutoff. This can be corrected by `assign_parents`.
+
+        Parameters
+        ----------
+        groups : list
+            List of groups to assign parents to
+        parents : list
+            List of possible parent groups.
+
+        Returns
+        -------
+        named : list
+            List of groups with 'parents' entries and 'name' filled out.
         """
 
         ife_count = it.imap(lambda g: len(g['members']), groups)
@@ -260,8 +292,28 @@ class Builder(core.Base):
         )
 
     def filter_groups(self, groups, resolutions):
+        """This will filter each group so that it contains only the members
+        with that pass the given resolution cutoff. The cutoffs should be
+        be values that are accepted by within_cutoff. In addition, the groups
+        will have their group['name']['full'] and group['name']['cutoff']
+        entries set.
+
+        Parameters
+        ----------
+        groups : list
+            The list of group dictonaries to filter.
+        resolutions : list
+            A list of resolution cutoffs to apply. The cutoffs should be as
+
+        Returns
+        -------
+        groups : list
+            List of groups that have been filtered to contain only the
+            requested members.
+        """
+
         data = []
-        for entry in groups:
+        for entry in copy.deepcopy(groups):
             for resolution in resolutions:
                 filtered = self.within_cutoff(entry, resolution)
                 if not filtered:
@@ -271,13 +323,73 @@ class Builder(core.Base):
                 data.append(filtered)
         return sorted(data, key=lambda g: g['name']['cutoff'])
 
-    def find_representatives(self, groups):
+    def attach_parents(self, groups, parents):
+        """Load all parents of the given representatives. These groups should
+        already be named and thus have a parent assignment. However, we need to
+        load the parent information for all resolution cutoffs, as well as load
+        the representative of the parents, which are not already loaded.
+
+        Parameters
+        ----------
+        groups : list
+            List of all groups to attach the parents to.
+        parents : list
+            List of all known parents
+
+        Returns
+        -------
+        groups : list
+            List of groups with the 'parents' entries set correctly.
+        """
+
+        def as_key(group, cutoff=None):
+            if cutoff:
+                return (cutoff, group['name']['handle'])
+            return (group['name']['cutoff'], group['name']['handle'])
+
+        flattened = it.chain.from_iterable(parents.values())
+        mapping = {as_key(p): p for p in flattened}
+
+        data = []
+        for group in copy.deepcopy(groups):
+            cutoff = group['name']['cutoff']
+            parents = []
+            for parent in group['parents']:
+                key = as_key(parent, cutoff=cutoff)
+                if key in mapping:
+                    parents.append(mapping[key])
+            group['parents'] = parents
+            data.append(group)
+        return data
+
+    def find_representatives(self, groups, sorting_key=ranking_key):
+        """Compute the representative for each group. This will modify the
+        group to now have a 'representative' entry containing the
+        representative entry. In addition, the members will be sorted and
+        assigned a rank based upon the sorting. The representative will always
+        be placed in the first position and thus have rank 0, the lowest
+        rank.
+
+        Parameters
+        ----------
+        groups : list
+            List of groups to get representatives for
+        sorting_key : function, default ranking_key
+            A function to use when sorting the members
+
+        Returns
+        -------
+        groups : list
+            The list of groups which have been modified to include the
+            representative entry and the members are resorted.
+        """
+
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
-        for group in groups:
-            rep = rep_finder(group['members'])
-            rep['rank'] = 0
+        for group in copy.deepcopy(groups):
+            rep = rep_finder(group)
             group['representative'] = rep
+            group['members'].sort(key=sorting_key)
             group['members'].remove(rep)
             group['members'].insert(0, rep)
             for index, member in enumerate(group['members']):
@@ -301,16 +413,13 @@ class Builder(core.Base):
 
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
-        groups = self.group(pdbs)
+        groups = self.group(pdbs, **kwargs)
+        parents = self.load_parents(parent_release, cutoffs)
 
-        parents = {}
-        known = Known(self.config, self.session)
-        for cutoff in cutoffs:
-            parents[cutoff] = known.classes(parent_release, cutoff)
-
-        named = self.named(groups, parents['all'])
+        named = self.name_groups(groups, parents['all'])
         filtered = self.filter_groups(named, cutoffs)
-        with_reps = self.find_representatives(filtered)
+        with_parents = self.attach_parents(filtered, parents)
+        with_reps = self.find_representatives(with_parents)
 
         return {
             'parent_counts': self.counts(parents, with_reps),
@@ -340,23 +449,40 @@ class RepresentativeFinder(core.Base):
         return self._methods
 
     def method(self, name):
-        """Get a method
+        """Get the method with the given name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the method
+
+        Returns
+        -------
+            An object that can be called to find the representative.
         """
         finder = reps.fetch(name)
         return finder(self.config, self.session)
 
-    def __call__(self, possible, method=NR_REPRESENTATIVE_METHOD):
+    def __call__(self, group, method=NR_REPRESENTATIVE_METHOD):
         """Find the representative for the group.
 
-        :param list group: List of ifes to find the best for.
-        :returns: The ife which should be the representative.
+        Parameters
+        ----------
+        group : dict
+            The grouping to find a representative for.
+        method : str, default `pymotifs.constants.NR_REPRESENTATIVE_METHOD`
+            Name of the method to use for finding a representative.
+
+        Returns
+        -------
+            The ife which should be the representative.
         """
 
-        if not possible:
-            raise core.InvalidState("No ifes given")
+        if not group:
+            raise core.InvalidState("No group given")
 
         if method not in self.methods:
             raise core.InvalidState("Unknown method %s" % method)
 
         finder = self.method(method)
-        return finder(possible)
+        return finder(group)

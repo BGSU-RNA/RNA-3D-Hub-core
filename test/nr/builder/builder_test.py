@@ -89,9 +89,12 @@ class NamingTest(StageTest):
         parents = known.classes(release1, '4.0')
         current = known.classes(release2, '4.0')
         data = {}
-        for group in self.loader.named(current, parents):
+        for group in self.loader.name_groups(current, parents):
             data[(group['name']['handle'], group['name']['version'])] = group
         return data
+
+    def parent_names(self, group):
+        return [p['name'] for p in group['parents']]
 
     def test_it_will_name_given_groups(self):
         val = self.named('1.0', '2.0')
@@ -99,6 +102,66 @@ class NamingTest(StageTest):
         for (handle, version) in val.keys():
             assert handle
             assert version
+
+    def test_it_builds_initial_parent_assignments(self):
+        val = self.named('1.0', '2.0')
+        names = self.parent_names(val[('09385', 1)])
+        assert names == [{
+            'class_id': 104,
+            'cutoff': '4.0',
+            'full': 'NR_4.0_09385.1',
+            'handle': '09385',
+            'version': 1
+        }]
+
+
+class AttachingParentsTest(StageTest):
+    loader_class = Builder
+
+    def group_by_name(self, groups):
+        data = {}
+        for group in groups:
+            data[group['name']['full']] = group
+        return data
+
+    def name_and_filter(self, parent_release, child_release):
+        known = Known(self.loader.config, self.loader.session)
+        parents = known.classes(parent_release, 'all')
+        current = known.classes(child_release, 'all')
+        with_names = self.loader.name_groups(current, parents)
+        filtered = self.loader.filter_groups(with_names, ['4.0'])
+        return self.group_by_name(filtered)
+
+    def attach_parents(self, groups, parent_release):
+        parents = self.loader.load_parents(parent_release, ['4.0'])
+        attached = self.loader.attach_parents(groups, parents)
+        return self.group_by_name(attached)
+
+    def parent_names(self, group):
+        return [p['name'] for p in group['parents']]
+
+    def test_parents_are_incorrect_from_filtering(self):
+        named = self.name_and_filter('1.0', '2.0')
+        assert self.parent_names(named['NR_4.0_09385.1']) == [{
+            'full': 'NR_all_09385.1',
+            'cutoff': 'all',
+            'handle': '09385',
+            'version': 1,
+            'class_id': 136,
+        }]
+
+    def test_it_can_correctly_assign_all_parents(self):
+        named = self.name_and_filter('1.0', '2.0')
+        attached = self.attach_parents(named.values(), '1.0')
+        val = self.parent_names(attached['NR_4.0_09385.1'])
+        assert val == [{
+            'full': 'NR_4.0_09385.1',
+            'cutoff': '4.0',
+            'handle': '09385',
+            'version': 1,
+            'class_id': 104,
+        }]
+
 
 
 class ParentCountsTest(StageTest):
