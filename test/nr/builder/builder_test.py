@@ -28,8 +28,8 @@ class GroupingTest(StageTest):
         val = self.group(['1GID'])
         assert val == [{
             'members': [
-                {'length': 158, 'bp': 76, 'name': 'B', 'species': 32630, 'resolution': 2.5, 'chains': [{u'is_accompanying': 0, u'is_integral': 1, 'name': 'B', u'sequence': 'GAAUUGCGGGAAAGGGGUCAACAGCCGUUCAGUACCAAGUCUCAGGGGAAACUUUGAGAUGGCCUUGCAAAGGGUAUGGUAAUAAGCUGACGGACAUGGUCCUAACCACGCAGCCAAGUCCUAAGUCAACAGAUCUUCUGUUGAUAUGGAUGCAGUUC', 'pdb': '1GID', u'length': 158L, 'bp': 76L, 'species': 32630L, u'resolution': 2.5, 'id': '1GID|1|B'}], 'id': '1GID|1|B', 'rank': 0, 'pdb': '1GID'},
-                {'length': 158, 'bp': 73, 'name': 'A', 'species': 32630, 'resolution': 2.5, 'chains': [{u'is_accompanying': 0, u'is_integral': 1, 'name': 'A', u'sequence': 'GAAUUGCGGGAAAGGGGUCAACAGCCGUUCAGUACCAAGUCUCAGGGGAAACUUUGAGAUGGCCUUGCAAAGGGUAUGGUAAUAAGCUGACGGACAUGGUCCUAACCACGCAGCCAAGUCCUAAGUCAACAGAUCUUCUGUUGAUAUGGAUGCAGUUC', 'pdb': '1GID', u'length': 158L, 'bp': 73L, 'species': 32630L, u'resolution': 2.5, 'id': '1GID|1|A'}], 'id': '1GID|1|A', 'rank': 1, 'pdb': '1GID'}
+                {'length': 158, 'bp': 76, 'name': 'B', 'species': 32630, 'resolution': 2.5, 'chains': [{u'is_accompanying': 0, u'is_integral': 1, 'name': 'B', u'sequence': 'GAAUUGCGGGAAAGGGGUCAACAGCCGUUCAGUACCAAGUCUCAGGGGAAACUUUGAGAUGGCCUUGCAAAGGGUAUGGUAAUAAGCUGACGGACAUGGUCCUAACCACGCAGCCAAGUCCUAAGUCAACAGAUCUUCUGUUGAUAUGGAUGCAGUUC', 'pdb': '1GID', u'length': 158L, 'bp': 76L, 'species': 32630L, u'resolution': 2.5, 'id': '1GID|1|B', 'method': 'X-RAY DIFFRACTION'}], 'id': '1GID|1|B', 'rank': 0, 'pdb': '1GID', 'method': 'X-RAY DIFFRACTION'},
+                {'length': 158, 'bp': 73, 'name': 'A', 'species': 32630, 'resolution': 2.5, 'chains': [{u'is_accompanying': 0, u'is_integral': 1, 'name': 'A', u'sequence': 'GAAUUGCGGGAAAGGGGUCAACAGCCGUUCAGUACCAAGUCUCAGGGGAAACUUUGAGAUGGCCUUGCAAAGGGUAUGGUAAUAAGCUGACGGACAUGGUCCUAACCACGCAGCCAAGUCCUAAGUCAACAGAUCUUCUGUUGAUAUGGAUGCAGUUC', 'pdb': '1GID', u'length': 158L, 'bp': 73L, 'species': 32630L, u'resolution': 2.5, 'id': '1GID|1|A', 'method': 'X-RAY DIFFRACTION'}], 'id': '1GID|1|A', 'rank': 1, 'pdb': '1GID', 'method': 'X-RAY DIFFRACTION'}
             ]
         }]
 
@@ -118,10 +118,10 @@ class ParentCountsTest(StageTest):
                 'unchanged': 117,
             },
             'classes': {
-                'added': 14,
+                'added': 12,
                 'removed': 4,
-                'updated': 4,
-                'unchanged': 32,
+                'updated': 5,
+                'unchanged': 29,
             },
             'pdbs': {
                 'added': 9,
@@ -134,6 +134,7 @@ class BuildingTest(StageTest):
     loader_class = Builder
 
     def test_can_build_reasonable_sets(self):
+        self.loader.config['nr']['use_discrepancy'] = False
         val = self.loader(["124D", "157D"], '1.0', '2.0')
         assert val
         assert sorted(val.keys()) == ['groups', 'parent', 'parent_counts',
@@ -160,17 +161,17 @@ class BuildingTest(StageTest):
              'ifes': {'added': 0, 'removed': 97, 'unchanged': 1},
              'pdbs': {'added': 0, 'removed': 30},
              'cutoff': '3.5'},
-            {'classes': {'added': 0, 'removed': 31, 'unchanged': 1, 'updated': 0},
-             'ifes': {'added': 0, 'removed': 108, 'unchanged': 1},
-             'pdbs': {'added': 0, 'removed': 33},
+            {'classes': {'updated': 0, 'removed': 30, 'unchanged': 1, 'added': 0},
+             'pdbs': {'removed': 33, 'added': 0},
+             'ifes': {'unchanged': 1, 'removed': 108, 'added': 0},
              'cutoff': '4.0'},
-            {'classes': {'added': 0, 'removed': 36, 'unchanged': 1, 'updated': 0},
-             'ifes': {'added': 0, 'removed': 113, 'unchanged': 1},
-             'pdbs': {'added': 0, 'removed': 34},
+            {'classes': {'updated': 0, 'removed': 34, 'unchanged': 1, 'added': 0},
+             'pdbs': {'removed': 34, 'added': 0},
+             'ifes': {'unchanged': 1, 'removed': 113, 'added': 0},
              'cutoff': '20.0'},
-            {'classes': {'added': 1, 'removed': 39, 'unchanged': 1, 'updated': 0},
-             'ifes': {'added': 1, 'removed': 119, 'unchanged': 1},
-             'pdbs': {'added': 1, 'removed': 37},
+            {'classes': {'updated': 0, 'removed': 37, 'unchanged': 1, 'added': 1},
+             'pdbs': {'removed': 37, 'added': 1},
+             'ifes': {'unchanged': 1, 'removed': 119, 'added': 1},
              'cutoff': 'all'},
         ]
 
