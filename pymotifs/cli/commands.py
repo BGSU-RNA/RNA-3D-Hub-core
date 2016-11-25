@@ -89,7 +89,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
               help="Logging level to use")
 @click.option('--log-mode', default='a', type=click.Choice(['w', 'a']),
               help='Mode to open the  logging file')
-@click.option('--email/--no-email', default=False, help='Send email')
+@click.option('--email/--no-email', default=True, help='Send email')
 @click.version_option(__VERSION__)
 @click.pass_context
 def cli(ctx, **options):
