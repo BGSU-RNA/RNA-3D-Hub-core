@@ -1,3 +1,4 @@
+import copy
 import inspect
 import operator as op
 import itertools as it
@@ -7,6 +8,7 @@ from pymotifs.utils import known_subclasses
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
+from pymotifs.constants import NR_ALLOWED_METHODS
 
 
 def bp_per_nt(chain):
@@ -66,7 +68,7 @@ class Naive(Representative):
     name = 'naive'
 
     def __call__(self, group):
-        return sorted(group, key=bp_per_nt, reverse=True)[0]
+        return sorted(group['members'], key=bp_per_nt, reverse=True)[0]
 
 
 class Increase(Representative):
@@ -76,19 +78,25 @@ class Increase(Representative):
     """
     name = 'percent-increase'
 
-    def naive_best(self, group):
+    def initial_representative(self, group):
         """Find the best chain terms of bps/nts. This is the starting point for
         finding the representative in a set of ifes. This method is naive
         because it does not favor more complete structures. In addition, it is
         very sensitive to minor changes in number of basepairs and nts.
 
-        :param list group: A list of dictonaries to find the naive
-        representative of.
-        :returns: The initial representative.
-        """
-        return max(group, key=bp_per_nt)
+        Parameters
+        ----------
+        members : dict
+            A group dict to find the representative of.
 
-    def candidates(self, best, group):
+        Returns
+        --------
+            The initial representative.
+        """
+        naive = Naive(self.config, self.session)
+        return naive(group)
+
+    def candidates(self, best, members):
         """Find all possible candidates for a representative within the group,
         given a current best ife. This finds all chains that have at least as
         many basepairs and nucleotides as the best chain. The chains will be
@@ -102,7 +110,7 @@ class Increase(Representative):
         len = op.itemgetter('length')
         bp = op.itemgetter('bp')
         same = lambda c: bp(c) == bp(best) and len(c) == len(best)
-        possible = it.ifilter(lambda c: len(c) >= len(best), group)
+        possible = it.ifilter(lambda c: len(c) >= len(best), members)
         possible = it.ifilter(lambda c: bp(c) >= bp(best), possible)
         possible = it.ifilterfalse(same, possible)
         return sorted(possible, key=bp_per_nt, reverse=True)
@@ -145,28 +153,67 @@ class Increase(Representative):
                 return candidate
         return representative
 
-    def __call__(self, possible, length_increase=NR_LENGTH_PERCENT_INCREASE,
+    def filter_group(self, group, methods=NR_ALLOWED_METHODS):
+        """This will filter the group that is being examiend to just a copy of
+        the parent, and members entries. This is done so that we have a group
+        that we can manipulate without messing up parts elsewhere. In addition,
+        the members of the group will be filtered to only those with allowed
+        methods. These are the methods listed in the methods set.
+
+        Parameters
+        ----------
+        group : dict
+            A group dictonary that must have 'parent' and 'members' entries.
+        methods : set
+            A set of method names that are allowed. If no members have the
+            given method then all are used.
+
+        Returns
+        -------
+        copied : dict
+            A group dictonary with only the 'parent' and 'members' entries.
+        """
+
+        meth = op.itemgetter('method')
+        members = [ife for ife in group['members'] if meth(ife) in methods]
+        if not members:
+            members = group['members']
+
+        return {
+            'parent': copy.deepcopy(group.get('parent', [])),
+            'members': copy.deepcopy(members),
+        }
+
+    def __call__(self, initial, length_increase=NR_LENGTH_PERCENT_INCREASE,
                  bp_increase=NR_BP_PERCENT_INCREASE):
         """Find the representative for the group.
 
-        :param list group: List of ifes to find the best for.
-        :returns: The ife which should be the representative.
+        Parameters
+        ----------
+        group : list
+            List of IFE's to find the representative of.
+        length_increase : float
+            The fraction increase in resolved nucleotides that an IFE must have
+            to be selected as representative.
+        bp_increase : float
+            The fraction increase of basepairs that an IFE must have to be
+            selected as representative.
+
+        Returns
+        -------
+            representative : dict
+        The ife which should be the representative.
         """
 
-        # Prefer any xray over any cyro em, as cyro modesl are generally built
-        # using x-ray and not yet carefully modeled.
-        group = [ife for ife in possible if ife['method'] == 'X-RAY DIFFRACTION']
-        if not group:
-            group = possible
-
-        best = self.naive_best(group)
+        group = self.filter_group(initial)
+        best = self.initial_representative(group)
         if not best:
             raise core.InvalidState("No current representative")
         self.logger.debug("Naive representative: %s", best['id'])
 
         rep = best
         while True:
-            candidates = self.candidates(rep, group)
+            candidates = self.candidates(rep, group['members'])
             self.logger.debug("Found %i representative candidates",
                               len(candidates))
             new_rep = self.best_above_cutoffs(rep, candidates,
@@ -191,7 +238,54 @@ class AnyIncrease(Increase):
     """
     name = 'any-increase'
 
-    def __call__(self, possible):
-        return super(AnyIncrease, self).__call__(possible,
+    def __call__(self, group):
+        return super(AnyIncrease, self).__call__(group,
                                                  length_increase=0,
                                                  bp_increase=0)
+
+
+class ParentIncrease(Increase):
+    """This is a modification of the percent increase method which uses the
+    parent representative as the initial representative, if possible. If this
+    is not possible then it will go back to the simple bp/nt selection.
+    """
+    name = 'parent-percent-increase'
+
+    def initial_representative(self, group):
+        """Select the initial representative. This will be the representative
+        for the parent if there is only 1 parent. If there is more than 1
+        parent, or none, then this will switch to bp/nt.
+
+        Parameters
+        ----------
+        group : dict
+            A group dict that must have a parent entry.
+
+        Returns
+        -------
+            The initial representative.
+        """
+
+        if not group['parent']:
+            self.logger.debug("No parent to use representative of")
+            return super(ParentIncrease, self).initial_representative(group)
+
+        if len(group['parent']) > 1:
+            self.logger.debug("Multiple parents, using naive")
+            return super(ParentIncrease, self).initial_representative(group)
+
+        parent = group['parent'][0]
+        previous = parent.get('representative', None)
+        if not previous:
+            self.logger.warning("Loaded parent %s has no representative, using"
+                                " naive", parent)
+            return super(ParentIncrease, self).initial_representative(group)
+
+        current_ids = {mem['id'] for mem in group['members']}
+        if previous['id'] not in current_ids:
+            self.logger.warning("Not using previous rep %s, because not in "
+                                "current group: %s",
+                                previous['id'], current_ids)
+            return super(ParentIncrease, self).initial_representative(group)
+
+        return previous
