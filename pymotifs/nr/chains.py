@@ -48,7 +48,7 @@ class Loader(BaseLoader):
                     'nr_class_id': group['name']['class_id'],
                     'nr_release_id': release,
                     'rank': chain['rank'],
-                    'rep': chain == group['representative'],
+                    'rep': chain['id'] == group['representative']['id'],
                 })
         return data
 
