@@ -1,3 +1,4 @@
+import abc
 import copy
 import inspect
 import operator as op
@@ -31,13 +32,20 @@ class Representative(core.Base):
     """Just a base class for all things that find representatives. This is only
     for book keeping purposes and implements nothing.
     """
-    pass
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def method(self):
+        """The method name for this representative finder. This should be a
+        unique string among all representative subclasses.
+        """
+        return None
 
 
 def known():
     finders = []
     for subclass in known_subclasses(Representative, globals()):
-        finders.append((subclass.name, subclass))
+        finders.append((subclass.method, subclass))
     return finders
 
 
@@ -56,7 +64,7 @@ def fetch(name):
     """
     for key, value in globals().items():
         if inspect.isclass(value) and issubclass(value, Representative) and \
-                value.name == name:
+                getattr(value, 'method', None) == name:
             return value
     raise ValueError("Unknown method %s" % name)
 
@@ -65,7 +73,7 @@ class Naive(Representative):
     """This will select the naive representative. This just selects the chain
     with the most bp/nt and uses that as the representative.
     """
-    name = 'naive'
+    method = 'naive'
 
     def __call__(self, group):
         return sorted(group['members'], key=bp_per_nt, reverse=True)[0]
@@ -76,7 +84,7 @@ class Increase(Representative):
     the best in terms of bp/nt and attempt to find all those with more bp's and
     nts in the set.
     """
-    name = 'percent-increase'
+    method = 'percent-increase'
 
     def initial_representative(self, group):
         """Find the best chain terms of bps/nts. This is the starting point for
@@ -236,7 +244,7 @@ class AnyIncrease(Increase):
     """A modification of the percent-increase representative method that will
     instead select the representative if it has any increase in length and bp.
     """
-    name = 'any-increase'
+    method = 'any-increase'
 
     def __call__(self, group):
         return super(AnyIncrease, self).__call__(group,
@@ -249,7 +257,7 @@ class ParentIncrease(Increase):
     parent representative as the initial representative, if possible. If this
     is not possible then it will go back to the simple bp/nt selection.
     """
-    name = 'parent-percent-increase'
+    method = 'parent-percent-increase'
 
     def initial_representative(self, group):
         """Select the initial representative. This will be the representative
