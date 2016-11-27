@@ -21,5 +21,6 @@ class RepresentativeFinderTest(StageTest):
         with pytest.raises(core.InvalidState):
             self.loader({'id': 'a'}, method='impossible')
 
+    @pytest.mark.skip()
     def test_can_pick_representative_using_method(self):
         pass
