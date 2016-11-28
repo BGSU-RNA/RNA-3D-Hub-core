@@ -8,6 +8,19 @@ from pymotifs.nr.groups.simplified import Grouper
 from pymotifs.nr.groups.simplified import ranking_key
 
 
+def basic_data(id, length=100, resolution=2.0, method='X-RAY DIFFRACTION',
+               species=512):
+    return {
+        'id': str(id),
+        'db_id': id,
+        'chains': [{'db_id': id}],
+        'length': length,
+        'resolution': resolution,
+        'method': method,
+        'species': species,
+    }
+
+
 class RankingChainsTest(StageTest):
     loader_class = Grouper
 
@@ -176,23 +189,23 @@ class SimilarSpeciesTest(StageTest):
     loader_class = Grouper
 
     def test_says_true_if_same(self):
-        g1 = {'id': 1, 'species': 1}
-        g2 = {'id': 2, 'species': 1}
-        self.assertTrue(self.loader.are_similar_species(g1, g2))
+        g1 = basic_data(1, species=1)
+        g2 = basic_data(2, species=1)
+        assert self.loader.are_similar_species(g1, g2) is True
 
     def test_says_different_if_disagree(self):
-        g1 = {'id': 1, 'species': 1}
-        g2 = {'id': 2, 'species': 2}
+        g1 = basic_data(1, species=1)
+        g2 = basic_data(2, species=2)
         self.assertFalse(self.loader.are_similar_species(g1, g2))
 
     def test_ignores_difference_if_synethic(self):
-        g1 = {'id': 1, 'species': 1}
-        g2 = {'id': 2, 'species': 32630}
+        g1 = basic_data(1, species=1)
+        g2 = basic_data(2, species=32630)
         self.assertTrue(self.loader.are_similar_species(g1, g2))
 
     def test_ignores_difference_if_none(self):
-        g1 = {'id': 1, 'species': 1}
-        g2 = {'id': 2, 'species': None}
+        g1 = basic_data(1, species=1)
+        g2 = basic_data(2, species=None)
         self.assertTrue(self.loader.are_similar_species(g1, g2))
 
 
@@ -210,54 +223,43 @@ class DiscrepancyTest(StageTest):
         self.good_disc = ft.partial(self.loader.has_good_discrepancy,
                                     self.disc)
 
-    def basic_data(self, id, length=100, resolution=2.0,
-                   method='X-RAY DIFFRACTION'):
-        return {
-            'id': id,
-            'db_id': id,
-            'chains': [{'db_id': id}],
-            'length': length,
-            'resolution': resolution,
-            'method': method
-        }
-
     def test_it_says_true_if_none_for_first(self):
-        g1 = self.basic_data(2)
-        g2 = self.basic_data(1)
+        g1 = basic_data(2)
+        g2 = basic_data(1)
         assert self.good_disc(g1, g2) is True
 
     def test_it_says_false_if_none_for_second(self):
-        g1 = self.basic_data(1)
-        g2 = self.basic_data(3)
+        g1 = basic_data(1)
+        g2 = basic_data(3)
         assert self.good_disc(g1, g2) is False
 
     def test_it_says_false_if_over_cutoff(self):
-        g1 = self.basic_data(1)
-        g2 = self.basic_data(4)
+        g1 = basic_data(1)
+        g2 = basic_data(4)
         assert self.good_disc(g1, g2) is False
 
     def test_it_says_true_if_under_cutoff(self):
-        g1 = self.basic_data(1)
-        g2 = self.basic_data(2)
+        g1 = basic_data(1)
+        g2 = basic_data(2)
         assert self.good_disc(g1, g2) is True
 
     def test_says_true_if_too_big_resolution(self):
-        g1 = self.basic_data(1, resolution=5.0)
-        g2 = self.basic_data(4)
+        g1 = basic_data(1, resolution=5.0)
+        g2 = basic_data(4)
         assert self.good_disc(g1, g2) is True
         assert self.good_disc(g2, g1) is True
         assert self.good_disc(g1, g1) is True
 
     def test_says_true_if_no_resolution(self):
-        g1 = self.basic_data(1, resolution=None)
-        g2 = self.basic_data(4, resolution=1.0)
+        g1 = basic_data(1, resolution=None)
+        g2 = basic_data(4, resolution=1.0)
         assert self.good_disc(g1, g2) is True
         assert self.good_disc(g2, g1) is True
         assert self.good_disc(g1, g1) is True
 
     def test_says_true_if_too_short(self):
-        g1 = self.basic_data(1, length=2)
-        g2 = self.basic_data(4, length=10)
+        g1 = basic_data(1, length=2)
+        g2 = basic_data(4, length=10)
         assert self.good_disc(g1, g2) is True
         assert self.good_disc(g2, g1) is True
         assert self.good_disc(g1, g1) is True
@@ -392,30 +394,25 @@ class PairsTest(StageTest):
             4: {},
         }
         self.chains = [
-            {'id': '0', 'db_id': 0, 'chains': [{'db_id': 0}], 'species': None},
-            {'id': '1', 'db_id': 1, 'chains': [{'db_id': 1}], 'species': 1},
-            {'id': '2', 'db_id': 2, 'chains': [{'db_id': 2}], 'species': 32630},
-            {'id': '3', 'db_id': 3, 'chains': [{'db_id': 3}], 'species': 1},
-            {'id': '4', 'db_id': 4, 'chains': [{'db_id': 4}], 'species': 1}
+            basic_data(0, species=None),
+            basic_data(1, species=1),
+            basic_data(2, species=32630),
+            basic_data(3, species=1),
+            basic_data(4, species=1),
         ]
 
     def test_will_create_all_valid_pairs(self):
-        val = list(self.loader.pairs(self.chains, self.align, self.disc))
-        assert val == [
+        assert list(self.loader.pairs(self.chains, self.align, self.disc)) == [
             (self.chains[0], self.chains[1]),
             (self.chains[0], self.chains[4]),
-            (self.chains[2], self.chains[3]),
         ]
 
     def test_will_create_pairs_despite_bad_second(self):
         self.align[1][-1] = False
-        val = list(self.loader.pairs(self.chains, self.align, self.disc))
-        ans = [
+        assert list(self.loader.pairs(self.chains, self.align, self.disc)) == [
             (self.chains[0], self.chains[1]),
             (self.chains[0], self.chains[4]),
-            (self.chains[2], self.chains[3]),
         ]
-        self.assertEquals(ans, val)
 
 
 class ValidIfeTest(StageTest):
