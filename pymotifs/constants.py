@@ -141,3 +141,7 @@ NR_REPRESENTATIVE_METHOD = 'percent-increase'
 """What representative selection method to use"""
 
 RSRZ_PAIRED_OUTLIERS = 2
+
+NR_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
+"""List of methods are allowed when selecting the representative of an NR
+group"""
