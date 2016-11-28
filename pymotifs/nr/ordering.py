@@ -50,7 +50,7 @@ class Loader(core.SimpleLoader):
         """
 
         latest = None
-        if kwargs['manual'].get('nr_release_id', False):
+        if kwargs.get('manual', {}).get('nr_release_id', False):
             latest = kwargs['manual']['nr_release_id']
         else:
             data = self.cached(NR_CACHE_NAME)
@@ -159,6 +159,11 @@ class Loader(core.SimpleLoader):
 
         if not distances:
             raise core.Skip("No distances, skipping class: %i" % class_id)
+
+        if set(distances.keys()) != ifes:
+            missing = ', '.join(ifes - set(distances.keys()))
+            self.logger.warning("Did not load distances for all pairs in: %i."
+                                " Missing %s", class_id, missing)
 
         return distances
 

@@ -9,9 +9,9 @@ from test import StageTest
 class ProcessTest(StageTest):
     loader_class = Loader
 
-    def test_it_can_get_all_class_ids(self):
-        val = self.loader.to_process([])
-        assert len(val) == 1090
+    def test_it_will_use_ids_from_given_pdbs(self):
+        val = self.loader.to_process([], manual={'nr_release_id': '1.0'})
+        assert len(val) == 165
 
 
 class QueryingTest(StageTest):
@@ -51,9 +51,16 @@ class MembersTest(StageTest):
 class DistancesTest(StageTest):
     loader_class = Loader
 
+    @pytest.mark.xfail(reason="1UTD|1|1 has no similarities yet")
     def test_it_can_load_all_distances(self):
         members = self.loader.members(9)
         distances = self.loader.distances(9, members)
+        ans = sorted(['1UTD|1|0', '1UTD|1|1', '1UTD|1|2', '1UTD|1|3',
+                      '1UTD|1|4', '1UTD|1|5', '1UTD|1|6', '1UTD|1|7',
+                      '1UTD|1|8', '1UTD|1|9', '1UTD|1|Z'])
+
+        assert sorted(m[0] for m in members) == ans
+        assert sorted(distances['1UTD|1|0'].keys()) == ans
         assert len(distances) == len(members)
         assert distances['1UTD|1|0'] == {
             '1UTD|1|1': 1.11285,
