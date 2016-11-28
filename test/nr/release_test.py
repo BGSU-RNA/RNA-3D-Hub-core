@@ -8,10 +8,8 @@ class ReleaseTest(StageTest):
 
     def test_gets_next_release_id(self):
         self.loader.config['release_mode']['nrlist'] = 'minor'
-        data = self.loader.data([])
-        self.assertEquals('4.0', data.nr_release_id)
+        assert self.loader.next_id('3.0') == '3.1'
 
     def test_gets_next_release_using_config(self):
         self.loader.config['release_mode']['nrlist'] = 'major'
-        data = self.loader.data([])
-        self.assertEquals('5.0', data.nr_release_id)
+        assert self.loader.next_id('3.0') == '4.0'
