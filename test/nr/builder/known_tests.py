@@ -28,12 +28,12 @@ class ClassesTest(StageTest):
     def test_can_compute_correct_data(self):
         assert self.data['NR_4.0_13436.1'] == {
             'members': [
-                {'id': '4V88|1|A7'},
-                {'id': '4V88|1|A3'},
-                {'id': '4V7R|1|D2'},
-                {'id': '4V7R|1|B2'}
+                {'id': '4V88|1|A7', 'bp': 53, 'length': 121, 'resolution': 3.0},
+                {'id': '4V88|1|A3', 'bp': 53, 'length': 121, 'resolution': 3.0},
+                {'id': '4V7R|1|D2', 'bp': 34, 'length': 121, 'resolution': 4.0},
+                {'id': '4V7R|1|B2', 'bp': 33, 'length': 121, 'resolution': 4.0},
             ],
-            'representative': {'id': '4V88|1|A7', 'length': 121, 'bp': 53},
+            'representative': {'id': '4V88|1|A7', 'length': 121, 'bp': 53, 'resolution': 3.0},
             'name': {
                 'class_id': 97,
                 'full': 'NR_4.0_13436.1',
