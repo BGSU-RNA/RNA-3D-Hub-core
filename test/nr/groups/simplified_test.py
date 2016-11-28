@@ -207,48 +207,60 @@ class DiscrepancyTest(StageTest):
             3: {3: 0, 5: 0.1},
             4: {},
         }
-        self.method = ft.partial(self.loader.has_good_discrepancy, self.disc)
+        self.good_disc = ft.partial(self.loader.has_good_discrepancy,
+                                    self.disc)
+
+    def basic_data(self, id, length=100, resolution=2.0,
+                   method='X-RAY DIFFRACTION'):
+        return {
+            'id': id,
+            'db_id': id,
+            'chains': [{'db_id': id}],
+            'length': length,
+            'resolution': resolution,
+            'method': method
+        }
 
     def test_it_says_true_if_none_for_first(self):
-        g1 = {'id': 1, 'db_id': 2, 'chains': [{'db_id': 2}]}
-        g2 = {'id': 2, 'db_id': 1, 'chains': [{'db_id': 1}]}
-        self.assertTrue(self.method(g1, g2))
+        g1 = self.basic_data(2)
+        g2 = self.basic_data(1)
+        assert self.good_disc(g1, g2) is True
 
     def test_it_says_false_if_none_for_second(self):
-        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}]}
-        g2 = {'id': 2, 'db_id': 3, 'chains': [{'db_id': 3}]}
-        self.assertFalse(self.method(g1, g2))
+        g1 = self.basic_data(1)
+        g2 = self.basic_data(3)
+        assert self.good_disc(g1, g2) is False
 
     def test_it_says_false_if_over_cutoff(self):
-        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}]}
-        g2 = {'id': 2, 'db_id': 4, 'chains': [{'db_id': 4}]}
-        self.assertFalse(self.method(g1, g2))
+        g1 = self.basic_data(1)
+        g2 = self.basic_data(4)
+        assert self.good_disc(g1, g2) is False
 
     def test_it_says_true_if_under_cutoff(self):
-        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}]}
-        g2 = {'id': 2, 'db_id': 2, 'chains': [{'db_id': 2}]}
-        self.assertTrue(self.method(g1, g2))
+        g1 = self.basic_data(1)
+        g2 = self.basic_data(2)
+        assert self.good_disc(g1, g2) is True
 
     def test_says_true_if_too_big_resolution(self):
-        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}], 'resolution': 5.0}
-        g2 = {'id': 2, 'db_id': 4, 'chains': [{'db_id': 4}], 'resolution': 1.0}
-        assert self.method(g1, g2) is True
-        assert self.method(g2, g1) is True
-        assert self.method(g1, g1) is True
+        g1 = self.basic_data(1, resolution=5.0)
+        g2 = self.basic_data(4)
+        assert self.good_disc(g1, g2) is True
+        assert self.good_disc(g2, g1) is True
+        assert self.good_disc(g1, g1) is True
 
     def test_says_true_if_no_resolution(self):
-        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}], 'resolution': None}
-        g2 = {'id': 2, 'db_id': 4, 'chains': [{'db_id': 4}], 'resolution': 1.0}
-        assert self.method(g1, g2) is True
-        assert self.method(g2, g1) is True
-        assert self.method(g1, g1) is True
+        g1 = self.basic_data(1, resolution=None)
+        g2 = self.basic_data(4, resolution=1.0)
+        assert self.good_disc(g1, g2) is True
+        assert self.good_disc(g2, g1) is True
+        assert self.good_disc(g1, g1) is True
 
     def test_says_true_if_too_short(self):
-        g1 = {'id': 1, 'db_id': 1, 'chains': [{'db_id': 1}], 'length': 2}
-        g2 = {'id': 2, 'db_id': 4, 'chains': [{'db_id': 4}], 'length': 10}
-        assert self.method(g1, g2) is True
-        assert self.method(g2, g1) is True
-        assert self.method(g1, g1) is True
+        g1 = self.basic_data(1, length=2)
+        g2 = self.basic_data(4, length=10)
+        assert self.good_disc(g1, g2) is True
+        assert self.good_disc(g2, g1) is True
+        assert self.good_disc(g1, g1) is True
 
 
 class AlignmentTest(StageTest):
@@ -309,7 +321,7 @@ class LoadingIfeTest(StageTest):
 
     def test_assigns_species_by_first_chain(self):
         assert self.data[3]['id'] == '4V9Q|1|BV'
-        self.assertEquals(562, self.data[3]['species'])
+        self.assertEquals(512, self.data[3]['species'])
 
     def test_sets_length_to_first(self):
         self.assertEquals(77, self.data[3]['length'])
@@ -322,8 +334,9 @@ class LoadingIfeTest(StageTest):
 
     def test_sets_db_id_to_first_chain_db_id(self):
         val = self.data[0]
+        print(val)
         self.assertEquals(val['db_id'], val['chains'][0]['db_id'])
-        self.assertEquals(1548, val['db_id'])
+        self.assertEquals(1527, val['db_id'])
 
     def test_sorts_ife_chains_by_stored_index(self):
         ife = self.data[3]
@@ -368,38 +381,39 @@ class PairsTest(StageTest):
     def setUp(self):
         super(PairsTest, self).setUp()
         self.disc = {
-            1: {2: 0.4, 4: 1, 5: 0.2},
-            3: {3: 0, 5: 0.1}
+            0: {1: 0.4, 3: 1, 4: 0.2},
+            2: {2: 0, 4: 0.1}
         }
         self.align = {
-            1: {1: True, 2: True, 3: False, 4: False, 5: False},
-            2: {},
-            3: {1: False, 2: False, 3: True, 4: True, 5: False},
+            0: {0: True, 1: True, 2: False, 3: False, 4: True},
+            1: {},
+            2: {0: False, 1: False, 2: True, 3: True, 4: False},
+            3: {},
             4: {},
-            5: {},
         }
         self.chains = [
-            {'id': '0', 'db_id': 1, 'chains': [{'db_id': 1}], 'species': None},
-            {'id': '1', 'db_id': 2, 'chains': [{'db_id': 2}], 'species': 1},
-            {'id': '2', 'db_id': 3, 'chains': [{'db_id': 3}], 'species': 32630},
-            {'id': '3', 'db_id': 4, 'chains': [{'db_id': 4}], 'species': 1},
-            {'id': '4', 'db_id': 5, 'chains': [{'db_id': 5}], 'species': 1}
+            {'id': '0', 'db_id': 0, 'chains': [{'db_id': 0}], 'species': None},
+            {'id': '1', 'db_id': 1, 'chains': [{'db_id': 1}], 'species': 1},
+            {'id': '2', 'db_id': 2, 'chains': [{'db_id': 2}], 'species': 32630},
+            {'id': '3', 'db_id': 3, 'chains': [{'db_id': 3}], 'species': 1},
+            {'id': '4', 'db_id': 4, 'chains': [{'db_id': 4}], 'species': 1}
         ]
 
     def test_will_create_all_valid_pairs(self):
         val = list(self.loader.pairs(self.chains, self.align, self.disc))
-        ans = [
+        assert val == [
             (self.chains[0], self.chains[1]),
-            (self.chains[0], self.chains[4])
+            (self.chains[0], self.chains[4]),
+            (self.chains[2], self.chains[3]),
         ]
-        self.assertEquals(ans, val)
 
     def test_will_create_pairs_despite_bad_second(self):
         self.align[1][-1] = False
         val = list(self.loader.pairs(self.chains, self.align, self.disc))
         ans = [
             (self.chains[0], self.chains[1]),
-            (self.chains[0], self.chains[4])
+            (self.chains[0], self.chains[4]),
+            (self.chains[2], self.chains[3]),
         ]
         self.assertEquals(ans, val)
 
