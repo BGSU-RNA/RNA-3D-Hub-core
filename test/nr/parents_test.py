@@ -2,23 +2,22 @@ import pytest
 
 from test import StageTest
 
-from pymotifs import core
 from pymotifs.nr.parents import Loader
 
 
 class ParentInfoTest(StageTest):
     loader_class = Loader
 
-    def setUp(self):
-        super(ParentInfoTest, self).setUp()
-        self.grouping = {
-        }
-
-    def test_it_fails_without_a_grouping(self):
-        self.assertRaises(core.InvalidState, self.loader.parents, {}, {'a': 1})
-
-    def test_it_fails_without_a_mapping(self):
-        self.assertRaises(core.InvalidState, self.loader.parents, {'a': 1}, {})
+    def test_build_valid_data(self):
+        val = self.loader.parents('1.0', [
+            {'name': {'class_id': 1}, 'parents': [{'name': {'class_id': -2}},
+                                                  {'name': {'class_id': -3}}]},
+            {'name': {'class_id': 3}, 'parents': []},
+        ])
+        assert val == [
+            {'nr_class_id': 1, 'nr_release_id': '1.0', 'nr_class_parent_id': -2},
+            {'nr_class_id': 1, 'nr_release_id': '1.0', 'nr_class_parent_id': -3},
+        ]
 
     def test_knows_if_no_parents(self):
         data = {'parent_counts': [
@@ -69,20 +68,11 @@ class ParentInfoTest(StageTest):
         assert self.loader.no_parents(both) is False
 
     @pytest.mark.skip()
-    def test_it_gets_previous_release(self):
-        _, release_id = self.loader.parents(self.grouping)
-        self.assertEquals('1.0', release_id)
-
-    @pytest.mark.skip()
     def test_it_gets_all_parent_names(self):
         val, _ = self.loader.parents(self.grouping)
         ans = sorted(['NR_1.5_01181.1', 'NR_1.5_08345.1', 'NR_1.5_23793.1',
                       'NR_1.5_26877.1', 'NR_1.5_31163.1'])
         self.assertEquals(ans, sorted(val))
-
-    @pytest.mark.skip()
-    def test_fails_if_no_parent_names_found_with_previous_release(self):
-        pass
 
     @pytest.mark.skip()
     def test_gives_no_parents_if_no_previous_release(self):
