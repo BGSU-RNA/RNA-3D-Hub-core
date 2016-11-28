@@ -48,9 +48,9 @@ class Grouper(core.Base):
         for ife1, ife2 in it.product(ifes, repeat=2):
             chain1 = ife1.chain
             chain2 = ife2.chain
-            count = interactions.get(chain1, {}).get(chain2, 0L)
-            same[chain1][chain2] = 0L
-            rest[chain1][chain2] = 0L
+            count = interactions.get(chain1, {}).get(chain2, 0)
+            same[chain1][chain2] = 0
+            rest[chain1][chain2] = 0
             if ife1.is_structured == ife2.is_structured:
                 same[chain1][chain2] = count
             else:
