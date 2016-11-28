@@ -54,7 +54,13 @@ def valid_chain(chain):
         True if this chain can have a discrepancy computed using it.
     """
 
+    if 'length' not in chain:
+        return False
+
     if chain['length'] < MIN_NT_DISCREPANCY:
+        return False
+
+    if 'method' not in chain:
         return False
 
     if chain['method'] != 'SOLUTION NMR':
