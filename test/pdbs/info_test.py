@@ -7,7 +7,7 @@ class DataTest(StageTest):
     loader_class = Loader
 
     def test_it_can_create_data(self):
-        val = self.loader.data(['2AW7'])[0]['resolution']
+        val = self.loader.data(['2AW7'])[0].resolution
         ans = 3.46
         self.assertEqual(ans, val)
 
@@ -17,7 +17,7 @@ class DataTest(StageTest):
 
     def test_it_gets_the_data_correctly(self):
         data = self.loader.data(['2AW7', '1GID', '1S72'])
-        val = sorted([d['resolution'] for d in data])
+        val = sorted([d.resolution for d in data])
         self.assertEquals([2.4, 2.5, 3.46], val)
 
 
