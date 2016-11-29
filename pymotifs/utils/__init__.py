@@ -336,7 +336,7 @@ class StructureFileFinder(object):
 
     def __call__(self, pdb):
         filename = os.path.join(self.location, pdb + '.' + self.extension)
-        filename = os.path.abspath(filename)
+        filename = os.path.realpath(os.path.abspath(filename))
 
         if not os.path.exists(filename):
             if not self.strict:
