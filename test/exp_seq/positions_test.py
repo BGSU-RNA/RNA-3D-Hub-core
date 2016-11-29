@@ -56,14 +56,13 @@ class RealDataTest(StageTest):
         assert self.loader.has_data(-1) is False
 
     def test_can_correctly_get_exp_seq_ids(self):
-        assert self.loader.to_process(['1GID']) == [51]
+        assert self.loader.to_process(['1GID']) == [40]
 
     def test_it_can_load_a_sequence(self):
-        assert self.loader.sequence(1) == 'AAA'
+        assert self.loader.sequence(1) == 'CA'
 
     def test_can_create_positions(self):
         assert self.loader.data(1) == [
-            {'exp_seq_id': 1, 'unit': 'A', 'normalized_unit': 'A', 'index': 0},
+            {'exp_seq_id': 1, 'unit': 'C', 'normalized_unit': 'C', 'index': 0},
             {'exp_seq_id': 1, 'unit': 'A', 'normalized_unit': 'A', 'index': 1},
-            {'exp_seq_id': 1, 'unit': 'A', 'normalized_unit': 'A', 'index': 2},
         ]
