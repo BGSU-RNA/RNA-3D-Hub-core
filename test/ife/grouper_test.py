@@ -115,7 +115,7 @@ class GroupingTest(StageTest):
                   IfeChain(internal=0, pdb='1S72', model=1, chain='B', length=10)]
         interactions = {'A': {'B': 10}, 'B': {'A': 10}}
         val = self.grouping(chains, interactions)
-        ans = {'1S72|1|A': ['1S72|1|A'], '1S72|1|B': ['1S72|1|A']}
+        ans = {'1S72|1|A': ['1S72|1|A+1S72|1|B'], '1S72|1|B': ['1S72|1|A+1S72|1|B']}
         self.assertEquals(ans, val)
 
     def test_unstructured_single_chains_will_be_alone(self):
@@ -132,10 +132,11 @@ class GroupingTest(StageTest):
             'B': {'A': 1, 'C': 5},
             'C': {'A': 5, 'B': 5}
         }
-        val = self.grouping(chains, interactions)
-        ans = {'1S72|1|A': ['1S72|1|A'], '1S72|1|B': ['1S72|1|B'],
-               '1S72|1|C': ['1S72|1|A', '1S72|1|B']}
-        self.assertEquals(ans, val)
+        assert self.grouping(chains, interactions) == {
+            '1S72|1|A': ['1S72|1|A'],
+            '1S72|1|B': ['1S72|1|B'],
+            '1S72|1|C': ['1S72|1|A', '1S72|1|B']
+        }
 
     def test_structured_chains_joined_only_by_unstructureds_arent_joined(self):
         chains = [IfeChain(internal=10, pdb='1S72', model=1, chain='A', length=50),
@@ -187,16 +188,15 @@ class RealDataTest(StageTest):
         return dict(grouping)
 
     def test_1EKD_groups(self):
-        ans = {
-            '1EKD|1|A': ['1EKD|1|A'],
-            '1EKD|1|B': ['1EKD|1|A']
+        assert self.grouping('1EKD') == {
+            '1EKD|1|A': ['1EKD|1|A+1EKD|1|B'],
+            '1EKD|1|B': ['1EKD|1|A+1EKD|1|B']
         }
-        self.assertEquals(ans, self.grouping('1EKD'))
 
     def test_1A34_groups(self):
         ans = {
-            '1A34|1|B': ['1A34|1|B'],
-            '1A34|1|C': ['1A34|1|B'],
+            '1A34|1|B': ['1A34|1|B+1A34|1|C'],
+            '1A34|1|C': ['1A34|1|B+1A34|1|C'],
         }
         self.assertEquals(ans, self.grouping('1A34'))
 
@@ -212,10 +212,10 @@ class RealDataTest(StageTest):
 
     def test_1FEU_groups(self):
         ans = {
-            '1FEU|1|B': ['1FEU|1|C'],
-            '1FEU|1|C': ['1FEU|1|C'],
-            '1FEU|1|F': ['1FEU|1|F'],
-            '1FEU|1|E': ['1FEU|1|F'],
+            '1FEU|1|B': ['1FEU|1|C+1FEU|1|B'],
+            '1FEU|1|C': ['1FEU|1|C+1FEU|1|B'],
+            '1FEU|1|F': ['1FEU|1|F+1FEU|1|E'],
+            '1FEU|1|E': ['1FEU|1|F+1FEU|1|E'],
         }
         self.assertEquals(ans, self.grouping('1FEU'))
 
@@ -265,10 +265,10 @@ class RealDataTest(StageTest):
 
     def test_many_ustructured_1YZ9(self):
         ans = {
-            '1YZ9|1|C': ['1YZ9|1|C'],
-            '1YZ9|1|D': ['1YZ9|1|C'],
-            '1YZ9|1|E': ['1YZ9|1|C'],
-            '1YZ9|1|F': ['1YZ9|1|C']
+            '1YZ9|1|C': ['1YZ9|1|C+1YZ9|1|D+1YZ9|1|E+1YZ9|1|F'],
+            '1YZ9|1|D': ['1YZ9|1|C+1YZ9|1|D+1YZ9|1|E+1YZ9|1|F'],
+            '1YZ9|1|E': ['1YZ9|1|C+1YZ9|1|D+1YZ9|1|E+1YZ9|1|F'],
+            '1YZ9|1|F': ['1YZ9|1|C+1YZ9|1|D+1YZ9|1|E+1YZ9|1|F']
         }
         self.assertEquals(ans, self.grouping('1YZ9'))
 
