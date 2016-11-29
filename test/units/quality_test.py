@@ -33,17 +33,15 @@ class CoreRsrParserTest(unittest.TestCase):
             'resnum': '10',
             'icode': ' '
         }
-        val = self.parser._unit_id('1J5E', data)
-        ans = {
+        assert self.parser._unit_id('1J5E', data) == {
             'component_id': 'C',
             'chain': 'A',
-            'insertion_code': None,
-            'component_number': 10,
+            'ins_code': None,
+            'number': 10,
             'model': 1,
             'pdb': '1J5E',
             'alt_id': None
         }
-        self.assertEqual(ans, val)
 
 
 class MissingRsRParserTest(unittest.TestCase):
@@ -75,13 +73,12 @@ class HasRsRParserTest(unittest.TestCase):
         self.assertTrue(self.parser.has_rsr())
 
     def test_can_generate_nt_level_data(self):
-        val = list(self.parser.nts())[0]
-        ans = {
+        assert list(self.parser.nts())[0] == {
             'id': {
                 'component_id': 'U',
                 'chain': 'AA',
-                'insertion_code': None,
-                'component_number': 5,
+                'ins_code': None,
+                'number': 5,
                 'model': 1,
                 'pdb': '4V7W',
                 'alt_id': None,
@@ -89,7 +86,6 @@ class HasRsRParserTest(unittest.TestCase):
             'real_space_r': 0.218,
             'z_score': 0.26,
         }
-        self.assertEquals(ans, val)
 
 
 class QueryingTest(StageTest):
@@ -165,7 +161,7 @@ class UnusualUnitsTest(StageTest):
             cls.nts = list(cls.parser.nts())
 
     def test_can_generate_unit_ids_for_all_units(self):
-        assert len(self.nts) == 3934
+        assert len(self.nts) == 4129
 
     @pytest.mark.skip()
     def test_can_generate_unit_id_for_hard_unit(self):
