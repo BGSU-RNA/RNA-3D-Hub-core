@@ -12,10 +12,9 @@ class ConfigTest(TestCase):
     def test_can_load_data(self):
         self.assertTrue('db' in self.conf)
 
-    def test_uses_default_dict(self):
+    def test_uses_given_data(self):
         val = self.conf['locations']['log_dir']
-        ans = os.path.join(os.getcwd(), "MotifAtlas", "logs")
-        self.assertEquals(ans, val)
+        assert val == '/home/pipeline/hub-core/MotifAtlas/logs'
 
     def test_adds_base_directory(self):
         val = self.conf['locations']['base']
