@@ -44,7 +44,7 @@ class RnaChainsTest(QueryUtilTest):
 
     def test_can_return_ids_and_names(self):
         val = self.db_obj.rna_chains('4V4Q', return_id=True)[0]
-        self.assertEquals(('AA', 364L), val)
+        assert ('AA', 2008) == val
 
 
 class LoopLoadingTest(QueryUtilTest):

@@ -22,11 +22,11 @@ class CoordianteTest(StageTest):
 
     def test_it_creates_only_atom_level_entries(self):
         for residue in self.data:
-            for line in residue['coordinates'].split('\n'):
+            for line in residue.coordinates.split('\n'):
                 assert line.startswith('ATOM')
 
     def test_it_creates_all_atom_level_entries(self):
-        val = self.data[0]['coordinates'].split('\n')
+        val = self.data[0].coordinates.split('\n')
         assert len(val) == 22
 
     def test_it_creates_entries_for_each_residue(self):
