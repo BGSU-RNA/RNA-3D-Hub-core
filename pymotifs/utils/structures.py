@@ -195,18 +195,18 @@ class Structure(Base):
                 filter(mod.SpeciesMapping.species_mapping_id.in_(tax_ids))
             species_ids = [result.species_id for result in query]
 
-            if len(species_ids) != len(tax_ids):
-                missing = set(species_ids).symmetric_difference(set(tax_ids))
-                missing = [str(tax_id) for tax_id in missing]
-                raise UnknownTaxonomyException("Missing tax ids %s",
-                                               ','.join(missing))
-
             if simplify:
                 if len(species_ids) > 1:
                     return SYNTHEIC[0]
                 if not species_ids:
                     return None
                 return species_ids[0]
+
+            if len(species_ids) != len(tax_ids):
+                missing = set(species_ids).symmetric_difference(set(tax_ids))
+                missing = [str(tax_id) for tax_id in missing]
+                raise UnknownTaxonomyException("Missing tax ids %s",
+                                               ','.join(missing))
 
             return sorted(species_ids)
 
