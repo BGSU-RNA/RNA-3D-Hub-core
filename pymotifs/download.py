@@ -32,7 +32,7 @@ class Downloader(core.Loader):
                                      'PDBFiles')
 
     def filename(self, name, **kwargs):
-        return os.path.join(self.location, name + '.cif')
+        return os.path.realpath(os.path.normpath(os.path.join(self.location, name + '.cif')))
 
     def url(self, name, **kwargs):
         return '%s/%s.cif.gz' % (self.file_url, name)
