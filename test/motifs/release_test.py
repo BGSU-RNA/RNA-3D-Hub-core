@@ -5,7 +5,6 @@ import pytest
 from test import StageTest
 from test import skip_without_matlab
 
-from pymotifs import core
 from pymotifs.motifs.release import Loader
 
 
@@ -13,12 +12,15 @@ class IfeTest(StageTest):
     loader_class = Loader
 
     def test_it_loads_representative_ifes(self):
-        ifes = self.loader.ifes('1.0', ['1FJG', '1J5E', '4V4Q', '4V8I'])
-        assert ifes == ['1J5E|1|A']
-
-    def test_it_only_uses_xray_ifes(self):
-        with pytest.raises(core.InvalidState):
-            self.loader.ifes('1.0', ['4V6M'])
+        assert self.loader.ifes('1.0') == [
+            '157D|1|A+157D|1|B', '1DUH|1|A', '1EIY|1|C', '1ET4|1|E',
+            '1G59|1|D', '1GID|1|B', '1IBK|1|X', '1J5E|1|A', '1KOG|1|P',
+            '1MDG|1|A', '1UTD|1|0', '1VY4|1|AY', '1VY4|1|BA', '1VY4|1|BB',
+            '1WMQ|1|D', '1X8W|1|B', '1X8W|1|C', '2HOJ|1|A', '2IL9|1|A',
+            '3CW5|1|A', '4A3G|1|P', '4CS1|1|A', '4FTE|1|R', '4PMI|1|A',
+            '4Q0B|1|T', '4Q0B|1|t', '4V88|1|A5+4V88|1|A8', '4V88|1|A6',
+            '4V88|1|A7', '4V9K|1|CW'
+        ]
 
     @pytest.mark.skip("Not sure what data to use for this")
     def test_it_only_uses_structured_ifes(self):
@@ -58,12 +60,12 @@ class LoopsTest(StageTest):
 class DataTests(StageTest):
     loader_class = Loader
 
-    @skip_without_matlab
+    @pytest.mark.skip("Do not want to run full clustering yet")
     def test_it_creates_entries_for_hl_and_il(self):
         data = self.loader.data(['1GID', '4V4Q', '1S72'], dry_run=True)
         assert len(data) == 2
 
-    @skip_without_matlab
+    @pytest.mark.skip("Do not want to run full clustering yet")
     def test_it_can_cluster_motifs(self):
         data = self.loader.data(['1GID', '4V4Q', '1S72'])
         assert len(data) == 2
