@@ -41,7 +41,7 @@ class Exporter(core.Exporter):
         """
 
         with self.session() as session:
-            current = session.query(mod.MlReleases.ml_releases_id).\
+            current = session.query(mod.MlReleases.ml_release_id).\
                 order_by(mod.MlReleases.date).\
                 limit(1).\
                 first()

@@ -14,8 +14,8 @@ class GettingLoopsTest(StageTest):
         data = self.loader.loops('1GID')
         assert data[0] == {
             'id': 'HL_1GID_001',
-            'motif_id': "",
+            'motif_id': None,
             'pdb': '1GID',
-            'nts': "1GID|1|A|G|149,1GID|1|A|G|150,1GID|1|A|A|151,1GID|1|A|A|152,1GID|1|A|A|153,1GID|1|A|C|154",
+            'nts': '1GID|1|A|A|151,1GID|1|A|A|152,1GID|1|A|A|153,1GID|1|A|C|154,1GID|1|A|G|149,1GID|1|A|G|150',
             # 'motif_id': "HL_67042.17"
         }
