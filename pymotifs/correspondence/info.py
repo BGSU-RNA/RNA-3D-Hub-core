@@ -15,6 +15,7 @@ from pymotifs.models import ExpSeqPdb
 from pymotifs.models import ChainSpecies
 from pymotifs.models import CorrespondenceInfo
 
+from pymotifs.constants import SYNTHENIC_SPECIES_ID
 from pymotifs.constants import CORRESPONDENCE_HUGE_CUTOFF
 from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
 
@@ -71,17 +72,24 @@ class Loader(core.MassLoader):
     def length_match(self, pair):
         """Determine if the length of the sequences in the pair match.
 
-        :param tuple pair: The pair of sequences to compare.
-        :returns: A boolean.
+        Parameters
+        ----------
+        pair : (dict, dict)
+            The pair of sequences to compare.
+
+        Returns
+        -------
+        length_matches : bool
+            If the lengths match
         """
 
         smallest = min(p['length'] for p in pair)
         largest = max(p['length'] for p in pair)
 
-        if smallest < self.small_cutoff:
+        if smallest < self.exact_cutoff:
             return smallest == largest
 
-        lower = max(0.5 * largest, self.small_cutoff)
+        lower = max(0.5 * largest, self.exact_cutoff)
         upper = 2 * smallest
 
         if smallest >= self.huge_cutoff:
@@ -105,13 +113,15 @@ class Loader(core.MassLoader):
         species = set()
         for seq in pair:
             species.update(seq['species'])
-        return len(species) <= 1 or None in species or 32630 in species
+        return len(species) <= 1 or None in species or SYNTHENIC_SPECIES_ID in species
 
     @property
     def known(self):
-        """Get all known pairs.
+        """Get all known pairs. This will look up the known pairs the first
+        time it is used, otherwise it will return the same set of known pairs.
 
-        :returns: A set of all known pairs.
+        :returns: A set of all known pairs. The entries in the set will be of
+        the form (exp_seq_id_1, exp_seq_id_2).
         """
 
         if not hasattr(self, '_known'):

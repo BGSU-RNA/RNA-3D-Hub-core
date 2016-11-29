@@ -2,6 +2,8 @@ import pytest
 
 from test import StageTest
 
+from pymotifs import models as mod
+from pymotifs.constants import SYNTHENIC_SPECIES_ID
 from pymotifs.correspondence.info import Loader
 
 
@@ -10,13 +12,11 @@ class LoadingSequencesTest(StageTest):
 
     def test_can_load_all_sequenecs(self):
         val = self.loader.lookup_sequences('1G59')
-        ans = [{'id': 29, 'length': 75, 'species': None}]
-        self.assertEquals(ans, val)
+        assert val == [{'id': 24, 'length': 75, 'species': None}]
 
     def test_can_load_with_synthetic(self):
         val = self.loader.lookup_sequences('1GID')
-        ans = [{'id': 51, 'length': 158, 'species': 32630}]
-        self.assertEquals(ans, val)
+        assert val == [{'id': 40, 'length': 158, 'species': SYNTHENIC_SPECIES_ID}]
 
     @pytest.mark.skip(reason="No data yet")
     def test_it_will_not_load_non_normalized(self):
@@ -28,11 +28,11 @@ class ShortSequencesTest(StageTest):
 
     def test_will_require_both_equal_if_second_small(self):
         pair = [{'length': 100}, {'length': 30}]
-        self.assertFalse(self.loader.length_match(pair))
+        assert self.loader.length_match(pair) is False
 
     def test_will_pass_if_both_equal(self):
         pair = [{'length': 30}, {'length': 30}]
-        self.assertTrue(self.loader.length_match(pair))
+        assert self.loader.length_match(pair) is True
 
     def test_will_require_both_equal_if_first_small(self):
         pair = [{'length': 10}, {'length': 300}]
@@ -50,12 +50,12 @@ class LongSequencesTest(StageTest):
         pair = [{'length': 2001}, {'length': 2002}]
         self.assertTrue(self.loader.length_match(pair))
 
-    def test_requires_both_sequences_above_36_if_first_below(self):
-        pair = [{'length': 35}, {'length': 40}]
+    def test_requires_both_sequences_above_19_if_first_below(self):
+        pair = [{'length': 18}, {'length': 20}]
         self.assertFalse(self.loader.length_match(pair))
 
-    def test_requires_both_sequences_above_36_if_second_below(self):
-        pair = [{'length': 40}, {'length': 35}]
+    def test_requires_both_sequences_above_19_if_second_below(self):
+        pair = [{'length': 20}, {'length': 18}]
         self.assertFalse(self.loader.length_match(pair))
 
     def test_requires_smallest_atleast_half_larger(self):
@@ -85,7 +85,8 @@ class SpeciesTest(StageTest):
         self.assertTrue(self.loader.species_matches(pair))
 
     def test_matches_if_one_species_has_synenthic(self):
-        pair = [{'species': set([1, 32360])}, {'species': set([2])}]
+        pair = [{'species': set([1, SYNTHENIC_SPECIES_ID])},
+                {'species': set([2])}]
         self.assertTrue(self.loader.species_matches(pair))
 
     def test_matches_if_same_species(self):
@@ -101,19 +102,17 @@ class IsKnownTest(StageTest):
     loader_class = Loader
 
     def test_knows_if_a_pair_is_unknown(self):
-        pair = [{'id': 1}, {'id': 52}]
-        assert self.loader.is_known(pair) is False
+        assert self.loader.is_known([{'id': 1}, {'id': 52}]) is False
 
     def test_knows_if_a_pair_is_known(self):
-        pair = [{'id': 1}, {'id': 2}]
-        assert self.loader.is_known(pair) is True
+        assert self.loader.is_known([{'id': 1}, {'id': 68}]) is True
 
 
 class MatchTest(StageTest):
     loader_class = Loader
 
     def test_matches_good_length_and_species(self):
-        pair = [{'id': -1, 'species': set([1, 32360]), 'length': 53},
+        pair = [{'id': -1, 'species': set([1, SYNTHENIC_SPECIES_ID]), 'length': 53},
                 {'id': -2, 'species': set([None]), 'length': 55}]
         assert self.loader.is_match(pair) is True
 
@@ -121,35 +120,6 @@ class MatchTest(StageTest):
         pair = [{'id': -1, 'species': set([1]), 'length': 53},
                 {'id': -2, 'species': set([3]), 'length': 55}]
         assert self.loader.is_match(pair) is False
-
-
-class ComputingPairsTest(StageTest):
-    loader_class = Loader
-
-    def setUp(self):
-        super(ComputingPairsTest, self).setUp()
-        pairs = self.loader.pairs(['4V7R', '1GID', '4V88'])
-        self.pairs = [(p[0]['id'], p[1]['id']) for p in pairs]
-
-    def test_it_includes_all_self_pairs(self):
-        assert (45, 45) in self.pairs
-        assert (51, 51) in self.pairs
-        assert (50, 50) in self.pairs
-        assert (60, 60) in self.pairs
-        assert (61, 61) in self.pairs
-        assert (62, 62) in self.pairs
-        assert (72, 72) in self.pairs
-
-    def test_it_creates_all_possible_pairs(self):
-        assert self.pairs == [
-            (45, 45), (45, 50), (45, 51), (45, 60), (45, 61), (45, 62), (45, 72),
-                      (50, 50), (50, 51), (50, 60), (50, 61), (50, 62), (50, 72),
-                                (51, 51), (51, 60), (51, 61), (51, 62), (51, 72),
-                                          (60, 60), (60, 61), (60, 62), (60, 72),
-                                                    (61, 61), (61, 62), (61, 72),
-                                                              (62, 62), (62, 72),
-                                                                        (72, 72)
-        ]
 
 
 class ComputingDataTest(StageTest):
@@ -161,32 +131,73 @@ class ComputingDataTest(StageTest):
         pairs = self.loader.data(['4V7R', '1GID', '4V88'])
         self.pairs = [(p['exp_seq_id_1'], p['exp_seq_id_2']) for p in pairs]
 
+    def exp_seq_id(self, pdb, chain):
+        with self.loader.session() as session:
+            return session.query(mod.ExpSeqPdb).\
+                filter_by(pdb_id=pdb, chain_name=chain).\
+                one().\
+                exp_seq_id
+
+    def exp_pair(self, pdb1, chain1, pdb2, chain2):
+        return tuple(sorted([self.exp_seq_id(pdb1, chain1),
+                             self.exp_seq_id(pdb2, chain2)]))
+
+    def self_pair(self, pdb, chain):
+        return (self.exp_seq_id(pdb, chain), self.exp_seq_id(pdb, chain))
+
     def test_includes_comparisions(self):
-        assert (45, 50) in self.pairs
-        assert (60, 61) in self.pairs
-        assert (60, 62) in self.pairs
-        assert (61, 62) in self.pairs
+        assert self.exp_pair('4V7R', 'A1', '4V88', 'A2') in self.pairs
+        assert self.exp_pair('4V7R', 'B1', '4V88', 'A1') in self.pairs
+        assert self.exp_pair('4V7R', 'B2', '4V88', 'A3') in self.pairs
+        assert self.exp_pair('4V7R', 'B3', '4V88', 'A4') in self.pairs
+        assert self.exp_pair('4V7R', 'C1', '4V88', 'A6') in self.pairs
+        assert self.exp_pair('1GID', 'A', '4V88', 'A3') in self.pairs
+        assert self.exp_pair('1GID', 'A', '4V88', 'A4') in self.pairs
+        assert self.exp_pair('1GID', 'A', '4V7R', 'B2') in self.pairs
+        assert self.exp_pair('1GID', 'A', '4V7R', 'B3') in self.pairs
+        assert self.exp_pair('4V88', 'A2', '4V88', 'A6') in self.pairs
+        assert self.exp_pair('4V7R', 'B2', '4V7R', 'B3') in self.pairs
 
     def test_it_includes_self_pairs(self):
-        assert (45, 45) in self.pairs
-        assert (51, 51) in self.pairs
-        assert (50, 50) in self.pairs
-        assert (60, 60) in self.pairs
-        assert (61, 61) in self.pairs
-        assert (62, 62) in self.pairs
-        assert (72, 72) in self.pairs
+        assert self.self_pair('4V7R', 'A1') in self.pairs
+        assert self.self_pair('4V7R', 'B1') in self.pairs
+        assert self.self_pair('4V7R', 'B2') in self.pairs
+        assert self.self_pair('4V7R', 'B3') in self.pairs
+        assert self.self_pair('1GID', 'A') in self.pairs
+        assert self.self_pair('4V88', 'A2') in self.pairs
+        assert self.self_pair('4V88', 'A1') in self.pairs
+        assert self.self_pair('4V88', 'A2') in self.pairs
+        assert self.self_pair('4V88', 'A3') in self.pairs
+        assert self.self_pair('4V88', 'A4') in self.pairs
+        assert self.self_pair('4V88', 'A6') in self.pairs
 
     def test_can_generates_in_correct_ordering(self):
-        assert self.pairs == [
-            (45, 45),
-            (45, 50),
-            (50, 50),
-            (51, 51),
-            (60, 60),
-            (60, 61),
-            (60, 62),
-            (61, 61),
-            (61, 62),
-            (62, 62),
-            (72, 72)
-        ]
+        ans = sorted(set([
+            self.self_pair('4V7R', 'A1'),
+            self.self_pair('4V7R', 'C1'),
+            self.self_pair('4V7R', 'B1'),
+            self.self_pair('4V7R', 'B2'),
+            self.self_pair('4V7R', 'B3'),
+            self.self_pair('1GID', 'A'),
+            self.self_pair('4V88', 'A2'),
+            self.self_pair('4V88', 'A1'),
+            self.self_pair('4V88', 'A2'),
+            self.self_pair('4V88', 'A3'),
+            self.self_pair('4V88', 'A4'),
+            self.self_pair('4V88', 'A5'),
+            self.self_pair('4V88', 'A6'),
+            self.exp_pair('4V7R', 'A1', '4V88', 'A2'),
+            self.exp_pair('4V7R', 'C1', '4V88', 'A6'),
+            self.exp_pair('4V7R', 'B1', '4V88', 'A1'),
+            self.exp_pair('4V7R', 'B2', '4V88', 'A3'),
+            self.exp_pair('4V7R', 'B3', '4V88', 'A4'),
+            self.exp_pair('1GID', 'A', '4V88', 'A3'),
+            self.exp_pair('1GID', 'A', '4V7R', 'B2'),
+            self.exp_pair('1GID', 'A', '4V7R', 'B3'),
+            self.exp_pair('1GID', 'A', '4V88', 'A4'),
+            self.exp_pair('4V88', 'A2', '4V88', 'A6'),
+            self.exp_pair('4V7R', 'B2', '4V7R', 'B3'),
+        ]))
+        print(self.pairs)
+        print(ans)
+        assert self.pairs == ans
