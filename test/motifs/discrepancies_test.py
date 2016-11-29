@@ -24,7 +24,7 @@ class DiscrepanciesTest(StageTest):
 
     def setUp(self):
         super(DiscrepanciesTest, self).setUp()
-        with open('test/files/motifs/IL.pickle') as raw:
+        with open('test/files/motifs/v0.1/IL.pickle') as raw:
             self.cached = pickle.load(raw)
             self.disc = self.loader.discrepancies(self.cached)
 

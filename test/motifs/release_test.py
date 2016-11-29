@@ -3,7 +3,6 @@ import os
 import pytest
 
 from test import StageTest
-from test import skip_without_matlab
 
 from pymotifs.motifs.release import Loader
 

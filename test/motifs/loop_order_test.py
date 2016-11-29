@@ -1,7 +1,5 @@
 import pickle
 
-import pytest
-
 from test import StageTest
 
 from pymotifs.motifs.loop_order import Loader
@@ -12,7 +10,7 @@ class ComputingDataTest(StageTest):
 
     def setUp(self):
         super(ComputingDataTest, self).setUp()
-        with open('test/files/motifs/IL.pickle') as raw:
+        with open('test/files/motifs/v0.1/IL.pickle') as raw:
             self.cached = pickle.load(raw)
             self.ordering = self.loader.ordering(self.cached)
 

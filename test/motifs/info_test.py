@@ -11,7 +11,7 @@ class LoaderTest(StageTest):
 
     def setUp(self):
         super(LoaderTest, self).setUp()
-        with open('test/files/motifs/IL.pickle') as raw:
+        with open('test/files/motifs/v0.1/IL.pickle') as raw:
             self.cached = pickle.load(raw)
             self.motifs = self.loader.motifs(self.cached)
 
