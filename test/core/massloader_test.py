@@ -25,7 +25,7 @@ class ToProecssTest(StageTest):
         self.assertEquals([('A', 'B')], self.loader.to_process(['a', 'b']))
 
     def test_filters_out_anything_in_skip(self):
-        self.assertEquals([('A')], self.loader.to_process(['a', 'c']))
+        assert self.loader.to_process(['a', 'c']) == [('A', )]
 
 
 class ShouldProcessTests(StageTest):
