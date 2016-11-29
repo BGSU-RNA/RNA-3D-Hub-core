@@ -40,7 +40,7 @@ class LoadingInfoTest(StageTest):
     loader_class = Loader
 
     def test_it_can_load_info_of_a_correspondence(self):
-        assert self.loader.info(1) == (1, 2)
+        assert self.loader.info(1) == (1, 1)
 
     def test_it_raises_if_unknown(self):
         with pytest.raises(core.InvalidState):
@@ -51,7 +51,7 @@ class LoadingSequencesTest(StageTest):
     loader_class = Loader
 
     def test_it_can_load_an_experimental_sequence(self):
-        ans = {'ids': [14174, 14175, 14176], 'sequence': 'CA'}
+        ans = {'ids': [7388, 7389], 'sequence': 'CA'}
         assert self.loader.sequence(1) == ans
 
     def test_it_fails_given_invalid_id(self):
@@ -92,7 +92,7 @@ class ComputingDataTest(StageTest):
 
     def test_can_compute_data_in_both_directions(self):
         val = list(self.loader.data(1))
-        assert len(val) == 8
+        assert len(val) == 2
 
     @pytest.mark.skip(reason='No data yet')
     def test_does_not_duplicate_same_alignments(self):
