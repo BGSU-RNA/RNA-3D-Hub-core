@@ -46,7 +46,7 @@ class ToExcludeTests(ut.TestCase):
         val = self.dispatcher.to_exclude('units.loader')
         assert val == set(['units.info', 'units.distances', 'units.quality',
                            'units.distances', 'units.centers', 'units.loader',
-                           'units.rotation', 'units.redundant',
+                           'units.rotation', 'units.incomplete',
                            'units.coordinates'])
 
 
@@ -86,11 +86,13 @@ class DependenciesTest(ut.TestCase):
             units.DistancesLoader,
             units.CenterLoader,
             units.RotationLoader,
-            units.RedundantNucleotidesLoader,
+            units.IncompleteLoader,
             units.CoordinateLoader,
             chains.InfoLoader,
             chains.SpeciesLoader,
-            interactions.PairwiseLoader
+            interactions.PairwiseLoader,
+            interactions.FlankingLoader,
+            interactions.SummaryLoader,
         ])
 
 
@@ -142,24 +144,22 @@ class StagesTest(ut.TestCase):
             'units.centers',
             'units.coordinates',
             'units.distances',
+            'units.incomplete',
             'units.quality',
             'units.rotation',
-            'units.redundant',
         ]
 
     def test_it_can_load_stage_container(self):
         assert self.stages('units.loader') == [
             'download',
             'pdbs.info',
-            'export.cifatom',
             'units.info',
-            'mat_files',
             'units.centers',
             'units.coordinates',
             'units.distances',
+            'units.incomplete',
             'units.quality',
             'units.rotation',
-            'units.redundant',
         ]
 
     def test_can_exclude_specific_stages(self):
@@ -169,28 +169,24 @@ class StagesTest(ut.TestCase):
         assert val == [
             'download',
             'pdbs.info',
-            'export.cifatom',
             'units.info',
-            'mat_files',
             'units.centers',
             'units.coordinates',
+            'units.incomplete',
             'units.quality',
             'units.rotation',
-            'units.redundant',
         ]
 
     def test_can_exclude_a_stage_collection(self):
         self.dispatcher.exclude = set(['pdbs.loader', 'units.distances'])
         assert self.stages('units.loader') == [
             'download',
-            'export.cifatom',
             'units.info',
-            'mat_files',
             'units.centers',
             'units.coordinates',
+            'units.incomplete',
             'units.quality',
             'units.rotation',
-            'units.redundant',
         ]
 
     @pytest.mark.xfail(reason="Haven't worked on yet")
@@ -218,11 +214,13 @@ class StagesTest(ut.TestCase):
             'units.centers',
             'units.coordinates',
             'units.distances',
+            'units.incomplete',
             'units.quality',
             'units.rotation',
+            'interactions.flanking',
             'interactions.pairwise',
             'species_mapping',
-            'units.redundant',
             'chains.species',
-            'ife.info'
+            'interactions.summary',
+            'ife.info',
         ]
