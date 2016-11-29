@@ -1,4 +1,6 @@
-"""Load the motif parent data.
+"""Load the motif parent data. This will load from the cached data and then use
+that create the parent level mappings. If there are no parents, which should be
+rare, or if this first release this will skip processing.
 """
 
 from pymotifs import core
@@ -11,10 +13,29 @@ from pymotifs.constants import NR_CACHE_NAME
 
 
 class Loader(BaseLoader):
+    """Loader for the motif parent data.
+    """
     dependencies = set([ReleaseLoader, InfoLoader])
-    table = mod.MlParents
+
+    @property
+    def table(self):
+        return mod.MlParents
 
     def parents(self, cached):
+        """Compute the parents for all cached motifs.
+
+        Parameters
+        ----------
+        cached : dict
+            The dictonary of cached data
+
+        Returns
+        --------
+        parents : list
+            List of parents dict. These dicts are suitable for storing into the
+            ml_parents table.
+        """
+
         data = []
         for motif in cached['motifs']:
             for parent in motif['parents']:
@@ -27,14 +48,54 @@ class Loader(BaseLoader):
         return data
 
     def no_parents(self, data):
+        """Check if the data has no parents. This is done through a different
+        method than just attempting to create parents and seeing if the list is
+        empty. This gives a method to determine if there are parents seperately
+        from computing them for storage.
+
+        Parameters
+        ----------
+        data : dict
+            The cached grouping to examine
+
+        Returns
+        -------
+        has_no_parents : bool
+            True if there are no parents.
+        """
+
         classes = [d['motifs'] for d in data['parent_counts']]
         counts = [abs(d['unchanged']) + abs(d['updated']) for d in classes]
         return not sum(counts)
 
     def data(self, release, **kwargs):
-        data = self.cached(NR_CACHE_NAME)
-        if not data:
-            raise core.InvalidState("Missing cached data")
+        """Compute the parentage data. This will raise a skip exception if
+        there are not parents, or if this is the first release (parent release
+        is the same as the current release). This requires that there is data
+        stored in the NR_CACHE_NAME file. If there is not, then an exception is
+        raised.
+
+        Parameters
+        ----------
+        release : str
+            The nr release id to process.
+
+        Raises
+        ------
+        Skip
+            If this is the first release, or there are no parents.
+
+        Returns
+        -------
+        data : list
+            A list of dicts that can be written to the ml_parents table.
+        """
+
+        data = release
+        if isinstance(release, str):
+            data = self.cached(NR_CACHE_NAME)
+            if not data:
+                raise core.InvalidState("Missing cached data")
 
         if data['release'] == data['parent']:
             raise core.Skip("No parents for first release")

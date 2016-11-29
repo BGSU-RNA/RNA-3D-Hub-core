@@ -4,21 +4,38 @@ import pytest
 
 from test import StageTest
 
+from pymotifs import core
 from pymotifs.motifs.parents import Loader
 
 
-class ComputingTest(StageTest):
+class BaseTest(StageTest):
     loader_class = Loader
 
-    def setUp(self):
-        super(ComputingTest, self).setUp()
-        with open('test/files/motifs/IL.pickle') as raw:
-            self.cached = pickle.load(raw)
-            self.parents = self.loader.parents(self.cached)
+    def data(self, release):
+        with open('test/files/motifs/v%s/IL.pickle' % release, 'rb') as raw:
+            cached = pickle.load(raw)
+            return self.loader.parents(cached)
 
-    def test_it_can_load_all_parent_data(self):
-        assert len(self.parents) == None
 
+class NoParentsTest(BaseTest):
+    loader_class = Loader
+
+    @pytest.mark.skip()
+    def test_it_knows_when_has_no_parents(self):
+        assert self.loader.no_parents(self.data('0.1')) is True
+
+    @pytest.mark.skip()
+    def test_raises_skip_when_no_parents(self):
+        with pytest.raises(core.Skip):
+            self.loader.data(self.data('0.1'))
+
+    @pytest.mark.skip()
+    def test_gives_empty_list_for_no_parents(self):
+        assert self.loader.data(self.data('0.1')) == []
+
+
+class ParentsTest(BaseTest):
+    @pytest.mark.skip()
     def test_it_creates_correct_data(self):
         assert self.parents[0] == {
             'ml_release_id': '0.1',
