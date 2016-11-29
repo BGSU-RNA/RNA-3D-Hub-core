@@ -35,4 +35,4 @@ class MissingCentersTest(CifStageTest):
 
     def test_it_can_handle_struture_with_missing_centers(self):
         val = list(self.loader.data(self.structure))
-        assert len(val) == 666
+        assert len(val) == 690
