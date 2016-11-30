@@ -145,3 +145,9 @@ RSRZ_PAIRED_OUTLIERS = 2
 NR_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
 """List of methods are allowed when selecting the representative of an NR
 group"""
+
+MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
+"""list of methods allowed when selected loops from representatives."""
+
+MOTIF_RESOLUTION_CUTOFF = '4.0'
+"""The resolution cutoff for representatives to use in the ML atlas"""

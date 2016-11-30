@@ -26,6 +26,9 @@ from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import releases as rel
 
+from pymotifs.constants import MOTIF_ALLOWED_METHODS
+from pymotifs.constants import MOTIF_RESOLUTION_CUTOFF
+
 from pymotifs.motifs.builder import Builder
 
 from pymotifs.nr.release import Loader as NrReleaseLoader
@@ -58,7 +61,6 @@ class Loader(core.MassLoader):
     """
 
     types = ['IL', 'HL']
-    resolution = '4.0'
     dependencies = set([NrLoader, LoopLoader])
 
     def nr_release_id(self, before_date=None, **kwargs):
@@ -179,8 +181,8 @@ class Loader(core.MassLoader):
                 join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
                 filter(chains.rep == 1).\
                 filter(chains.nr_release_id == nr_release_id).\
-                filter(classes.resolution == self.resolution).\
-                filter(pdbs.experimental_technique == 'X-RAY DIFFRACTION').\
+                filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
+                filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
                 order_by(chains.ife_id)
 
             if not query.count():
