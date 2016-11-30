@@ -43,7 +43,7 @@ SCRIPT = """
 cd '{base}';
 setup();
 cd '{fr3d}';
-aAaSearches('{input_file}', {start}, {stop});
+aAaSearches('{input_file}', {start}, {stop}, {enforceSize});
 """
 
 
@@ -58,9 +58,18 @@ class ClusterMotifs(core.Base):
         self.mlab_input_filename = os.path.join(self.fr3d_root, 'loops.txt')
 
     def make_release_directory(self, loop_type):
-        """Make a directory for the release files.
+        """Make a directory for the release files. The directory name will be
+        based off the current time. This should prevent duplicates.
 
-        :loop_type: The loop type to create a director for.
+        Parameters
+        ----------
+        loop_type : str
+            The loop type to create a director for.
+
+        Returns
+        -------
+        directory : str
+            Full path to the created directory.
         """
 
         release_dir = self.config['locations']['releases_dir']
@@ -128,7 +137,7 @@ class ClusterMotifs(core.Base):
             else:
                 time.sleep(0.05)
 
-    def prepare_aAa_commands(self, loops):
+    def prepare_aAa_commands(self, loops, enforceSize=False):
         """Creates a list of matlab commands to run all-against-all searches
         in parallel. To avoid matlab hanging at the command prompt in case
         of errors in the matlab code, the script must be written out to a
@@ -152,7 +161,8 @@ class ClusterMotifs(core.Base):
                                          fr3d=self.fr3d_root,
                                          input_file=self.mlab_input_filename,
                                          start=current_max + 1,
-                                         stop=current_max + interval)
+                                         stop=current_max + interval,
+                                         enforceSize=int(enforceSize))
 
             script_name = '%s%i.m' % (self.script_prefix, i)
             i += 1
