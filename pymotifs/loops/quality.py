@@ -367,7 +367,12 @@ class Loader(core.SimpleLoader):
         for nt in loop['nts']:
             parts = decode(nt)
             ops.add(parts['symmetry'])
-        return len(ops) != 1
+        if loop['type'] == 'HL':
+            return len(ops) != 1
+        if loop['type'] == 'IL':
+            return len(ops) > 2
+        if loop['type'] == 'J3':
+            return len(ops) > 3
 
     def status(self, incomplete, loop):
         """Compute the status code. The status code is defined above.
