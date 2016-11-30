@@ -99,7 +99,7 @@ class IfeLoader(core.Base):
         data['internal'] = rep(data['pdb'], data['chain'], count=True,
                                family='cWW', sym_op=sym_op)
         data['bps'] = rep(data['pdb'], data['chain'], count=True,
-                          sym_op=sym_op)
+                          model=model, sym_op=sym_op)
 
         return IfeChain(**data)
 
