@@ -1,7 +1,7 @@
 function [disc] = pairwiseSearch(file1, file2, exactSizeLimit)
 
     if nargin < 3
-        exactSizeLimit = 0
+        exactSizeLimit = 0;
     end
 
     % defer loading loop Precomputed data if not necessary
@@ -64,7 +64,7 @@ function [disc] = pairwiseSearch(file1, file2, exactSizeLimit)
     end
 
     % don't search large in small
-    if ~isSizeCompatible(File1, File2)
+    if ~isSizeCompatible(File1, File2, exactSizeLimit)
         fprintf('Query %s is larger than target %s\n', file1, file2);
         addToNoCandidatesFile(file2, P);
         disc = Inf;
@@ -93,7 +93,7 @@ function [disc] = pairwiseSearch(file1, file2, exactSizeLimit)
 
 end
 
-function [searchPossible] = isSizeCompatible(File1, File2)
+function [searchPossible] = isSizeCompatible(File1, File2, exactSizeLimit)
 
     if strcmp(File1.Filename, File2.Filename)
         searchPossible = 1;
@@ -104,11 +104,14 @@ function [searchPossible] = isSizeCompatible(File1, File2)
     B1 = length(aDetectBulgedBases(File1));
     queryEffectiveLength = L1 - B1;
 
+
     % check if the query without bulges is <= than the entire target loop
     if queryEffectiveLength <= File2.NumNT
-        if exactSizeLimit and queryEffectiveLength >= 20
-            if File2.NumNT - queryEffectiveLength <= 1
-                searchPossible = 1;
+        if exactSizeLimit
+            targetEffectiveLength = File2.NumNT - length(aDetectBulgedBases(File2));
+            searchPossible = abs(queryEffectiveLength - targetEffectiveLength) <= 2;
+            if ~searchPossible
+                fprintf('Query has size difference > 2 with target\n');
             end
         else
             searchPossible = 1;
