@@ -50,3 +50,4 @@ cache/
 ss-diagrams/
 
 docs/build/*
+default.nix
