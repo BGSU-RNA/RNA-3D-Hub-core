@@ -40,12 +40,15 @@ from pymotifs import core
 from pymotifs.utils import matlab
 
 SCRIPT = """
-cd '{base}';
-setup();
-cd '{fr3d}';
-aAaSearches('{input_file}', {start}, {stop}, {enforceSize});
+cd '{base}'
+setup()
+cd '{fr3d}'
+aAaSearches('{input_file}', {start}, {stop}, {enforceSize})
 """
 
+
+# It may be useful to log to the log file using:
+# https://codereview.stackexchange.com/questions/6567/redirecting-subprocesses-output-stdout-and-stderr-to-the-logging-module
 
 class ClusterMotifs(core.Base):
     jobs = 4
@@ -108,7 +111,7 @@ class ClusterMotifs(core.Base):
             while cmds and len(processes) < self.jobs:
                 task = cmds.pop()
                 list2cmdline(task)
-                p = Popen(task)
+                p = Popen(task, stdout=logging_file)
                 tasks[p.pid] = task  # associate task with a pid
                 self.logger.info('Task %s has pid %i' % (task, p.pid))
                 processes.append(p)
@@ -123,6 +126,7 @@ class ClusterMotifs(core.Base):
                         if not retries_left:
                             self.logger.critical('Parallel task failed')
                             self.logger.error(p.stdout)
+                            self.logger.error(p.stderr)
                             raise matlab.MatlabFailed("Clustering failed")
 
                         self.logger.warning('Restarting Parallel task')
@@ -137,7 +141,7 @@ class ClusterMotifs(core.Base):
             else:
                 time.sleep(0.05)
 
-    def prepare_aAa_commands(self, loops, enforceSize=False):
+    def prepare_aAa_commands(self, loops, enforceSize=True):
         """Creates a list of matlab commands to run all-against-all searches
         in parallel. To avoid matlab hanging at the command prompt in case
         of errors in the matlab code, the script must be written out to a

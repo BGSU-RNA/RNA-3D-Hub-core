@@ -107,14 +107,13 @@ function [searchPossible] = isSizeCompatible(File1, File2, exactSizeLimit)
 
     % check if the query without bulges is <= than the entire target loop
     if queryEffectiveLength <= File2.NumNT
-        if exactSizeLimit
-            targetEffectiveLength = File2.NumNT - length(aDetectBulgedBases(File2));
-            searchPossible = abs(queryEffectiveLength - targetEffectiveLength) <= 2;
+        searchPossible = 1;
+        % targetEffectiveLength = File2.NumNT - length(aDetectBulgedBases(File2));
+        if exactSizeLimit && (queryEffectiveLength > 20 || File2.NumNT > 20)
+            searchPossible = (File2.NumNT - queryEffectiveLength) <= 2;
             if ~searchPossible
-                fprintf('Query has size difference > 2 with target\n');
+                fprintf('Query has size (%i) difference > 2 with target (%i)\n', queryEffectiveLength, File2.NumNT);
             end
-        else
-            searchPossible = 1;
         end
     else
         searchPossible = 0;
