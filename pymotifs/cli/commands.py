@@ -102,6 +102,7 @@ def cli(ctx, **options):
     ctx.objs = options
     config = conf.load(options['config'])
     ctx.objs.update({
+        'config_filename': options['config'],
         'config': config,
         'engine': create_engine(config['db']['uri'],
                                 pool_size=config['db']['pool_size'],

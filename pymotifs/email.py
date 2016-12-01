@@ -3,32 +3,63 @@ from mailer import Message
 
 from pymotifs import core
 
+BODY = """
+Input
+-----
+{input}
+
+Options
+-------
+{options}
+
+Issues
+------
+{issues}
+"""
+
 
 class Emailer(core.Base):
     """A class that handles the logic of sending an email. This will parse the
     log file to get the required lines, and send the mail if needed.
     """
 
-    def body(self, filename):
+    levels = set(['WARNING', 'ERROR', 'CRITICAL'])
+    """Set of logging levels to put in email body."""
+
+    skip_keys = set(['exclude', 'email', 'config', 'engine'])
+    """Set of config keys to not put in email body."""
+
+    def body_lines(self, filename):
+        if not filename:
+            return 'No log file produced'
+
+        lines = []
+        with open(filename, 'rb') as raw:
+            for line in raw:
+                if any(line.startswith(level) for level in self.levels):
+                    lines.append(line)
+        return ''.join(lines)
+
+    def config_lines(self, config):
+        lines = []
+        for key, value in config.items():
+            if key not in self.skip_keys:
+                lines.append('{key}: {value}'.format(key=key, value=value))
+        return '\n'.join(lines)
+
+    def body(self, name, filename, ids=None, **kwargs):
         """Generate the body of the email.
 
         :param string filename: Name of the log file to create a body for.
         :returns: A string to use a body.
         """
 
-        if not filename:
-            return 'No log file produced'
+        config_lines = self.config_lines(kwargs)
+        issues = self.body_lines(filename)
+        id_lines = ' '.join('%s' % id for id in ids)
+        return BODY.format(options=config_lines, issues=issues, input=id_lines)
 
-        bad_lines = []
-        with open(filename, 'rb') as raw:
-            for line in raw:
-                if line.startswith('WARNING') or line.startswith('ERROR') or \
-                        line.startswith('CRITICAL'):
-                    bad_lines.append(line)
-
-        return ''.join(bad_lines)
-
-    def message(self, name, log_file=None, error=None, **kwargs):
+    def message(self, log_file=None, error=None, **kwargs):
         """Create an email for the given stage based upon the log file.
 
         If no log file is provided or it is False then the email's body will
@@ -52,7 +83,7 @@ class Emailer(core.Base):
             From=self.config['email']['from'],
             To=self.config['email']['to'],
             Subject=subject,
-            Body=self.body(log_file)
+            Body=self.body(log_file, **kwargs)
         )
         if log_file:
             msg.attach(log_file)
@@ -74,6 +105,9 @@ class Emailer(core.Base):
 
         :name: The name of the stage that was run.
         """
+
+        if self.config['email'].get('send', True) is False:
+            return None
 
         mailer = self.mailer()
         msg = self.message(name, **kwargs)
