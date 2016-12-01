@@ -230,6 +230,7 @@ def ss_import(ctx, **kwargs):
               help="Recalculate data for the given stage(s)")
 @click.option('--skip-dependencies', is_flag=True,
               help='Skip running any dependencies')
+@click.option('--skip-stage', multiple=True, help='Stage to skip')
 @click.argument('pdb', type=PDB)
 @click.argument('chain')
 @click.argument('filename', type=FILE)
