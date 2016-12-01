@@ -92,6 +92,8 @@ class Entry(object):
         self.observed = 0
         self.experimental = 0
         self.sequence = ''
+        self.bp = 0.0
+        self.nt = 0.0
 
     def add_info(self, info):
         """Use the given `Info` object to update the attributes of this object.
@@ -109,6 +111,9 @@ class Entry(object):
         self.proteins = [info.chains[c].compound for c in prot_chains]
         self.protein_species = [info.chains[c].species for c in prot_chains]
 
+        ife_info = info.interactions[self.ife_id]
+        self.bp = ife_info['bp']
+
         for index, chain_id in enumerate(self.chains):
             chain_info = info.chains[chain_id]
             self.names.append(chain_info.name)
@@ -118,12 +123,6 @@ class Entry(object):
                 self.observed = chain_info.observed
                 self.experimental = chain_info.experimental
                 self.sequence = chain_info.sequence
-
-    @property
-    def type(self):
-        if self.rank == 0:
-            return 'rep'
-        return 'member'
 
     def named(self, max_proteins=5):
         """Turn this `Entity` into a dictonary with named columns for the
@@ -149,19 +148,21 @@ class Entry(object):
             proteins = []
             protein_species = []
 
+        bp_nt = 0
+        if self.observed:
+            bp_nt = round(float(self.bp) / float(self.observed), 3)
+
         return {
             'Group': self.group,
             'Release': self.release,
-            'Rank': self.rank,
-            'Type': self.type,
             'IFE id': self.ife_id,
+            'BP/NT': bp_nt,
             'PDB': self.pdb_id,
             'Chains': ', '.join(self.names),
             'Protein Species': ', '.join(str(p) for p in protein_species),
             'Protein Compound': ', '.join(str(p) for p in proteins),
             'RNA Species': self.species,
             'Nucleic Acid Compound': self.compound,
-            'Name': '',
             'Observed Length': self.observed,
             'Experimental Length': self.experimental,
             'Experimental Sequence': self.sequence,
@@ -173,7 +174,23 @@ class Info(object):
         self.session = maker
 
     @property
-    def pdbs(self, **kwargs):
+    def interactions(self):
+        if hasattr(self, '_interactions'):
+            return self._interactions
+
+        with self.session() as session:
+            query = session.query(mod.IfeInfo.ife_id,
+                                  mod.IfeInfo.bp_count)
+
+            self._interactions = {}
+            for result in query:
+                self._interactions[result.ife_id] = {
+                    'bp': result.bp_count,
+                }
+        return self._interactions
+
+    @property
+    def pdbs(self):
         if hasattr(self, '_pdb'):
             return self._pdb
 
@@ -192,12 +209,12 @@ class Info(object):
         return self._pdb
 
     @property
-    def chains(self, **kwargs):
+    def chains(self):
         if not hasattr(self, '_chains'):
-            self._chains = self.__chains__(**kwargs)
+            self._chains = self.__chains__()
         return self._chains
 
-    def __chains__(self, **kwargs):
+    def __chains__(self):
         chains = {}
         with self.session() as session:
             chain = mod.ChainInfo
@@ -238,18 +255,17 @@ class Info(object):
 
 class Groups(core.Reporter):
     headers = [
+        'Original Index',
         'Group',
         'Release',
-        'Rank',
-        'Type',
         'IFE id',
+        'BP/NT',
         'PDB',
         'Chains',
         'Protein Species',
         'Protein Compound',
         'RNA Species',
         'Nucleic Acid Compound',
-        'Name',
         'Observed Length',
         'Experimental Length',
         'Experimental Sequence',
@@ -330,4 +346,10 @@ class Groups(core.Reporter):
                                 )
                 current.add_info(info)
                 data.append(current)
-        return [d.named() for d in self.sort_groups(data)]
+
+        result = []
+        for index, entry in enumerate(self.sort_groups(data)):
+            entry = entry.named()
+            entry['Original Index'] = index
+            result.append(entry)
+        return result
