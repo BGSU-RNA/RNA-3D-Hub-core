@@ -19,7 +19,7 @@ from pymotifs.pdbs.info import Loader as PdbLoader
 class Loader(core.SimpleLoader):
     dependencies = set([InterLoader, UnitLoader, PdbLoader])
 
-    ignore_bp = set(['wat', 'perp'])
+    ignore_bp = set(['wat', 'perp', 'bif'])
     """A list of basepair families to ignore the counts of."""
 
     @property
