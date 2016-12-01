@@ -10,6 +10,7 @@ import collections as coll
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.constants import LONG_RANGE
+from pymotifs.interactions.pairwise import IGNORE
 
 from pymotifs.interactions.pairwise import Loader as InterLoader
 from pymotifs.units.info import Loader as UnitLoader
@@ -19,7 +20,7 @@ from pymotifs.pdbs.info import Loader as PdbLoader
 class Loader(core.SimpleLoader):
     dependencies = set([InterLoader, UnitLoader, PdbLoader])
 
-    ignore_bp = set(['wat', 'perp', 'bif'])
+    ignore_bp = IGNORE
     """A list of basepair families to ignore the counts of."""
 
     @property
