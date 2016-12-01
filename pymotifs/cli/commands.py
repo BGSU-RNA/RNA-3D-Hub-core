@@ -75,7 +75,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
         ctx.exit(1)
     finally:
         if kwargs['email']:
-            mailer(name, ids=ids, error=None, **kwargs)
+            mailer(name, ids=ids, error=error, **kwargs)
 
 
 @click.group(short_help="Interface to update pipeline",
