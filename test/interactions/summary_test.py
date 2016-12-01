@@ -47,8 +47,13 @@ class BasicCountsTest(StageTest):
 
     def test_it_skips_prep_bps(self):
         data = coll.defaultdict(int)
-        val = dict(self.loader.increment_bp(data, 'perp', 5))
-        assert val == {}
+        assert dict(self.loader.increment_bp(data, 'perp', 5)) == {}
+        assert dict(self.loader.increment_bp(data, 'perp', 1)) == {}
+
+    def test_it_skips_wat_bps(self):
+        data = coll.defaultdict(int)
+        assert dict(self.loader.increment_bp(data, 'wat', 1)) == {}
+        assert dict(self.loader.increment_bp(data, 'wat', 5)) == {}
 
     def test_it_can_increment_stacks(self):
         data = coll.defaultdict(int)

@@ -17,11 +17,14 @@ from pymotifs.units.info import Loader as UnitLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
 
 
+"""A list of basepair families to ignore the counts of."""
+IGNORE_BP = set(IGNORE)
+IGNORE_BP.add('wat')
+
+
 class Loader(core.SimpleLoader):
     dependencies = set([InterLoader, UnitLoader, PdbLoader])
-
-    ignore_bp = IGNORE
-    """A list of basepair families to ignore the counts of."""
+    ignore_bp = IGNORE_BP
 
     @property
     def table(self):
