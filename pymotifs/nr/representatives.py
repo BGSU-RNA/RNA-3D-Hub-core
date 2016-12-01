@@ -5,7 +5,9 @@ import operator as op
 import itertools as it
 
 from pymotifs import core
+from pymotifs import models as mod
 from pymotifs.utils import known_subclasses
+from pymotifs.utils import row2dict
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
@@ -40,6 +42,37 @@ class Representative(core.Base):
         unique string among all representative subclasses.
         """
         return None
+
+    def filter_group_by_method(self, group, methods=NR_ALLOWED_METHODS):
+        """This will filter the group that is being examiend to just a copy of
+        the parent, and members entries. This is done so that we have a group
+        that we can manipulate without messing up parts elsewhere. In addition,
+        the members of the group will be filtered to only those with allowed
+        methods. These are the methods listed in the methods set.
+
+        Parameters
+        ----------
+        group : dict
+            A group dictonary that must have 'parent' and 'members' entries.
+        methods : set
+            A set of method names that are allowed. If no members have the
+            given method then all are used.
+
+        Returns
+        -------
+        copied : dict
+            A group dictonary with only the 'parent' and 'members' entries.
+        """
+
+        meth = op.itemgetter('method')
+        members = [ife for ife in group['members'] if meth(ife) in methods]
+        if not members:
+            members = group['members']
+
+        return {
+            'parent': copy.deepcopy(group.get('parent', [])),
+            'members': copy.deepcopy(members),
+        }
 
 
 def known():
@@ -161,37 +194,6 @@ class Increase(Representative):
                 return candidate
         return representative
 
-    def filter_group(self, group, methods=NR_ALLOWED_METHODS):
-        """This will filter the group that is being examiend to just a copy of
-        the parent, and members entries. This is done so that we have a group
-        that we can manipulate without messing up parts elsewhere. In addition,
-        the members of the group will be filtered to only those with allowed
-        methods. These are the methods listed in the methods set.
-
-        Parameters
-        ----------
-        group : dict
-            A group dictonary that must have 'parent' and 'members' entries.
-        methods : set
-            A set of method names that are allowed. If no members have the
-            given method then all are used.
-
-        Returns
-        -------
-        copied : dict
-            A group dictonary with only the 'parent' and 'members' entries.
-        """
-
-        meth = op.itemgetter('method')
-        members = [ife for ife in group['members'] if meth(ife) in methods]
-        if not members:
-            members = group['members']
-
-        return {
-            'parent': copy.deepcopy(group.get('parent', [])),
-            'members': copy.deepcopy(members),
-        }
-
     def __call__(self, initial, length_increase=NR_LENGTH_PERCENT_INCREASE,
                  bp_increase=NR_BP_PERCENT_INCREASE):
         """Find the representative for the group.
@@ -213,7 +215,7 @@ class Increase(Representative):
         The ife which should be the representative.
         """
 
-        group = self.filter_group(initial)
+        group = self.filter_group_by_method(initial)
         best = self.initial_representative(group)
         if not best:
             raise core.InvalidState("No current representative")
@@ -297,3 +299,44 @@ class ParentIncrease(Increase):
             return super(ParentIncrease, self).initial_representative(group)
 
         return previous
+
+
+class QualityMetrics(Representative):
+    """Find representatives using quality metrics provided by PDB.
+    """
+    method = 'quality-metrics'
+
+    def select_by_bp_nt(self, group):
+        selector = ParentIncrease(self.config, self.session)
+        return selector(group)
+
+    def lookup_structure_quality(self, members):
+        pdbs = set(member['pdb'] for member in members)
+        with self.session() as session:
+            query = session(mod.PdbQuality).\
+                filter(mod.PdbQuality.pdb_id.in_(pdbs))
+            measures = {}
+            for result in query:
+                measures[result.pdb_id] = row2dict(result)
+        return measures
+
+    def lookup_chain_quality(self, members):
+        pdbs = set(member['pdb'] for member in members)
+        with self.session() as session:
+            query = session(mod.ChainQuality).\
+                filter(mod.ChainQuality.pdb_id.in_(pdbs))
+            measures = {}
+            for result in query:
+                measures[result.chain_id] = row2dict(result)
+        return measures
+
+    def filter_by_quality(self, group):
+        return group
+
+    def __call__(self, given):
+        if self.is_cryo_group(given):
+            return self.filter_by_bp(given)
+
+        group = self.filter_group_by_method(given)
+        group = self.filter_group_by_quality(group)
+        return self.select_by_bp_nt(group)
