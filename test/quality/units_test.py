@@ -3,7 +3,7 @@ import pytest
 
 from test import StageTest
 
-import pymotifs.units.quality as ntq
+import pymotifs.quality.units as ntq
 
 
 class FileHelperTest(StageTest):
