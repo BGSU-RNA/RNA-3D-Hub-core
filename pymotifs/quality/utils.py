@@ -1,8 +1,14 @@
+"""This module contains generic utiltiy functions and classes for working with
+validation reports.
+"""
+
 import os
 import gzip
 import hashlib
 import cStringIO as sio
 import xml.etree.ElementTree as ET
+
+from pymotifs.utils import renaming as rn
 
 from fr3d.unit_ids import encode
 
@@ -90,14 +96,33 @@ class Parser(object):
         The parsed XML tree for processing.
     """
 
-    """List of keys from the validation report to extract"""
-    entry_keys = [
-        'absolute-percentile-percent-RSRZ-outliers',
-        'high-resol-relative-percentile-percent-RSRZ-outliers',
-        'low-resol-relative-percentile-percent-RSRZ-outliers',
-        'numPDBids-absolute-percentile-percent-RSRZ-outliers',
-        'numPDBids-relative-percentile-percent-RSRZ-outliers',
-    ]
+    unit_renamer = rn.Renamer(
+        real_space_r=rn.rename('rsr', rn.maybe_float),
+        real_space_r_z_score=rn.rename('rsrz', rn.maybe_float),
+        density_correlation=rn.rename('DCC', rn.maybe_float),
+    )
+
+    unit_id_renamer = rn.Renamer(
+            rn.transform('model', int),
+            rn.transform('chain', str),
+            component_id=rn.rename('resname', str),
+            number=rn.rename('resnum', int),
+            ins_code=rn.rename('icode', rn.maybe_str, strip=True),
+            alt_id=rn.rename('altcode', rn.maybe_str, strip=True),
+        )
+
+    structure_renamer = rn.Renamer(
+        rn.with_dashes('percent-RSRZ-outliers', rn.maybe_float),
+        rn.with_dashes('absolute-percentile-percent-RSRZ-outliers', rn.maybe_float),
+        rn.with_dashes('relative-percentile-percent-RSRZ-outliers', rn.maybe_float),
+        rn.with_dashes('clashscore', rn.maybe_float),
+        rn.with_dashes('relative-percentile-clashscore', rn.maybe_float),
+        rn.with_dashes('absolute-percentile-clashscore', rn.maybe_float),
+        rn.with_dashes('percent-rota-outliers', rn.maybe_float),
+        rn.with_dashes('absolute-percentile-percent-rota-outliers', rn.maybe_float),
+        rn.with_dashes('relative-percentile-percent-rota-outliers', rn.maybe_float),
+        pdb_id=rn.rename('pdbid', rn.maybe_str),
+    )
 
     def __init__(self, gz_content):
         """Create a new `Parser` to parse the given gz_content. This parser
@@ -108,7 +133,6 @@ class Parser(object):
         gz_content : str
             A gzip'ed string of the file to parse.
         """
-
         filehandle = sio.StringIO(gz_content)
         content = gzip.GzipFile(fileobj=filehandle).read()
         md5 = hashlib.md5()
@@ -126,7 +150,9 @@ class Parser(object):
             A dictonary of mappings for all attributes on the entity entry.
             The keys and values will all be strings.
         """
-        return self.root.find("Entry").attrib
+        data = self.structure_renamer(self.root.find("Entry").attrib)
+        data['md5'] = self.digest
+        return data
 
     def has_dcc(self):
         """Check if this report has DCC data.
@@ -136,9 +162,7 @@ class Parser(object):
         has_dcc : bool
             True if this report has DCC data.
         """
-
-        entry = self.root.find("Entry")
-        return 'DCC_R' in entry.attrib
+        return 'DCC_R' in self.root.find("Entry").attrib
 
     def has_rsr(self):
         """Check if this report has RSR data.
@@ -147,7 +171,6 @@ class Parser(object):
         -------
         True if this report has RSR data
         """
-
         entry = self.root.find("Entry")
         return 'absolute-percentile-percent-RSRZ-outliers' in entry.attrib
 
@@ -162,19 +185,9 @@ class Parser(object):
         nt : dict
             A dictionary of nt level data.
         """
-
         pdb = self.root.find("Entry").attrib['pdbid'].upper()
         for residue in self.root.findall("ModelledSubgroup"):
-            data = {}
-            if 'rsr' in residue.attrib:
-                data['real_space_r'] = float(residue.attrib['rsr'])
-
-            if 'rsrz' in residue.attrib:
-                data['z_score'] = float(residue.attrib['rsrz'])
-
-            if 'DCC' in residue.attrib:
-                data['density_correlation'] = float(residue['DCC'])
-
+            data = self.unit_renamer(residue.attrib, skip_missing=True)
             if data:
                 data['id'] = self._unit_id(pdb, residue.attrib)
                 yield data
@@ -201,21 +214,6 @@ class Parser(object):
             A dictionary with keys, 'pdb', 'model', 'chain', component_number',
             'component_id', 'insertion_code', and 'alt_id'.
         """
-
-        insertion_code = attributes['icode'].strip()
-        if insertion_code == '':
-            insertion_code = None
-
-        alt_id = attributes.get('altcode', '').strip()
-        if alt_id == '':
-            alt_id = None
-
-        return {
-            'pdb': pdb,
-            'model': int(attributes['model']),
-            'chain': attributes['chain'],
-            'number': int(attributes['resnum']),
-            'component_id': attributes['resname'],
-            'ins_code': insertion_code,
-            'alt_id': alt_id,
-        }
+        data = self.unit_id_renamer(attributes)
+        data['pdb'] = pdb
+        return data
