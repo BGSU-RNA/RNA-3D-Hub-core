@@ -42,3 +42,6 @@ class Base(object):
         self.session = Session(session_maker)
         self.name = self.__class__.__module__.replace('pymotifs.', '')
         self.logger = logging.getLogger(self.name)
+
+    def _create(self, klass):
+        return klass(self.config, self.session)

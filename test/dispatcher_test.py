@@ -44,7 +44,7 @@ class ToExcludeTests(ut.TestCase):
 
     def test_will_expand_stage_container_to_stages(self):
         val = self.dispatcher.to_exclude('units.loader')
-        assert val == set(['units.info', 'units.distances', 'units.quality',
+        assert val == set(['units.info', 'units.distances',
                            'units.distances', 'units.centers', 'units.loader',
                            'units.rotation', 'units.incomplete',
                            'units.coordinates'])
@@ -82,7 +82,6 @@ class DependenciesTest(ut.TestCase):
         val = self.dispatcher.dependencies([ifes.Loader])
         assert val[ifes.InfoLoader] == set([
             units.InfoLoader,
-            units.QualityLoader,
             units.DistancesLoader,
             units.CenterLoader,
             units.RotationLoader,
@@ -145,7 +144,6 @@ class StagesTest(ut.TestCase):
             'units.coordinates',
             'units.distances',
             'units.incomplete',
-            'units.quality',
             'units.rotation',
         ]
 
@@ -158,7 +156,6 @@ class StagesTest(ut.TestCase):
             'units.coordinates',
             'units.distances',
             'units.incomplete',
-            'units.quality',
             'units.rotation',
         ]
 
@@ -173,7 +170,6 @@ class StagesTest(ut.TestCase):
             'units.centers',
             'units.coordinates',
             'units.incomplete',
-            'units.quality',
             'units.rotation',
         ]
 
@@ -185,7 +181,6 @@ class StagesTest(ut.TestCase):
             'units.centers',
             'units.coordinates',
             'units.incomplete',
-            'units.quality',
             'units.rotation',
         ]
 
@@ -215,7 +210,6 @@ class StagesTest(ut.TestCase):
             'units.coordinates',
             'units.distances',
             'units.incomplete',
-            'units.quality',
             'units.rotation',
             'interactions.flanking',
             'interactions.pairwise',

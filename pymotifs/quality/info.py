@@ -1,7 +1,7 @@
-"""Fetch, parse and store validation reports. This module contains a loader to
-get validation reports from PDB's FTP site and extract quality data.
+"""This will download information about
 """
 
+import os
 import gzip
 import hashlib
 import operator as op
@@ -20,7 +20,9 @@ except:
 import pymotifs.utils as ut
 import pymotifs.core as core
 from pymotifs import models as mod
+
 from pymotifs.units.info import Loader as InfoLoader
+from pymotifs.quality.download import Loader as Downloader
 
 from fr3d.unit_ids import encode
 
@@ -197,7 +199,11 @@ class Loader(core.SimpleLoader):
     """The loader to fetch and store quality data for structures.
     """
 
-    dependencies = set([InfoLoader])
+    dependencies = set([InfoLoader, Downloader])
+
+    def to_process(self, pdbs, **kwrags):
+        empty = set(f for f in self.known() if os.stat(f).st_size == 0)
+        return sorted(set(pdbs) - empty)
 
     def query(self, session, pdb):
         """Generate a query to find all entries in units_quality for the given
@@ -296,19 +302,13 @@ class Loader(core.SimpleLoader):
 
         Returns
         -------
-        data: iterable
+        data : iterable
             An iterable of a quality assignments to store in the database.
         """
 
-        finder = FileHelper()
-        filename = finder(pdb)
-        try:
-            fetcher = ut.FTPFetchHelper('ftp.wwpdb.org')
-            response = fetcher(filename)
-        except ut.RetryFailedException:
-            raise core.Skip("Could not download data for %s" % pdb)
+        with open(self.filename(pdb), 'rb') as raw:
+            parser = Parser(raw.read())
 
-        parser = Parser(response)
         if not parser.has_rsr() and not parser.has_dcc():
             raise core.Skip("No RsR found for %s" % pdb)
 
@@ -317,3 +317,4 @@ class Loader(core.SimpleLoader):
         data = it.imap(as_quality, parser.nts())
         data = it.chain.from_iterable(data)
         return it.imap(lambda d: mod.UnitQuality(**d), data)
+

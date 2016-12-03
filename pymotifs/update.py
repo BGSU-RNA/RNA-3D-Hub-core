@@ -18,6 +18,7 @@ from pymotifs.ife import loader as ife
 from pymotifs.chain_chain import loader as cc
 from pymotifs.export import loader as export
 from pymotifs.nr import loader as nr
+from pymotifs.quality import loader as quality
 
 
 class Loader(core.StageContainer):
@@ -27,6 +28,7 @@ class Loader(core.StageContainer):
         chains.Loader,
         species_mapping.Loader,
         units.Loader,
+        quality.Loader,
         interactions.Loader,
         loops.Loader,
         exp_seq.Loader,
