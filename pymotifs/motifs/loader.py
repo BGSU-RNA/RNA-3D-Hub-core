@@ -7,7 +7,7 @@ import pymotifs.core as core
 
 from pymotifs.motifs.cleanup import Loader as Cleanup
 from pymotifs.motifs.info import Loader as MotifLoader
-# from pymotifs.motifs.parents import Loader as ParentLoader
+from pymotifs.motifs.parents import Loader as ParentLoader
 from pymotifs.motifs.release import Loader as ReleaseLoader
 from pymotifs.motifs.loop_order import Loader as LoopOrderLoader
 from pymotifs.motifs.assignments import Loader as AssignmentLoader
@@ -17,5 +17,5 @@ from pymotifs.motifs.loop_positions import Loader as LoopPositionLoader
 
 
 class Loader(core.StageContainer):
-    stages = [ReleaseLoader, DiscrepancyLoader, MotifLoader, LoopOrderLoader,
-              LoopPositionLoader, AssignmentLoader]
+    stages = set([ReleaseLoader, DiscrepancyLoader, MotifLoader, LoopOrderLoader,
+              LoopPositionLoader, AssignmentLoader, ParentLoader])
