@@ -59,7 +59,7 @@ class Emailer(core.Base):
         id_lines = ' '.join('%s' % id for id in ids)
         return BODY.format(options=config_lines, issues=issues, input=id_lines)
 
-    def message(self, log_file=None, error=None, **kwargs):
+    def message(self, name, log_file=None, error=None, **kwargs):
         """Create an email for the given stage based upon the log file.
 
         If no log file is provided or it is False then the email's body will
@@ -79,9 +79,10 @@ class Emailer(core.Base):
 
         kwargs = {'stage': name, 'status': status}
         subject = self.config['email']['subject'].format(**kwargs)
+        to_address = kwargs.get('send_to', None) or self.config['email']['to']
         msg = Message(
             From=self.config['email']['from'],
-            To=self.config['email']['to'],
+            To=to_address,
             Subject=subject,
             Body=self.body(log_file, **kwargs)
         )
