@@ -9,7 +9,6 @@ from pymotifs import models as mod
 from pymotifs.motifs.utils import BaseLoader
 from pymotifs.motifs.info import Loader as InfoLoader
 from pymotifs.motifs.release import Loader as ReleaseLoader
-from pymotifs.constants import NR_CACHE_NAME
 
 
 class Loader(BaseLoader):
@@ -68,7 +67,7 @@ class Loader(BaseLoader):
         counts = [abs(d['unchanged']) + abs(d['updated']) for d in classes]
         return not sum(counts)
 
-    def data(self, release, **kwargs):
+    def data(self, pair, **kwargs):
         """Compute the parentage data. This will raise a skip exception if
         there are not parents, or if this is the first release (parent release
         is the same as the current release). This requires that there is data
@@ -91,15 +90,14 @@ class Loader(BaseLoader):
             A list of dicts that can be written to the ml_parents table.
         """
 
-        data = release
-        if isinstance(release, str):
-            data = self.cached(NR_CACHE_NAME)
-            if not data:
-                raise core.InvalidState("Missing cached data")
+        loop_type, release = pair
+        cached = self.cached(loop_type)
+        if not cached:
+            raise core.InvalidState("No cached data")
 
-        if data['release'] == data['parent']:
+        if cached['release'] == cached['parent']:
             raise core.Skip("No parents for first release")
-        if self.no_parents(data):
+        if self.no_parents(cached):
             raise core.Skip("Parent counts show no parents")
 
-        return self.parents(data)
+        return self.parents(cached)
