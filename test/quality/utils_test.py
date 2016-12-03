@@ -1,42 +1,33 @@
-import unittest
-
+from pymotifs import core
 import pymotifs.quality.utils as ut
 
 import pytest
 
+from test import StageTest
 
-class ParserTest(unittest.TestCase):
+from fr3d.unit_ids import decode
+
+
+class ParserTest(StageTest):
+    loader_class = ut.Utils
     filename = None
 
     @classmethod
     def setUpClass(cls):
+        super(ParserTest, cls).setUpClass()
         with open(cls.filename, 'rb') as raw:
             cls.parser = ut.Parser(raw.read())
 
     def setUp(self):
+        super(ParserTest, self).setUp()
         self.parser = self.__class__.parser
+
+    def mapping(self, pdb):
+        return self.loader.unit_mapping(pdb)
 
 
 class CoreRsrParserTest(ParserTest):
     filename = 'test/files/validation/4v7w_validation.xml.gz'
-
-    def test_can_generate_a_unit_id(self):
-        data = {
-            'model': '1',
-            'chain': 'A',
-            'resname': 'C',
-            'resnum': '10',
-            'icode': ' '
-        }
-        assert self.parser._unit_id('1J5E', data) == {
-            'component_id': 'C',
-            'chain': 'A',
-            'ins_code': None,
-            'number': 10,
-            'model': 1,
-            'pdb': '1J5E',
-            'alt_id': None
-        }
 
     def test_can_get_tree_from_gz_content(self):
         self.assertTrue(self.parser.root)
@@ -47,17 +38,20 @@ class CoreRsrParserTest(ParserTest):
     def test_can_detect_has_dcc(self):
         assert self.parser.has_dcc() is True
 
+    def test_can_map_all_nts(self):
+        mapping = self.mapping('4V7W')
+        assert len(list(self.parser.nts(mapping))) == 20917
+
+    def test_fails_if_cannot_map_all(self):
+        mapping = self.mapping('4V7W')
+        mapping.pop(mapping.keys()[0])
+        with pytest.raises(core.InvalidState):
+            list(self.parser.nts(mapping))
+
     def test_can_generate_nt_level_data(self):
-        assert list(self.parser.nts())[0] == {
-            'id': {
-                'component_id': 'U',
-                'chain': 'AA',
-                'ins_code': None,
-                'number': 5,
-                'model': 1,
-                'pdb': '4V7W',
-                'alt_id': None,
-            },
+        mapping = self.mapping('4V7W')
+        assert list(self.parser.nts(mapping))[0] == {
+            'id': '4V7W|1|AA|U|5',
             'real_space_r': 0.218,
             'real_space_r_z_score': 0.26,
         }
@@ -94,10 +88,14 @@ class MissingDataTest(ParserTest):
     def setUp(self):
         super(MissingDataTest, self).setUp()
         self.parser = self.__class__.parser
-        self.nts = list(self.parser.nts())
+        mapping = self.mapping('1FJG')
+        self.nts = list(self.parser.nts(mapping))
+
+    def chain_of(self, uid):
+        return decode(uid)['chain']
 
     def test_parses_all_rna_data(self):
-        val = [nt for nt in self.nts if nt['id'].get('chain') == 'A']
+        val = [nt for nt in self.nts if self.chain_of(nt['id']) == 'A']
         self.assertEquals(len(val), 1603)
 
 
@@ -107,10 +105,14 @@ class AltIdParsingTest(ParserTest):
     def setUp(self):
         super(AltIdParsingTest, self).setUp()
         self.parser = self.__class__.parser
-        self.nts = list(self.parser.nts())
+        mapping = self.mapping('1VY4')
+        self.nts = list(self.parser.nts(mapping))
+
+    def alt_of(self, uid):
+        return decode(uid)['chain']
 
     def test_can_generate_ids_using_alt_ids(self):
-        val = [nt for nt in self.nts if nt['id']['alt_id']]
+        val = [nt for nt in self.nts if self.alt_of(nt['id'])]
         self.assertTrue(2, len(val))
 
 
@@ -120,7 +122,8 @@ class UnusualUnitsTest(ParserTest):
     def setUp(self):
         super(UnusualUnitsTest, self).setUp()
         self.parser = self.__class__.parser
-        self.nts = list(self.parser.nts())
+        mapping = self.mapping('2UUA')
+        self.nts = list(self.parser.nts(mapping))
 
     def test_can_generate_unit_ids_for_all_units(self):
         assert len(self.nts) == 4129
@@ -139,3 +142,53 @@ class UnusualUnitsTest(ParserTest):
                 'pdb': '2UUA'
             }
         }
+
+
+class UtilsTest(StageTest):
+    loader_class = ut.Utils
+
+    def test_can_get_filename(self):
+        ans = '/Users/bsweene/dotfiles/personal/leontis/hub-core/MotifAtlas/quality/validation-reports/1FJG.xml.gz'
+        assert self.loader.filename('1FJG') == ans
+
+    def test_knows_if_has_no_data(self):
+        assert self.loader.has_no_data('0FJG') is True
+
+    @pytest.mark.skip()
+    def test_knows_has_no_data_if_empty(self):
+        assert self.loader.has_no_data('') is True
+
+    @pytest.mark.skip()
+    def test_can_list_known_reports(self):
+        assert self.loader.known() == []
+
+    @pytest.mark.skip()
+    def test_can_list_reports_with_data(self):
+        assert self.loader.known(has_data=True) == []
+
+    @pytest.mark.skip()
+    def test_can_list_reports_without_data(self):
+        assert self.loader.known(has_data=False) == []
+
+    def test_can_create_a_unit_mapping(self):
+        val = self.loader.unit_mapping('124D')
+        assert len(val) == 16
+        assert val[('A', 4, None, None)] == ['124D|1|A|DA|4']
+
+    def test_can_create_mapping_with_sym_ops(self):
+        val = self.loader.unit_mapping('1A34')
+        ans = ['1A34|1|C|U|7||||P_1', '1A34|1|C|U|7||||P_P']
+        assert len(val) == 349
+        assert val[('C', 7, None, None)] == ans
+
+    def test_can_create_mapping_with_alt_ids(self):
+        val = self.loader.unit_mapping('1A34')
+        ans = ['1A34|1|A|CYS|157||A||P_1', '1A34|1|A|CYS|157||A||P_P']
+        assert len(val) == 349
+        assert val[('A', 157, None, 'A')] == ans
+
+    def test_can_create_mapping_with_insertion_codes(self):
+        val = self.loader.unit_mapping('1FJG')
+        ans = ['1FJG|1|A|A|1030|||D']
+        assert len(val) == 4018
+        assert val[('A', 1030, 'D', None)] == ans
