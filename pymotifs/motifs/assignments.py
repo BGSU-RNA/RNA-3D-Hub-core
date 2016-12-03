@@ -14,7 +14,10 @@ from pymotifs.motifs.release import Loader as ReleaseLoader
 
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader, LoopLoader, InfoLoader])
-    table = mod.MlLoops
+
+    @property
+    def table(self):
+        return mod.MlLoops
 
     def assignments(self, cached):
         """Compute the assignments of loop to motif.
