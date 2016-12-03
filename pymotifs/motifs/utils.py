@@ -48,11 +48,10 @@ class BaseLoader(core.SimpleLoader):
         if self.table == info:
             return self.__self_query__(session, pair)
 
+        loop_type, release = pair
         return session.query(self.table).\
-            join(info, (info.motif_id == self.table.motif_id &
-                        info.ml_release_id == self.table.ml_release_id)).\
-            filter(info.type == pair[0]).\
-            filter(info.ml_release_id == pair[1])
+            filter(self.table.motif_id.like(loop_type + '_%')).\
+            filter(self.table.ml_release_id == release)
 
     @abc.abstractmethod
     def data(self, pair, **kwargs):
