@@ -66,11 +66,13 @@ class Utils(core.Base):
             empty (False), or either (None).
         """
         pdbs = []
-        for filename in os.path.listdir(self.config):
+        dirname = self.config['locations']['quality_reports']
+        for basename in os.listdir(dirname):
+            filename = os.path.join(dirname, basename)
             if has_data is not None:
-                if os.stat(filename).st_size != has_data:
+                if bool(os.stat(filename).st_size) != has_data:
                     continue
-            pdbs.append(os.path.basename(filename))
+            pdbs.append(basename[0:4])
         return pdbs
 
     def has_no_data(self, pdb):

@@ -10,14 +10,23 @@ import pymotifs.core as core
 
 import pymotifs.quality.utils as qut
 
+from pymotifs.download import Writer
+
 
 class Loader(core.Loader):
     """The loader to fetch and store quality data for structures.
     """
-
     dependencies = set()
-    saver = core.FileHandleSaver
+    saver = Writer
     path = 'pub/pdb/validation_reports/{short}/{pdb}/{pdb}_validation.xml.gz'
+
+    @property
+    def ftp(self):
+        """A FTP connection to the wwpdb.org FTP site.
+        """
+        if not hasattr(self, '_ftp'):
+            self._ftp = ut.FTPFetchHelper('ftp.wwpdb.org')
+        return self._ftp
 
     def filename(self, pdb, **kwargs):
         """Get the filename where data for this PDB should be stored.
@@ -32,7 +41,23 @@ class Loader(core.Loader):
         path : str
             The path to write to.
         """
-        return qut.filename(self.config, pdb, compressed=True)
+        util = self._create(qut.Utils)
+        return util.filename(pdb, compressed=True)
+
+    def remote(self, pdb):
+        """Get the path to validation report on PDB's FTP servers.
+
+        Parameters
+        ----------
+        pdb : str
+            The pdb id to use
+
+        Returns
+        -------
+        path : str
+            The path to the validation file.
+        """
+        return self.path.format(short=pdb[1:3].lower(), pdb=pdb.lower())
 
     def remove(self, entry, **kwargs):
         """Remove the data if it exists.
@@ -53,8 +78,6 @@ class Loader(core.Loader):
         ----------
         pdb : str
             The pdb to lookup.
-        ignore_empty : bool, False
-            This will ingore
 
         Returns
         -------
@@ -79,15 +102,14 @@ class Loader(core.Loader):
         data: iterable
             An iterable of a quality assignments to store in the database.
         """
-
         filename = self.filename(pdb)
         directory = os.path.dirname(filename)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         try:
-            fetcher = ut.FTPFetchHelper('ftp.wwpdb.org')
-            return fetcher(filename)
+            remote = self.remote(pdb)
+            return self.ftp(remote)
         except ut.RetryFailedException:
             self.logger.warning("No quality found of %s", pdb)
             return ''

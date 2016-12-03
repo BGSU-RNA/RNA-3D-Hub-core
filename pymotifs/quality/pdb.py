@@ -1,14 +1,14 @@
 """Parse and store validation reports for pdb level information. This will
 process the downloaded validation reports and use them to populate the
-units_quality table.
+pdb_quality table.
 """
 
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.quality.utils import Parser
-from pymotifs.quality.utils import known
+from pymotifs.quality.utils import Utils
 
-from pymotifs.pdb.info import Loader as PdbLoader
+from pymotifs.pdbs.info import Loader as PdbLoader
 from pymotifs.quality.download import Loader as Downloader
 
 
@@ -18,13 +18,22 @@ class Loader(core.SimpleLoader):
 
     dependencies = set([PdbLoader, Downloader])
 
-    mapping = {
-        'percent-RSRZ-outliers': float,
-        'relative-percentile-percent-RSRZ-outliers': float,
-    }
-
     def to_process(self, pdbs, **kwrags):
-        return sorted(set(pdbs) - set(known(has_data=False)))
+        """Get the pdbs to process. These will be the structures that have an
+        non-empty validation report downloaded.
+
+        Parameters
+        ----------
+        pdbs : list
+            The pdbs to get data for
+
+        Returns
+        -------
+        pdbs : list
+            The list of PDBs to process.
+        """
+        util = self._create(Utils)
+        return sorted(set(pdbs) - set(util.known(has_data=False)))
 
     def query(self, session, pdb):
         """Generate a query to find all entries in units_quality for the given
@@ -47,11 +56,26 @@ class Loader(core.SimpleLoader):
         return session.query(mod.PdbQuality).\
             filter_by(pdb_id=pdb)
 
+    def parse(self, filename):
+        """Parse the file to extract the structure level data.
+
+        Parameters
+        ----------
+        filename : str
+            The file to parse.
+
+        Returns
+        -------
+        data : mod.UnitQuality
+            The quality data for the structure.
+        """
+        with open(filename, 'rb') as raw:
+            parser = Parser(raw.read())
+        entity = parser.entity()
+        return mod.PdbQuality(**entity)
+
     def data(self, pdb, **kwargs):
-        """Compute the quality assignments for residues in the structure. This
-        will fetch the validation report from PDB and convert the entries there
-        into forms suitable to write to the database. If the report has no RSR
-        or DCC data then a `core.Skip` exception will be raised.
+        """Compute the quality assignments for the structure.
 
         Parameters
         ----------
@@ -60,18 +84,8 @@ class Loader(core.SimpleLoader):
 
         Returns
         -------
-        data : iterable
-            An iterable of a quality assignments to store in the database.
+        data : mod.UnitQuality
+            The quality data for the structure.
         """
-
-        with open(self.filename(pdb), 'rb') as raw:
-            parser = Parser(raw.read())
-        entity = parser.entity()
-
-        data = {'pdb_id': pdb}
-        for key, fn in self.mapping.items():
-            value = entity.get(key, None)
-            if value is not None:
-                value = fn(value)
-            data[key.replace('-', '_')] = value
-        return mod.PdbQuality(**data)
+        filename = self._create(Utils).filename(pdb)
+        return self.parse(filename)
