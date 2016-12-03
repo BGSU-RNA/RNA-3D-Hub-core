@@ -7,14 +7,14 @@ from pymotifs.utils.releases import Release
 
 
 class CsvLoader(core.MassLoader):
-    """ Name of the file to load """
     name = None
+    """ Name of the file to load """
 
-    """ Name of the table to write to """
     table = None
+    """ Name of the table to write to """
 
-    """ Headers for the csv file to parse """
     headers = None
+    """ Headers for the csv file to parse """
 
     def __init__(self, *args, **kwargs):
         super(CsvLoader, self).__init__(*args, **kwargs)
