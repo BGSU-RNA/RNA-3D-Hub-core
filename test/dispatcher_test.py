@@ -49,6 +49,21 @@ class ToExcludeTests(ut.TestCase):
                            'units.rotation', 'units.incomplete',
                            'units.coordinates'])
 
+    @pytest.mark.xfail(reason='Cannot handle skip-deps and stage at once')
+    def test_can_exclude_stages_in_container(self):
+        dispatcher = Dispatcher('motifs.loader', CONFIG, Session,
+                                skip_dependencies=True,
+                                exclude=['motifs.release'])
+        val = [o.name for o in dispatcher.stages('motifs.loader')]
+        assert 'motifs.release' not in val
+        assert val == [
+            'motifs.discrepancies',
+            'motifs.info',
+            'motifs.assignments',
+            'motifs.loop_order',
+            'motifs.loop_positions',
+        ]
+
 
 class DependenciesTest(ut.TestCase):
     def setUp(self):
