@@ -84,7 +84,7 @@ class Emailer(core.Base):
             From=self.config['email']['from'],
             To=to_address,
             Subject=subject,
-            Body=self.body(log_file, **kwargs)
+            Body=self.body(name, log_file, **kwargs)
         )
         if log_file:
             msg.attach(log_file)
