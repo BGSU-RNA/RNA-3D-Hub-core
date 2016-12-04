@@ -4,6 +4,7 @@ write an empty file for any report it could not download.
 """
 
 import os
+import ftplib
 
 import pymotifs.utils as ut
 import pymotifs.core as core
@@ -18,6 +19,7 @@ class Loader(core.Loader):
     """
     dependencies = set()
     saver = Writer
+    allow_no_data = True
     path = 'pub/pdb/validation_reports/{short}/{pdb}/{pdb}_validation.xml.gz'
 
     @property
@@ -110,6 +112,9 @@ class Loader(core.Loader):
         try:
             remote = self.remote(pdb)
             return self.ftp(remote)
+        except ftplib.error_perm:
+            self.logger.warning("Could not fetch quality data for %s", pdb)
+            return ''
         except ut.RetryFailedException:
             self.logger.warning("No quality found of %s", pdb)
             return ''
