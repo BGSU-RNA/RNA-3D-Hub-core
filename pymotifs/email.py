@@ -4,6 +4,8 @@ text for the email. This can probably be cleaned up and minimized with clever
 use of better logging handlers. I think.
 """
 import sys
+import gzip
+import shutil
 
 from mailer import Mailer
 from mailer import Message
@@ -99,6 +101,28 @@ class Emailer(core.Base):
                            input=id_lines,
                            args=' '.join(sys.argv))
 
+    def compressed_log(self, filename):
+        """Create a compressed version of the given filename. This is useful
+        for sending emails as it provides a compressed version of the file that
+        can be attached to emails.
+
+        Parameters
+        ----------
+        filename : str
+            The filename to compress.
+
+        Returns
+        -------
+        filename : str
+            The compressed filename
+        """
+        if not filename:
+            return None
+        outname = filename + '.gz'
+        with open(filename, 'rb') as raw, gzip.open(outname, 'wb') as out:
+            shutil.copyfileobj(raw, out)
+        return outname
+
     def message(self, name, log_file=None, error=None, **kwargs):
         """Create an email for the given stage based upon the log file.
 
@@ -126,8 +150,10 @@ class Emailer(core.Base):
             Subject=subject,
             Body=self.body(name, log_file, **kwargs)
         )
-        if log_file:
-            msg.attach(log_file)
+
+        compressed_log = self.compressed_log(log_file)
+        if compressed_log:
+            msg.attach(compressed_log)
 
         return msg
 
