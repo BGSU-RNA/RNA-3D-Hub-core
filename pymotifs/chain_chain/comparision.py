@@ -446,7 +446,8 @@ class Loader(core.SimpleLoader):
                 join(mapping1, mapping1.exp_seq_id == info.exp_seq_id_1).\
                 join(mapping2, mapping2.exp_seq_id == info.exp_seq_id_2).\
                 filter(mapping1.chain_id == chain1).\
-                filter(mapping2.chain_id == chain2)
+                filter(mapping2.chain_id == chain2).\
+                filter(info.good_alignment == 1)
 
             result = query.first()
             if result:
@@ -482,7 +483,7 @@ class Loader(core.SimpleLoader):
             corr_id = self.__correspondence_query__(chain_id2, chain_id1)
 
         if corr_id is None:
-            raise core.Skip("No correspondence between %s, %s" %
+            raise core.Skip("No good correspondence between %s, %s" %
                             (chain_id1, chain_id2))
         return corr_id
 
