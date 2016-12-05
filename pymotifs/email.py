@@ -1,3 +1,10 @@
+"""This module contains some basic utilities for sending emails to the correct
+users. It will build an email containing logging information and use that as
+text for the email. This can probably be cleaned up and minimized with clever
+use of better logging handlers. I think.
+"""
+import sys
+
 from mailer import Mailer
 from mailer import Message
 
@@ -7,6 +14,10 @@ BODY = """
 Input
 -----
 {input}
+
+Argv
+----
+{args}
 
 Options
 -------
@@ -30,6 +41,19 @@ class Emailer(core.Base):
     """Set of config keys to not put in email body."""
 
     def body_lines(self, filename):
+        """Compute the body text to use. This will contain infromation about
+        the issues found during the run.
+
+        Parameters
+        ----------
+        filename : str
+            The path to the log file.
+
+        Returns
+        -------
+        lines : str
+            The configuration lines.
+        """
         if not filename:
             return 'No log file produced'
 
@@ -41,6 +65,19 @@ class Emailer(core.Base):
         return ''.join(lines)
 
     def config_lines(self, config):
+        """Create lines about the configuration used. The goal is to make it
+        possible for some reading the email to recreate the input used.
+
+        Parameters
+        ----------
+        config : dict
+            The dictonary containing all options and configuration values.
+
+        Returns
+        -------
+        lines : str
+            The configuration lines.
+        """
         lines = []
         for key, value in config.items():
             if key not in self.skip_keys:
@@ -56,8 +93,11 @@ class Emailer(core.Base):
 
         config_lines = self.config_lines(kwargs)
         issues = self.body_lines(filename)
-        id_lines = ' '.join('%s' % id for id in ids)
-        return BODY.format(options=config_lines, issues=issues, input=id_lines)
+        id_lines = ' '.join('%s' % id for id in (ids or []))
+        return BODY.format(options=config_lines,
+                           issues=issues,
+                           input=id_lines,
+                           args=' '.join(sys.argv))
 
     def message(self, name, log_file=None, error=None, **kwargs):
         """Create an email for the given stage based upon the log file.
