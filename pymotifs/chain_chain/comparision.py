@@ -295,6 +295,8 @@ class Loader(core.SimpleLoader):
                 filter(units2.sym_op == info2['sym_op']).\
                 filter(units1.alt_id == info1['alt_id']).\
                 filter(units2.alt_id == info2['alt_id']).\
+                filter(units1.model == info1['model']).\
+                filter(units2.model == info2['model']).\
                 order_by(corr_units.correspondence_index).\
                 distinct()
 
