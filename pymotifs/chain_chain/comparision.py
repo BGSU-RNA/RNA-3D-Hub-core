@@ -301,7 +301,8 @@ class Loader(core.SimpleLoader):
                 distinct()
 
             if not query.count():
-                raise core.InvalidState("Could not load any geometric data")
+                self.logger.warning("No geometric data for %s %s", info1, info2)
+                raise core.Skip("Missing geometric data")
 
             c1 = []
             c2 = []
