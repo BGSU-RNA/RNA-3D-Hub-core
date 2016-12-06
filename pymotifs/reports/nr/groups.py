@@ -9,6 +9,8 @@ from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
 
+import numpy as np
+
 from sqlalchemy.sql.expression import func
 
 compound = op.itemgetter('compound')
@@ -128,6 +130,22 @@ class Entry(object):
                 self.experimental = chain_info.experimental
                 self.sequence = chain_info.sequence
 
+    def validation(self, key):
+        return self.pdb_validation.get(key, None)
+
+    @property
+    def validation_relative_mean(self):
+        valid = self.validation
+        measures = [
+            'relative_percentile_percent_rsrz_outliers',
+            'relative_percentile_clashscore',
+            'relative_percentile_percent_rota_outliers',
+        ]
+        measures = [valid(m) for m in measures if valid(m) is not None]
+        if measures:
+            return np.mean(measures)
+        return None
+
     def named(self, max_proteins=5):
         """Turn this `Entity` into a dictonary with named columns for the
         report.
@@ -156,7 +174,9 @@ class Entry(object):
         if self.observed:
             bp_nt = round(float(self.bp) / float(self.observed), 3)
 
-        validation = lambda k: self.pdb_validation.get(k, None)
+        relative_mean = self.validation_relative_mean
+        if relative_mean is not None:
+            relative_mean = round(relative_mean, 2)
 
         return {
             'Group': self.group,
@@ -172,12 +192,13 @@ class Entry(object):
             'Observed Length': self.observed,
             'Experimental Length': self.experimental,
             'Experimental Sequence': self.sequence,
-            'Percent RSRZ Outliers': validation('percent_rsrz_outliers'),
-            'Clashscore': validation('clashscore'),
-            'Percent RNA Backbone Outliers': validation('percent_rota_outliers'),
-            'Relative Percentile RSRZ': validation('relative_percentile_percent_rsrz_outliers'),
-            'Relative Percentile Clashscore': validation('relative_percentile_clashscore'),
-            'Relative Percentile Backbone Outliers': validation('relative_percentile_percent_rota_outliers'),
+            'Percent RSRZ Outliers': self.validation('percent_rsrz_outliers'),
+            'Clashscore': self.validation('clashscore'),
+            'Percent RNA Backbone Outliers': self.validation('percent_rota_outliers'),
+            'Relative Percentile RSRZ': self.validation('relative_percentile_percent_rsrz_outliers'),
+            'Relative Percentile Clashscore': self.validation('relative_percentile_clashscore'),
+            'Relative Percentile Backbone Outliers': self.validation('relative_percentile_percent_rota_outliers'),
+            'Relative Percentile Mean': relative_mean,
         }
 
 
@@ -300,7 +321,8 @@ class Groups(core.Reporter):
         'Percent RNA Backbone Outliers',
         'Relative Percentile RSRZ',
         'Relative Percentile Clashscore',
-        'Relative Percentile Backbone Outliers'
+        'Relative Percentile Backbone Outliers',
+        'Relative Percentile Mean',
     ]
 
     def sort_groups(self, data):
