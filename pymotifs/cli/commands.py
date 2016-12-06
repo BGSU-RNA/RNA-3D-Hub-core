@@ -311,7 +311,7 @@ def correct_nr_history(ctx, version, **kwargs):
 @click.option('--quoting', default='none',
               type=click.Choice(['none', 'minimal', 'all', 'nonnumeric']),
               help='Logic of quoting, as in the csv module.')
-@click.option('--filename', default=None, type=str,
+@click.option('--filename', default=None, type=str, required=True,
               help='Filename to write to')
 @click.pass_context
 def report(ctx, **kwargs):
