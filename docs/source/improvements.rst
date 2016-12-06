@@ -46,3 +46,9 @@ Here is a list of some possible improvements. They are in no particular order.
     work that will not produce anything. This can probably be over come by
     using the marks in pdb_analysis_status to determine if this has been
     processed before.
+
+11. Alter the logic that determines what needs to be run so that it does 2
+    things, first it checks what is is done and then runs the normal
+    to_process. Then it gets the difference between the two and runs those.
+    This would remove the need for a 'has_data' method as we know that each
+    entry being processed will never have data.
