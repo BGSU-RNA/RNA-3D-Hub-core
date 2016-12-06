@@ -57,6 +57,8 @@ class Entry(object):
         Number of residues in the experimental sequence
     sequence : str
         The experimental sequence
+    pdb_validation : dict
+        A dict of structure level quality data.
     """
 
     def __init__(self, group, release, rank, ife_id, pdb_id, chain_ids):
@@ -94,6 +96,7 @@ class Entry(object):
         self.sequence = ''
         self.bp = 0.0
         self.nt = 0.0
+        self.pdb_validation = {}
 
     def add_info(self, info):
         """Use the given `Info` object to update the attributes of this object.
@@ -110,6 +113,7 @@ class Entry(object):
         prot_chains = pdb_info.protein_chains
         self.proteins = [info.chains[c].compound for c in prot_chains]
         self.protein_species = [info.chains[c].species for c in prot_chains]
+        self.pdb_validation = info.validation.get(self.pdb_id, {})
 
         ife_info = info.interactions[self.ife_id]
         self.bp = ife_info['bp']
@@ -152,6 +156,8 @@ class Entry(object):
         if self.observed:
             bp_nt = round(float(self.bp) / float(self.observed), 3)
 
+        validation = lambda k: self.pdb_validation.get(k, None)
+
         return {
             'Group': self.group,
             'Release': self.release,
@@ -166,6 +172,12 @@ class Entry(object):
             'Observed Length': self.observed,
             'Experimental Length': self.experimental,
             'Experimental Sequence': self.sequence,
+            'Percent RSRZ Outliers': validation('percent_rsrz_outliers'),
+            'Clashscore': validation('clashscore'),
+            'Percent RNA Backbone Outliers': validation('percent_rota_outliers'),
+            'Relative Percentile RSRZ': validation('relative_percentile_percent_rsrz_outliers'),
+            'Relative Percentile Clashscore': validation('relative_percentile_clashscore'),
+            'Relative Percentile Backbone Outliers': validation('relative_percentile_percent_rota_outliers'),
         }
 
 
@@ -207,6 +219,20 @@ class Info(object):
                 rna = [c['chain_id'] for c in chains if is_rna(c)]
                 self._pdb[pdb] = PdbInfo(proteins, rna)
         return self._pdb
+
+    @property
+    def validation(self):
+        if hasattr(self, '_validation'):
+            return self._validation
+
+        self._validation = {}
+        with self.session() as session:
+            query = session.query(mod.PdbQuality)
+            for result in query:
+                entry = row2dict(result)
+                pdb_id = entry.pop('pdb_id')
+                self._validation[pdb_id] = entry
+        return self._validation
 
     @property
     def chains(self):
@@ -269,6 +295,12 @@ class Groups(core.Reporter):
         'Observed Length',
         'Experimental Length',
         'Experimental Sequence',
+        'Percent RSRZ Outliers',
+        'Clashscore',
+        'Percent RNA Backbone Outliers',
+        'Relative Percentile RSRZ',
+        'Relative Percentile Clashscore',
+        'Relative Percentile Backbone Outliers'
     ]
 
     def sort_groups(self, data):
