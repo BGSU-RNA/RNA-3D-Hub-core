@@ -13,10 +13,6 @@ from mailer import Message
 from pymotifs import core
 
 BODY = """
-Input
------
-{input}
-
 Argv
 ----
 {args}
@@ -95,10 +91,8 @@ class Emailer(core.Base):
 
         config_lines = self.config_lines(kwargs)
         issues = self.body_lines(filename)
-        id_lines = ' '.join('%s' % id for id in (ids or []))
         return BODY.format(options=config_lines,
                            issues=issues,
-                           input=id_lines,
                            args=' '.join(sys.argv))
 
     def compressed_log(self, filename):
