@@ -38,3 +38,11 @@ Here is a list of some possible improvements. They are in no particular order.
 9. Cleanup and simplify the hierarchy in pymotifs.core.stages. Currently, there
    are too many levels of inheritance. This can be cut down quite a bit using
    composition instead.
+
+10. Do a better job at not recomputing stages which produce no data. For
+    example, units.incomplete will often produce nothing for a given structure
+    (eg. 3BO1) and thus each time the pipeline is run the stage will attempt to
+    recompute missing for the file. This slows things down as we are redoing
+    work that will not produce anything. This can probably be over come by
+    using the marks in pdb_analysis_status to determine if this has been
+    processed before.
