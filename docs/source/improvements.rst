@@ -52,3 +52,10 @@ Here is a list of some possible improvements. They are in no particular order.
     to_process. Then it gets the difference between the two and runs those.
     This would remove the need for a 'has_data' method as we know that each
     entry being processed will never have data.
+
+12. Unify all configuration data. There are 3 places where things are
+    configured, the configuration file (`conf/motifatlas.json`), the
+    pymotifs.constants file, options given on the command line, the values set
+    using '--manual key=value' on the command line. It would be good if all
+    three were a single thing. Right now each totally separate but it would be
+    really useful if any could be set in the same way.
