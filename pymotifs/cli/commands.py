@@ -145,6 +145,52 @@ def do(ctx, name, ids, **kwargs):
     run(ctx, name, ids, **kwargs)
 
 
+@cli.command('explore', short_help="Determine what stage(s) will be run")
+@click.option('--skip-dependencies', is_flag=True, help='Skip stage(s)')
+@click.option('--skip-stage', multiple=True, help='Stage to skip')
+@click.option('--recalculate', multiple=True,
+              metavar='STAGE', help="Recalculate data for the given stage(s)")
+@click.option('--all', is_flag=True, help="Use all RNA containing PDBS")
+@click.option('--known', is_flag=True, help="Use only downloaded files")
+@click.option('--after-date', default=None,
+              type=DATE, help='Get files posted after DATE (YYYY-MM-DD)')
+@click.option('--before-date', default=None,
+              type=DATE, help='Get files posted before DATE (YYYY-MM-DD)')
+@click.option('--exclude', multiple=True, type=PDB,
+              help='Excluded PDB(s)')
+@click.argument('name')
+@click.argument('ids', nargs=-1, type=PDB)
+@click.pass_context
+def explore(ctx, name, ids, recalculate=None, **kwargs):
+    kwargs.update(ctx.parent.objs)
+    engine = kwargs['engine']
+    config = kwargs['config']
+    mod.reflect(engine)
+
+    try:
+        setup.expand_stage_pattern(name, 'recalculate', kwargs)
+        setup.expand_stage_pattern(name, 'skip_stage', kwargs)
+    except introspect.UnknownStageError as err:
+        click.secho("Unknown stage %s" % err.args, err=True, fg='red')
+        ctx.exit(1)
+
+    if not ids:
+        ids = setup.pdbs(config, kwargs)
+
+    kwargs['exclude'] = kwargs.get('skip_stage')
+
+    dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
+    result = []
+    for stage in dispatcher.stages(name):
+        recalc = ''
+        if recalculate is True or stage.name in recalculate:
+            recalc = 'Will Recalculate'
+        result.append((stage.name, recalc))
+    formatter = click.HelpFormatter(width=90)
+    formatter.write_dl(result)
+    click.echo(formatter.getvalue(), nl=False)
+
+
 @cli.command(short_help='Populate a database')
 @click.pass_context
 def bootstrap(ctx, **kwargs):
