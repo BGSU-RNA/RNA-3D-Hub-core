@@ -27,12 +27,15 @@ from pymotifs.chain_chain.comparision import Loader as SimilarityLoader
 
 class Loader(core.SimpleLoader):
     """The actual Loader to compute and store ordering.
+
+    Attributes
+    ----------
+    trials : int, 10
+        The number to runs to use when sorting the members of each group.
     """
 
-    dependencies = set([NrChainLoader, NrClassLoader, SimilarityLoader])
-
     trials = 10
-    """The number of trials for creating the ordering"""
+    dependencies = set([NrChainLoader, NrClassLoader, SimilarityLoader])
 
     def to_process(self, pdbs, **kwargs):
         """Look up all NR classes. This ignores the given PDBs and just creates
