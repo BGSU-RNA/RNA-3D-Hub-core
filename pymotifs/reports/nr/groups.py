@@ -276,7 +276,7 @@ class Info(object):
                                   mapping.species_name.label('species'),
                                   chain.compound,
                                   chain.sequence,
-                                  func.count(units.unit_id).label('observed'),
+                                  func.count(units.unit_id.distinct()).label('observed'),
                                   exp.length.label('experimental'),
                                   ).\
                 outerjoin(species, species.chain_id == chain.chain_id).\
