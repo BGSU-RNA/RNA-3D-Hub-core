@@ -36,25 +36,29 @@ class Stage(base.Base):
     ----------
     skip : set
         A set of all structures to skip.
+    update_gap : datetime.timedelta None
+        Maximum length of time between updates. False for forever.
+    dependencies : set, set()
+        What stages this stage depends upon.
+    mark : bool, True
+        Flag if we should mark stuff as processed.
+    skip_complex : bool, True
+        If we should skip complex operators
+    skip : list, []
+        Collection of ids to always skip
+    saver : None
+        Class to use for saving
+    use_marks : bool, False
+        Flag to use mark data when skipping.
     """
 
     update_gap = None
-    """Maximum length of time between updates. False for forever. """
-
     dependencies = set()
-    """What stages this stage depends upon. """
-
     mark = True
-    """Flag if we should mark stuff as processed."""
-
     skip_complex = True
-    """If we should skip complex operators"""
-
     skip = []
-    """Collection of ids to always skip"""
-
     saver = None
-    """Class to use for saving"""
+    use_marks = False
 
     def __init__(self, *args, **kwargs):
         """Build a new Stage.
@@ -269,6 +273,11 @@ class Stage(base.Base):
         also recalculate. This may also be done by setting the configuration
         value of 'recalculate' for the name of stage to True.
 
+        If self.use_marks is True then this will not recompute if there is a
+        mark, even if there is no data. This case will be logged to examine.
+        Note if you use this, you must be sure it is the correct thing to do.
+        It can have unclear effects.
+
         Parameters
         ----------
         entry : object
@@ -367,7 +376,13 @@ class Stage(base.Base):
             self.logger.info("Time gap for %s too large, recomputing", entry)
             return True
 
-        if self.is_missing(entry, **kwargs):
+        is_missing = self.is_missing(entry, **kwargs)
+        if is_missing and self.use_marks and self.allow_no_data:
+            if self.was_marked(entry, **kwargs):
+                self.logger.info("Marked as completed, despite no data")
+                return False
+
+        if is_missing:
             self.logger.info("Missing data from %s. Will compute", entry)
             return True
 
