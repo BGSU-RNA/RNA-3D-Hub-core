@@ -10,13 +10,11 @@ import collections as coll
 from pymotifs import core
 from pymotifs import models as mod
 
-from pymotifs.utils import row2dict
-
 from pymotifs.units.info import Loader as InfoLoader
 
 
-class Entry(coll.namedtuple('Entry', ['model', 'chain', 'number', 'sequence',
-                                      'alt_id', 'insertion'])):
+class Entry(coll.namedtuple('Entry', ['pdb_id', 'model', 'chain', 'number',
+                                      'unit', 'alt_id', 'ins_code'])):
     """A useful tuple for creating mappings and handling incomplete/missing
     units. It does not include symmetry operators to allow for mapping from
     these entries to all unit ids which will include symmetry operators.
@@ -58,39 +56,6 @@ class Loader(core.SimpleLoader):
         return session.query(mod.UnitIncomplete).\
             filter(mod.UnitIncomplete.pdb_id == pdb)
 
-    def mapping(self, pdb):
-        """Create a mapping from the parts of a unit id to a full unit id for
-        some pdb id. This is needed since the missing_keys method provides part
-        of the unit ids to indicate what parts are unobserved/missing.
-
-        Parameters
-        ----------
-        pdb : str
-            The PDB id
-
-        Returns
-        -------
-        mapping : dict
-            A mapping from Entry keys to unit id.
-        """
-        with self.session() as session:
-            query = session.query(mod.UnitInfo.model,
-                                  mod.UnitInfo.chain,
-                                  mod.UnitInfo.number,
-                                  mod.UnitInfo.unit.label('sequence'),
-                                  mod.UnitInfo.alt_id,
-                                  mod.UnitInfo.ins_code.label('insertion'),
-                                  mod.UnitInfo.unit_id,
-                                  ).\
-                filter(mod.UnitInfo.pdb_id == pdb)
-            mapping = coll.defaultdict(set)
-            for result in query:
-                r = row2dict(result)
-                unit_id = r.pop('unit_id')
-                key = Entry(**r)
-                mapping[key].add(unit_id)
-        return mapping
-
     def missing_keys(self, pdb):
         """Determine the unit ids in a file that are missing/unobserved. This
         parses the mmCIF file for the given PDB and examines the
@@ -124,7 +89,7 @@ class Loader(core.SimpleLoader):
             if 'label_alt_id' in row and row['label_alt_id'] != '?':
                 alt_id = row['label_alt_id']
 
-            key = Entry(model, chain, num, seq, alt_id, ins)
+            key = Entry(pdb, model, chain, num, seq, alt_id, ins)
             missing.add(key)
         return missing
 
@@ -148,16 +113,6 @@ class Loader(core.SimpleLoader):
             unit ids.
         """
         data = []
-        seen = set()
-        mapping = self.mapping(pdb)
         for key in self.missing_keys(pdb):
-            if key not in mapping:
-                self.logger.info("Skipping unobserved %s", str(key))
-            for uid in mapping[key]:
-                if uid in seen:
-                    continue
-                seen.add(uid)
-                data.append(mod.UnitIncomplete(unit_id=uid,
-                                               pdb_id=pdb,
-                                               is_incomplete=True))
+            data.append(mod.UnitIncomplete(**key._asdict()))
         return data
