@@ -11,15 +11,20 @@ nucleotides. The disqualification codes are:
 5 - incomplete nucleotides
 6 - self-complementary internal loop
 7 - Too many symmetry operators
+8 - A fictional loop
+9 - A loop with pair outside of the range
 """
+
+from collections import defaultdict
+from collections import namedtuple as nt
 
 import operator as op
 import functools as ft
-import itertools as it
 import collections as coll
 
 from sqlalchemy import asc
 from sqlalchemy import desc
+from sqlalchemy.orm import aliased
 
 from fr3d.unit_ids import decode
 
@@ -27,10 +32,15 @@ from pymotifs import core
 from pymotifs.utils import row2dict
 from pymotifs.utils import grouper
 from pymotifs import models as mod
+from pymotifs.units.incomplete import Entry
+
+from pymotifs.constants import RSRZ_PAIRED_OUTLIERS as PAIR
+from pymotifs.constants import RSRZ_FICTIONAL_CUTOFF as FICTIONAL_CUTOFF
 
 from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
 from pymotifs.loops.positions import Loader as PositionLoader
+from pymotifs.units.incomplete import Loader as IncompleteLoader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqMappingLoader
 from pymotifs.exp_seq.positions import Loader as ExpSeqPositionLoader
 
@@ -42,9 +52,26 @@ COMPLEMENTARY = {
 }
 
 
+class AssessmentData(nt('AssessmentData', ['incomplete', 'pairs', 'rsrz'])):
+    """Just a value class to store some assessment related data.
+
+    Attributes
+    ----------
+    incomplete : dict
+        Data on what nucleotides are incomplete
+    pairs : dict
+        Dict mapping from loop id to nts in the loop that have internal
+        interactions
+    rsrz : dict
+        Data on rsrz data for all nucleotides
+    """
+    pass
+
+
 class Loader(core.SimpleLoader):
     dependencies = set([ReleaseLoader, InfoLoader, PositionLoader,
-                        ExpSeqPositionLoader, ExpSeqMappingLoader])
+                        ExpSeqPositionLoader, ExpSeqMappingLoader,
+                        IncompleteLoader])
 
     @property
     def table(self):
@@ -101,37 +128,79 @@ class Loader(core.SimpleLoader):
             filter(mod.LoopInfo.pdb_id == pdb).\
             filter(mod.LoopQa.loop_release_id == release_id)
 
-    def components(self, pdb):
-        structure = self.structure(pdb)
-        components = {}
-        for comp in structure.residues():
-            components[comp.unit_id()] = comp
-        return components
+    def paired(self, pdb):
+        """Load all within loop basepairs.
 
-    def incomplete(self, cif):
-        data = set()
-        total = it.chain(getattr(cif, 'pdbx_unobs_or_zero_occ_residues', []),
-                         getattr(cif, 'pdbx_unobs_or_zero_occ_atoms', []))
-        for row in total:
-            model = int(row['PDB_model_num'])
-            chain = row['auth_asym_id']
-            num = int(row['auth_seq_id'])
-            seq = row['auth_comp_id']
-            ins = None
-            if row['PDB_ins_code'] != '?':
-                ins = row['PDB_ins_code']
+        Parameters
+        ----------
+        pdb : str
+            The pdb id to use.
 
-            alt_id = None
-            if 'label_alt_id' in row and row['label_alt_id'] != '?':
-                alt_id = row['label_alt_id']
+        Returns
+        -------
+            A dict mapping from loop id to a set of paired units.
+        """
+        with self.session() as session:
+            pos1 = aliased(mod.LoopPositions)
+            pos2 = aliased(mod.LoopPositions)
+            interactions = mod.UnitPairsInteractions
+            info = mod.BpFamilyInfo
+            query = session.query(interactions.unit_id_1.label('unit1'),
+                                  interactions.unit_id_2.label('unit2'),
+                                  pos1.loop_id,
+                                  ).\
+                join(pos1, pos1.unit_id == interactions.unit_id_1).\
+                join(pos2, pos2.unit_id == interactions.unit_id_2).\
+                join(info, info.bp_family_id == interactions.f_lwbp).\
+                filter(interactions.pdb_id == pdb).\
+                filter(pos1.loop_id == pos2.loop_id).\
+                filter(info.is_near == 0)
 
-            key = (model, chain, num, seq, alt_id, ins)
-            data.add(key)
+            pairs = defaultdict(set)
+            for result in query:
+                pairs[result.loop_id].add(result.unit1)
+                pairs[result.loop_id].add(result.unit2)
+            return pairs
 
-        return data
+    def incomplete(self, pdb):
+        """Load all incomplete nucleotides from the database. This will query
+        the unit_incomplete for all incomplete data.
+
+        Parameters
+        ----------
+        pdb : str
+            The pdb id to use.
+
+        Returns
+        -------
+        incomplete : set
+            A set of unit ids that are incomplete.
+        """
+        with self.session() as session:
+            query = session.query(mod.UnitIncomplete.pdb_id,
+                                  mod.UnitIncomplete.model,
+                                  mod.UnitIncomplete.chain,
+                                  mod.UnitIncomplete.number,
+                                  mod.UnitIncomplete.unit,
+                                  mod.UnitIncomplete.alt_id,
+                                  mod.UnitIncomplete.ins_code,
+                                  ).\
+                filter_by(pdb_id=pdb)
+        return {Entry(**row2dict(r)) for r in query}
 
     def loops(self, pdb):
         """Load all the loops in the pdb file.
+
+        Parameters
+        ----------
+        pdb : str
+            The pdb id to use
+
+        Returns
+        -------
+        loops : list
+            A list of loop dictionaries. Each loop will contain an 'nts' list,
+            'units' list, chains set, signature string and endpoints list.
         """
 
         def empty_loop():
@@ -182,7 +251,7 @@ class Loader(core.SimpleLoader):
             for loop in loops:
                 ends = loop['endpoints']
                 loop['endpoints'] = [(e1, e2) for (e1, e2) in grouper(2, ends)]
-            return loops
+            return sorted(loops, key=op.itemgetter('id'))
 
     def position_info(self, unit):
         """Get the information about a position in an experimental sequence
@@ -218,7 +287,14 @@ class Loader(core.SimpleLoader):
             units = mod.UnitInfo
             mapping = mod.ExpSeqUnitMapping
             pos = mod.ExpSeqPosition
-            query = session.query(units).\
+            query = session.query(units.pdb_id,
+                                  units.model,
+                                  units.chain,
+                                  units.number,
+                                  units.unit,
+                                  units.alt_id,
+                                  units.ins_code,
+                                  ).\
                 join(mapping,
                      mapping.unit_id == units.unit_id).\
                 join(pos,
@@ -232,7 +308,7 @@ class Loader(core.SimpleLoader):
                 distinct().\
                 order_by(asc(pos.index))
 
-            return [row2dict(r) for r in query]
+            return [Entry(**row2dict(r)) for r in query]
 
     def complementary_sequence(self, loop):
         """Detect if a sequence is complementary.
@@ -244,7 +320,7 @@ class Loader(core.SimpleLoader):
         parts = []
         for (start, stop) in loop['endpoints']:
             units = self.units_between(start, stop)
-            parts.append([u['unit'] for u in units])
+            parts.append([u.unit for u in units])
 
         pair = zip(parts, reversed(parts))
         for (part1, part2) in pair:
@@ -293,7 +369,7 @@ class Loader(core.SimpleLoader):
         normal = ft.partial(op.contains, set(['A', 'C', 'G', 'U']))
         for (start, end) in loop['endpoints']:
             units = self.units_between(start, end)
-            modified.extend(u['unit'] for u in units if not normal(u['unit']))
+            modified.extend(u.unit for u in units if not normal(u.unit))
 
         return modified
 
@@ -334,9 +410,7 @@ class Loader(core.SimpleLoader):
 
         for (u1, u2) in loop['endpoints']:
             for unit in self.units_between(u1, u2):
-                key = (int(unit['model']), unit['chain'], int(unit['number']),
-                       unit['unit'], unit['ins_code'], unit['alt_id'])
-                if key in incomplete:
+                if unit in incomplete:
                     return True
         return False
 
@@ -364,8 +438,8 @@ class Loader(core.SimpleLoader):
         """
 
         ops = set()
-        for nt in loop['nts']:
-            parts = decode(nt)
+        for unit in loop['nts']:
+            parts = decode(unit)
             ops.add(parts['symmetry'])
         if loop['type'] == 'HL':
             return len(ops) != 1
@@ -374,11 +448,71 @@ class Loader(core.SimpleLoader):
         if loop['type'] == 'J3':
             return len(ops) > 3
 
-    def status(self, incomplete, loop):
+    def rsrz_data(self, pdb):
+        """Load the unit quality data for all units in the given structure.
+
+        Parameters
+        ----------
+        pdb : str
+            The PDB id to use.
+
+        Returns
+        -------
+        data : dict
+            A dict mapping from unit id to the rsr z_score.
+        """
+        data = defaultdict(lambda: None)
+        with self.session() as session:
+            query = session.query(mod.UnitQuality).\
+                join(mod.UnitInfo,
+                     mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
+                filter_by(unit_type_id='rna').\
+                filter_by(pdb_id=pdb)
+            data.update({r.unit_id: r.z_score for r in query})
+            return data
+
+    def is_fictional_loop(self, rsrz, loop):
+        """Detect if this loop is fictional. A fictional loop is defined as one
+        where all nucleotides in the loop have an RSRZ value are above some cutoff.
+        The cutoff used here is the FICTIONAL_CUTOFF imported from
+        pymotifs.constants.
+
+        Parameters
+        ----------
+        rsrz : dict
+            A dict mapping from unit id to rsrz score.
+        loop : dict
+            A loop dict with a nt entries that contains the list of all unit
+            ids in the loop.
+
+        Returns
+        -------
+        is_fictional : bool
+            True if all nucleotides in the loop have an RSRZ greater than the
+            cutoff.
+        """
+        return all(rsrz[unit] >= FICTIONAL_CUTOFF for unit in loop['nt'])
+
+    def is_fictional_pair(self, pairs, rsrz, loop):
+        """
+        """
+        paired = pairs[loop['id']]
+        return any(rsrz[u] >= PAIR for u in loop['nt'] if u in paired)
+
+    def status(self, assess, loop):
         """Compute the status code. The status code is defined above.
 
-        :param dict loop: A loop as returned from loops.
-        :returns: The status code.
+        Parameters
+        ----------
+        assess : AssessmentData
+            An assessment data object for information about the structure
+        loop : dict
+            A dictionary for containing information about the loop.
+
+        Returns
+        -------
+        status : int
+            The status code
         """
 
         if self.has_breaks(loop):
@@ -389,13 +523,33 @@ class Loader(core.SimpleLoader):
             return 4
         if self.too_many_sym_ops(loop):
             return 7
-        if self.has_incomplete_nucleotides(incomplete, loop):
+        if self.has_incomplete_nucleotides(assess.incomplete, loop):
             return 5
         if self.is_complementary(loop):
             return 6
+        # if self.is_fictional(assess.rsrz, loop):
+        #     return 8
+        # if self.has_fictional_pair(assess.rsrz, loop):
+        #     return 9
         return 1
 
-    def quality(self, incomplete, release_id, loop):
+    def quality(self, assess, release_id, loop):
+        """Compute the quality information for the given loop.
+
+        Parameters
+        ----------
+        assess : AssessmentData
+            The assessment data to use.
+        release_id : str
+            The loop release id to use
+        loop : dict
+            A loop dictionary to use.
+
+        Returns
+        -------
+        quality : dict
+            A quality dict to write to the database.
+        """
         seq = None
         if self.is_complementary(loop):
             seq = loop['seq'].replace('*', ',')
@@ -406,12 +560,17 @@ class Loader(core.SimpleLoader):
 
         return {
             'loop_id': loop['id'],
-            'status': self.status(incomplete, loop),
+            'status': self.status(assess, loop),
             'modifications': mods,
             'nt_signature': ', '.join(str(s) for s in loop['signature']),
             'complementary': seq,
             'loop_release_id': release_id,
         }
+
+    def assessment_data(self, pdb):
+        return AssessmentData(incomplete=self.incomplete(pdb),
+                              pairs=self.paired(pdb),
+                              rsrz=self.rsrz_data(pdb))
 
     def data(self, pdb, **kwargs):
         """Compute the qa status of each loop in the structure.
@@ -420,7 +579,6 @@ class Loader(core.SimpleLoader):
         :returns: A list of the status entries for all loops in the structure.
         """
 
-        cif = self.cif(pdb)
-        partial = self.incomplete(cif)
         release_id = self.current_id()
-        return [self.quality(partial, release_id, l) for l in self.loops(pdb)]
+        assess = self.assessment_data(pdb)
+        return [self.quality(assess, release_id, l) for l in self.loops(pdb)]

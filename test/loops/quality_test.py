@@ -26,6 +26,62 @@ class QueryingTest(Base):
         self.assertFalse(self.loader.has_data('0GID'))
 
 
+class LoadingTest(Base):
+    loader_class = Loader
+
+    def test_can_load_all_paired_units(self):
+        data = self.loader.paired('1FJG')
+        assert len(data) == 106
+        # This is a cross loop interaction
+        assert '1FJG|1|A|U|368' not in data['IL_1FJG_004']
+        assert data['IL_1FJG_004'] == set([
+            '1FJG|1|A|A|356',
+            '1FJG|1|A|A|55',
+            '1FJG|1|A|C|54',
+            '1FJG|1|A|G|357',
+            '1FJG|1|A|U|56',
+        ])
+        assert data['IL_1FJG_001'] == set([
+            '1FJG|1|A|U|30',
+            '1FJG|1|A|A|32',
+            '1FJG|1|A|U|552',
+            '1FJG|1|A|A|553',
+        ])
+
+    def test_can_load_all_incomplete_units(self):
+        data = self.loader.incomplete('1FJG')
+        assert len(data) == 154
+        assert ('1FJG', 1, 'D', 1, 'MET', None, None) in data
+        assert ('1FJG', 1, 'A', 5, 'U', None, None) in data
+
+    @pytest.mark.skip()
+    def test_can_load_all_loops(self):
+        data = self.loader.loops('1FJG')
+        assert len(data) == 106
+        assert data[0] == {
+            'id': 'HL_1FJG_001',
+            'type': 'HL',
+            'nts': [],
+            'units': ['U', 'U', 'U', 'G', 'A', 'U'],
+            'chains': set('A'),
+            'signature': [12, 13, 14, 15, 16, 17],
+            'pdb': '1FJG',
+            'seq': 'UUUGAUCCUGG',
+            'endpoints': None,
+        }
+
+    def test_can_load_all_rsrz_data(self):
+        data = self.loader.rsrz_data('1FJG')
+        assert len(data) == 1512
+        assert data['1FJG|1|A|A|32'] == 0.641
+
+    def test_can_load_all_assessment_data(self):
+        data = self.loader.assessment_data('1FJG')
+        assert len(data.pairs) == 106
+        assert len(data.incomplete) == 154
+        assert len(data.rsrz) == 1512
+
+
 class ComplementarySequenceTest(Base):
     loader_class = Loader
 
@@ -105,10 +161,9 @@ class RealDataValidationTests(Base):
 
     def test_can_detect_if_valid(self):
         loop = self.loop('HL_1GID_001')
-        cif = self.loader.cif('1GID')
-        incomplete = self.loader.incomplete(cif)
-        assert self.loader.status(incomplete, loop) == 1
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assess = self.loader.assessment_data('1GID')
+        assert self.loader.status(assess, loop) == 1
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'HL_1GID_001',
             'complementary': None,
             'modifications': None,
@@ -119,11 +174,10 @@ class RealDataValidationTests(Base):
 
     def test_can_detect_if_has_breaks(self):
         loop = self.loop('HL_1FG0_002')
-        cif = self.loader.cif('1FG0')
-        incomplete = self.loader.incomplete(cif)
+        assess = self.loader.assessment_data('1FG0')
         assert self.loader.has_breaks(loop) is True
-        assert self.loader.status(incomplete, loop) == 2
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assert self.loader.status(assess, loop) == 2
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'HL_1FG0_002',
             'complementary': None,
             'modifications': None,
@@ -134,12 +188,11 @@ class RealDataValidationTests(Base):
 
     def test_can_detect_if_has_modifications(self):
         loop = self.loop('HL_1FCW_015')
-        cif = self.loader.cif('1FCW')
-        incomplete = self.loader.incomplete(cif)
+        assess = self.loader.assessment_data('1FCW')
         assert self.loader.has_modified(loop) is True
         assert self.loader.modified_bases(loop) == ['5MU', 'PSU', '1MA']
-        assert self.loader.status(incomplete, loop) == 3
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assert self.loader.status(assess, loop) == 3
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'HL_1FCW_015',
             'complementary': None,
             'modifications': '5MU, PSU, 1MA',
@@ -151,11 +204,10 @@ class RealDataValidationTests(Base):
     @pytest.mark.xfail(reason='Bug fix in fr3d prevents this')
     def test_can_detect_if_has_bad_chain_number(self):
         loop = self.loop('HL_1A34_001')
-        cif = self.loader.cif('1A34')
-        incomplete = self.loader.incomplete(cif)
+        assess = self.loader.assessment_data('1A34')
         assert self.loader.bad_chain_number(loop) is True
-        assert self.loader.status(incomplete, loop) == 4
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assert self.loader.status(assess, loop) == 4
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'HL_1A34_001',
             'complementary': None,
             'modifications': None,
@@ -166,11 +218,10 @@ class RealDataValidationTests(Base):
 
     def test_can_detect_incomplete_nts(self):
         loop = self.loop('IL_2HOJ_001')
-        cif = self.loader.cif('2HOJ')
-        incomplete = self.loader.incomplete(cif)
-        assert self.loader.has_incomplete_nucleotides(incomplete, loop) is True
-        assert self.loader.status(incomplete, loop) == 5
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assess = self.loader.assessment_data('2HOJ')
+        assert self.loader.has_incomplete_nucleotides(assess.incomplete, loop) is True
+        assert self.loader.status(assess, loop) == 5
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'IL_2HOJ_001',
             'complementary': None,
             'modifications': None,
@@ -179,13 +230,13 @@ class RealDataValidationTests(Base):
             'loop_release_id': '0.01'
         }
 
+    @pytest.mark.xfail(reason="Probably a bad previous annotation")
     def test_can_detect_is_complementary(self):
         loop = self.loop('IL_1GRZ_007')
-        cif = self.loader.cif('1GRZ')
-        incomplete = self.loader.incomplete(cif)
+        assess = self.loader.assessment_data('1GRZ')
         assert self.loader.is_complementary(loop) is True
-        assert self.loader.status(incomplete, loop) == 6
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assert self.loader.status(assess, loop) == 6
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'IL_1GRZ_007',
             'complementary': 'CAG,CUG',
             'modifications': None,
@@ -197,11 +248,10 @@ class RealDataValidationTests(Base):
     @pytest.mark.skip(reason='Bug fix prevents this')
     def test_can_detect_if_more_than_one_symmetry(self):
         loop = self.loop('HL_1DUH_001')
-        cif = self.loader.cif('1DUH')
-        incomplete = self.loader.incomplete(cif)
+        assess = self.loader.assessment_data('1DUH')
         assert self.loader.too_many_sym_ops(loop) is True
-        assert self.loader.status(incomplete, loop) == 7
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assert self.loader.status(assess, loop) == 7
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'HL_1DUH_001',
             'complementary': 'CAG,CUG',
             'modifications': None,
@@ -220,11 +270,10 @@ class RealDataValidationTests(Base):
     @pytest.mark.skip(reason="no data yet")
     def test_handles_large_chain_break(self):
         loop = self.loop('HL_4W23_015')
-        cif = self.loader.cif('4W23')
-        incomplete = self.loader.incomplete(cif)
+        assess = self.loader.assessment_data('4W23')
         assert self.loader.has_breaks(loop) is True
-        assert self.loader.status(incomplete, loop) == 2
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assert self.loader.status(assess, loop) == 2
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'HL_4W23_015',
             'complementary': None,
             'modifications': None,
@@ -239,19 +288,24 @@ class IncompleteResidueTest(Base):
 
     def test_knows_if_not_incomplete(self):
         loop = self.loop('HL_1GID_003')
-        cif = self.loader.cif('1GID')
-        incomplete = self.loader.incomplete(cif)
-        has_inc = self.loader.has_incomplete_nucleotides(incomplete, loop)
+        assess = self.loader.assessment_data('1GID')
+        has_inc = self.loader.has_incomplete_nucleotides(assess.incomplete, loop)
+        assert has_inc is True
+        assert self.loader.status(assess, loop) == 5
+
+    def test_knows_if_incomplete_despite_all_coords(self):
+        loop = self.loop('HL_1GID_001')
+        assess = self.loader.assessment_data('1GID')
+        has_inc = self.loader.has_incomplete_nucleotides(assess.incomplete, loop)
         assert has_inc is False
-        assert self.loader.status(incomplete, loop) == 1
+        assert self.loader.status(assess, loop) == 1
 
     def test_can_detect_if_has_incomplete_nts(self):
         loop = self.loop('IL_2HOM_001')
-        cif = self.loader.cif('2HOM')
-        incomplete = self.loader.incomplete(cif)
-        assert self.loader.has_incomplete_nucleotides(incomplete, loop) is True
-        assert self.loader.status(incomplete, loop) == 5
-        assert self.loader.quality(incomplete, '0.01', loop) == {
+        assess = self.loader.assessment_data('2HOM')
+        assert self.loader.has_incomplete_nucleotides(assess.incomplete, loop) is True
+        assert self.loader.status(assess, loop) == 5
+        assert self.loader.quality(assess, '0.01', loop) == {
             'loop_id': 'IL_2HOM_001',
             'complementary': None,
             'modifications': None,
@@ -279,12 +333,11 @@ class IncompleteResidueTest(Base):
         for loop_id in ids:
             loop = self.loop(loop_id)
             pdb = loop_id.split('_')[1]
-            cif = self.loader.cif(pdb)
-            partial = self.loader.incomplete(cif)
-            inc = self.loader.has_incomplete_nucleotides(partial, loop)
-            assert inc is True, loop_id
-            assert self.loader.status(partial, loop) == 5, loop_id
-            val = self.loader.quality(partial, '0.01', loop)
+            assess = self.loader.assessment_data(pdb)
+            inc = self.loader.has_incomplete_nucleotides(assess.incomplete, loop)
+            assert inc is True, 'Failed incomplete with ' + loop_id
+            assert self.loader.status(assess, loop) == 5, loop_id
+            val = self.loader.quality(assess, '0.01', loop)
             val.pop('complementary')  # Ignoring for this test
             ans = {
                 'loop_id': loop_id,
@@ -341,7 +394,8 @@ class RealDataTest(Base):
             'IL_2HOJ_002': 1,
             'IL_2HOJ_003': 5,
             'HL_2HOJ_001': 2,
-            'HL_2HOJ_002': 1
+            'HL_2HOJ_002': 1,
+            'J3_2HOJ_001': 5,
         }
 
     def test_can_process_124D(self):
@@ -354,6 +408,7 @@ class RealDataTest(Base):
             'IL_2HOO_001': 5,
             'IL_2HOO_002': 1,
             'IL_2HOO_003': 5,
+            'J3_2HOO_001': 5,
         }
 
     def test_can_process_3CPW(self):
@@ -545,6 +600,11 @@ class RealDataTest(Base):
             'J3_3CPW_008': 1,
             'J3_3CPW_009': 1,
             'J3_3CPW_010': 1,
+            'J3_3CPW_011': 1,
+            'J3_3CPW_012': 1,
+            'J3_3CPW_013': 1,
+            'J3_3CPW_014': 1,
+            'J3_3CPW_015': 1,
         }
 
     def test_can_process_2HOM(self):
@@ -554,6 +614,7 @@ class RealDataTest(Base):
             'IL_2HOM_001': 5,
             'IL_2HOM_002': 1,
             'IL_2HOM_003': 5,
+            'J3_2HOM_001': 5,
         }
 
     def test_can_process_1S72(self):
@@ -744,6 +805,11 @@ class RealDataTest(Base):
             'J3_1S72_008': 1,
             'J3_1S72_009': 1,
             'J3_1S72_010': 1,
+            'J3_1S72_011': 1,
+            'J3_1S72_012': 1,
+            'J3_1S72_013': 1,
+            'J3_1S72_014': 1,
+            'J3_1S72_015': 1,
         }
 
     def test_can_process_3T4B(self):
