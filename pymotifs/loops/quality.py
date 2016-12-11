@@ -491,13 +491,13 @@ class Loader(core.SimpleLoader):
             True if all nucleotides in the loop have an RSRZ greater than the
             cutoff.
         """
-        return all(rsrz[unit] >= FICTIONAL_CUTOFF for unit in loop['nt'])
+        return all(rsrz[unit] >= FICTIONAL_CUTOFF for unit in loop['nts'])
 
     def is_fictional_pair(self, pairs, rsrz, loop):
         """
         """
         paired = pairs[loop['id']]
-        return any(rsrz[u] >= PAIR for u in loop['nt'] if u in paired)
+        return any(rsrz[u] >= PAIR for u in loop['nts'] if u in paired)
 
     def status(self, assess, loop):
         """Compute the status code. The status code is defined above.

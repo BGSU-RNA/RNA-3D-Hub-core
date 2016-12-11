@@ -820,3 +820,27 @@ class RealDataTest(Base):
             'IL_3T4B_001': 1,
             'IL_3T4B_002': 1,
         }
+
+
+class RSRZTests(Base):
+    loader_class = Loader
+
+    def test_knows_if_not_fictional_loop(self):
+        loop = self.loop('HL_1GID_003')
+        assess = self.loader.assessment_data('1GID')
+        assert self.loader.is_fictional_loop(assess.rsrz, loop) is False
+
+    def test_knows_if_no_fictional_pair(self):
+        loop = self.loop('HL_1GID_003')
+        assess = self.loader.assessment_data('1GID')
+        assert self.loader.is_fictional_pair(assess.pairs, assess.rsrz, loop) is False
+
+    def test_can_detect_fictional_loop(self):
+        loop = self.loop('HL_1FJG_003')
+        assess = self.loader.assessment_data('1FJG')
+        assert self.loader.is_fictional_loop(assess.rsrz, loop) is True
+
+    def test_can_detect_loop_with_fictional_pair(self):
+        loop = self.loop('HL_1FJG_003')
+        assess = self.loader.assessment_data('1FJG')
+        assert self.loader.is_fictional_pair(assess.pairs, assess.rsrz, loop) is True
