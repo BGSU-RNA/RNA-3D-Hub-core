@@ -140,7 +140,11 @@ MIN_NT_DISCREPANCY = 3
 NR_REPRESENTATIVE_METHOD = 'percent-increase'
 """What representative selection method to use"""
 
-RSRZ_PAIRED_OUTLIERS = 2
+RSRZ_PAIRED_OUTLIERS = 1
+"""The cutoff for finding if a loop contains poorly modeled interactions"""
+
+RSRZ_FICTIONAL_CUTOFF = 1
+"""The cutoff for finding if a loop is fictional by RSRZ"""
 
 NR_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
 """List of methods are allowed when selecting the representative of an NR
