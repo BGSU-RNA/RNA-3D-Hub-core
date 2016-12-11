@@ -4,6 +4,7 @@ from test import StageTest
 
 from pymotifs import core
 from pymotifs.exp_seq.mapping import Loader
+from pymotifs.exp_seq.mapping import MappedChain
 
 
 class QueryingTest(StageTest):
@@ -26,7 +27,8 @@ class DeterminingTheMappedChainsTest(StageTest):
 
     def test_gets_correct_chains(self):
         val = sorted(self.loader.mapped_chains('1S72'))
-        self.assertEquals(['0', '9'], val)
+        assert val == [MappedChain(id=101, chain_id=1676, name='9'),
+                       MappedChain(id=114, chain_id=1672, name='0')]
 
 
 class GettingExpMappingTest(StageTest):
@@ -42,7 +44,7 @@ class GettingExpMappingTest(StageTest):
 
     def test_complains_if_cannot_get_mappings_for_all_chains(self):
         with pytest.raises(core.InvalidState):
-            val = self.loader.exp_mapping('1GID', ['A', 'X'])
+            self.loader.exp_mapping('1GID', ['A', 'X'])
 
     def test_gets_a_correct_mapping(self):
         val = self.loader.exp_mapping('1GID', ['A', 'B'])
@@ -51,7 +53,6 @@ class GettingExpMappingTest(StageTest):
             for index in range(158):
                 ans.append((chain, index))
         assert ans == sorted(val.keys())
-
 
 
 class DataTest(StageTest):

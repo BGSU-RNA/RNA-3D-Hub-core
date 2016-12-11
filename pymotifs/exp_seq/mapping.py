@@ -4,14 +4,24 @@ experimental sequence positions and unit ids. It deals with positions that are
 not mapped to unit ids as well.
 """
 
+from collections import namedtuple as nt
+
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.utils import row2dict
 
 from pymotifs.exp_seq.info import Loader as InfoLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.exp_seq.chain_mapping import Loader as ChainMappingLoader
 from pymotifs.units.info import Loader as UnitLoader
 
+
+class MappedChain(nt('MappedChain', ['id', 'chain_id', 'name'])):
+    pass
+
+
+def as_mapped(result):
+    return MappedChain(**row2dict(result))
 
 DELETE = """
 DELETE exp_seq_unit_mapping
@@ -87,7 +97,7 @@ class Loader(core.Loader):
         with self.session() as session:
             session.execute(DELETE, {'pdb_id': pdb})
 
-    def chain_mapping(self, cif, chain, exp_mapping):
+    def chain_mapping(self, cif, mapped_chains, exp_mapping):
         """Compute the mapping between experimental sequence position id and
         unit id.
 
@@ -108,7 +118,8 @@ class Loader(core.Loader):
             position to unit id.
         """
 
-        for mapping in cif.experimental_sequence_mapping(chain):
+        trans = {m.name: m for m in mapped_chains}
+        for mapping in cif.experimental_sequence_mapping(trans.values()):
             unit_id = mapping['unit_id']
             index = mapping['index']
             chain = mapping['chain']
@@ -118,10 +129,14 @@ class Loader(core.Loader):
                 raise core.InvalidState("No pos id for %s" % str(key))
 
             pos_id = exp_mapping[key]
-            yield mod.ExpSeqUnitMapping(unit_id=unit_id,
-                                        chain=chain,
-                                        exp_seq_position_id=pos_id,
-                                        )
+            mapped = trans[chain]
+            yield mod.ExpSeqUnitMapping(
+                unit_id=unit_id,
+                chain=chain,
+                chain_id=mapped.chain_id,
+                exp_seq_chain_mapping_id=mapped.mapping_id,
+                exp_seq_position_id=pos_id,
+            )
 
     def exp_mapping(self, pdb, chains):
         """Compute a mapping from index in a chain to experimental sequence
@@ -181,12 +196,15 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(mod.ChainInfo.chain_name).\
+            query = session.query(mod.ChainInfo.chain_name.label('name'),
+                                  mod.ChainInfo.chain_id,
+                                  mod.ExpSeqChainMapping.exp_seq_id.label('id'),
+                                  ).\
                 join(mod.ExpSeqChainMapping,
                      mod.ExpSeqChainMapping.chain_id == mod.ChainInfo.chain_id).\
                 filter(mod.ChainInfo.pdb_id == pdb).\
                 filter(mod.ChainInfo.entity_macromolecule_type == 'Polyribonucleotide (RNA)')
-            return [result.chain_name for result in query]
+            return sorted(as_mapped(result) for result in query)
 
     def data(self, pdb, **kwargs):
         """Compute the data for the given pdb. This will load the cif file and
