@@ -150,7 +150,7 @@ NR_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
 """List of methods are allowed when selecting the representative of an NR
 group"""
 
-MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
+MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION', 'ELECTRON MICROSCOPY'])
 """list of methods allowed when selected loops from representatives."""
 
 MOTIF_RESOLUTION_CUTOFF = '4.0'
