@@ -115,7 +115,7 @@ class Saver(Base):
         if not saved:
             if not self.allow_no_data:
                 raise InvalidState("No data saved")
-            self.logger.warning("No data saved")
+            self.logger.info("No data saved")
 
 
 class DatabaseSaver(Saver):
