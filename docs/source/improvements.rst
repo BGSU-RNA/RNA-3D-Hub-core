@@ -59,3 +59,15 @@ Here is a list of some possible improvements. They are in no particular order.
     using '--manual key=value' on the command line. It would be good if all
     three were a single thing. Right now each totally separate but it would be
     really useful if any could be set in the same way.
+
+13. Refactor the pipeline to use `attrs
+    <https://attrs.readthedocs.io/en/stable/>`_ extensively. This makes it easy
+    to create new simple classes. Read the why to use it section for an
+    explanation of it's benefits, but I think it is a very good idea. I would
+    recommend that all new code use this module. An example of where to use it
+    would be as part of the ``to_process`` method of new stages. Instead of
+    returning a tuple, it could return an object built from an attrs class.
+    Another good place to use it would be when returning data from the
+    database. It would be very useful then to build up immutable objects
+    instead of mutable dicts. Doing so would make it clearer what is contained
+    in each result from the DB.
