@@ -40,6 +40,7 @@ class Entry(coll.namedtuple('Entry', ['pdb_id', 'model', 'chain', 'number',
 class Loader(core.SimpleLoader):
     merge = True
     allow_no_data = True
+    use_marks = True
     dependencies = set([InfoLoader])
 
     def query(self, session, pdb):
