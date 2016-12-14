@@ -23,6 +23,13 @@ class Loader(core.Loader):
         super(Loader, self).__init__(*args, **kwargs)
         self.precomputed = self.config['locations']['loops_mat_files']
 
+    def to_process(self, pdbs, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.LoopInfo.pdb_id).\
+                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
+                distinct()
+            return [r.pdb_id for r in query]
+
     def remove(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
