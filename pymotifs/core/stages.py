@@ -571,11 +571,10 @@ class Loader(Stage):
 
         if not data:
             if not self.allow_no_data:
-                self.logger.error("No data produced")
                 raise InvalidState("Stage %s produced no data processing %s" %
                                    (self.name, entry))
             else:
-                self.logger.warning("No data produced")
+                self.logger.warning("No data produced for %s", str(entry))
                 return
 
         self.store(entry, data, **kwargs)
