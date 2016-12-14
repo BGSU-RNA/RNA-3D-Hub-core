@@ -119,7 +119,7 @@ class Loader(core.Loader):
         """
 
         trans = {m.name: m for m in mapped_chains}
-        for mapping in cif.experimental_sequence_mapping(trans.values()):
+        for mapping in cif.experimental_sequence_mapping(trans.keys()):
             unit_id = mapping['unit_id']
             index = mapping['index']
             chain = mapping['chain']
@@ -132,9 +132,7 @@ class Loader(core.Loader):
             mapped = trans[chain]
             yield mod.ExpSeqUnitMapping(
                 unit_id=unit_id,
-                chain=chain,
-                chain_id=mapped.chain_id,
-                exp_seq_chain_mapping_id=mapped.mapping_id,
+                exp_seq_chain_mapping_id=mapped.id,
                 exp_seq_position_id=pos_id,
             )
 
@@ -156,6 +154,7 @@ class Loader(core.Loader):
             sequence id.
         """
 
+        chain_names = [c.name for c in chains]
         with self.session() as session:
             query = session.query(mod.ExpSeqPosition.index,
                                   mod.ExpSeqPosition.exp_seq_position_id,
@@ -165,7 +164,7 @@ class Loader(core.Loader):
                 join(mod.ChainInfo,
                      mod.ChainInfo.chain_id == mod.ExpSeqChainMapping.chain_id).\
                 filter(mod.ChainInfo.pdb_id == pdb).\
-                filter(mod.ChainInfo.chain_name.in_(chains))
+                filter(mod.ChainInfo.chain_name.in_(chain_names))
 
             seen = set()
             mapping = {}
@@ -174,9 +173,9 @@ class Loader(core.Loader):
                 mapping[key] = result.exp_seq_position_id
                 seen.add(result.chain_name)
 
-            if seen != set(chains):
+            if seen != set(chain_names):
                 msg = "Could not get mappings for all chains in %s, %s"
-                raise core.InvalidState(msg, pdb, ', '.join(chains))
+                raise core.InvalidState(msg, pdb, ', '.join(chain_names))
 
             return mapping
 
@@ -198,7 +197,7 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name.label('name'),
                                   mod.ChainInfo.chain_id,
-                                  mod.ExpSeqChainMapping.exp_seq_id.label('id'),
+                                  mod.ExpSeqChainMapping.exp_seq_chain_mapping_id.label('id'),
                                   ).\
                 join(mod.ExpSeqChainMapping,
                      mod.ExpSeqChainMapping.chain_id == mod.ChainInfo.chain_id).\
