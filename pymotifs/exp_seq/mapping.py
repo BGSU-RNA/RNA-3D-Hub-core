@@ -75,7 +75,8 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.chain).\
-                join(mod.ExpSeqUnitMapping, mod.ExpSeqUnitMapping.unit_id == mod.UnitInfo.unit_id).\
+                join(mod.ExpSeqUnitMapping,
+                     mod.ExpSeqUnitMapping.unit_id == mod.UnitInfo.unit_id).\
                 join(mod.ExpSeqPosition,
                      mod.ExpSeqPosition.exp_seq_position_id == mod.ExpSeqUnitMapping.exp_seq_position_id).\
                 filter(mod.UnitInfo.pdb_id == pdb).\
