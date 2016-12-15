@@ -20,7 +20,8 @@ is_type = lambda t: lambda c: macro_type(c) == t
 is_protein = is_type('Polypeptide(L)')
 is_rna = is_type('Polyribonucleotide (RNA)')
 
-PdbInfo = coll.namedtuple('PdbInfo', ['protein_chains', 'rna_chains'])
+PdbInfo = coll.namedtuple('PdbInfo', ['protein_chains', 'rna_chains',
+                                      'resolution'])
 ChainInfo = coll.namedtuple('ChainInfo', ['name', 'species', 'compound',
                                           'observed', 'experimental',
                                           'sequence'])
@@ -99,6 +100,7 @@ class Entry(object):
         self.bp = 0.0
         self.nt = 0.0
         self.pdb_validation = {}
+        self.resolution = None
 
     def add_info(self, info):
         """Use the given `Info` object to update the attributes of this object.
@@ -116,6 +118,7 @@ class Entry(object):
         self.proteins = [info.chains[c].compound for c in prot_chains]
         self.protein_species = [info.chains[c].species for c in prot_chains]
         self.pdb_validation = info.validation.get(self.pdb_id, {})
+        self.resolution = pdb_info.resolution
 
         ife_info = info.interactions[self.ife_id]
         self.bp = ife_info['bp']
@@ -184,6 +187,7 @@ class Entry(object):
             'IFE id': self.ife_id,
             'BP/NT': bp_nt,
             'PDB': self.pdb_id,
+            'Resolution': self.resolution,
             'Chains': ', '.join(self.names),
             'Protein Species': ', '.join(str(p) for p in protein_species),
             'Protein Compound': ', '.join(str(p) for p in proteins),
@@ -228,7 +232,11 @@ class Info(object):
             return self._pdb
 
         with self.session() as session:
-            query = session.query(mod.ChainInfo).\
+            query = session.query(mod.ChainInfo.chain_id,
+                                  mod.ChainInfo.entity_macromolecule_type,
+                                  mod.ChainInfo.pdb_id,
+                                  mod.PdbInfo.resolution).\
+                join(mod.PdbInfo, mod.PdbInfo.pdb_id == mod.ChainInfo.pdb_id).\
                 order_by(mod.ChainInfo.pdb_id)
 
             results = it.imap(row2dict, query)
@@ -238,7 +246,8 @@ class Info(object):
                 chains = list(group)
                 proteins = [c['chain_id'] for c in chains if is_protein(c)]
                 rna = [c['chain_id'] for c in chains if is_rna(c)]
-                self._pdb[pdb] = PdbInfo(proteins, rna)
+                resolution = chains[0]['resolution']
+                self._pdb[pdb] = PdbInfo(proteins, rna, resolution)
         return self._pdb
 
     @property
@@ -308,6 +317,7 @@ class Groups(core.Reporter):
         'IFE id',
         'BP/NT',
         'PDB',
+        'Resolution',
         'Chains',
         'Protein Species',
         'Protein Compound',
