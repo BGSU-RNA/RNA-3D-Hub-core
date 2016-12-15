@@ -306,7 +306,20 @@ class QualityMetrics(Representative):
     """
     method = 'quality-metrics'
 
-    def select_by_bp_nt(self, group):
+    def has_hardcoded_representative(self, group):
+        members = {m['id'] for m in group}
+        found = members.intersection()
+        if len(found) > 1:
+            self.logger.error("Groups merged, using quality logic for %s",
+                              group)
+            return None
+
+        if not found:
+            self.logger.debug("No hardcoded representative for %s", group)
+            return None
+        return found.pop()
+
+    def select_final_representative(self, group):
         selector = ParentIncrease(self.config, self.session)
         return selector(group)
 
@@ -334,9 +347,13 @@ class QualityMetrics(Representative):
         return group
 
     def __call__(self, given):
+        hardcoded = self.hardcoded_representative(given)
+        if hardcoded:
+            return hardcoded
+
         if self.is_cryo_group(given):
             return self.filter_by_bp(given)
 
         group = self.filter_group_by_method(given)
         group = self.filter_group_by_quality(group)
-        return self.select_by_bp_nt(group)
+        return self.select_final_representative(group)
