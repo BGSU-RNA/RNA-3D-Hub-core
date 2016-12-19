@@ -52,6 +52,10 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     mod.reflect(engine)
 
+    if kwargs['redo'] is True:
+        kwargs['recalculate'] = '.'
+        kwargs['skip_dependencies'] = True
+
     try:
         setup.expand_stage_pattern(name, 'recalculate', kwargs)
         setup.expand_stage_pattern(name, 'skip_stage', kwargs)
@@ -119,6 +123,8 @@ def cli(ctx, **options):
 @click.option('--seed', type=int, help="Set the random seed")
 @click.option('--recalculate', multiple=True,
               metavar='STAGE', help="Recalculate data for the given stage(s)")
+@click.option('--redo', is_flag=True, default=False,
+              help='Skip dependencies and recalculate this stage')
 @click.option('--all', is_flag=True, help="Use all RNA containing PDBS")
 @click.option('--known', is_flag=True, help="Use only downloaded files")
 @click.option('--after-date', default=None,
