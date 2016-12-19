@@ -155,3 +155,9 @@ MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION', 'ELECTRON MICROSCOPY'])
 
 MOTIF_RESOLUTION_CUTOFF = '4.0'
 """The resolution cutoff for representatives to use in the ML atlas"""
+
+MANUAL_IFE_REPRESENTATIVES = set([
+  '4LFB|1|A',  # TTh SSU
+    ])
+"""List of IFEs to use as the representative of its equivalence class"""
+"""Until superseded by some criteria that the pipeline is able to check"""
