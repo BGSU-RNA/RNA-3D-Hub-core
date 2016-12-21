@@ -10,7 +10,9 @@ from pymotifs.motifs.release import Loader as ReleaseLoader
 
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader, InfoLoader])
-    table = mod.MlLoopPositions
+    @property
+    def table(self):
+        return mod.MlLoopPositions
 
     def positions(self, cached):
         data = []

@@ -13,7 +13,9 @@ from pymotifs.motifs.release import Loader as ReleaseLoader
 
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader, InfoLoader])
-    table = mod.MlLoopOrder
+    @property
+    def table(self):
+        return mod.MlLoopOrder
 
     def ordering(self, cached):
         data = []

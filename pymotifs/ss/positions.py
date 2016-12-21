@@ -8,7 +8,9 @@ from pymotifs.ss.info import Loader as SsInfoLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([SsInfoLoader])
-    table = mod.SsPositions
+    @property
+    def table(self):
+        return mod.SsPositions
     mark = False
 
     def ss_id(self, filename):

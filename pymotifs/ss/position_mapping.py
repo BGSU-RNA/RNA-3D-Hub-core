@@ -14,7 +14,9 @@ from pymotifs.correspondence.positions import Loader as CorrPositionLoader
 class Loader(core.SimpleLoader):
     dependencies = set([SsMappingLoader, SsPositionLoader, ExpPositionLoader,
                         ExpSeqMappingLoader])
-    table = mod.SsExpSeqPositionMapping
+    @property
+    def table(self):
+        return mod.SsExpSeqPositionMapping
 
     def to_process(self, pdbs, **kwargs):
         ss_map = mod.SsExpSeqMapping

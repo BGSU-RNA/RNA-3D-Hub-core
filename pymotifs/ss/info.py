@@ -5,7 +5,9 @@ from pymotifs.ss.helpers import md5
 
 
 class Loader(core.SimpleLoader):
-    table = mod.SsInfo
+    @property
+    def table(self):
+        return mod.SsInfo
     mark = False
 
     def to_process(self, pdbs, **kwargs):

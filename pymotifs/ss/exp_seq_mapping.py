@@ -15,7 +15,9 @@ from pymotifs.ss.helpers import md5
 
 class Loader(core.SimpleLoader):
     dependencies = set([SsInfoLoader, IfeLoader, ExpSeqChainLoader])
-    table = mod.SsExpSeqMapping
+    @property
+    def table(self):
+        return mod.SsExpSeqMapping
     mark = False
 
     def to_process(self, pdbs, **kwargs):

@@ -15,7 +15,9 @@ from pymotifs.pdbs.loader import Loader as PdbLoader
 class Loader(core.MassLoader):
     merge_data = True
     dependencies = set([PdbLoader])
-    table = mod.ChainInfo
+    @property
+    def table(self):
+        return mod.ChainInfo
 
     names = {
         'structureId': 'pdb_id',

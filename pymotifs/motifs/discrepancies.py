@@ -10,7 +10,9 @@ from pymotifs.motifs.release import Loader as ReleaseLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([ReleaseLoader])
-    table = mod.MlMutualDiscrepancy
+    @property
+    def table(self):
+        return mod.MlMutualDiscrepancy
 
     def to_process(self, *args, **kwargs):
         return ReleaseLoader.types
