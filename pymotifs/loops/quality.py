@@ -94,8 +94,10 @@ class Loader(core.SimpleLoader):
 
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
+                join(mod.LoopPositions,
+                     mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
                 distinct()
-            known = set(r.pdb_id for r in query)
+            known = {r.pdb_id for r in query}
 
         return sorted(set(pdbs).intersection(known))
 
