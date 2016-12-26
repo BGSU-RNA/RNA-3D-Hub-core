@@ -9,6 +9,7 @@ from pymotifs import core
 from pymotifs import utils
 from pymotifs import models as mod
 from pymotifs.utils import matlab
+from pymotifs.utils.correct_units import Correcter
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
 from pymotifs.loops.release import Loader as ReleaseLoader
@@ -139,11 +140,10 @@ class Loader(core.Loader):
         """
 
         correcter = Correcter(self.config, self.session)
-        mapping = corrector.normalized_mapping(pdb)
+        mapping = correcter.normalized_mapping(pdb)
         def fn(unit_id):
             unit = correcter.as_unit(unit_id)
-            valid = correcter.correct(pdb, mapping, unit, require_all=True)
-            return mapping[valid]
+            return correcter.correct(mapping, unit)
         return fn
 
     def data(self, pdb, **kwargs):
@@ -167,8 +167,8 @@ class Loader(core.Loader):
                 raise core.InvalidState("Unknown loop: %s" % row['loop_id'])
 
             if row['unit_id'] not in mapping[row['loop_id']]:
-                msg = "Unit %s not part of expected units %s"
-                entry = (row['unit_id'], mapping[row['loop_id']])
+                msg = "Unit %s not part of expected units %s for %s"
+                entry = (row['unit_id'], mapping[row['loop_id']], row['loop_id'])
                 raise core.InvalidState(msg % entry)
 
             entry.update(row)

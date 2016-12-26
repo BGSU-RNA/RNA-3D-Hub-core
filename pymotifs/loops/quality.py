@@ -73,6 +73,8 @@ class Loader(core.SimpleLoader):
                         ExpSeqPositionLoader, ExpSeqMappingLoader,
                         IncompleteLoader])
 
+    allow_no_data = True
+
     @property
     def table(self):
         return mod.LoopQa
@@ -98,9 +100,12 @@ class Loader(core.SimpleLoader):
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
                 filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
                 distinct()
-            known = set(r.pdb_id for r in query)
+            known = {r.pdb_id for r in query}
 
-        return sorted(set(pdbs).intersection(known))
+        to_use = sorted(set(pdbs).intersection(known))
+        if not to_use:
+            raise core.Skip("Nothing to process")
+        return to_use
 
     def current_id(self):
         """Compute the current loop release id.

@@ -17,7 +17,9 @@ from pymotifs.species_mapping import Loader as SpeciesLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([ChainLoader, SpeciesLoader])
-    table = mod.ChainSpecies
+    @property
+    def table(self):
+        return mod.ChainSpecies
 
     def query(self, session, pdb):
         return session.query(mod.ChainSpecies).\

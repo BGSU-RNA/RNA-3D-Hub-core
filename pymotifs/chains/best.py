@@ -13,7 +13,9 @@ from pymotifs.mat_files import Loader as MatLoader
 
 class BestChainsAndModelsLoader(core.SimpleLoader):
     dependencies = set([MatLoader])
-    table = mod.PdbBestChainsAndModels
+    @property
+    def table(self):
+        return mod.PdbBestChainsAndModels
 
     def query(self, session, pdb, **kwargs):
         return session.query(mod.PdbBestChainsAndModels).filter_by(pdb_id=pdb)

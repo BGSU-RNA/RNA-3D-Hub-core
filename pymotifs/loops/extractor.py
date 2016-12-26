@@ -50,7 +50,7 @@ class Loader(core.SimpleLoader):
             units = [corrector.as_unit(uid) for uid in unit_ids]
             corrected = corrector.correct_structure(pdb, mapping, units,
                                                     require_all=True)
-            return tuple(sorted(mapping[unit] for unit in corrected))
+            return tuple(sorted(unit for unit in corrected))
 
         return fn
 
@@ -126,6 +126,7 @@ class Loader(core.SimpleLoader):
             loop_id = self._get_loop_id(full_id, pdb, loop_type, mapping)
             loops[index].Filename = loop_id
 
+            print((loop_id, loop.full_id))
             data.append(mod.LoopInfo(
                 loop_id=loop_id,
                 type=loop_type,

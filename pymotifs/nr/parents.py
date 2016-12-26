@@ -16,7 +16,9 @@ from pymotifs.nr.id_mapping import Loader as IdMappingLoader
 class Loader(BaseLoader):
     dependencies = set([IdMappingLoader, ChainLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
-    table = mod.NrClassParents
+    @property
+    def table(self):
+        return mod.NrClassParents
 
     def parents(self, release, grouping):
         data = []

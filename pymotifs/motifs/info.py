@@ -12,7 +12,9 @@ from pymotifs.motifs.release import Loader as ReleaseLoader
 
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader])
-    table = mod.MlMotifsInfo
+    @property
+    def table(self):
+        return mod.MlMotifsInfo
 
     def motifs(self, cached):
         data = []
