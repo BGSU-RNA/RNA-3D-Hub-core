@@ -73,6 +73,8 @@ class Loader(core.SimpleLoader):
                         ExpSeqPositionLoader, ExpSeqMappingLoader,
                         IncompleteLoader])
 
+    allow_no_data = True
+
     @property
     def table(self):
         return mod.LoopQa
