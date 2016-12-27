@@ -96,8 +96,9 @@ class Loader(core.SimpleLoader):
 
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
-                join(mod.LoopPositions,
+                join(mod.LoopPositions, 
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
+                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
                 distinct()
             known = {r.pdb_id for r in query}
 
@@ -237,6 +238,8 @@ class Loader(core.SimpleLoader):
                 filter(mod.LoopInfo.pdb_id == pdb).\
                 order_by(asc(mod.LoopPositions.position))
 
+            print(pdb)
+            print(query.count())
             loops = coll.defaultdict(empty_loop)
             for result in query:
                 current = loops[result.id]
