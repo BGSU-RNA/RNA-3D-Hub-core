@@ -14,8 +14,7 @@ class QueryingTest(StageTest):
         assert self.loader.has_data('1GID') is True
 
     def test_knows_if_has_no_data(self):
-        with pytest.raises(core.Skip):
-            self.loader.has_data('0FJG')
+        assert self.loader.has_data('0FJG') is False
 
     @pytest.mark.skip()
     def test_can_remove_data(self):
@@ -27,27 +26,31 @@ class DeterminingTheMappedChainsTest(StageTest):
 
     def test_gets_correct_chains(self):
         val = sorted(self.loader.mapped_chains('1S72'))
-        assert val == [MappedChain(id=101, chain_id=1676, name='9'),
-                       MappedChain(id=114, chain_id=1672, name='0')]
+        assert len(val) == 2
+        assert sorted(v.name for v in val) == ['0', '9']
 
 
 class GettingExpMappingTest(StageTest):
     loader_class = Loader
 
+    def exp_mapping(self, pdb, *chains):
+        mapped = [MappedChain(id=None, chain_id=None, name=c) for c in chains]
+        return self.loader.exp_mapping(pdb, mapped)
+
     def test_can_get_full_mapping(self):
-        val = self.loader.exp_mapping('1S72', ['9', '0'])
+        val = self.exp_mapping('1S72', '0', '9')
         self.assertEquals(2922 + 122, len(val))
 
     def test_can_get_full_mapping_with_duplicate_exp_seq(self):
-        val = self.loader.exp_mapping('1GID', ['A', 'B'])
+        val = self.exp_mapping('1GID', 'A', 'B')
         self.assertEquals(158 * 2, len(val))
 
     def test_complains_if_cannot_get_mappings_for_all_chains(self):
         with pytest.raises(core.InvalidState):
-            self.loader.exp_mapping('1GID', ['A', 'X'])
+            self.exp_mapping('1GID', 'A', 'X')
 
     def test_gets_a_correct_mapping(self):
-        val = self.loader.exp_mapping('1GID', ['A', 'B'])
+        val = self.exp_mapping('1GID', 'A', 'B')
         ans = []
         for chain in ['A', 'B']:
             for index in range(158):

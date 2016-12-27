@@ -17,24 +17,13 @@ from pymotifs.units.info import Loader as UnitLoader
 
 
 class MappedChain(nt('MappedChain', ['id', 'chain_id', 'name'])):
+    @classmethod
+    def from_dict(cls, result):
+        return cls(**row2dict(result))
     pass
 
 
-def as_mapped(result):
-    return MappedChain(**row2dict(result))
-
-DELETE = """
-DELETE exp_seq_unit_mapping
-FROM exp_seq_unit_mapping
-JOIN unit_info
-ON
-    unit_info.unit_id = exp_seq_unit_mapping.unit_id
-WHERE unit_info.pdb_id = :pdb_id
-;
-"""
-
-
-class Loader(core.Loader):
+class Loader(core.SimpleLoader):
     """The loader to use. This is a bit unusual in that we can't inherit from
     simple loader as we have to parse CIF files. Since this can take a long
     time for large files we don't process a single chain at a time, which would
@@ -44,59 +33,26 @@ class Loader(core.Loader):
     dependencies = set([InfoLoader, PositionLoader, ChainMappingLoader,
                         UnitLoader])
 
-    def has_data(self, pdb, **kwargs):
-        """Checks if we have all the data for a given structure. This is a bit
-        strange as compared to other has_data methods as it will raise skip for
-        things without rna chains, such as unknown PDB ids. This could cause
-        some issue with partially mapped structures, but I haven't seen this
-        yet.
+    def query(self, session, pdb):
+        """Query the database for mappings for the given PDB.
 
         Parameters
         ----------
+        session : pymotifs.core.db.Session
+            The session to use.
         pdb : str
-            The pdb id.
+            The PDB id to use
 
         Returns
         -------
-        has : bool
-            True if this has data for the given pdb.
+        A query that will find mappings for the given structure.
         """
-
-        with self.session() as session:
-            query = session.query(mod.ChainInfo.chain_name).\
-                filter(mod.ChainInfo.pdb_id == pdb).\
-                filter(mod.ChainInfo.entity_macromolecule_type == 'Polyribonucleotide (RNA)').\
-                distinct()
-
-            possible = set(result.chain_name for result in query)
-
-        if not possible:
-            raise core.Skip("No chains to map")
-
-        with self.session() as session:
-            query = session.query(mod.UnitInfo.chain).\
-                join(mod.ExpSeqUnitMapping,
-                     mod.ExpSeqUnitMapping.unit_id == mod.UnitInfo.unit_id).\
-                join(mod.ExpSeqPosition,
-                     mod.ExpSeqPosition.exp_seq_position_id == mod.ExpSeqUnitMapping.exp_seq_position_id).\
-                filter(mod.UnitInfo.pdb_id == pdb).\
-                distinct()
-
-            known = set(result.chain for result in query)
-
-        return possible == known
-
-    def remove(self, pdb, **kwargs):
-        """Delete all mapping data for the given pdb.
-
-        Parameters
-        ----------
-        pdb : str
-            The pdb id to use.
-        """
-
-        with self.session() as session:
-            session.execute(DELETE, {'pdb_id': pdb})
+        return session.query(mod.ExpSeqUnitMapping).\
+            join(mod.ExpSeqChainMapping,
+                 mod.ExpSeqChainMapping.exp_seq_chain_mapping_id == mod.ExpSeqUnitMapping.exp_seq_chain_mapping_id).\
+            join(mod.ChainInfo,
+                 mod.ChainInfo.chain_id == mod.ExpSeqChainMapping.chain_id).\
+            filter(mod.ChainInfo.pdb_id == pdb)
 
     def chain_mapping(self, cif, mapped_chains, exp_mapping):
         """Compute the mapping between experimental sequence position id and
@@ -135,6 +91,7 @@ class Loader(core.Loader):
                 unit_id=unit_id,
                 exp_seq_chain_mapping_id=mapped.id,
                 exp_seq_position_id=pos_id,
+                chain=chain,
             )
 
     def exp_mapping(self, pdb, chains):
@@ -204,7 +161,7 @@ class Loader(core.Loader):
                      mod.ExpSeqChainMapping.chain_id == mod.ChainInfo.chain_id).\
                 filter(mod.ChainInfo.pdb_id == pdb).\
                 filter(mod.ChainInfo.entity_macromolecule_type == 'Polyribonucleotide (RNA)')
-            return sorted(as_mapped(result) for result in query)
+            return sorted(MappedChain.from_dict(result) for result in query)
 
     def data(self, pdb, **kwargs):
         """Compute the data for the given pdb. This will load the cif file and
