@@ -266,6 +266,7 @@ class Loader(core.SimpleLoader):
         using a unit id.
         """
 
+        self.logger.debug("Finding position for %s", unit)
         with self.session() as session:
             pos = mod.ExpSeqPosition
             mapping = mod.ExpSeqUnitMapping
@@ -557,7 +558,8 @@ class Loader(core.SimpleLoader):
         -------
         quality : dict
             A quality dict to write to the database.
-        """
+        """=`=jedi=0, =`=                                       (*_*object=''*_*) =`=jedi=`=
+        self.logger.debug("Examining loop %s", str(loop))
         seq = None
         if self.is_complementary(loop):
             seq = loop['seq'].replace('*', ',')
