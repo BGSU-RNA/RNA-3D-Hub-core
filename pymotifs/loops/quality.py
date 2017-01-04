@@ -558,7 +558,8 @@ class Loader(core.SimpleLoader):
         -------
         quality : dict
             A quality dict to write to the database.
-        """=`=jedi=0, =`=                                       (*_*object=''*_*) =`=jedi=`=
+        """
+
         self.logger.debug("Examining loop %s", str(loop))
         seq = None
         if self.is_complementary(loop):
