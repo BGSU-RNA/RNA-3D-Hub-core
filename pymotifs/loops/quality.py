@@ -221,6 +221,7 @@ class Loader(core.SimpleLoader):
                 }
 
         with self.session() as session:
+            badloops = [ 'HL_2H0S_001', 'IL_2H0S_001' ]
             query = session.query(mod.LoopInfo.loop_id.label('id'),
                                   mod.LoopInfo.type,
                                   mod.LoopInfo.pdb_id.label('pdb'),
@@ -236,6 +237,7 @@ class Loader(core.SimpleLoader):
                 join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.LoopPositions.unit_id).\
                 filter(mod.LoopInfo.pdb_id == pdb).\
+		filter(~mod.LoopInfo.loop_id.in_(badloops)).\
                 order_by(asc(mod.LoopPositions.position))
 
             loops = coll.defaultdict(empty_loop)
