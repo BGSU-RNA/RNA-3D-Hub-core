@@ -1,6 +1,7 @@
 import pytest
 
 from pymotifs import core
+from pymotifs import models as mod
 from pymotifs.nr.ordering import Loader
 
 from test import StageTest
@@ -78,3 +79,40 @@ class DistancesTest(StageTest):
     def test_it_will_raise_skip_if_no_members(self):
         with pytest.raises(core.Skip):
             self.loader.distances(-1, [])
+
+
+class OrderingTest(StageTest):
+    loader_class = Loader
+
+    def class_for(self, release, resolution, ife):
+        with self.loader.session() as session:
+            query = session.query(mod.NrChains).\
+                join(mod.NrClasses,
+                     mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
+                filter(mod.NrChains.nr_release_id == release).\
+                filter(mod.NrChains.ife_id == ife).\
+                first()
+            return query.nr_class_id
+
+    def ordering_for(self, release, resolution, ife):
+        class_id = self.class_for(release, resolution, ife)
+        members = self.loader.members(class_id)
+        distances = self.loader.distances(class_id, members)
+        return [d[0] for d in self.loader.ordered(members, distances)]
+
+    def test_it_creates_correct_ordering(self):
+        val = self.ordering_for('1.0', '3.0', '1VY4|1|AA')
+        assert val == [
+            '4V9K|1|AA',
+            '4V9K|1|CA',
+            '4V8G|1|AA',
+            '1J5E|1|A',
+            '1IBK|1|A',
+            '4V7W|1|AA',
+            '4V7W|1|CA',
+            '4V8G|1|CA',
+            '4V8I|1|CA',
+            '1VY4|1|CA',
+            '1VY4|1|AA',
+            '4V8I|1|AA'
+        ]
