@@ -2,6 +2,7 @@
 can run. This contains all the functions that will be run.
 """
 
+import sys
 import csv
 import random
 import logging
@@ -68,6 +69,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     kwargs['exclude'] = kwargs.get('skip_stage')
 
+    logging.info("Running from commadn %s", ' '.join(sys.argv))
     error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
     mailer = Emailer(config, engine)
