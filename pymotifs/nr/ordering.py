@@ -191,14 +191,14 @@ class Loader(core.SimpleLoader):
 
         dist = np.zeros((len(members), len(members)))
         for index1, member1 in enumerate(members):
-            curr = distances.get(member1, {})
+            curr = distances.get(member1[0], {})
             for index2, member2 in enumerate(members):
-                val = curr.get(member2, None)
-                if member2 not in curr:
+                val = curr.get(member2[0], None)
+                if member2[0] not in curr:
                     val = None
                 dist[index1, index2] = val
 
-        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist, self.trials)
+        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist, self.trials, scanForNan=True)
         return [members[index] for index in ordering]
 
     def data(self, class_id, **kwargs):
