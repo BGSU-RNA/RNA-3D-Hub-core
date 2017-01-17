@@ -64,7 +64,7 @@ class NR(Base):
 
 
 class Structure(Base):
-    def rna_chains(self, pdb, return_id=False, strict=False):
+    def rna_chains(self, pdb, return_id=False, strict=False, extended=False):
         """This will get all chains labeled as RNA for a given structure or
         structures. This has a strict mode which can fitler out chains which
         are not standard RNA, however, this may also filter out chains where
@@ -80,10 +80,14 @@ class Structure(Base):
         :returns: A list of the names or a tuple of the ids and names.
         """
 
+        macromolecule_types = set(['Polyribonucleotide (RNA)'])
+        if extended:
+            macromolecule_types.add('DNA/RNA Hybrid')
+
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name,
-                                  mod.ChainInfo.chain_id).\
-                filter_by(entity_macromolecule_type='Polyribonucleotide (RNA)')
+                     mod.ChainInfo.chain_id).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
 
             if isinstance(pdb, basestring):
                 query = query.filter_by(pdb_id=pdb)
