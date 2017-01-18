@@ -111,7 +111,7 @@ class ClusterMotifs(core.Base):
             while cmds and len(processes) < self.jobs:
                 task = cmds.pop()
                 list2cmdline(task)
-                p = Popen(task, stdout=logging_file)
+                p = Popen(task)
                 tasks[p.pid] = task  # associate task with a pid
                 self.logger.info('Task %s has pid %i' % (task, p.pid))
                 processes.append(p)
