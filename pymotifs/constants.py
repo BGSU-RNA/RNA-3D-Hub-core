@@ -151,3 +151,7 @@ MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
 
 MOTIF_RESOLUTION_CUTOFF = '4.0'
 """The resolution cutoff for representatives to use in the ML atlas"""
+
+NR_HARD_CODED = set()
+"""Set of ifes that must always be a representative if they are a member of a
+group."""
