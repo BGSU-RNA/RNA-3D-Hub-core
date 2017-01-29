@@ -12,6 +12,7 @@ from pymotifs.utils import row2dict
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
 from pymotifs.constants import NR_ALLOWED_METHODS
+from pymotifs.constants import NR_HARD_CODED
 
 
 def bp_per_nt(chain):
@@ -306,11 +307,11 @@ class QualityMetrics(Representative):
     """
     method = 'quality-metrics'
 
-    def has_hardcoded_representative(self, group):
-        members = {m['id'] for m in group}
-        found = members.intersection()
+    def hardcoded_representative(self, group):
+        members = {m['id'] for m in group['members']}
+        found = members.intersection(NR_HARD_CODED)
         if len(found) > 1:
-            self.logger.error("Groups merged, using quality logic for %s",
+            self.logger.error("More than one hardcoded, using quality for %s",
                               group)
             return None
 
