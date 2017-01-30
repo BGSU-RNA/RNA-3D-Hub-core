@@ -5,7 +5,9 @@
 class StageFailed(Exception):
     """This is raised when one stage of the pipeline fails.
     """
-    pass
+    def __init__(self, msg, ids=None):
+        super(StageFailed, self).__init__(msg)
+        self.failed_ids = ids
 
 
 class InvalidState(Exception):

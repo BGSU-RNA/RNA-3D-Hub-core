@@ -210,6 +210,11 @@ class Dispatcher(object):
             try:
                 self.logger.info("Running stage: %s", stage.name)
                 stage(entries, **kwargs)
+            except core.StageFailed as failed:
+                if failed.ids:
+                    entries = entries - failed.ids
+                    continue
+                raise failed
             except Exception as err:
                 self.logger.error("Uncaught exception with stage: %s",
                                   self.name)

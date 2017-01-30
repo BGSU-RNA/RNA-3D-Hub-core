@@ -476,7 +476,7 @@ class Stage(base.Base):
         if failed:
             ids = ' '.join(str(f) for f in failed)
             raise StageFailed("Stage %s failed on these inputs %s" %
-                              (self.name, ids))
+                              (self.name, ids), ids=failed)
 
         return processed
 
