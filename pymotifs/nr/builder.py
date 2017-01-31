@@ -387,11 +387,9 @@ class Builder(core.Base):
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
         for group in copy.deepcopy(groups):
-            rep = rep_finder(group)
-            group['representative'] = rep
-            group['members'].sort(key=sorting_key)
-            group['members'].remove(rep)
-            group['members'].insert(0, rep)
+            ordered_members = rep_finder(group)
+            group['representative'] = ordered_members[0]
+            group['members'] = ordered_members
             for index, member in enumerate(group['members']):
                 member['rank'] = index
             data.append(group)
