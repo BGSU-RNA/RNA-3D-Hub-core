@@ -6,13 +6,14 @@ import itertools as it
 
 from pymotifs import core
 from pymotifs import models as mod
-from pymotifs.utils import known_subclasses
 from pymotifs.utils import row2dict
+from pymotifs.utils import known_subclasses
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
 from pymotifs.constants import NR_ALLOWED_METHODS
 from pymotifs.constants import NR_HARD_CODED
+from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
 
 def bp_per_nt(chain):
@@ -75,6 +76,14 @@ class Representative(core.Base):
             'members': copy.deepcopy(members),
         }
 
+    def insert_as_representative(self, representative, members, sort=None):
+        ordered = [representative]
+        to_add = [m for m in members if m['id'] != representative['id']]
+        if sort:
+            to_add.sort(key=sort, reverse=True)
+        ordered.extend(to_add)
+        return ordered
+
 
 def known():
     finders = []
@@ -110,7 +119,7 @@ class Naive(Representative):
     method = 'naive'
 
     def __call__(self, group):
-        return sorted(group['members'], key=bp_per_nt, reverse=True)[0]
+        return sorted(group['members'], key=bp_per_nt, reverse=True)
 
 
 class Increase(Representative):
@@ -136,7 +145,7 @@ class Increase(Representative):
             The initial representative.
         """
         naive = Naive(self.config, self.session)
-        return naive(group)
+        return naive(group)[0]
 
     def candidates(self, best, members):
         """Find all possible candidates for a representative within the group,
@@ -240,7 +249,9 @@ class Increase(Representative):
             raise core.InvalidState("No representative found")
 
         self.logger.debug("Computed representative: %s", rep['id'])
-        return rep
+        return self.insert_as_representative(rep,
+                                             initial['members'],
+                                             sort=bp_per_nt)
 
 
 class AnyIncrease(Increase):
@@ -306,55 +317,118 @@ class QualityMetrics(Representative):
     """Find representatives using quality metrics provided by PDB.
     """
     method = 'quality-metrics'
+    hardcoded = NR_HARD_CODED
+    worse = WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
-    def hardcoded_representative(self, group):
-        members = {m['id'] for m in group['members']}
-        found = members.intersection(NR_HARD_CODED)
+    def load_quality(self, members):
+        def as_quality(data):
+            return {
+                'has': {key for key, value in data.items() if value},
+                'rsrz': data.get('rsrz') or 100,
+                'backbone': data.get('backbone') or 100,
+                'clashscore': data.get('clashscore') or 500,
+            }
+
+        known = {m['pdb'] for m in members}
+        with self.session() as session:
+            query = session.query(mod.PdbQuality.pdb_id,
+                                  mod.PdbQuality.percent_rsrz_outliers.label('rsrz'),
+                                  mod.PdbQuality.clashscore,
+                                  mod.PdbQuality.percent_rota_outliers.label('backbone'),
+                                  ).\
+                filter(mod.PdbQuality.pdb_id.in_(known))
+
+            measures = {}
+            for result in query:
+                result = row2dict(result)
+                pdb_id = result.pop('pdb_id')
+                measures[pdb_id] = as_quality(result)
+
+        for member in members:
+            pdb_id = member['pdb']
+            member['quality'] = measures.get(pdb_id, as_quality({}))
+
+        return members
+
+    def find_hardcoded(self, members):
+        ids = {m['id'] for m in members}
+
+        found = ids.intersection(self.hardcoded)
         if len(found) > 1:
-            self.logger.error("More than one hardcoded, using quality for %s",
-                              group)
+            self.logger.error("More than one hardcoded, using quality")
             return None
 
         if not found:
-            self.logger.debug("No hardcoded representative for %s", group)
+            self.logger.debug("No hardcoded representative")
             return None
-        return found.pop()
 
-    def select_final_representative(self, group):
-        selector = ParentIncrease(self.config, self.session)
-        return selector(group)
+        selected = next(m for m in members if m['id']in found)
+        self.logger.info("Found hardcoded representative %s", selected)
+        return selected
 
-    def lookup_structure_quality(self, members):
-        pdbs = set(member['pdb'] for member in members)
-        with self.session() as session:
-            query = session(mod.PdbQuality).\
-                filter(mod.PdbQuality.pdb_id.in_(pdbs))
-            measures = {}
-            for result in query:
-                measures[result.pdb_id] = row2dict(result)
-        return measures
+    def filter_by_method(self, members):
+        def is_good_xray(member):
+            required = set(['rsrz', 'backbone', 'clashscore'])
+            return member['method'] == 'X-RAY DIFFRACTION' and \
+                member['resolution'] <= 4.0 and \
+                required.issubset(member['quality']['has'])
 
-    def lookup_chain_quality(self, members):
-        pdbs = set(member['pdb'] for member in members)
-        with self.session() as session:
-            query = session(mod.ChainQuality).\
-                filter(mod.ChainQuality.pdb_id.in_(pdbs))
-            measures = {}
-            for result in query:
-                measures[result.chain_id] = row2dict(result)
-        return measures
+        if any(is_good_xray(m) for m in members):
+            return [m for m in members if is_good_xray(m)]
+        return list(members)
 
-    def filter_by_quality(self, group):
-        return group
+    def filter_by_nts(self, members):
+        best = max(m['length'] for m in members)
+        return [m for m in members if m['length'] >= 0.75 * best]
+
+    def filter_by_resolution(self, members):
+        best = min(m['resolution'] for m in members)
+        return [m for m in members if abs(m['resolution'] - best) <= 0.2]
+
+    def sort_by_quality(self, members):
+        def key(member):
+            quality = member['quality']
+            quality_factor = quality['rsrz'] * \
+                quality['clashscore'] * \
+                quality['backbone'] * \
+                pow(member['resolution'], 4)
+            size_factor = member['length'] + member['bp']
+            return quality_factor / size_factor
+
+        return sorted(members, key=key)
+
+    def use_hardcoded(self, members):
+        current = members[0]
+        hardcoded = self.find_hardcoded(members)
+
+        if not hardcoded:
+            self.logger.debug("No hardcoded representative to use")
+            return list(members)
+
+        if current == hardcoded:
+            self.logger.info("Hardcoded and chosen agree")
+            return list(members)
+
+        if current['id'] not in self.worse:
+            self.logger.warning("Automatically selected %s not in"
+                                " WORSE_THAN_MANUAL_IFE_REPRESENTATIVES",
+                                current)
+
+        return self.insert_as_representative(hardcoded, members)
+
+    def final_ordering(self, ordered, given):
+        already_ordered = {m['id'] for m in ordered}
+        rest = [m for m in given if m['id'] not in already_ordered]
+        return ordered + self.sort_by_quality(rest)
 
     def __call__(self, given):
-        hardcoded = self.hardcoded_representative(given)
-        if hardcoded:
-            return hardcoded
-
-        if self.is_cryo_group(given):
-            return self.filter_by_bp(given)
-
-        group = self.filter_group_by_method(given)
-        group = self.filter_group_by_quality(group)
-        return self.select_final_representative(group)
+        self.logger.info("Selecting representative for %s", given)
+        with_quailty = self.load_quality(given['members'])
+        best_method = self.filter_by_method(with_quailty)
+        best_nts = self.filter_by_nts(best_method)
+        best_resolution = self.filter_by_resolution(best_nts)
+        if not best_resolution:
+            raise core.InvalidState("Nothing with good resolutin")
+        ordered_by_quality = self.sort_by_quality(best_resolution)
+        with_representative = self.use_hardcoded(ordered_by_quality)
+        return self.final_ordering(with_representative, given['members'])

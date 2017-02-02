@@ -155,3 +155,10 @@ MOTIF_RESOLUTION_CUTOFF = '4.0'
 NR_HARD_CODED = set()
 """Set of ifes that must always be a representative if they are a member of a
 group."""
+
+WORSE_THAN_MANUAL_IFE_REPRESENTATIVES = set()
+"""
+The collection of automatically selected representatives that have already
+been evaulated as worse than the manually selected ones, despite what the
+program things.
+"""
