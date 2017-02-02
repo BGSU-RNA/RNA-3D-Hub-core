@@ -161,3 +161,10 @@ MANUAL_IFE_REPRESENTATIVES = set([
     ])
 """List of IFEs to use as the representative of its equivalence class"""
 """Until superseded by some criteria that the pipeline is able to check"""
+
+WORSE_THAN_MANUAL_IFE_REPRESENTATIVES = set()
+"""
+The collection of automatically selected representatives that have already
+been evaulated as worse than the manually selected ones, despite what the
+program things.
+"""
