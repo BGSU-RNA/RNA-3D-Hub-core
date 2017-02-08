@@ -19,7 +19,7 @@ class Writer(core.FileHandleSaver):
 
 
 class Downloader(core.Loader):
-    file_url = 'http://www.rcsb.org/pdb/files'
+    file_url = 'http://files.rcsb.org/download/{pdb}.cif.gz'
     name = 'downloader'
     update_gap = False
     dependencies = set()
@@ -35,7 +35,7 @@ class Downloader(core.Loader):
         return os.path.realpath(os.path.normpath(os.path.join(self.location, name + '.cif')))
 
     def url(self, name, **kwargs):
-        return '%s/%s.cif.gz' % (self.file_url, name)
+        return self.file_url.format(pdb=name)
 
     def remove(self, entry, **kwargs):
         if self.has_data(entry) and not kwargs.get('dry_run'):
@@ -47,8 +47,9 @@ class Downloader(core.Loader):
     def data(self, name, **kwargs):
         try:
             content = self.gzip(self.url(name, **kwargs))
-        except:
+        except Exception as err:
             self.logger.error('%s could not be downloaded', name)
+            self.logger.exception(err)
             raise core.Skip("Couldn't get %s" % name)
 
         if not content:
