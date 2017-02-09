@@ -592,7 +592,7 @@ class Loader(core.SimpleLoader):
             'model_1': info1['model'],
             'model_2': info2['model'],
             'correspondence_id': corr_id,
-            'discrepancy': disc,
+            'discrepancy': float(disc),
             'num_nucleotides': length,
         }
 
