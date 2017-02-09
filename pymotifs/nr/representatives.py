@@ -12,7 +12,7 @@ from pymotifs.utils import known_subclasses
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
 from pymotifs.constants import NR_ALLOWED_METHODS
-from pymotifs.constants import NR_HARD_CODED
+from pymotifs.constants import MANUAL_IFE_REPRESENTATIVES
 from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
 
@@ -317,7 +317,7 @@ class QualityMetrics(Representative):
     """Find representatives using quality metrics provided by PDB.
     """
     method = 'quality-metrics'
-    hardcoded = NR_HARD_CODED
+    hardcoded = MANUAL_IFE_REPRESENTATIVES
     worse = WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
     def load_quality(self, members):
