@@ -213,6 +213,7 @@ def bootstrap(ctx, **kwargs):
     kwargs.update(ctx.parent.objs)
     kwargs['config'] = conf.load('conf/bootstrap.json')
     kwargs['engine'] = create_engine(kwargs['config']['db']['uri'])
+    kwargs['email'] = False
     for index, step in enumerate(BOOTSTRAPPING['steps']):
         logging.info("Running step %i", index)
         args = dict(kwargs)
