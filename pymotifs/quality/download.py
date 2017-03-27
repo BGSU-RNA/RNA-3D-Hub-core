@@ -118,3 +118,7 @@ class Loader(core.Loader):
         except ut.RetryFailedException:
             self.logger.warning("No quality found of %s", pdb)
             return ''
+        except Exception as err:
+            self.logger.exception(err)
+            self.logger.warning("Unknown exception occurred")
+            return ''
