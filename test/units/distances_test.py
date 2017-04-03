@@ -8,6 +8,33 @@ import numpy as np
 from pymotifs.units.distances import Loader
 
 
+class ToProcessTest(StageTest):
+    loader_class = Loader
+
+    def test_it_uses_all_given_pdbs_if_recalculate_is_true(self):
+        pdbs = ['1S72', '1J5E', '2AW7']
+        assert self.loader.to_process(pdbs, recalculate=True) == pdbs
+
+    def test_it_uses_given_if_name_in_recalculate_list(self):
+        pdbs = ['1S72', '1J5E', '2AW7']
+        recalc = ['units.info', 'units.distances']
+        assert self.loader.to_process(pdbs, recalculate=recalc) == pdbs
+
+    def test_it_only_uses_new_pdbs_otherwise(self):
+        pdbs = ['1S72', '1J5E', '1FJG', '4A3G', '1FEU', '5E3F', '2AW7']
+        assert self.loader.to_process(pdbs, recalculate=False) == [
+            '2AW7',
+            '5E3F'
+        ]
+
+    def test_it_defaults_to_using_only_new(self):
+        pdbs = ['1S72', '1J5E', '1FJG', '4A3G', '1FEU', '5E3F', '2AW7']
+        assert self.loader.to_process(pdbs) == [
+            '2AW7',
+            '5E3F'
+        ]
+
+
 class QueryingTest(StageTest):
     loader_class = Loader
 
