@@ -53,7 +53,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     mod.reflect(engine)
 
-    if kwargs['redo'] is True:
+    if kwargs.get('redo', None) is True:
         kwargs['recalculate'] = '.'
         kwargs['skip_dependencies'] = True
 
