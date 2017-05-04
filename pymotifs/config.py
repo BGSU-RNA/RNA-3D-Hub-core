@@ -75,7 +75,6 @@ def defaults():
             "log_dir": os.path.join(base, "MotifAtlas", "logs"),
             "releases_dir": os.path.join(base, "MotifAtlas", "Releases"),
             "fr3d_root": os.path.join(base, "FR3D"),
-            "2ds_destination":  os.path.join(base, "MotifAtlas", "2d"),
             'quality_reports': os.path.join(base, "MotifAtlas", 'quality',
                                             'validation-reports'),
         },
