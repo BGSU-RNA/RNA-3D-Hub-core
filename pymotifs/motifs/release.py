@@ -300,6 +300,11 @@ class Loader(core.MassLoader):
         :returns: None. All data is cached and nothing is returned.
         """
 
+        cached_data = kwargs.get('manual', {}).get(loop_type, None)
+        if cached_data:
+            self.logger.info("Using cached data at %s" % cached_data)
+            return self.cached(cached_data)
+
         size_limit = kwargs.get('manual', {}).get('loop_size_limit', None)
         if size_limit is not None:
             try:

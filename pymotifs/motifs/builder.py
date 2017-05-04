@@ -166,7 +166,6 @@ class Combiner(core.Base):
         data = self.positions(directory, data)
         data = self.ordering(directory, data)
         data = self.signature(directory, data)
-        data = self.graph(directory, data)
         return data
 
 
