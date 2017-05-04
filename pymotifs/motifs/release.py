@@ -317,6 +317,7 @@ class Loader(core.MassLoader):
         motifs = builder(loop_type, releases.parent, releases.current, loops)
         self.cache(loop_type, motifs)
         self.logger.info("Done clustering %s", loop_type)
+        return motifs
 
     def data(self, releases, **kwargs):
         """Compute the releases for the given pdbs. This will cluster the
@@ -336,13 +337,16 @@ class Loader(core.MassLoader):
 
         data = []
         for loop_type in self.types:
-            self.cluster(loop_type, releases, ifes, **kwargs)
+            motifs = self.cluster(loop_type, releases, ifes, **kwargs)
+            with open(motifs['graph'], 'rb') as raw:
+                graphml = raw.read().replace('\n', '')
             data.append(mod.MlReleases(ml_release_id=releases.current,
                                        parent_ml_release_id=releases.parent,
                                        date=now,
                                        type=loop_type,
                                        index=releases.parent_index + 1,
                                        loop_release_id=releases.loop,
-                                       nr_release_id=releases.nr))
+                                       nr_release_id=releases.nr,
+                                       graphml=graphml))
 
         return data
