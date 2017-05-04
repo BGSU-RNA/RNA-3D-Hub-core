@@ -255,7 +255,7 @@ class Loader(core.MassLoader):
 
             found.update(r.loop_id for r in query if r.loop_id not in exclude)
 
-        if not loops:
+        if not found:
             raise core.InvalidState("No loops to cluster for %s" %
                                     loop_release_id)
         return sorted(found)
