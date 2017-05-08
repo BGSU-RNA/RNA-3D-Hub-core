@@ -255,7 +255,7 @@ class Loader(core.MassLoader):
 
             found.update(r.loop_id for r in query if r.loop_id not in exclude)
 
-        if not loops:
+        if not found:
             raise core.InvalidState("No loops to cluster for %s" %
                                     loop_release_id)
         return sorted(found)
@@ -299,6 +299,11 @@ class Loader(core.MassLoader):
         date.
         :returns: None. All data is cached and nothing is returned.
         """
+
+        cached_data = kwargs.get('manual', {}).get(loop_type, None)
+        if cached_data:
+            self.logger.info("Using cached data at %s" % cached_data)
+            return self.cached(cached_data)
 
         size_limit = kwargs.get('manual', {}).get('loop_size_limit', None)
         if size_limit is not None:
