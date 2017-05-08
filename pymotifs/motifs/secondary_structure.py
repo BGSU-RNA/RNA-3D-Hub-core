@@ -46,18 +46,22 @@ class Loader(core.Loader):
         )
 
     def final_location(self, release, motif):
+        type = motif['motif_id'].split('_')[0]
         return os.path.join(
-            self.final_directory(release, motif['type']),
+            self.final_directory(type, release),
             motif['motif_id'] + '.png',
         )
 
     def has_data(self, pair, **kwargs):
-        return os.path.exists(self.final_directory(*pair))
+        return False
 
     def remove(self, pair, **kwargs):
         filename = self.final_directory(*pair)
         if os.path.exists(filename):
             os.rmdir(filename)
+
+    def mark_processed(self, *args, **kwargs):
+        return None
 
     def data(self, pair, **kwargs):
         loop_type, release = pair
@@ -70,5 +74,8 @@ class Loader(core.Loader):
             os.makedirs(directory)
 
         for motif in cached['motifs']:
-            shutil.copy(motif['2d'], self.final_location(motif))
+            location = self.final_location(release, motif)
+            self.logger.debug("Copying motif 2d %s %s to %s",
+                              motif['motif_id'], motif['2d'], location)
+            shutil.copy(motif['2d'], location)
         return None
