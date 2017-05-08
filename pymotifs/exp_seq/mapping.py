@@ -137,7 +137,7 @@ class Loader(core.SimpleLoader):
 
             return mapping
 
-    def mapped_chains(self, pdb):
+    def mapped_chains(self, pdb, extended=True):
         """Get all mapped chains for the given pdb. This will look up all
         chain names that have been mapped to experimental sequences.
 
@@ -145,12 +145,19 @@ class Loader(core.SimpleLoader):
         ----------
         pdb : str
             The pdb id
+        extended : bool
+            Work with only "Polyribonucleotide (RNA)" chains (False) or 
+            allow additional chains to be considered (True; default).
 
         Returns
         -------
         chains : list
             A list of mapped chain names.
         """
+
+        macromolecule_types = set(['Polyribonucleotide (RNA)'])
+        if extended:
+            macromolecule_types.add('DNA/RNA Hybrid')
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name.label('name'),
@@ -160,7 +167,7 @@ class Loader(core.SimpleLoader):
                 join(mod.ExpSeqChainMapping,
                      mod.ExpSeqChainMapping.chain_id == mod.ChainInfo.chain_id).\
                 filter(mod.ChainInfo.pdb_id == pdb).\
-                filter(mod.ChainInfo.entity_macromolecule_type == 'Polyribonucleotide (RNA)')
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
             return sorted(MappedChain.from_dict(result) for result in query)
 
     def data(self, pdb, **kwargs):
