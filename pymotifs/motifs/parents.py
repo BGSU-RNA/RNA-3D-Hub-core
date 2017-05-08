@@ -40,7 +40,7 @@ class Loader(BaseLoader):
             for parent in motif['parents']:
                 data.append({
                     'ml_release_id': cached['release'],
-                    'motif_id': motif['name']['full'],
+                    'motif_id': motif['motif_id'],
                     'parent_ml_release_id': cached['parent'],
                     'parent_motif_id': parent['name']['full'],
                 })
@@ -63,9 +63,9 @@ class Loader(BaseLoader):
             True if there are no parents.
         """
 
-        classes = [d['motifs'] for d in data['parent_counts']]
-        counts = [abs(d['unchanged']) + abs(d['updated']) for d in classes]
-        return not sum(counts)
+        counts = data['parent_counts']['motifs']['unchanged'] + \
+            data['parent_counts']['motifs']['updated']
+        return not counts
 
     def data(self, pair, **kwargs):
         """Compute the parentage data. This will raise a skip exception if
