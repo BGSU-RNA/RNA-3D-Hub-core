@@ -146,12 +146,16 @@ class Correcter(core.Base):
                 self.logger.debug("Attempt failed")
         return None
 
-    def correct_structure(self, pdb, mapping, units, require_all=True):
+    def correct_structure(self, pdb, mapping, units, require_all=True,
+                          skip_probably_correct=True):
         """Correct units from a single structure.
 
         :param str pdb: The PDB id to use.
         :param dict mapping: The mapping to use.
         :param list units: The list of Unit's to correct.
+        :param bool: skip_probably_correct: This will cause the method to not
+        attempt to correct any unit with `|` in it as this is used in new style
+        IDs. This should probably work.
         :returns: A list of the corrected units.
         """
 
@@ -159,6 +163,11 @@ class Correcter(core.Base):
         for unit in units:
             if unit.pdb != pdb:
                 continue
+
+            if '|' in unit and skip_probably_correct:
+                self.logger.info("Not correcting probably valid unit %s",
+                                 str(unit))
+                valid.append(unit)
 
             fixed = self.correct(mapping, unit)
             if not fixed:
@@ -175,7 +184,7 @@ class Correcter(core.Base):
 
         return valid
 
-    def __call__(self, unit_ids, require_all=True):
+    def __call__(self, unit_ids, require_all=True, skip_probably_correct=True):
         units = [self.as_unit(uid) for uid in unit_ids]
         pdbs = set(unit.pdb for unit in units)
 
@@ -183,7 +192,8 @@ class Correcter(core.Base):
         for pdb in pdbs:
             normalization = self.normalized_mapping(pdb)
             valid.extend(self.correct_structure(pdb, normalization, units,
-                                                require_all=require_all))
+                                                require_all=require_all,
+                                                skip_probably_correct=skip_probably_correct))
 
         return valid
 
