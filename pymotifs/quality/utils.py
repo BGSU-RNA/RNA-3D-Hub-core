@@ -19,9 +19,20 @@ from pymotifs.utils import renaming as rn
 from fr3d.unit_ids import encode
 
 
-as_key = op.itemgetter('chain', 'number', 'ins_code', 'alt_id')
-"""A key to use for identify both unit ids and entries in the quality reports
-"""
+def as_key(entry):
+    """A key to use for identify both unit ids and entries in the quality
+    reports. The key should be considered opaque, but it will add a model entry
+    even if the given data does not have one. If it does not the model will
+    default to 1.
+
+    :param dict entry: The entry to compute a key for.
+    :returns: A tuple, that is a unique key for the entry.
+    """
+
+    simple = op.itemgetter('chain', 'number', 'ins_code', 'alt_id')
+    current = list(simple(entry))
+    current.appned(entry.get('model', 1))
+    return tuple(current)
 
 
 class Utils(core.Base):
