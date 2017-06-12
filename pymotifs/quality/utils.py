@@ -31,7 +31,7 @@ def as_key(entry):
 
     simple = op.itemgetter('chain', 'number', 'ins_code', 'alt_id')
     current = list(simple(entry))
-    current.appned(entry.get('model', 1))
+    current.append(entry.get('model', 1))
     return tuple(current)
 
 
