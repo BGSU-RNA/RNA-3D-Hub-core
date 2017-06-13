@@ -270,9 +270,12 @@ class Parser(object):
 
         for residue in self.root.findall("ModelledSubgroup"):
             data = self.unit_renamer(residue.attrib, skip_missing=True)
-            sum, count = self.clash_score(residue)
-            data['clash_score'] = sum
-            data['clash_count'] = count
+
+            if 'clashscore' in self.root.attrib:
+                clash_sum, clash_count = self.clash_score(residue)
+                data['clash_sum'] = clash_sum
+                data['clash_count'] = clash_count
+
             if not data:
                 continue
 
