@@ -90,12 +90,15 @@ class Loader(core.SimpleLoader):
             A dictionary of 'unit_id', 'real_space_r', 'density_correlation',
             'z_score'.
         """
-        return {
-            'unit_id': entry['id'],
-            'real_space_r': entry.get('real_space_r'),
-            'density_correlation': entry.get('density_correlation'),
-            'z_score': entry.get('real_space_r_z_score')
-        }
+        return mod.UnitQuality(
+            unit_id=entry['id'],
+            real_space_r=entry.get('real_space_r', None),
+            real_space_r_z_score=entry.get('real_space_r_z_score', None),
+            density_correlation=entry.get('density_correlation', None),
+            rscc=entry.get('rscc', None),
+            clash_score=entry.get('clash_score', None),
+            rna_score=entry.get('rna_score', None),
+        )
 
     def parse(self, filename, mapping):
         """Actually the parse the file and map quality data to unit ids.
@@ -118,12 +121,7 @@ class Loader(core.SimpleLoader):
         """
         with open(filename, 'rb') as raw:
             parser = qual.Parser(raw.read())
-
-        if not parser.has_rsr() and not parser.has_dcc():
-            raise core.Skip("No RsR or DCC found")
-
-        data = it.imap(self.as_quality, parser.nts(mapping))
-        return it.imap(lambda d: mod.UnitQuality(**d), data)
+            return it.imap(self.as_quality, parser.nts(mapping))
 
     def data(self, pdb, **kwargs):
         """Compute the quality assignments for residues in the structure. This

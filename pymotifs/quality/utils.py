@@ -19,8 +19,9 @@ from pymotifs.utils import renaming as rn
 from fr3d.unit_ids import encode
 
 
-def as_key(entry):
-    """A key to use for identify both unit ids and entries in the quality
+def as_key(entry, ignore_model=False):
+    """
+    A key to use for identify both unit ids and entries in the quality
     reports. The key should be considered opaque, but it will add a model entry
     even if the given data does not have one. If it does not the model will
     default to 1.
@@ -31,12 +32,18 @@ def as_key(entry):
 
     simple = op.itemgetter('chain', 'number', 'ins_code', 'alt_id')
     current = list(simple(entry))
-    current.appned(entry.get('model', 1))
+
+    model = entry.get('model', None)
+    if ignore_model is True:
+        model = None
+
+    current.append(model)
     return tuple(current)
 
 
 class Utils(core.Base):
-    """A set of a utilities for dealing with quality data.
+    """
+    A set of a utilities for dealing with quality data.
     """
 
     def filename(self, pdb, compressed=True):
@@ -61,11 +68,12 @@ class Utils(core.Base):
         return os.path.join(base, pdb + ext)
 
     def known(self, has_data=None):
-        """Get a list of all known PDBs that have downloaded data. By default this
-        will list all PDBs, even those that have no quality data. However, this is
-        changable using the has_data flag. Setting it to True will filter the list
-        to only those that have data, while False, will be for those that were
-        downloaded but have no data.
+        """
+        Get a list of all known PDBs that have downloaded data. By default this
+        will list all PDBs, even those that have no quality data. However, this
+        is changable using the has_data flag. Setting it to True will filter
+        the list to only those that have data, while False, will be for those
+        that were downloaded but have no data.
 
         Parameters
         ----------
@@ -73,8 +81,8 @@ class Utils(core.Base):
             The configuration dictonary.
 
         has_data : bool, None
-            A flag to indicate if we should require that files be non-empty (True),
-            empty (False), or either (None).
+            A flag to indicate if we should require that files be non-empty
+            (True), empty (False), or either (None).
         """
         pdbs = []
         dirname = self.config['locations']['quality_reports']
@@ -87,9 +95,10 @@ class Utils(core.Base):
         return pdbs
 
     def has_no_data(self, pdb):
-        """Check if the validation report for the given pdb is empty or not. If it
-        is empty then this means there was no validation report. However, if the
-        file was never attempted to be downloaded, this will fail.
+        """
+        Check if the validation report for the given pdb is empty or not. If it
+        is empty then this means there was no validation report. However, if
+        the file was never attempted to be downloaded, this will fail.
 
         Parameters
         ----------
@@ -110,7 +119,8 @@ class Utils(core.Base):
         return os.stat(name).st_size == 0
 
     def unit_mapping(self, pdb):
-        """Create a dictionary that maps from data produced by `as_key` to unit
+        """
+        Create a dictionary that maps from data produced by `as_key` to unit
         ids that are in the database. This will lookup all unit ids in the
         database and create the required mapping.
 
@@ -124,21 +134,25 @@ class Utils(core.Base):
         mapping : dict
             The mapping dictionary to use.
         """
-        mapping = coll.defaultdict(list)
+        mapping = coll.defaultdict(set)
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
                 filter_by(pdb_id=pdb)
 
             for result in query:
-                key = as_key(ut.row2dict(result))
-                mapping[key].append(result.unit_id)
+                entry = ut.row2dict(result)
+                generic_key = as_key(entry, ignore_model=True)
+                model_key = as_key(entry)
+                mapping[generic_key].add(result.unit_id)
+                mappend[model_key].add(result.unit_id)
 
         return mapping
 
 
 class Parser(object):
-    """A class to parse the results of getting the quality file. Right now it
-    only processes the RsR related data.
+    """
+    A class to parse the results of getting the quality file. Right now it only
+    processes the RsR related data.
 
     Attributes
     ----------
@@ -154,6 +168,8 @@ class Parser(object):
         real_space_r=rn.rename('rsr', rn.maybe_float),
         real_space_r_z_score=rn.rename('rsrz', rn.maybe_float),
         density_correlation=rn.rename('DCC', rn.maybe_float),
+        rscc=rn.rename('rscc', rn.maybe_float),
+        rna_score=rn.rename('RNAscore', rn.maybe_float),
     )
 
     unit_id_renamer = rn.Renamer(
@@ -167,20 +183,45 @@ class Parser(object):
 
     structure_renamer = rn.Renamer(
         rn.with_dashes('percent-RSRZ-outliers', rn.maybe_float),
-        rn.with_dashes('absolute-percentile-percent-RSRZ-outliers', rn.maybe_float),
-        rn.with_dashes('relative-percentile-percent-RSRZ-outliers', rn.maybe_float),
+        rn.with_dashes(
+            'absolute-percentile-percent-RSRZ-outliers', rn.maybe_float),
+        rn.with_dashes(
+            'relative-percentile-percent-RSRZ-outliers', rn.maybe_float),
+
         rn.with_dashes('clashscore', rn.maybe_float),
         rn.with_dashes('relative-percentile-clashscore', rn.maybe_float),
         rn.with_dashes('absolute-percentile-clashscore', rn.maybe_float),
+
         rn.with_dashes('percent-rota-outliers', rn.maybe_float),
-        rn.with_dashes('absolute-percentile-percent-rota-outliers', rn.maybe_float),
-        rn.with_dashes('relative-percentile-percent-rota-outliers', rn.maybe_float),
+        rn.with_dashes(
+            'absolute-percentile-percent-rota-outliers', rn.maybe_float),
+        rn.with_dashes(
+            'relative-percentile-percent-rota-outliers', rn.maybe_float),
+
+        rn.with_dashes('percent-rama-outliers', rn.maybe_float),
+        rn.with_dashes(
+            'absolute-percentile-percent-rama-outliers', rn.maybe_float),
+        rn.with_dashes(
+            'relative-percentile-percent-rama-outliers', rn.maybe_float),
+
+        rn.with_dashes('PDB-R', rn.maybe_float),
+        rn.with_dashes('PDB-Rfree', rn.maybe_float),
+        rn.with_dashes('DCC_R', rn.maybe_float),
+        rn.with_dashes('DCC_Rfree', rn.maybe_float),
+
+        rna_suiteness=rn.with_dashes('RNAsuiteness', rn.maybe_float),
+        absolute_percentile_rna_suiteness=rn.with_dashes(
+            'absolute-percentile-RNAsuiteness', rn.maybe_float),
+        relative_percentile_rna_suiteness=rn.with_dashes(
+            'relative-percentile-RNAsuiteness', rn.maybe_float),
+
         pdb_id=rn.rename('pdbid', rn.maybe_str),
     )
 
     def __init__(self, gz_content):
-        """Create a new `Parser` to parse the given gz_content. This parser
-        will extract the residue level entries from the content.
+        """
+        Create a new `Parser` to parse the given gz_content. This parser will
+        extract the residue level entries from the content.
 
         Parameters
         ----------
@@ -196,7 +237,8 @@ class Parser(object):
         self.root = ET.fromstring(content)
 
     def entity(self):
-        """Get the entity level anotations.
+        """
+        Get the entity level anotations.
 
         Returns
         -------
@@ -208,28 +250,16 @@ class Parser(object):
         data['md5'] = self.digest
         return data
 
-    def has_dcc(self):
-        """Check if this report has DCC data.
-
-        Returns
-        -------
-        has_dcc : bool
-            True if this report has DCC data.
-        """
-        return 'DCC_R' in self.root.find("Entry").attrib
-
-    def has_rsr(self):
-        """Check if this report has RSR data.
-
-        Returns
-        -------
-        True if this report has RSR data
-        """
-        entry = self.root.find("Entry")
-        return 'absolute-percentile-percent-RSRZ-outliers' in entry.attrib
+    def clash_score(self, residue):
+        clash_sum, clash_count = 0, 0
+        for clash in residue.findall('clash'):
+            clash_sum += float(clash.attrib['clashmag'])
+            clash_count += 1
+        return clash_sum, clash_count
 
     def nts(self, mapping):
-        """Get all nucleotide data from the parsed tree. This will extract all
+        """
+        Get all nucleotide data from the parsed tree. This will extract all
         residue level quality data and produce an iterator over the resulting
         dictionaries. This will extract data for all entries, RNA, DNA, and all
         ligands.
@@ -245,8 +275,15 @@ class Parser(object):
         nt : dict
             A dictionary of nt level data.
         """
+
         for residue in self.root.findall("ModelledSubgroup"):
             data = self.unit_renamer(residue.attrib, skip_missing=True)
+
+            if 'clashscore' in self.root.attrib:
+                clash_sum, clash_count = self.clash_score(residue)
+                data['clash_sum'] = clash_sum
+                data['clash_count'] = clash_count
+
             if not data:
                 continue
 
