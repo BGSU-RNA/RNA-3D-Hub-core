@@ -192,11 +192,10 @@ class CompScore(QualityBase):
             return sum(e[name] for e in entries if e[name]) / len(entries)
 
         def has_entry(name):
-            return any(e[name] for e in entries)
+            return any(e[name] is not None for e in entries)
 
         def percent_of(name):
-            length = len(entries)
-            return 100 * sum(1.0 for e in entries if e[name]) / length
+            return 100 * sum(e[name] for e in entries) / len(entries)
 
         def first_value(name):
             return entries[0][name]
@@ -208,10 +207,13 @@ class CompScore(QualityBase):
             return (default, tracking)
 
         resolution, has = assign('resolution', 100, first_value, set())
-        rfree, has = assign('pdb_rfree', 2, first_value, has)
-        percent_clash, has = assign('clash_score', 0, percent_of, has)
-        average_rsr, has = assign('real_space_r', 2, avg_of, has)
-        average_rscc, has = assign('rscc', 10, avg_of, has)
+        rfree, has = assign('rfree', 1, first_value, has)
+        average_rsr, has = assign('real_space_r', 1, avg_of, has)
+        average_rscc, has = assign('rscc', 0, avg_of, has)
+
+        percent_clash = 100
+        if entries[0]['clash_score'] is not None:
+            percent_clash, has = assign('clash_count', 0, percent_of, has)
 
         return {
             'resolution': resolution,
@@ -231,11 +233,14 @@ class CompScore(QualityBase):
             with self.session() as session:
                 query = session.query(
                     mod.UnitQuality.real_space_r,
-                    mod.UnitQuality.clash_score,
+                    mod.UnitQuality.clash_count,
                     mod.UnitQuality.rscc,
-                    mod.PdbQuality.rfree,
-                ).join(mod.UnitQuality,
+                    mod.PdbQuality.dcc_rfree.label('rfree'),
+                    mod.PdbQuality.clashscore,
+                    mod.PdbInfo.resolution,
+                ).join(mod.UnitInfo
                        mod.UnitQuality.unit_id == mod.UnitInfo.unit_id).\
+                    join(mod.PdbInfo, mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
                     filter(mod.UnitInfo.pdb_id == member['pdb']).\
                     filter(mod.UnitInfo.model == member['model']).\
                     filter(mod.UnitInfo.sym_op == member['sym_op']).\
