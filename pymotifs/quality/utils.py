@@ -19,7 +19,7 @@ from pymotifs.utils import renaming as rn
 from fr3d.unit_ids import encode
 
 
-def as_key(entry):
+def as_key(entry, ignore_model=False):
     """
     A key to use for identify both unit ids and entries in the quality
     reports. The key should be considered opaque, but it will add a model entry
@@ -32,7 +32,12 @@ def as_key(entry):
 
     simple = op.itemgetter('chain', 'number', 'ins_code', 'alt_id')
     current = list(simple(entry))
-    current.append(entry.get('model', 1))
+
+    model = entry.get('model', None)
+    if ignore_model is True:
+        model = None
+
+    current.append(model)
     return tuple(current)
 
 
@@ -129,14 +134,17 @@ class Utils(core.Base):
         mapping : dict
             The mapping dictionary to use.
         """
-        mapping = coll.defaultdict(list)
+        mapping = coll.defaultdict(set)
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
                 filter_by(pdb_id=pdb)
 
             for result in query:
-                key = as_key(ut.row2dict(result))
-                mapping[key].append(result.unit_id)
+                entry = ut.row2dict(result)
+                generic_key = as_key(entry, ignore_model=True)
+                model_key = as_key(entry)
+                mapping[generic_key].add(result.unit_id)
+                mappend[model_key].add(result.unit_id)
 
         return mapping
 
