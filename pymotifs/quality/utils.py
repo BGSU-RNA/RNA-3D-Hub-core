@@ -144,7 +144,7 @@ class Utils(core.Base):
                 generic_key = as_key(entry, ignore_model=True)
                 model_key = as_key(entry)
                 mapping[generic_key].add(result.unit_id)
-                mappend[model_key].add(result.unit_id)
+                mapping[model_key].add(result.unit_id)
 
         return mapping
 
