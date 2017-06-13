@@ -17,6 +17,7 @@ class Loader(core.SimpleLoader):
     """The loader to fetch and store quality data for structures.
     """
     dependencies = set([InfoLoader, Downloader])
+    allow_no_data = True
 
     def to_process(self, pdbs, **kwrags):
         """Compute the PDBs to process. These are only the PDB's that have
