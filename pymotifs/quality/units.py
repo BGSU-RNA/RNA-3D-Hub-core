@@ -97,7 +97,8 @@ class Loader(core.SimpleLoader):
             real_space_r_z_score=entry.get('real_space_r_z_score', None),
             density_correlation=entry.get('density_correlation', None),
             rscc=entry.get('rscc', None),
-            clash_score=entry.get('clash_score', None),
+            clash_sum=entry.get('clash_sum', None),
+            clash_count=entry.get('clash_count', None),
             rna_score=entry.get('rna_score', None),
         )
 
