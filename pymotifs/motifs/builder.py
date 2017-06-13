@@ -119,6 +119,7 @@ class Combiner(core.Base):
             'positions': [],
             'ordering': [],
             'signature': None,
+            '2d': None,
         }
 
     def loops(self, directory, data):
@@ -151,6 +152,11 @@ class Combiner(core.Base):
             data[name]['signature'] = entry['bp_signature']
         return data
 
+    def secondary_structures(self, directory, data):
+        for name, motif in data.items():
+            motif['2d'] = os.path.join(directory, '2ds', name + '.png')
+        return data
+
     def __call__(self, release_id, directory):
         """Load and merge all motif information for the given release.
         """
@@ -160,6 +166,7 @@ class Combiner(core.Base):
         data = self.positions(directory, data)
         data = self.ordering(directory, data)
         data = self.signature(directory, data)
+        data = self.secondary_structures(directory, data)
         return data
 
 
@@ -282,20 +289,31 @@ class Builder(core.Base):
 
         return counts
 
-    def __call__(self, loop_type, parent_id, release_id, loops):
+    def graph(self, directory):
+        return os.path.join(directory, 'Supergroups.graphml')
+
+    def __call__(self, loop_type, parent_id, release_id, loops,
+                 directory=None):
         """Build the data structures for a motif release. This will load and
         name all motifs as well as load the mutual discrepancy information.
 
         :param str parent_id: The id of the parent release.
         :param str release_id: The current release id.
-        :param str directory: The directory all results are stored in.
+        :param str directory: The directory all results are stored in. If this
+        is passed then the results there will be loaded, otherwise the motifs
+        will be computed and placed in a directory.
         :returns: A dictonary with 2 keys, 'motifs' for a list of all motif
         from the release, and 'discrepancies' a list of all loop-loop
         discrepancies.
         """
 
-        cluster = ClusterMotifs(self.config, self.session)
-        directory = cluster(loop_type, loops)
+        if not loops and directory is None:
+            raise ValueError("Cannot build motifs without loops")
+
+        if not directory:
+            cluster = ClusterMotifs(self.config, self.session)
+            directory = cluster(loop_type, loops)
+
         motifs = self.motifs(loop_type, parent_id, release_id, directory)
         known = Known(self.config, self.session)
         parents = known.motifs(loop_type, parent_id)
@@ -307,4 +325,5 @@ class Builder(core.Base):
             'discrepancies': self.mutual_discrepancy(directory),
             'release': release_id,
             'parent': parent_id,
+            'graph': self.graph(directory),
         }

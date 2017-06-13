@@ -33,6 +33,7 @@ class CombinerTest(StageTest):
             'positions': [],
             'ordering': [],
             'signature': None,
+            '2d': None
         }
 
     def test_it_can_load_all_positions(self):
@@ -74,6 +75,7 @@ class CombinerTest(StageTest):
             ],
             'ordering': [],
             'signature': None,
+            '2d': None
         }
 
     def test_it_can_load_all_orderings(self):
@@ -88,6 +90,7 @@ class CombinerTest(StageTest):
                 {'loop_id': 'IL_2HOJ_002', 'original_order': 3, 'similarity_order': 3},
             ],
             'signature': None,
+            '2d': None
         }
 
     def test_it_can_load_all_signatures(self):
@@ -98,6 +101,18 @@ class CombinerTest(StageTest):
             'positions': [],
             'ordering': [],
             'signature': "10_cWW-cWW--tWH",
+            '2d': None
+        }
+
+    def test_it_can_load_2ds(self):
+        data = self.data('secondary_structures')
+        assert data['Group_268'] == {
+            'release_id': self.rel_id,
+            'members': [],
+            'positions': [],
+            'ordering': [],
+            'signature': None,
+            '2d': 'test/files/motifs/IL_20120905_0000/2ds/GROUP_268.png',
         }
 
     def test_it_can_load_and_merge_all_data(self):
@@ -147,6 +162,7 @@ class CombinerTest(StageTest):
                 {'loop_id': 'IL_2HOJ_002', 'original_order': 3, 'similarity_order': 3},
             ],
             'signature': "10_cWW-cWW--tWH",
+            '2d': 'test/files/motifs/IL_20120905_0000/2ds/Group_268.png',
         }
 
 
@@ -183,6 +199,10 @@ class BuilderTests(StageTest):
             'discrepancy': 0.4232,
             'loop_id_2': 'IL_4A1B_028',
         }
+
+    def test_it_loads_graph_location(self):
+        assert self.loader.graph(self.directory) == \
+            'test/files/motifs/IL_20120905_0000/Supergroups.graphml'
 
     @pytest.mark.skip()
     def test_it_can_compute_parent_counts(self):

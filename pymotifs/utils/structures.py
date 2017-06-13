@@ -64,7 +64,7 @@ class NR(Base):
 
 
 class Structure(Base):
-    def rna_chains(self, pdb, return_id=False, strict=False, extended=False):
+    def rna_chains(self, pdb, return_id=False, strict=False, extended=True):
         """This will get all chains labeled as RNA for a given structure or
         structures. This has a strict mode which can fitler out chains which
         are not standard RNA, however, this may also filter out chains where
@@ -77,6 +77,9 @@ class Structure(Base):
         chain_id, chain_name or just chain_name.
         :strict: A flag that will exclude any chains that are not composed of
         only ACGUN.
+	:extended: A flag that sets the allowed macromolecule types for
+	processing.  False = "Polyribonucleotide (RNA)" only; True allows 
+	additional values.
         :returns: A list of the names or a tuple of the ids and names.
         """
 

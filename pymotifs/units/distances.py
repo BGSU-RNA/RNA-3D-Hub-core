@@ -31,6 +31,31 @@ class Loader(core.SimpleLoader):
     disallowed = set(['HOH'])
     """Set of components to ignore for distances"""
 
+    def known(self):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.pdb_id).\
+                join(mod.UnitPairsDistances,
+                     mod.UnitPairsDistances.unit_id_1 == mod.UnitInfo.unit_id).\
+                distinct()
+            return set(r.pdb_id for r in query)
+
+    def to_process(self, pdbs, **kwargs):
+        recalculate = kwargs.get('recalculate', False)
+        if recalculate is True:
+            return pdbs
+
+        if isinstance(recalculate, (set, list, tuple)):
+            try:
+                if self.name in recalculate:
+                    return pdbs
+            except:
+                return pdbs
+
+        if bool(self.config[self.name].get('recompute')):
+            return True
+
+        return sorted(set(pdbs) - self.known())
+
     def query(self, session, pdb):
         """Create a query to select all entries in unit_pairs_distances for the
         given pdb id.

@@ -2,6 +2,7 @@
 process the downloaded validation reports and use them to populate the
 pdb_quality table.
 """
+import os
 
 import os
 
@@ -71,6 +72,8 @@ class Loader(core.SimpleLoader):
         data : mod.UnitQuality
             The quality data for the structure.
         """
+        if not os.path.exists(filename):
+            raise core.Skip("Missing file %s" % filename)
         with open(filename, 'rb') as raw:
             parser = Parser(raw.read())
         entity = parser.entity()

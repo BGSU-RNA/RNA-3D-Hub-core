@@ -255,7 +255,7 @@ class Loader(core.MassLoader):
 
             found.update(r.loop_id for r in query if r.loop_id not in exclude)
 
-        if not loops:
+        if not found:
             raise core.InvalidState("No loops to cluster for %s" %
                                     loop_release_id)
         return sorted(found)
@@ -300,6 +300,11 @@ class Loader(core.MassLoader):
         :returns: None. All data is cached and nothing is returned.
         """
 
+        cached_data = kwargs.get('manual', {}).get(loop_type, None)
+        if cached_data:
+            self.logger.info("Using cached data at %s" % cached_data)
+            return self.cached(cached_data)
+
         size_limit = kwargs.get('manual', {}).get('loop_size_limit', None)
         if size_limit is not None:
             try:
@@ -317,6 +322,7 @@ class Loader(core.MassLoader):
         motifs = builder(loop_type, releases.parent, releases.current, loops)
         self.cache(loop_type, motifs)
         self.logger.info("Done clustering %s", loop_type)
+        return motifs
 
     def data(self, releases, **kwargs):
         """Compute the releases for the given pdbs. This will cluster the
@@ -336,13 +342,16 @@ class Loader(core.MassLoader):
 
         data = []
         for loop_type in self.types:
-            self.cluster(loop_type, releases, ifes, **kwargs)
+            motifs = self.cluster(loop_type, releases, ifes, **kwargs)
+            with open(motifs['graph'], 'rb') as raw:
+                graphml = raw.read().replace('\n', '')
             data.append(mod.MlReleases(ml_release_id=releases.current,
                                        parent_ml_release_id=releases.parent,
                                        date=now,
                                        type=loop_type,
                                        index=releases.parent_index + 1,
                                        loop_release_id=releases.loop,
-                                       nr_release_id=releases.nr))
+                                       nr_release_id=releases.nr,
+                                       graphml=graphml))
 
         return data

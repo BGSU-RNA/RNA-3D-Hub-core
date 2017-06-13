@@ -222,13 +222,13 @@ class FileHandleSaver(Saver):
         """Compress the file for the given pdb and data.
         """
 
-        filename = self.filename(pdb, **kwargs)
+        filename = self.stage.filename(pdb, **kwargs)
         self.logger.debug('Compressing %s', filename)
         if kwargs.get('dry_run'):
             return True
 
-        temp_output_file = os.path.join(self.config['fr3d_root'],
-                                        self.__name__)
+        temp_output_file = os.path.join(self.config['locations']['fr3d_root'],
+                                        self.name)
         handle = gzip.open(temp_output_file, 'wb')
         with open(filename, 'rb') as raw:
             handle.writelines(raw)

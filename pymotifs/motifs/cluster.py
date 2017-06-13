@@ -213,6 +213,9 @@ class ClusterMotifs(core.Base):
         :returns: Nothing.
         """
 
+        if not loops:
+            raise ValueError("Must give loops to cluster")
+
         self._clean_up()
 
         output_dir = self.make_release_directory(loop_type)
