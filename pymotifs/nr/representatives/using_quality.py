@@ -250,16 +250,14 @@ class CompScore(QualityBase):
             member['quality'] = self.as_quality([row2dict(r) for r in query])
         return member
 
+    def compscore(self, member):
+        average = np.mean(member['resolution'],
+                          member['percent_clash'],
+                          10 * member['average_rsr'],
+                          10 * (1 - member['average_rscc']),
+                          10 * member['rfree'])
+
+        return 100 * average
+
     def sort_by_quality(self, members):
-        def key(member):
-            average = np.mean(member['resolution'],
-                              member['percent_clash'],
-                              10 * member['average_rsr'],
-                              10 * (1 - member['average_rscc']),
-                              10 * member['rfree'])
-
-            return 100 * average
-            # eqn = 100*AVERAGE(resolution, percent clash, 10*average rsr,
-            #                   10*(1-average rscc), 10*rfree)
-
-        return sorted(members, key=key, reverse=True)
+        return sorted(members, key=self.compscore, reverse=True)
