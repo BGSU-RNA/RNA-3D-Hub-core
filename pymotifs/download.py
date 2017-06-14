@@ -27,12 +27,12 @@ class Downloader(core.Loader):
 
     def __init__(self, *args, **kwargs):
         super(Downloader, self).__init__(*args, **kwargs)
-        self.gzip = utils.GzipFetchHelper(allow_fail=True)
+        self.helper = utils.WebRequestHelper(allow_fail=True)
         self.location = os.path.join(self.config['locations']['fr3d_root'],
                                      'PDBFiles')
 
     def filename(self, name, **kwargs):
-        return os.path.realpath(os.path.normpath(os.path.join(self.location, name + '.cif')))
+        return os.path.realpath(os.path.normpath(os.path.join(self.location, name + '.cif.gz')))
 
     def url(self, name, **kwargs):
         return self.file_url.format(pdb=name)
@@ -46,7 +46,7 @@ class Downloader(core.Loader):
 
     def data(self, name, **kwargs):
         try:
-            content = self.gzip(self.url(name, **kwargs))
+            content = self.helper(self.url(name, **kwargs))
         except Exception as err:
             self.logger.error('%s could not be downloaded', name)
             self.logger.exception(err)
