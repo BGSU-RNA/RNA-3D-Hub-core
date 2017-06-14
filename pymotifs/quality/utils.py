@@ -289,7 +289,7 @@ class Parser(object):
 
             uid = as_key(self.unit_id_renamer(residue.attrib))
             if uid not in mapping:
-                raise core.InvalidState("Could not find unit id for %s" % data)
+                raise core.InvalidState("Could not find unit id for %s" % str(uid))
 
             if not mapping[uid]:
                 raise core.InvalidState("No unit ids known for %s", uid)
