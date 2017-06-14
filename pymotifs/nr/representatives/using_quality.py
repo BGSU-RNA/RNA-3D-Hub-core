@@ -1,4 +1,5 @@
 import abc
+from collections import Counter
 
 import numpy as np
 
@@ -197,16 +198,17 @@ class CompScore(QualityBase):
             raise core.InvalidState("No entries to compute quality for")
 
         def avg_of(name):
-            return sum(e[name] for e in entries if e[name]) / len(entries)
+            return np.mean([e[name] for e in entries])
 
         def has_entry(name):
             return any(e[name] is not None for e in entries)
 
-        def percent_of(name):
-            return 100 * sum(e[name] for e in entries) / len(entries)
-
         def first_value(name):
-            return entries[0][name]
+            values = set(entry[name] for entry in entries)
+            if len(values) > 1:
+                raise core.InvalidState("Excpected only a single value for %s"
+                                        % name)
+            return values.pop()
 
         def assign(name, default, function, tracking):
             if has_entry(name):
@@ -214,6 +216,8 @@ class CompScore(QualityBase):
                 return (function(name), tracking)
             return (default, tracking)
 
+        print(len(entries))
+        print(entries[0])
         resolution, has = assign('resolution', 100, first_value, set())
         rfree, has = assign('rfree', 1, first_value, has)
         average_rsr, has = assign('real_space_r', 1, avg_of, has)
@@ -221,8 +225,11 @@ class CompScore(QualityBase):
 
         percent_clash = 100
         if entries[0]['clashscore'] is not None:
-            percent_clash, has = assign('clash_count', 0, percent_of, has)
+            clash_count = sum(e['clash_count'] for e in entries)
+            percent_clash = clash_count / float(entries[0]['atoms'])
+            has.add('clashscore')
 
+        print(entries[0])
         return {
             'resolution': resolution,
             'percent_clash': percent_clash,
@@ -267,8 +274,22 @@ class CompScore(QualityBase):
     def load_quality(self, members):
         for member in members:
             info = self.member_info(member)
+
             with self.session() as session:
-                print(info)
+                query = session.query(mod.UnitInfo.unit).\
+                    filter(mod.UnitInfo.pdb_id == info['pdb']).\
+                    filter(mod.UnitInfo.model == info['model']).\
+                    filter(mod.UnitInfo.sym_op == info['sym_op']).\
+                    filter(mod.UnitInfo.chain.in_(info['chains'])).\
+                    filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
+                counts = Counter(r.unit for r in query)
+
+            atoms = counts['A'] * 21 + \
+                counts['C'] * 19 + \
+                counts['G'] * 22 + \
+                counts['U'] * 19
+
+            with self.session() as session:
                 query = session.query(
                     mod.UnitQuality.real_space_r,
                     mod.UnitQuality.clash_count,
@@ -288,7 +309,13 @@ class CompScore(QualityBase):
                     filter(mod.UnitInfo.chain.in_(info['chains'])).\
                     filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
 
-            member['quality'] = self.as_quality([row2dict(r) for r in query])
+                entries = []
+                for row in query:
+                    entry = row2dict(row)
+                    entry['atoms'] = atoms
+                    entries.append(entry)
+
+            member['quality'] = self.as_quality(entries)
         return member
 
     def compscore(self, member):

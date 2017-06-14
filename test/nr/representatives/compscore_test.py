@@ -1,5 +1,7 @@
 import pytest
 
+from numpy.testing import assert_almost_equal
+
 from test import StageTest
 
 from pymotifs.nr.representatives import CompScore
@@ -15,13 +17,13 @@ class DataTest(StageTest):
         return self.data(*args)['quality']
 
     def test_computes_correct_average_rsr(self):
-        assert self.quality('1S72|1|0')['average_rsr'] == 0.13
+        assert self.quality('1S72|1|0')['average_rsr'] == 0.133  # 0.15
         # assert self.quality('4v9f|0|1')['average_rsr'] == 0.14
         # assert self.quality('4v9f|9|2')['average_rsr'] == 0.13
         # assert self.quality('4V7M|32|DB')['average_rsr'] == 0.23
 
     def test_computes_correct_percent_clash(self):
-        assert self.quality('1S72|1|0')['percent_clash'] == 0.06
+        assert self.quality('1S72|1|0')['percent_clash'] == 0.056
         # assert self.quality('4v9f|0|1')['percent_clash'] == 0.07
         # assert self.quality('4v9f|9|2')['percent_clash'] == 0.15
         # assert self.quality('4V7M|32|DB')['percent_clash'] == 3.84
@@ -32,16 +34,18 @@ class DataTest(StageTest):
         # assert 'percent_clash' in self.quality('4v9f|9|2')['has']
 
     def test_computes_correct_average_rscc(self):
-        assert self.quality('1S72|1|0')['average_rscc'] == -1 * (0.035 - 1)
+        assert_almost_equal(self.quality('1S72|1|0')['average_rscc'], 0.961,
+                            decimal=2)
         # assert self.quality('4v9f|0|1')['average_rscc'] == -1 * (0.033 - 1)
         # assert self.quality('4v9f|9|2')['average_rscc'] == -1 * (0.043 - 1)
         # assert self.quality('4V7M|32|DB')['average_rscc'] == -1 * (0.277 - 1)
 
     def test_uses_correct_rfree(self):
-        assert self.quality('1S72|1|0')['average_rscc'] == 0.22
-        # assert self.quality('4V7M|32|DB')['average_rscc'] == 0.27
-        # assert self.quality('4v9f|0|1')['average_rscc'] == 0.21
-        # assert self.quality('4v9f|9|2')['average_rscc'] == 0.21
+        assert self.quality('1S72|1|0')['rfree'] == 0.22
+        # assert self.quality('4V7M|32|DB')['rfree'] == 0.27
+        # assert self.quality('4v9f|0|1')['rfree'] == 0.21
+        # assert self.quality('4v9f|9|2')['rfree] == 0.21
+
 
     @pytest.mark.skip()
     def test_complains_about_missing_rfree(self):
