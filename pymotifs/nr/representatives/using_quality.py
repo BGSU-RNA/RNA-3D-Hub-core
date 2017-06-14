@@ -9,6 +9,8 @@ from pymotifs.utils import row2dict
 from pymotifs.constants import MANUAL_IFE_REPRESENTATIVES
 from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
+from pymotifs.ife.helpers import IfeLoader
+
 from .core import Representative
 
 
@@ -191,6 +193,9 @@ class CompScore(QualityBase):
         return [m for m in members if self.has_quality(m)]
 
     def as_quality(self, entries):
+        if not entries:
+            raise core.InvalidState("No entries to compute quality for")
+
         def avg_of(name):
             return sum(e[name] for e in entries if e[name]) / len(entries)
 
@@ -215,7 +220,7 @@ class CompScore(QualityBase):
         average_rscc, has = assign('rscc', 0, avg_of, has)
 
         percent_clash = 100
-        if entries[0]['clash_score'] is not None:
+        if entries[0]['clashscore'] is not None:
             percent_clash, has = assign('clash_count', 0, percent_of, has)
 
         return {
@@ -227,13 +232,43 @@ class CompScore(QualityBase):
             'has': has,
         }
 
-    def load_quality(self, members):
-        for member in members:
-            chains = [mem['chain'] for mem in members if members['structured']]
-            if not chains:
-                chains = [mem['chain'] for mem in members]
+    def member_info(self, member):
+        with self.session() as session:
+            info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
+                                 mod.IfeInfo.model).\
+                filter_by(ife_id=member['id']).\
+                one()
+            info = row2dict(info)
 
             with self.session() as session:
+                query = session.query(mod.ChainInfo.chain_name,
+                                      mod.IfeChains.is_structured,
+                                      ).\
+                    join(mod.IfeChains,
+                         mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
+                    filter_by(ife_id=member['id'])
+
+                if not query.count():
+                    raise core.InvalidState("Could not find chains for %s" %
+                                            member)
+
+                all_chains = [row2dict(c) for c in query]
+                chains = [c['chain_name'] for c in all_chains if c['is_structured']]
+                if not chains:
+                    chains = [c['chain_name'] for c in all_chains]
+
+            info['chains'] = chains
+
+            loader = self._create(IfeLoader)
+            info['sym_op'] = loader.sym_op(info['pdb'])
+
+            return info
+
+    def load_quality(self, members):
+        for member in members:
+            info = self.member_info(member)
+            with self.session() as session:
+                print(info)
                 query = session.query(
                     mod.UnitQuality.real_space_r,
                     mod.UnitQuality.clash_count,
@@ -243,22 +278,26 @@ class CompScore(QualityBase):
                     mod.PdbInfo.resolution,
                 ).join(mod.UnitInfo,
                        mod.UnitQuality.unit_id == mod.UnitInfo.unit_id).\
-                    join(mod.PdbInfo, mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
-                    filter(mod.UnitInfo.pdb_id == member['pdb']).\
-                    filter(mod.UnitInfo.model == member['model']).\
-                    filter(mod.UnitInfo.sym_op == member['sym_op']).\
-                    filter(mod.UnitInfo.chain.in_(chains)).\
+                    join(mod.PdbInfo,
+                         mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
+                    join(mod.PdbQuality,
+                         mod.PdbQuality.pdb_id == mod.PdbInfo.pdb_id).\
+                    filter(mod.UnitInfo.pdb_id == info['pdb']).\
+                    filter(mod.UnitInfo.model == info['model']).\
+                    filter(mod.UnitInfo.sym_op == info['sym_op']).\
+                    filter(mod.UnitInfo.chain.in_(info['chains'])).\
                     filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
 
             member['quality'] = self.as_quality([row2dict(r) for r in query])
         return member
 
     def compscore(self, member):
-        average = np.mean(member['resolution'],
-                          member['percent_clash'],
-                          10 * member['average_rsr'],
-                          10 * (1 - member['average_rscc']),
-                          10 * member['rfree'])
+        quality = member['quality']
+        average = np.mean([quality['resolution'],
+                           quality['percent_clash'],
+                           10 * quality['average_rsr'],
+                           10 * (1 - quality['average_rscc']),
+                           10 * quality['rfree']])
 
         return 100 * average
 
