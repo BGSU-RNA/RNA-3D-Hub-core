@@ -8,6 +8,7 @@ import abc
 import sys
 import pickle
 import datetime
+import gzip
 from contextlib import contextmanager
 
 from fr3d.data import Structure
@@ -74,6 +75,7 @@ class Stage(base.Base):
         """
         super(Stage, self).__init__(*args, **kwargs)
         self._cif = ut.CifFileFinder(self.config)
+        self._comprssed = ut.
         self.skip = set(SKIP)
         self.skip.update(self.__class__.skip)
         self.skip.update(kwargs.get('skip_pdbs', []))
@@ -130,6 +132,20 @@ class Stage(base.Base):
         """
         pass
 
+    @contextmanager
+    def __open_cif__(self, pdb):
+        base = os.path.join(self.config['locations']['fr3d_root'], 'PDBFiles')
+        compressed = os.path.join(base, pdb + '.cif.gz')
+        standard = os.path.join(pdb + '.cif')
+        if os.path.exists(compressed):
+            with gzip.open(compressed, 'rb') as raw:
+                yield raw
+        elif os.path.exists(standard):
+            with open(compressed, 'rb') as raw:
+                yield raw
+        else:
+            raise core.InvalidState("Cannot load cif file for %s" % pdb)
+
     def cif(self, pdb):
         """A method to load the cif file for a given pdb id. If given a CIF
         file this will return the given CIF file.
@@ -149,13 +165,15 @@ class Stage(base.Base):
             return pdb
 
         try:
-            with open(self._cif(pdb), 'rb') as raw:
+            with self.__open_cif__(pdb) as raw:
                 return Cif(raw)
         except ComplexOperatorException as err:
             if self.skip_complex:
                 self.logger.warning("Got a complex operator for %s, skipping",
                                     pdb)
                 raise Skip("Complex operator must be skipped")
+            raise err
+        except Exception as err:
             raise err
 
     def structure(self, pdb):

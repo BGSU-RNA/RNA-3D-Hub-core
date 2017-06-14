@@ -351,21 +351,6 @@ class StructureFileFinder(object):
         return filename
 
 
-class CifFileFinder(StructureFileFinder):
-    """This is a class that can find cif files. It looks into the configure
-    PDBFiles directory for cif files. It will return the full path to the file,
-    or raise an exception if it could not be found in strict mode. If not
-    strict it returns None.
-    """
-
-    """File extension to find."""
-    extension = 'cif'
-
-
-class PickleFileFinder(StructureFileFinder):
-    extension = 'pickle'
-
-
 class FTPFetchHelper(RetryHelper):
     def __init__(self, uri, allow_empty=False, parser=None, **kwargs):
         self.parser = parser
