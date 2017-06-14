@@ -6,7 +6,7 @@ from pymotifs import core
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
 
-from pymotifs.representatives.core import Representative
+from .core import Representative
 
 
 def bp_per_nt(chain):

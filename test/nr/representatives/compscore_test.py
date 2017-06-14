@@ -35,7 +35,7 @@ class DataTest(StageTest):
     @pytest.mark.skip()
     def test_computes_correct_average_rscc(self):
         assert self.quality('4v9f', 0, '1')['average_rscc'] == -1 * (0.033 - 1)
-        assert self.quality('4v9f', 9, '2')['average_rscc'] == -1 * (0.043) - 1)
+        assert self.quality('4v9f', 9, '2')['average_rscc'] == -1 * (0.043 - 1)
         assert self.quality('1S72', 0, '1')['average_rscc'] == -1 * (0.035 - 1)
         assert self.quality('4V7M', 32, 'DB')['average_rscc'] == -1 * (0.277 - 1)
 

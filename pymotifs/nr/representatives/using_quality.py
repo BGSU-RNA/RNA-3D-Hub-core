@@ -9,7 +9,7 @@ from pymotifs.utils import row2dict
 from pymotifs.constants import MANUAL_IFE_REPRESENTATIVES
 from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
-from pymotifs.representatives.core import Representative
+from .core import Representative
 
 
 class QualityBase(Representative):
@@ -19,7 +19,7 @@ class QualityBase(Representative):
     hardcoded = MANUAL_IFE_REPRESENTATIVES
     worse = WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
-    __metaclass__ = abc.ABCMeta()
+    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def has_quality(self, member):
@@ -179,13 +179,16 @@ class CompScore(QualityBase):
     This implements a composite scoring metric that should provide a good
     linear ordering of IFE's.
     """
-    name = 'compscore'
+    method = 'compscore'
 
     def has_quality(self, member):
         return 'real_space_r' in member['has'] and \
             'rscc' in member['has'] and \
             'pdb_rfree' in member['has'] and \
             'resolution' in member['has']
+
+    def select_candidates(self, members):
+        return [m for m in members if self.has_quality(m)]
 
     def as_quality(self, entries):
         def avg_of(name):
@@ -238,7 +241,7 @@ class CompScore(QualityBase):
                     mod.PdbQuality.dcc_rfree.label('rfree'),
                     mod.PdbQuality.clashscore,
                     mod.PdbInfo.resolution,
-                ).join(mod.UnitInfo
+                ).join(mod.UnitInfo,
                        mod.UnitQuality.unit_id == mod.UnitInfo.unit_id).\
                     join(mod.PdbInfo, mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
                     filter(mod.UnitInfo.pdb_id == member['pdb']).\
