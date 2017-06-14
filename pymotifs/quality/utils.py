@@ -18,6 +18,12 @@ from pymotifs.utils import renaming as rn
 
 from fr3d.unit_ids import encode
 
+# Sometimes the entries in the validation reports can have NotAvailble in them
+# instead of a number.
+maybe_float = rn.none_or(float, also_none=set([
+    'notavailable'
+]))
+
 
 def as_key(entry, ignore_model=False):
     """
@@ -165,11 +171,11 @@ class Parser(object):
     """
 
     unit_renamer = rn.Renamer(
-        real_space_r=rn.rename('rsr', rn.maybe_float),
-        real_space_r_z_score=rn.rename('rsrz', rn.maybe_float),
-        density_correlation=rn.rename('DCC', rn.maybe_float),
-        rscc=rn.rename('rscc', rn.maybe_float),
-        rna_score=rn.rename('RNAscore', rn.maybe_float),
+        real_space_r=rn.rename('rsr', maybe_float),
+        real_space_r_z_score=rn.rename('rsrz', maybe_float),
+        density_correlation=rn.rename('DCC', maybe_float),
+        rscc=rn.rename('rscc', maybe_float),
+        rna_score=rn.rename('RNAscore', maybe_float),
     )
 
     unit_id_renamer = rn.Renamer(
@@ -182,38 +188,38 @@ class Parser(object):
     )
 
     structure_renamer = rn.Renamer(
-        rn.with_dashes('percent-RSRZ-outliers', rn.maybe_float),
+        rn.with_dashes('percent-RSRZ-outliers', maybe_float),
         rn.with_dashes(
-            'absolute-percentile-percent-RSRZ-outliers', rn.maybe_float),
+            'absolute-percentile-percent-RSRZ-outliers', maybe_float),
         rn.with_dashes(
-            'relative-percentile-percent-RSRZ-outliers', rn.maybe_float),
+            'relative-percentile-percent-RSRZ-outliers', maybe_float),
 
-        rn.with_dashes('clashscore', rn.maybe_float),
-        rn.with_dashes('relative-percentile-clashscore', rn.maybe_float),
-        rn.with_dashes('absolute-percentile-clashscore', rn.maybe_float),
+        rn.with_dashes('clashscore', maybe_float),
+        rn.with_dashes('relative-percentile-clashscore', maybe_float),
+        rn.with_dashes('absolute-percentile-clashscore', maybe_float),
 
-        rn.with_dashes('percent-rota-outliers', rn.maybe_float),
+        rn.with_dashes('percent-rota-outliers', maybe_float),
         rn.with_dashes(
-            'absolute-percentile-percent-rota-outliers', rn.maybe_float),
+            'absolute-percentile-percent-rota-outliers', maybe_float),
         rn.with_dashes(
-            'relative-percentile-percent-rota-outliers', rn.maybe_float),
+            'relative-percentile-percent-rota-outliers', maybe_float),
 
-        rn.with_dashes('percent-rama-outliers', rn.maybe_float),
+        rn.with_dashes('percent-rama-outliers', maybe_float),
         rn.with_dashes(
-            'absolute-percentile-percent-rama-outliers', rn.maybe_float),
+            'absolute-percentile-percent-rama-outliers', maybe_float),
         rn.with_dashes(
-            'relative-percentile-percent-rama-outliers', rn.maybe_float),
+            'relative-percentile-percent-rama-outliers', maybe_float),
 
-        rn.with_dashes('PDB-R', rn.maybe_float),
-        rn.with_dashes('PDB-Rfree', rn.maybe_float),
-        rn.with_dashes('DCC_R', rn.maybe_float),
-        rn.with_dashes('DCC_Rfree', rn.maybe_float),
+        rn.with_dashes('PDB-R', maybe_float),
+        rn.with_dashes('PDB-Rfree', maybe_float),
+        rn.with_dashes('DCC_R', maybe_float),
+        rn.with_dashes('DCC_Rfree', maybe_float),
 
-        rna_suiteness=rn.with_dashes('RNAsuiteness', rn.maybe_float),
+        rna_suiteness=rn.with_dashes('RNAsuiteness', maybe_float),
         absolute_percentile_rna_suiteness=rn.with_dashes(
-            'absolute-percentile-RNAsuiteness', rn.maybe_float),
+            'absolute-percentile-RNAsuiteness', maybe_float),
         relative_percentile_rna_suiteness=rn.with_dashes(
-            'relative-percentile-RNAsuiteness', rn.maybe_float),
+            'relative-percentile-RNAsuiteness', maybe_float),
 
         pdb_id=rn.rename('pdbid', rn.maybe_str),
     )
@@ -279,7 +285,7 @@ class Parser(object):
         for residue in self.root.findall("ModelledSubgroup"):
             data = self.unit_renamer(residue.attrib, skip_missing=True)
 
-            if 'clashscore' in self.root.attrib:
+            if 'clashscore' in self.entity():
                 clash_sum, clash_count = self.clash_score(residue)
                 data['clash_sum'] = clash_sum
                 data['clash_count'] = clash_count
@@ -289,7 +295,7 @@ class Parser(object):
 
             uid = as_key(self.unit_id_renamer(residue.attrib))
             if uid not in mapping:
-                raise core.InvalidState("Could not find unit id for %s" % data)
+                raise core.InvalidState("Could not find unit id for %s" % str(uid))
 
             if not mapping[uid]:
                 raise core.InvalidState("No unit ids known for %s", uid)
