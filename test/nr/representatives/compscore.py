@@ -27,6 +27,11 @@ class DataTest(StageTest):
         assert self.quality('1S72', 0, '1')['percent_clash'] == 0.06
         assert self.quality('4V7M', 32, 'DB')['percent_clash'] == 3.84
 
+        assert 'percent_clash' in self.quality('4V7M', 32, 'DB')['has']
+        assert 'percent_clash' in self.quality('4v9f', 0, '1')['has']
+        assert 'percent_clash' in self.quality('4v9f', 9, '2')['has']
+        assert 'percent_clash' in self.quality('1S72', 0, '1')['has']
+
     @pytest.mark.skip()
     def test_computes_correct_average_rscc(self):
         assert self.quality('4v9f', 0, '1')['average_rscc'] == -1 * (0.033 - 1)
