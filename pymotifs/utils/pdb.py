@@ -2,7 +2,6 @@ import re
 import csv
 import logging
 import datetime
-import xml.etree.ElementTree as ET
 
 from pymotifs import utils
 
@@ -18,7 +17,18 @@ class RnaPdbsHelper(object):
     """A helper class to get a list of all RNA containing PDBS
     """
 
-    def __call__(self, **kwargs):
+    def within_date(self, dates, release):
+        if not release:
+            return None
+        if not dates:
+            return True
+
+        min_date = dates[0] or datetime.date.min
+        max_date = dates[1] or datetime.date.max
+        release_date = datetime.datetime.strptime(release, r'%Y-%m-%d').date()
+        return min_date <= release_date <= max_date
+
+    def __call__(self, dates=(None, None)):
         """Get a list of all rna-containing pdb files, including hybrids. Raise
         a specific error if it fails.
 
@@ -28,7 +38,8 @@ class RnaPdbsHelper(object):
         """
 
         try:
-            helper = CustomReportHelper(fields=['structureId', 'entityMacromoleculeType'])
+            fields = ['structureId', 'entityMacromoleculeType', 'releaseDate']
+            helper = CustomReportHelper(fields=fields)
         except Exception as err:
             logger.exception(err)
             raise GetAllRnaPdbsError("Failed getting all PDBs")
@@ -36,7 +47,9 @@ class RnaPdbsHelper(object):
         data = helper('*')
         ids = set()
         for entry in data:
-            if 'RNA' in entry['entityMacromoleculeType']:
+            entity_type = entry['entityMacromoleculeType']
+            if entity_type and 'RNA' in entity_type and \
+                    self.within_date(dates, entry['releaseDate']):
                 ids.add(entry['structureId'])
         return sorted(ids)
 
@@ -152,5 +165,5 @@ class ObsoleteStructureHelper(object):
         return data
 
     def __call__(self):
-        return self.ftp.cwd('/pub/pdb/data/status/obsolete.dat',
-                            parser=self.parse)
+        return self.ftp.action('/pub/pdb/data/status/obsolete.dat',
+                               parser=self.parse)

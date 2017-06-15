@@ -35,13 +35,11 @@ def pdbs(config, options):
         logger.debug("Using known pdbs only")
         return list(known(config, pdb=False))
 
-    kwargs = {}
     if 'before_date' in options or 'after_date' in options:
-        kwargs['dates'] = (options.get('after_date', None),
-                           options.get('before_date', None))
-        logger.debug("Geting PDBs within dates %s, %s",
-                     *kwargs['dates'])
-        return helper(**kwargs)
+        dates = (options.get('after_date', None),
+                 options.get('before_date', None))
+        logger.debug("Geting PDBs within dates %s, %s", dates)
+        return helper(dates=dates)
 
     return []
 
