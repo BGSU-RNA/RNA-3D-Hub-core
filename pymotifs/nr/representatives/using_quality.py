@@ -85,13 +85,15 @@ class QualityBase(Representative):
         return [m for m in members if abs(m['resolution'] - best) <= 0.2]
 
     def use_hardcoded(self, members):
-        current = members[0]
         hardcoded = self.find_hardcoded(members)
-
         if not hardcoded:
             self.logger.debug("No hardcoded representative to use")
             return list(members)
 
+        if not members:
+            return []
+
+        current = members[0]
         if current == hardcoded:
             self.logger.info("Hardcoded and chosen agree")
             return list(members)
@@ -185,10 +187,11 @@ class CompScore(QualityBase):
     method = 'compscore'
 
     def has_quality(self, member):
-        return 'real_space_r' in member['has'] and \
-            'rscc' in member['has'] and \
-            'pdb_rfree' in member['has'] and \
-            'resolution' in member['has']
+        has_quality = member['quality']['has']
+        return 'real_space_r' in has_quality and \
+            'rscc' in has_quality and \
+            'rfree' in has_quality and \
+            'resolution' in has_quality
 
     def select_candidates(self, members):
         return [m for m in members if self.has_quality(m)]
@@ -216,8 +219,6 @@ class CompScore(QualityBase):
                 return (function(name), tracking)
             return (default, tracking)
 
-        print(len(entries))
-        print(entries[0])
         resolution, has = assign('resolution', 100, first_value, set())
         rfree, has = assign('rfree', 1, first_value, has)
         average_rsr, has = assign('real_space_r', 1, avg_of, has)
@@ -229,7 +230,6 @@ class CompScore(QualityBase):
             percent_clash = clash_count / float(entries[0]['atoms'])
             has.add('clashscore')
 
-        print(entries[0])
         return {
             'resolution': resolution,
             'percent_clash': percent_clash,
@@ -316,7 +316,7 @@ class CompScore(QualityBase):
                     entries.append(entry)
 
             member['quality'] = self.as_quality(entries)
-        return member
+        return members
 
     def compscore(self, member):
         quality = member['quality']

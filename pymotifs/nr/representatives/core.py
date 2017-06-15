@@ -1,44 +1,10 @@
 import abc
 import copy
-import inspect
 import operator as op
 
 from pymotifs import core
-from pymotifs.utils import known_subclasses
 
 from pymotifs.constants import NR_ALLOWED_METHODS
-
-
-def known():
-    """
-    List all the knonw methods to select representatives.
-    """
-
-    finders = []
-    for subclass in known_subclasses(Representative, globals()):
-        finders.append((subclass.method, subclass))
-    return finders
-
-
-def fetch(name):
-    """
-    Get the class that implements the given method name.
-
-    Parameters
-    ----------
-    name : str
-        Method name to use
-
-    Returns
-    -------
-    finder : class
-        A class that implements the given method.
-    """
-    for key, value in globals().items():
-        if inspect.isclass(value) and issubclass(value, Representative) and \
-                getattr(value, 'method', None) == name:
-            return value
-    raise ValueError("Unknown method %s" % name)
 
 
 class Representative(core.Base):
