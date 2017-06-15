@@ -5,6 +5,7 @@ FR3D directory.
 """
 
 import os
+import operator as op
 from contextlib import contextmanager
 
 from pymotifs import core
@@ -23,16 +24,19 @@ class Downloader(core.Loader):
     name = 'downloader'
     update_gap = False
     dependencies = set()
+    write_utf8 = True
     saver = Writer
 
     def __init__(self, *args, **kwargs):
         super(Downloader, self).__init__(*args, **kwargs)
-        self.helper = utils.WebRequestHelper(allow_fail=True)
+        self.helper = utils.WebRequestHelper(allow_fail=True,
+                                             parser=op.attrgetter('content'))
         self.location = os.path.join(self.config['locations']['fr3d_root'],
                                      'PDBFiles')
 
     def filename(self, name, **kwargs):
-        return os.path.realpath(os.path.normpath(os.path.join(self.location, name + '.cif.gz')))
+        path = os.path.join(self.location, name + '.cif.gz')
+        return os.path.realpath(os.path.normpath(path))
 
     def url(self, name, **kwargs):
         return self.file_url.format(pdb=name)
@@ -53,6 +57,6 @@ class Downloader(core.Loader):
             raise core.Skip("Couldn't get %s" % name)
 
         if not content:
-            core.Skip("Downloaded empty file %s" % name)
+            raise core.InvalidState("Downloaded empty file %s" % name)
 
         return content
