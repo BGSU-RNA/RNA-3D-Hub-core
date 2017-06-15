@@ -204,7 +204,7 @@ class FileHandleSaver(Saver):
             The object to get a writer for.
         """
 
-        with self.handle(entry, **kwargs) as (filename, handle):
+        with self.file_handle(entry, **kwargs) as (filename, handle):
             yield handle
 
         if filename is not None:
