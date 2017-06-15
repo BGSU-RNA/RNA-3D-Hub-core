@@ -74,8 +74,6 @@ class Stage(base.Base):
             Arguments to base to `pymotifs.core.base.Base`.
         """
         super(Stage, self).__init__(*args, **kwargs)
-        self._cif = ut.CifFileFinder(self.config)
-        self._comprssed = ut.
         self.skip = set(SKIP)
         self.skip.update(self.__class__.skip)
         self.skip.update(kwargs.get('skip_pdbs', []))
@@ -144,7 +142,7 @@ class Stage(base.Base):
             with open(compressed, 'rb') as raw:
                 yield raw
         else:
-            raise core.InvalidState("Cannot load cif file for %s" % pdb)
+            raise InvalidState("Cannot load cif file for %s" % pdb)
 
     def cif(self, pdb):
         """A method to load the cif file for a given pdb id. If given a CIF
