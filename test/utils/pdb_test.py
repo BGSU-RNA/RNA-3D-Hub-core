@@ -32,3 +32,6 @@ class RnaPdbsHelperTest(TestCase):
     def test_fails_given_invalid_dates(self):
         self.assertRaises(Exception, self.helper,
                           dates=('bob', date(2014, 12, 15)))
+
+    def test_it_fetches_a_structure_with_only_hybrid(self):
+        assert '5T5A' in self.helper()
