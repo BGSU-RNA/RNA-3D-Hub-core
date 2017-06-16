@@ -1,5 +1,4 @@
 import abc
-from collections import Counter
 
 import numpy as np
 
@@ -274,29 +273,21 @@ class CompScore(QualityBase):
 
             return info
 
-    def __chain_query__(self, query, info, only_rna=True, no_water=True):
-        updated = query.filter(mod.UnitInfo.pdb_id == info['pdb']).\
+    def __chain_query__(self, query, info):
+        return query.filter(mod.UnitInfo.pdb_id == info['pdb']).\
             filter(mod.UnitInfo.model == info['model']).\
             filter(mod.UnitInfo.sym_op == info['sym_op']).\
-            filter(mod.UnitInfo.chain.in_(info['chains']))
-
-        if no_water:
-            updated = updated.filter(mod.UnitInfo.unit != 'HOH')
-
-        if only_rna:
-            updated = updated.filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
-
-        return updated
+            filter(mod.UnitInfo.chain.in_(info['chains'])).\
+            filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
 
     def count_atoms(self, info):
         with self.session() as session:
             query = session.query(mod.UnitCoordinates).\
                 join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id)
-            query = self.__chain_query__(query, info, only_rna=False)
+            query = self.__chain_query__(query, info)
             counted_atoms = set(['C', 'N', 'O'])
             count = 0
-            print(query.count())
             for row in query:
                 current = 0
                 for line in row.coordinates.split('\n'):
