@@ -2,6 +2,8 @@ import abc
 
 import numpy as np
 
+from sqlalchemy.orm import aliased
+
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
@@ -195,7 +197,7 @@ class CompScore(QualityBase):
     def select_candidates(self, members):
         return [m for m in members if self.has_quality(m)]
 
-    def as_quality(self, atoms, entries):
+    def as_quality(self, clashes, atoms, entries):
         if not entries:
             raise core.InvalidState("No entries to compute quality for")
 
@@ -223,22 +225,20 @@ class CompScore(QualityBase):
         average_rsr, has = assign('real_space_r', 1, avg_of, has)
         average_rscc, has = assign('rscc', 0, avg_of, has)
 
-        clash_count = 0.0
         percent_clash = 100
         if entries[0]['clashscore'] is not None:
-            clash_count = sum(e['clash_count'] for e in entries)
-            percent_clash = clash_count / atoms
+            percent_clash = 100 * clashes / atoms
             has.add('clashscore')
 
         return {
             'resolution': resolution,
-            'clash': clash_count,
             'percent_clash': percent_clash,
             'average_rsr': average_rsr,
             'average_rscc': average_rscc,
             'rfree': rfree,
             'has': has,
             'atoms': atoms,
+            'clashes': clashes,
         }
 
     def member_info(self, member):
@@ -267,18 +267,17 @@ class CompScore(QualityBase):
                     chains = [c['chain_name'] for c in all_chains]
 
             info['chains'] = chains
-
             loader = self._create(IfeLoader)
             info['sym_op'] = loader.sym_op(info['pdb'])
 
             return info
 
-    def __chain_query__(self, query, info):
-        return query.filter(mod.UnitInfo.pdb_id == info['pdb']).\
-            filter(mod.UnitInfo.model == info['model']).\
-            filter(mod.UnitInfo.sym_op == info['sym_op']).\
-            filter(mod.UnitInfo.chain.in_(info['chains'])).\
-            filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
+    def __chain_query__(self, query, info, table=mod.UnitInfo):
+        return query.filter(table.pdb_id == info['pdb']).\
+            filter(table.model == info['model']).\
+            filter(table.sym_op == info['sym_op']).\
+            filter(table.chain.in_(info['chains'])).\
+            filter(table.unit.in_(['A', 'C', 'G', 'U']))
 
     def count_atoms(self, info):
         with self.session() as session:
@@ -286,7 +285,7 @@ class CompScore(QualityBase):
                 join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id)
             query = self.__chain_query__(query, info)
-            counted_atoms = set(['C', 'N', 'O'])
+            counted_atoms = set(['C', 'N', 'O', 'P'])
             count = 0
             for row in query:
                 current = 0
@@ -303,6 +302,20 @@ class CompScore(QualityBase):
                 raise core.InvalidState("No atoms found for %s" % str(info))
 
             return float(count)
+
+    def count_clashes(self, info):
+        with self.session() as session:
+            u1 = aliased(mod.UnitInfo)
+            u2 = aliased(mod.UnitInfo)
+            query = session.query(mod.UnitClashes).\
+                join(u1, u1.unit_id == mod.UnitClashes.unit_id_1).\
+                join(u2, u2.unit_id == mod.UnitClashes.unit_id_2).\
+                filter(~mod.UnitClashes.atom_name_1.like('%H%')).\
+                filter(~mod.UnitClashes.atom_name_2.like('%H%'))
+
+            query = self.__chain_query__(query, info, table=u1)
+            query = self.__chain_query__(query, info, table=u2)
+            return float(query.count())
 
     def load_quality(self, members):
         for member in members:
@@ -326,7 +339,8 @@ class CompScore(QualityBase):
                 query = self.__chain_query__(query, info)
 
                 entries = [row2dict(r) for r in query]
-            member['quality'] = self.as_quality(atoms, entries)
+            clashes = self.count_clashes(info)
+            member['quality'] = self.as_quality(clashes, atoms, entries)
         return members
 
     def compscore(self, member):
