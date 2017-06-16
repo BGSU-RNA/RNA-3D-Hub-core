@@ -14,7 +14,7 @@ class DataTest(StageTest):
         return self.loader.load_quality([{'id': i for i in ids}])
 
     def quality(self, *args):
-        return self.data(*args)['quality']
+        return self.data(*args)[0]['quality']
 
     def test_computes_correct_average_rsr(self):
         assert self.quality('1S72|1|0')['average_rsr'] == 0.133  # 0.15
@@ -23,6 +23,8 @@ class DataTest(StageTest):
         # assert self.quality('4V7M|32|DB')['average_rsr'] == 0.23
 
     def test_computes_correct_percent_clash(self):
+        print(self.quality('1S72|1|0'))
+
         assert self.quality('1S72|1|0')['percent_clash'] == 0.056
         # assert self.quality('4v9f|0|1')['percent_clash'] == 0.07
         # assert self.quality('4v9f|9|2')['percent_clash'] == 0.15

@@ -196,7 +196,7 @@ class CompScore(QualityBase):
     def select_candidates(self, members):
         return [m for m in members if self.has_quality(m)]
 
-    def as_quality(self, entries):
+    def as_quality(self, atoms, entries):
         if not entries:
             raise core.InvalidState("No entries to compute quality for")
 
@@ -224,19 +224,22 @@ class CompScore(QualityBase):
         average_rsr, has = assign('real_space_r', 1, avg_of, has)
         average_rscc, has = assign('rscc', 0, avg_of, has)
 
+        clash_count = 0.0
         percent_clash = 100
         if entries[0]['clashscore'] is not None:
             clash_count = sum(e['clash_count'] for e in entries)
-            percent_clash = clash_count / float(entries[0]['atoms'])
+            percent_clash = clash_count / atoms
             has.add('clashscore')
 
         return {
             'resolution': resolution,
+            'clash': clash_count,
             'percent_clash': percent_clash,
             'average_rsr': average_rsr,
             'average_rscc': average_rscc,
             'rfree': rfree,
             'has': has,
+            'atoms': atoms,
         }
 
     def member_info(self, member):
@@ -271,23 +274,49 @@ class CompScore(QualityBase):
 
             return info
 
+    def __chain_query__(self, query, info, only_rna=True, no_water=True):
+        updated = query.filter(mod.UnitInfo.pdb_id == info['pdb']).\
+            filter(mod.UnitInfo.model == info['model']).\
+            filter(mod.UnitInfo.sym_op == info['sym_op']).\
+            filter(mod.UnitInfo.chain.in_(info['chains']))
+
+        if no_water:
+            updated = updated.filter(mod.UnitInfo.unit != 'HOH')
+
+        if only_rna:
+            updated = updated.filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
+
+        return updated
+
+    def count_atoms(self, info):
+        with self.session() as session:
+            query = session.query(mod.UnitCoordinates).\
+                join(mod.UnitInfo,
+                     mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id)
+            query = self.__chain_query__(query, info, only_rna=False)
+            counted_atoms = set(['C', 'N', 'O'])
+            count = 0
+            print(query.count())
+            for row in query:
+                current = 0
+                for line in row.coordinates.split('\n'):
+                    parts = line.split()
+                    if parts[2] in counted_atoms:
+                        current += 1
+
+                if not current:
+                    raise core.InvalidState("No atoms in %s" % row.unit_id)
+                count += current
+
+            if not count:
+                raise core.InvalidState("No atoms found for %s" % str(info))
+
+            return float(count)
+
     def load_quality(self, members):
         for member in members:
             info = self.member_info(member)
-
-            with self.session() as session:
-                query = session.query(mod.UnitInfo.unit).\
-                    filter(mod.UnitInfo.pdb_id == info['pdb']).\
-                    filter(mod.UnitInfo.model == info['model']).\
-                    filter(mod.UnitInfo.sym_op == info['sym_op']).\
-                    filter(mod.UnitInfo.chain.in_(info['chains'])).\
-                    filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
-                counts = Counter(r.unit for r in query)
-
-            atoms = counts['A'] * 21 + \
-                counts['C'] * 19 + \
-                counts['G'] * 22 + \
-                counts['U'] * 19
+            atoms = self.count_atoms(info)
 
             with self.session() as session:
                 query = session.query(
@@ -302,20 +331,11 @@ class CompScore(QualityBase):
                     join(mod.PdbInfo,
                          mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
                     join(mod.PdbQuality,
-                         mod.PdbQuality.pdb_id == mod.PdbInfo.pdb_id).\
-                    filter(mod.UnitInfo.pdb_id == info['pdb']).\
-                    filter(mod.UnitInfo.model == info['model']).\
-                    filter(mod.UnitInfo.sym_op == info['sym_op']).\
-                    filter(mod.UnitInfo.chain.in_(info['chains'])).\
-                    filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
+                         mod.PdbQuality.pdb_id == mod.PdbInfo.pdb_id)
+                query = self.__chain_query__(query, info)
 
-                entries = []
-                for row in query:
-                    entry = row2dict(row)
-                    entry['atoms'] = atoms
-                    entries.append(entry)
-
-            member['quality'] = self.as_quality(entries)
+                entries = [row2dict(r) for r in query]
+            member['quality'] = self.as_quality(atoms, entries)
         return members
 
     def compscore(self, member):
