@@ -57,6 +57,21 @@ class Loader(core.SimpleLoader):
                  mod.UnitInfo.unit_id == mod.UnitClashes.unit_id_1).\
             filter(mod.UnitInfo.pdb_id == pdb)
 
+    def filename(self, pdb):
+        """Get the filename where the validation report of the PDB is stored.
+
+        Parameters
+        ----------
+        pdb : str
+            The PDB id string
+
+        Returns
+        -------
+        filename : str
+            The path to validation report for this file.
+        """
+        return self._create(qual.Utils).filename(pdb)
+
     def compatabile_units(self, unit_id1, unit_id2):
         unit1 = decode(unit_id1)
         unit2 = decode(unit_id2)

@@ -343,10 +343,10 @@ class Parser(object):
                 entry['distance'] = data['dist']
                 if not entry['unit_ids'][0]:
                     entry['unit_ids'][0].extend(unit_ids)
-                    entry['atoms'][0] = entry['atom']
+                    entry['atoms'][0] = data['atom']
                 elif not entry['unit_ids'][1]:
                     entry['unit_ids'][1].extend(unit_ids)
-                    entry['atoms'][1] = entry['atom']
+                    entry['atoms'][1] = data['atom']
                     assert len(entry['unit_ids'][1]) == len(entry['unit_ids'][0])
                 else:
                     raise core.InvalidState("Too many unit ids")
