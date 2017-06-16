@@ -2,6 +2,8 @@ import abc
 
 import numpy as np
 
+from sqlalchemy.orm import aliased
+
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
@@ -9,7 +11,9 @@ from pymotifs.utils import row2dict
 from pymotifs.constants import MANUAL_IFE_REPRESENTATIVES
 from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
-from pymotifs.representatives.core import Representative
+from pymotifs.ife.helpers import IfeLoader
+
+from .core import Representative
 
 
 class QualityBase(Representative):
@@ -19,7 +23,7 @@ class QualityBase(Representative):
     hardcoded = MANUAL_IFE_REPRESENTATIVES
     worse = WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
-    __metaclass__ = abc.ABCMeta()
+    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def has_quality(self, member):
@@ -82,13 +86,15 @@ class QualityBase(Representative):
         return [m for m in members if abs(m['resolution'] - best) <= 0.2]
 
     def use_hardcoded(self, members):
-        current = members[0]
         hardcoded = self.find_hardcoded(members)
-
         if not hardcoded:
             self.logger.debug("No hardcoded representative to use")
             return list(members)
 
+        if not members:
+            return []
+
+        current = members[0]
         if current == hardcoded:
             self.logger.info("Hardcoded and chosen agree")
             return list(members)
@@ -179,26 +185,34 @@ class CompScore(QualityBase):
     This implements a composite scoring metric that should provide a good
     linear ordering of IFE's.
     """
-    name = 'compscore'
+    method = 'compscore'
 
     def has_quality(self, member):
-        return 'real_space_r' in member['has'] and \
-            'rscc' in member['has'] and \
-            'pdb_rfree' in member['has'] and \
-            'resolution' in member['has']
+        has_quality = member['quality']['has']
+        return 'real_space_r' in has_quality and \
+            'rscc' in has_quality and \
+            'rfree' in has_quality and \
+            'resolution' in has_quality
 
-    def as_quality(self, entries):
+    def select_candidates(self, members):
+        return [m for m in members if self.has_quality(m)]
+
+    def as_quality(self, clashes, atoms, entries):
+        if not entries:
+            raise core.InvalidState("No entries to compute quality for")
+
         def avg_of(name):
-            return sum(e[name] for e in entries if e[name]) / len(entries)
+            return np.mean([e[name] for e in entries])
 
         def has_entry(name):
             return any(e[name] is not None for e in entries)
 
-        def percent_of(name):
-            return 100 * sum(e[name] for e in entries) / len(entries)
-
         def first_value(name):
-            return entries[0][name]
+            values = set(entry[name] for entry in entries)
+            if len(values) > 1:
+                raise core.InvalidState("Excpected only a single value for %s"
+                                        % name)
+            return values.pop()
 
         def assign(name, default, function, tracking):
             if has_entry(name):
@@ -212,8 +226,9 @@ class CompScore(QualityBase):
         average_rscc, has = assign('rscc', 0, avg_of, has)
 
         percent_clash = 100
-        if entries[0]['clash_score'] is not None:
-            percent_clash, has = assign('clash_count', 0, percent_of, has)
+        if entries[0]['clashscore'] is not None:
+            percent_clash = 100 * clashes / atoms
+            has.add('clashscore')
 
         return {
             'resolution': resolution,
@@ -222,13 +237,90 @@ class CompScore(QualityBase):
             'average_rscc': average_rscc,
             'rfree': rfree,
             'has': has,
+            'atoms': atoms,
+            'clashes': clashes,
         }
+
+    def member_info(self, member):
+        with self.session() as session:
+            info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
+                                 mod.IfeInfo.model).\
+                filter_by(ife_id=member['id']).\
+                one()
+            info = row2dict(info)
+
+            with self.session() as session:
+                query = session.query(mod.ChainInfo.chain_name,
+                                      mod.IfeChains.is_structured,
+                                      ).\
+                    join(mod.IfeChains,
+                         mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
+                    filter_by(ife_id=member['id'])
+
+                if not query.count():
+                    raise core.InvalidState("Could not find chains for %s" %
+                                            member)
+
+                all_chains = [row2dict(c) for c in query]
+                chains = [c['chain_name'] for c in all_chains if c['is_structured']]
+                if not chains:
+                    chains = [c['chain_name'] for c in all_chains]
+
+            info['chains'] = chains
+            loader = self._create(IfeLoader)
+            info['sym_op'] = loader.sym_op(info['pdb'])
+
+            return info
+
+    def __chain_query__(self, query, info, table=mod.UnitInfo):
+        return query.filter(table.pdb_id == info['pdb']).\
+            filter(table.model == info['model']).\
+            filter(table.sym_op == info['sym_op']).\
+            filter(table.chain.in_(info['chains'])).\
+            filter(table.unit.in_(['A', 'C', 'G', 'U']))
+
+    def count_atoms(self, info):
+        with self.session() as session:
+            query = session.query(mod.UnitCoordinates).\
+                join(mod.UnitInfo,
+                     mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id)
+            query = self.__chain_query__(query, info)
+            counted_atoms = set(['C', 'N', 'O', 'P'])
+            count = 0
+            for row in query:
+                current = 0
+                for line in row.coordinates.split('\n'):
+                    parts = line.split()
+                    if parts[2] in counted_atoms:
+                        current += 1
+
+                if not current:
+                    raise core.InvalidState("No atoms in %s" % row.unit_id)
+                count += current
+
+            if not count:
+                raise core.InvalidState("No atoms found for %s" % str(info))
+
+            return float(count)
+
+    def count_clashes(self, info):
+        with self.session() as session:
+            u1 = aliased(mod.UnitInfo)
+            u2 = aliased(mod.UnitInfo)
+            query = session.query(mod.UnitClashes).\
+                join(u1, u1.unit_id == mod.UnitClashes.unit_id_1).\
+                join(u2, u2.unit_id == mod.UnitClashes.unit_id_2).\
+                filter(~mod.UnitClashes.atom_name_1.like('%H%')).\
+                filter(~mod.UnitClashes.atom_name_2.like('%H%'))
+
+            query = self.__chain_query__(query, info, table=u1)
+            query = self.__chain_query__(query, info, table=u2)
+            return float(query.count())
 
     def load_quality(self, members):
         for member in members:
-            chains = [mem['chain'] for mem in members if members['structured']]
-            if not chains:
-                chains = [mem['chain'] for mem in members]
+            info = self.member_info(member)
+            atoms = self.count_atoms(info)
 
             with self.session() as session:
                 query = session.query(
@@ -238,28 +330,28 @@ class CompScore(QualityBase):
                     mod.PdbQuality.dcc_rfree.label('rfree'),
                     mod.PdbQuality.clashscore,
                     mod.PdbInfo.resolution,
-                ).join(mod.UnitInfo
+                ).join(mod.UnitInfo,
                        mod.UnitQuality.unit_id == mod.UnitInfo.unit_id).\
-                    join(mod.PdbInfo, mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
-                    filter(mod.UnitInfo.pdb_id == member['pdb']).\
-                    filter(mod.UnitInfo.model == member['model']).\
-                    filter(mod.UnitInfo.sym_op == member['sym_op']).\
-                    filter(mod.UnitInfo.chain.in_(chains)).\
-                    filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U']))
+                    join(mod.PdbInfo,
+                         mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
+                    join(mod.PdbQuality,
+                         mod.PdbQuality.pdb_id == mod.PdbInfo.pdb_id)
+                query = self.__chain_query__(query, info)
 
-            member['quality'] = self.as_quality([row2dict(r) for r in query])
-        return member
+                entries = [row2dict(r) for r in query]
+            clashes = self.count_clashes(info)
+            member['quality'] = self.as_quality(clashes, atoms, entries)
+        return members
+
+    def compscore(self, member):
+        quality = member['quality']
+        average = np.mean([quality['resolution'],
+                           quality['percent_clash'],
+                           10 * quality['average_rsr'],
+                           10 * (1 - quality['average_rscc']),
+                           10 * quality['rfree']])
+
+        return 100 * average
 
     def sort_by_quality(self, members):
-        def key(member):
-            average = np.mean(member['resolution'],
-                              member['percent_clash'],
-                              10 * member['average_rsr'],
-                              10 * (1 - member['average_rscc']),
-                              10 * member['rfree'])
-
-            return 100 * average
-            # eqn = 100*AVERAGE(resolution, percent clash, 10*average rsr,
-            #                   10*(1-average rscc), 10*rfree)
-
-        return sorted(members, key=key, reverse=True)
+        return sorted(members, key=self.compscore, reverse=True)
