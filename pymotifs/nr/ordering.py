@@ -206,6 +206,9 @@ class Loader(core.SimpleLoader):
                                                                scanForNan=True)
         return [members[index] for index in ordering]
 
+    def mark_processed(self, pair, **kwargs):
+        return super(Loader, self).mark_processed(pair[1], **kwargs)
+
     def data(self, pair, **kwargs):
         """Compute the ordering rows to store. This will lookup the distances
         and members as needed. It is possible for this to raise a
