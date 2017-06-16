@@ -137,7 +137,7 @@ MAX_RESOLUTION_DISCREPANCY = 4.0
 """Min number of nts to need for computing discrepancies"""
 MIN_NT_DISCREPANCY = 3
 
-NR_REPRESENTATIVE_METHOD = 'percent-increase'
+NR_REPRESENTATIVE_METHOD = 'compscore'
 """What representative selection method to use"""
 
 RSRZ_PAIRED_OUTLIERS = 1
@@ -159,8 +159,10 @@ MOTIF_RESOLUTION_CUTOFF = '4.0'
 MANUAL_IFE_REPRESENTATIVES = set([
   '4LFB|1|A',  # TTh SSU
     ])
-"""List of IFEs to use as the representative of its equivalence class"""
-"""Until superseded by some criteria that the pipeline is able to check"""
+"""
+List of IFEs to use as the representative of its equivalence class
+Until superseded by some criteria that the pipeline is able to check
+"""
 
 WORSE_THAN_MANUAL_IFE_REPRESENTATIVES = set()
 """
