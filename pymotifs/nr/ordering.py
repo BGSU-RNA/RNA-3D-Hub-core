@@ -64,9 +64,9 @@ class Loader(core.SimpleLoader):
         with self.session() as session:
             query = session.query(mod.NrClasses.nr_class_id).\
                 filter_by(nr_release_id=latest)
-            return [r.nr_class_id for r in query]
+            return [(latest, r.nr_class_id) for r in query]
 
-    def query(self, session, class_id):
+    def query(self, session, pair):
         """Create a query to find all entries in nr_ordering for the given
         class id.
 
@@ -84,6 +84,7 @@ class Loader(core.SimpleLoader):
             The query.
         """
 
+        _, class_id = pair
         return session.query(mod.NrOrdering).\
             filter_by(nr_class_id=class_id)
 
@@ -115,7 +116,7 @@ class Loader(core.SimpleLoader):
 
         return members
 
-    def distances(self, class_id, members):
+    def distances(self, nr_release_id, class_id, members):
         """Load all compute distances for members of the NR class. This may not
         load distances for all members, as we do not compute discrepancies for
         all possible chain to chain comparisons. For example, chains with very
@@ -151,6 +152,8 @@ class Loader(core.SimpleLoader):
                 join(nr2, nr2.ife_id == chains2.ife_id).\
                 filter(nr1.nr_class_id == nr2.nr_class_id).\
                 filter(nr1.nr_class_id == class_id).\
+                filter(nr1.nr_release_id == nr2.nr_release_id).\
+                filter(nr1.nr_release_id == nr_release_id).\
                 order_by(nr1.ife_id, nr2.ife_id)
 
             distances = coll.defaultdict(lambda: coll.defaultdict(int))
@@ -198,10 +201,12 @@ class Loader(core.SimpleLoader):
                     val = None
                 dist[index1, index2] = val
 
-        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist, self.trials, scanForNan=True)
+        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
+                                                               self.trials,
+                                                               scanForNan=True)
         return [members[index] for index in ordering]
 
-    def data(self, class_id, **kwargs):
+    def data(self, pair, **kwargs):
         """Compute the ordering rows to store. This will lookup the distances
         and members as needed. It is possible for this to raise a
         `pymotifs.core.Skip` if there are no distances stored.
@@ -222,8 +227,9 @@ class Loader(core.SimpleLoader):
             A list of NrOrdering objects to store.
         """
 
+        nr_release_id, class_id = pair
         members = self.members(class_id)
-        distances = self.distances(class_id, members)
+        distances = self.distances(nr_release_id, class_id, members)
         ordered = self.ordered(members, distances)
         data = []
         for index, (ife_id, chain_id) in enumerate(ordered):
