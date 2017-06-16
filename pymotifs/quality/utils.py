@@ -224,6 +224,13 @@ class Parser(object):
         pdb_id=rn.rename('pdbid', rn.maybe_str),
     )
 
+    clash_renamer = rn.Renamer(
+        rn.transform('atom', str),
+        rn.transform('cid', int),
+        rn.transform('clashmag', float),
+        rn.transform('dist', float),
+    )
+
     def __init__(self, gz_content):
         """
         Create a new `Parser` to parse the given gz_content. This parser will
@@ -257,11 +264,20 @@ class Parser(object):
         return data
 
     def clash_score(self, residue):
-        clash_sum, clash_count = 0, 0
+        all_clashes = []
+        non_h_clashes = []
         for clash in residue.findall('clash'):
-            clash_sum += float(clash.attrib['clashmag'])
-            clash_count += 1
-        return clash_sum, clash_count
+            clashmag = float(clash.attrib['clashmag'])
+            all_clashes.append(clashmag)
+            if 'H' not in clash.attrib['atom']:
+                non_h_clashes.append(clashmag)
+
+        return {
+            'clash_count': len(all_clashes),
+            'clash_sum': sum(all_clashes),
+            'non_h_clash_count': len(non_h_clashes),
+            'non_h_clash_sum': sum(non_h_clashes),
+        }
 
     def nts(self, mapping):
         """
@@ -285,11 +301,6 @@ class Parser(object):
         for residue in self.root.findall("ModelledSubgroup"):
             data = self.unit_renamer(residue.attrib, skip_missing=True)
 
-            if 'clashscore' in self.entity():
-                clash_sum, clash_count = self.clash_score(residue)
-                data['clash_sum'] = clash_sum
-                data['clash_count'] = clash_count
-
             if not data:
                 continue
 
@@ -304,3 +315,41 @@ class Parser(object):
                 d = copy.deepcopy(data)
                 d['id'] = pk
                 yield d
+
+    def clashes(self, mapping):
+        def empty_clash():
+            return {
+                'unit_ids': ([], []),
+                'magnitude': None,
+                'distance': None,
+                'atoms': [None, None],
+            }
+
+        clashes = coll.defaultdict(empty_clash)
+        for residue in self.root.findall("ModelledSubgroup"):
+            uid = as_key(self.unit_id_renamer(residue.attrib))
+            if uid not in mapping:
+                raise core.InvalidState("Could not find unit id for %s" %
+                                        str(uid))
+
+            if not mapping[uid]:
+                raise core.InvalidState("No unit ids known for %s", uid)
+
+            unit_ids = sorted(mapping[uid])
+            for clash in residue.findall('clash'):
+                data = self.clash_renamer(clash.attrib)
+                entry = clashes[data['cid']]
+                entry['magnitude'] = data['clashmag']
+                entry['distance'] = data['dist']
+                if not entry['unit_ids'][0]:
+                    entry['unit_ids'][0].extend(unit_ids)
+                    entry['atoms'][0] = entry['atom']
+                elif not entry['unit_ids'][1]:
+                    entry['unit_ids'][1].extend(unit_ids)
+                    entry['atoms'][1] = entry['atom']
+                    assert len(entry['unit_ids'][1]) == len(entry['unit_ids'][0])
+                else:
+                    raise core.InvalidState("Too many unit ids")
+                clashes[data['cid']] = entry
+
+        return clashes.values()
