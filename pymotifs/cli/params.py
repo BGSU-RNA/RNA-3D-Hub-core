@@ -20,7 +20,7 @@ class PdbParamType(click.ParamType):
     def convert(self, value, param, ctx):
         if re.match('^[1-9][0-9a-z]{3}$', value, re.IGNORECASE):
             return value
-        self.fail("Invalid PDB id")
+        self.fail("Invalid PDB id: %s" % value)
 
 
 class KeyValueType(click.ParamType):

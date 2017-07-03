@@ -199,10 +199,19 @@ class CompScore(QualityBase):
 
     def as_quality(self, clashes, atoms, entries):
         if not entries:
-            raise core.InvalidState("No entries to compute quality for")
+            return {
+	        'resolution': 100,
+	        'percent_clash': 100.0,
+	        'average_rsr': 1.0,
+	        'average_rscc': 0.0,
+	        'rfree': 1.0,
+	        'has': set(),
+	        'atoms': atoms,
+	        'clashes': clashes,
+            }
 
-        def avg_of(name):
-            return np.mean([e[name] for e in entries])
+        def avg_of(name, missing):
+            return np.mean([e[name] or missing for e in entries])
 
         def has_entry(name):
             return any(e[name] is not None for e in entries)
@@ -214,16 +223,16 @@ class CompScore(QualityBase):
                                         % name)
             return values.pop()
 
-        def assign(name, default, function, tracking):
+        def assign(name, default, function, tracking, *args):
             if has_entry(name):
                 tracking.add(name)
-                return (function(name), tracking)
+                return (function(name, *args), tracking)
             return (default, tracking)
 
         resolution, has = assign('resolution', 100, first_value, set())
         rfree, has = assign('rfree', 1, first_value, has)
-        average_rsr, has = assign('real_space_r', 1, avg_of, has)
-        average_rscc, has = assign('rscc', 0, avg_of, has)
+        average_rsr, has = assign('real_space_r', 1, avg_of, has, 1)
+        average_rscc, has = assign('rscc', 0, avg_of, has, 0)
 
         percent_clash = 100
         if entries[0]['clashscore'] is not None:
@@ -291,15 +300,16 @@ class CompScore(QualityBase):
                 current = 0
                 for line in row.coordinates.split('\n'):
                     parts = line.split()
-                    if parts[2] in counted_atoms:
+                    if len(parts) >= 2 and parts[2] in counted_atoms:
                         current += 1
 
                 if not current:
-                    raise core.InvalidState("No atoms in %s" % row.unit_id)
+                    self.logger.error("No atoms in %s" % row.unit_id)
                 count += current
 
             if not count:
-                raise core.InvalidState("No atoms found for %s" % str(info))
+                self.logger.error("No atoms found for %s" % str(info))
+                return 100.0
 
             return float(count)
 
@@ -339,6 +349,9 @@ class CompScore(QualityBase):
                 query = self.__chain_query__(query, info)
 
                 entries = [row2dict(r) for r in query]
+            if not entries:
+                self.logger.error("Found no quality data for: %s", str(members))
+
             clashes = self.count_clashes(info)
             member['quality'] = self.as_quality(clashes, atoms, entries)
         return members
