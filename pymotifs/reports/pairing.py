@@ -2,6 +2,8 @@
 This is a module to produce a report about the
 """
 
+from sqlachemly.orm import aliased
+
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
@@ -9,82 +11,85 @@ from pymotifs.utils import row2dict
 
 class Reporter(core.Reporter):
     headers = [
-        'unit',
-        'interacting_index',
+        'unit_1',
+        'index_1',
+        'unit_id_1',
+        'unit_2',
+        'index_2',
+        'unit_id_2',
         'observed',
     ]
 
-# select
-# 	UI1.unit_id,
-# 	ESP1.index,
-# 	ESP1.unit,
-# 	UI2.unit_id,
-# 	ESP2.index,
-# 	ESP2.unit,
-# 	UPI.f_lwbp
-# from exp_seq_unit_mapping as ESUM1
-# join exp_seq_position as ESP1
-# on
-# 	ESP1.exp_seq_position_id = ESUM1.exp_seq_position_id
-# left join unit_info as UI1
-# on
-# 	UI1.unit_id = ESUM1.unit_id
-# left join unit_pairs_interactions as UPI
-# on
-# 	UPI.unit_id_1 = UI1.unit_id
-# left join unit_info as UI2
-# on
-# 	UI2.unit_id = UPI.unit_id_2
-# left join exp_seq_unit_mapping as ESUM2
-# on
-# 	ESUM2.unit_id = UI2.unit_id
-# left join exp_seq_position as ESP2
-# on
-# 	ESP2.exp_seq_position_id = ESUM2.exp_seq_position_id
-# where
-# 	UI1.pdb_id = '5AOX'
-# 	and UI1.chain = 'C'
-# 	and UPI.f_lwbp = 'cWW'
-# order by ESP1.index
-# ;
-
-    def load_interactions(self, pdb, chain, model=1):
+    def exp_seq(self, pdb, chain):
         with self.session() as session:
-            ui1 = aliased(mod.UnitInfo)
-            ui2 = aliased(mod.UnitInfo)
-            esp1 = aliased(mod.ExpSeqPosition)
-            esp2 = aliased(mod.ExpSeqPosition)
-            esum1 = aliased(mod.ExpSeqUnitMapping)
-            esum2 = aliased(mod.ExpSeqUnitMapping)
-            upi = mod.UnitPairsInteractions
+            return session.query(mod.ExpSeqPdbMapping).\
+                filter(pdb == pdb).\
+                filter(chain == chain).\
+                one().\
+                exp_seq_id
 
+    def load_positions(self, pdb, chain):
+        exp_seq = self.exp_seq(pdb, chain)
+        with self.session() as session:
+            esum = mod.ExpSeqUnitMapping
+            esp = mod.ExpSeqPosition
             query = session.query(
-                esum1.unit_id,
-                esp1.index,
-                esp1.unit,
-                ui2.unit_id,
-                esp2.index,
-                esp2.unit,
-            ).\
-                outerjoin(esp1,
-                          esp.exp_seq_position_id == esum1.exp_seq_position_id).\
-                outerjoin(ui1, ui1.unit_id == esum1.unit_id).\
-                outerjoin(upi, upi.unit_id_1 == ui1.unit_id).\
-                outerjoin(ui2, ui2.unit_id == upi.unit_id_2).\
-                outerjoin(esum2,
-                          esum2.unit_id == ui2.unit_id).\
-                outerjoin(esp2,
-                          esp2.exp_seq_position_id == esum2.exp_seq_position_id).\
-                filter(upi.f_lwbp == 'cWW').\
-                filter(ui1.chain == ui2.chain).\
-                filter(ui1.sym_op == ui2.sym_op).\
-                filter(ui1.pdb == pdb).\
-                filter(ui1.chain == chain).\
-                filter(ui1.sym_op.in_(('1_555', 'P_1'))).\
-                order_by(esp1.index)
+                esum.unit_id,
+                esp.index,
+                esp.unit,
+            ).join(esp, esp.exp_seq_position_id == esum.exp_seq_position_id).\
+                filter(esp.exp_seq_seq_id == exp_seq)
 
-            return [row2dict(r) for r in query]
+            positions = []
+            for result in query:
+                entry = row2dict(result)
+                entry['observed'] = result['unit_id'] is not None
+                positions.append(entry)
+            return positions
+
+    def load_interactions(self, pdb_id, chain, positions):
+        mapping = {position['unit_id']: position for position in positions}
+        with self.session() as session:
+            uid1 = aliased(mod.UnitInfo)
+            uid2 = aliased(mod.UnitInfo)
+            query = session.query(mod.UnitPairsInteractions).\
+                join(uid1,
+                     uid1.unit_id == mod.UnitPairsInteractions.unit_id_1).\
+                join(uid2,
+                     uid2.unit_id == mod.UnitPairsInteractions.unit_id_2).\
+                filter_by(f_lwbp='cWW').\
+                filter(uid1.chain == uid2.chain).\
+                filter(uid1.sym_op == uid2.sym_op).\
+                filter(uid1.model == uid2.model)
+            query = self.__limit_units__(query, uid1, pdb_id, chain)
+            query = self.__limit_units__(query, uid2, pdb_id, chain)
+
+            interactions = {}
+            for result in query:
+                unit = mapping[result.unit_id_1]['unit_id']
+                interactions[unit] = mapping[result.unit_id_2]
+            return interactions
+
+    def __limit_units__(self, query, uid, pdb, chain):
+        return query.\
+                filter(uid.pdb_id == pdb).\
+                filter(uid.chain == chain).\
+                filter(uid.model == 1).\
+                filter(uid.alt_id.in_([None, 'A'])).\
+                filter(uid.sym_op.in_(['1_555', 'P_1']))
 
     def data(self, chain_spec):
         pdb, chain = chain_spec.split('.')
-        return self.load_interactions(pdb, chain, model=1)
+        positions = self.positions(pdb, chain)
+        interactions = self.interactions(positions)
+        for position in positions:
+            base = {
+                'unit_id_1': position['unit_id'],
+                'unit_1': position['unit'],
+                'index_1': position['index'],
+                'observed': position['observed'],
+            }
+            other = interactions.get(position['unit_id'], {})
+            second = {k + '_2': v for k, v in other.items() if k != 'observed'}
+            base.update(second)
+            yield base
