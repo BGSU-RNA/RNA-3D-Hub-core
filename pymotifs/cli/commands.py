@@ -553,6 +553,14 @@ def report_loop_quality(ctx, ids, **kwargs):
     run(ctx, 'reports.loops.quality', ids, **kwargs)
 
 
+@report.command('pairing', short_help='A report about cWW pairing in a chain')
+@click.argument('ids', nargs=-1, type=str)
+@click.pass_context
+def report_pairing(ctx, ids, **kwargs):
+    kwargs.update(ctx.parent.objs)
+    run(ctx, 'reports.pairing', ids, **kwargs)
+
+
 @cli.group(short_help='Dump/Import data')
 @click.pass_context
 def transfer(ctx):
