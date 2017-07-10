@@ -2,7 +2,7 @@
 This is a module to produce a report about the
 """
 
-from sqlachemly.orm import aliased
+from sqlalchemy.orm import aliased
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -18,7 +18,7 @@ class Reporter(core.Reporter):
         'observed',
     ]
 
-    def load_positions(self, pdb, chain):
+    def positions(self, pdb, chain):
         exp_seq = self.exp_seq(pdb, chain)
         with self.session() as session:
             esum = mod.ExpSeqUnitMapping
@@ -41,7 +41,7 @@ class Reporter(core.Reporter):
             positions = []
             for result in query:
                 entry = row2dict(result)
-                entry['observed'] = result['unit_id'] is not None
+                entry['observed'] = int(result.unit_id is not None)
                 positions.append(entry)
             return positions
 
@@ -55,10 +55,8 @@ class Reporter(core.Reporter):
                      uid1.unit_id == mod.UnitPairsInteractions.unit_id_1).\
                 join(uid2,
                      uid2.unit_id == mod.UnitPairsInteractions.unit_id_2).\
-                filter_by(f_lwbp='cWW').\
-                filter(uid1.chain == uid2.chain).\
-                filter(uid1.sym_op == uid2.sym_op).\
-                filter(uid1.model == uid2.model)
+                filter(mod.UnitPairsInteractions.f_lwbp == 'cWW').\
+                filter(uid1.sym_op == uid2.sym_op)
             query = self.__limit_units__(query, uid1, pdb_id, chain)
             query = self.__limit_units__(query, uid2, pdb_id, chain)
 
@@ -79,8 +77,8 @@ class Reporter(core.Reporter):
                 filter(uid.pdb_id == pdb).\
                 filter(uid.chain == chain).\
                 filter(uid.model == 1).\
-                filter(uid.alt_id.in_([None, 'A'])).\
                 filter(uid.sym_op.in_(['1_555', 'P_1']))
+                # filter(uid.alt_id.in_([None, 'A'])).\
 
     def data(self, chain_spec, remove_pseudoknots, **kwargs):
         pdb, chain = chain_spec
