@@ -42,6 +42,7 @@ class Reporter(core.Reporter):
             for result in query:
                 entry = row2dict(result)
                 entry['observed'] = int(result.unit_id is not None)
+                entry['index'] = entry['index'] + 1
                 positions.append(entry)
             return positions
 
