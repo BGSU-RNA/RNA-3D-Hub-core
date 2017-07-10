@@ -4,10 +4,13 @@
 import operator as op
 import itertools as it
 import collections as coll
+from copy import deepcopy
 
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
+
+from pymotifs.nr.representatives.using_quality import CompScore
 
 import numpy as np
 
@@ -20,11 +23,6 @@ is_type = lambda t: lambda c: macro_type(c) == t
 is_protein = is_type('Polypeptide(L)')
 is_rna = is_type('Polyribonucleotide (RNA)')
 
-PdbInfo = coll.namedtuple('PdbInfo', ['protein_chains', 'rna_chains',
-                                      'resolution'])
-ChainInfo = coll.namedtuple('ChainInfo', ['name', 'species', 'compound',
-                                          'observed', 'experimental',
-                                          'sequence'])
 
 
 class Entry(object):
@@ -312,45 +310,163 @@ class Info(object):
 class Groups(core.Reporter):
     headers = [
         'Original Index',
-        'Group',
         'Release',
-        'IFE id',
-        'BP/NT',
+        'Group',
         'PDB',
-        'Resolution',
         'Chains',
-        'Protein Species',
-        'Protein Compound',
-        'RNA Species',
-        'Nucleic Acid Compound',
+        'Resolution',
         'Observed Length',
         'Experimental Length',
         'Experimental Sequence',
-        'Percent RSRZ Outliers',
+        'BP/NT',
+        'Nucleic Acid Compound',
+        'RNA Species',
+        'Protein Species',
+        'Protein Compound',
         'Clashscore',
-        'Percent RNA Backbone Outliers',
-        'Relative Percentile RSRZ',
-        'Relative Percentile Clashscore',
-        'Relative Percentile Backbone Outliers',
-        'Relative Percentile Mean',
+        'Compscore',
+        'Average RSR',
+        'Percent Clash',
+        'Average RSCC',
+        'Rfree',
     ]
 
-    def sort_groups(self, data):
-        key = op.attrgetter('group')
-        grouped = it.groupby(sorted(data, key=key), key)
-        ordering = []
-        mapping = {}
-        for name, members in grouped:
-            members = sorted(members, key=op.attrgetter('rank'))
-            mapping[name] = members
-            rep_size = members[0].experimental
-            ordering.append((name, rep_size))
+    def class_property(self, ifes, name):
+        return {ife[name] for ife in ifes}
 
-        ordering.sort(key=op.itemgetter(1))
-        ordered = []
-        for name, _ in ordering:
-            ordered.extend(mapping[name])
-        return ordered
+    def quality_data(self, ifes):
+        compscore = self._create(CompScore)
+        members = deepcopy(ifes)
+        compscore.load_quality(members)
+        data = {}
+        for ife in ifes:
+            quality = ife['quality']
+            data[ife['id']] = {
+                'Clashscore': quality['clashscore'],
+                'Compscore': compscore.compscore(ife),
+                'Average RSR': quality['average_rsr'],
+                'Percent Clash': quality['percent_clash'],
+                'Average RSCC': quality['average_rscc'],
+                'Rfree': quality['rfree'],
+            }
+        return data
+
+    def ife_info(self, ifes):
+        ife_ids = self.class_property(ifes, 'id')
+        with self.session() as session:
+            query = session.query(
+                mod.IfeInfo.ife_id,
+                mod.IfeInfo.bps,
+                mod.IfeInfo.length.label('Observed Length')
+            ).filter(mod.IfeInfo.ife_id.in_(ife_ids))
+
+            data = {}
+            for result in query:
+                entry = row2dict(result)
+                nt = entry['Observed Length']
+                bp = entry.pop('bps')
+                ife_id = entry.pop('ife_id')
+                entry['BP/NT'] = float(bp) / float(nt)
+                chain_ids = ife_id.split('+')
+                chains = [p.split('|')[-1] for p in chain_ids]
+                entry['Chains'] = ', '.join(chains)
+                data[ife_id] = entry
+        return data
+
+    def protein_info(self, ifes):
+        pdb_ids = self.class_property(ifes, 'pdb_id')
+        with self.session() as session:
+            query = session.query(
+                mod.ChainInfo.pdb_id,
+                mod.ChainInfo.compound.label('Protein Compound'),
+                mod.SpeciesInfo.species_name.label('Protein Species'),
+            ).\
+                join(mod.ChainSpecies,
+                     mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
+                join(mod.SpeciesInfo,
+                     mod.SpeciesInfo.species_id == mod.ChainSpecies.species_id).\
+                filter(mod.ChainInfo.pdb_id.in_(pdb_ids)).\
+                filter(mod.ChainInfo.entity_macromolecule_type == '')
+
+            data = {}
+            for result in query:
+                entry = row2dict(result)
+                pdb_id = entry.pop('pdb_id')
+                data[pdb_id] = entry
+            return data
+
+    def chain_info(self, ifes):
+        chain_ids = self.class_property(ifes, 'chain_id')
+        with self.session() as session:
+            query = session.query(
+                mod.ChainInfo.chain_id,
+                mod.ChainInfo.sequence.label('Experimental Sequence'),
+                mod.ChainInfo.compound.label('Nucleic Acid Compound'),
+                mod.SpeciesInfo.species_name.label('RNA Species'),
+            ).\
+                join(mod.ChainSpecies,
+                     mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
+                join(mod.SpeciesInfo,
+                     mod.SpeciesInfo.species_id == mod.ChainSpecies.species_id).\
+                filter(mod.ChainInfo.chain_id.in_(chain_ids))
+
+            data = {}
+            for result in query:
+                entry = row2dict(result)
+                entry['Experimental Length'] = len(entry['Experimental Sequence'])
+                chain_id = entry.pop('chain_id')
+                data[chain_id] = entry
+        return data
+
+    def pdb_info(self, ifes):
+        pdb_ids = self.class_property(ifes, 'pdb_id')
+        with self.session() as session:
+            query = session.query(
+                mod.PdbInfo.pdb_id.label('PDB'),
+                mod.PdbInfo.resolution.label('Resolution')
+            ).filter(mod.PdbInfo.pdb_id.in_(pdb_ids))
+
+            data = {}
+            for result in query:
+                entry = row2dict(result)
+                data[entry['PDB']] = entry
+        return data
+
+    def load_nr_classes(self, release, resolution):
+        with self.session() as session:
+            query = session.query(
+                mod.NrChains.index,
+                mod.NrChains.ife_id.label('id'),
+                mod.IfeInfo.pdb_id,
+                mod.IfeInfo.length,
+                mod.IfeChains.chain_id,
+                mod.NrClasses.name,
+            ).\
+                join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
+                join(mod.IfeChains,
+                     mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
+                join(mod.NrClasses,
+                     mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
+                filter(mod.NrClasses.nr_release_id == release).\
+                filter(mod.NrClasses.resolution == resolution).\
+                filter(mod.IfeChains.index == 0)
+
+            data = []
+            for result in query:
+                entry = row2dict(result)
+                entry['rep'] = (entry['index'] == 0)
+                data.append(entry)
+        return data
+
+    def order_nr_classes(self, nr_classes):
+        def key(nr_class):
+            rep = next(ife for ife in nr_class if ife['rep'] is True)
+            return rep['length']
+        return sorted(nr_classes, key=key)
+
+    def nr_classes(self, release, resolution):
+        nr_classes = self.load_nr_classes(release, resolution)
+        return self.order_nr_classes(nr_classes)
 
     def data(self, entry, **kwargs):
         """Create a report about the NR set.
@@ -373,47 +489,24 @@ class Groups(core.Reporter):
         """
 
         release, resolution = entry
-        info = Info(self.session)
-        with self.session() as session:
-            classes = mod.NrClasses
-            chains = mod.NrChains
-            ife = mod.IfeInfo
-            ife_chains = mod.IfeChains
-            query = session.query(classes.name,
-                                  chains.rank,
-                                  chains.ife_id,
-                                  ife.pdb_id,
-                                  ife_chains.chain_id,
-                                  ife_chains.index,
-                                  ).\
-                join(chains, chains.nr_class_id == classes.nr_class_id).\
-                join(ife, ife.ife_id == chains.ife_id).\
-                join(ife_chains, ife.ife_id == ife_chains.ife_id).\
-                filter(classes.nr_release_id == release).\
-                filter(classes.resolution == resolution).\
-                order_by(ife.ife_id)
-
-            data = []
-            for ife_id, group in it.groupby(query, op.attrgetter('ife_id')):
-                chains = [row2dict(g) for g in group]
-                result = chains[0]
-                name = op.itemgetter('chain_id', 'index')
-                chain_ids = set(name(c) for c in chains)
-                chain_ids = sorted(chain_ids, key=op.itemgetter(1))
-                chain_ids = [n[0] for n in chain_ids]
-                current = Entry(result['name'],
-                                release,
-                                result['rank'],
-                                result['ife_id'],
-                                result['pdb_id'],
-                                chain_ids,
-                                )
-                current.add_info(info)
-                data.append(current)
-
-        result = []
-        for index, entry in enumerate(self.sort_groups(data)):
-            entry = entry.named()
-            entry['Original Index'] = index
-            result.append(entry)
-        return result
+        nr_classes = self.nr_classes(release, resolution)
+        index = 0
+        for nr_class in nr_classes:
+            pdb_info = self.pdb_info(nr_class)
+            chain_info = self.chain_info(nr_class)
+            ife_info = self.ife_info(nr_class)
+            quality_data = self.quality_data(nr_class)
+            protein_data = self.protein_data(nr_class)
+            for ife in nr_class:
+                data = {
+                    'Original Index': index,
+                    'Release': release,
+                    'Group': ife['name'],
+                }
+                data.update(pdb_info[ife['pdb_id']])
+                data.update(chain_info[ife['chain_id']])
+                data.update(ife_info[ife['id']])
+                data.update(quality_data[ife['id']])
+                data.update(protein_data[ife['pdb_id']])
+                yield data
+                index + 1
