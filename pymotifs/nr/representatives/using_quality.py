@@ -200,14 +200,14 @@ class CompScore(QualityBase):
     def as_quality(self, clashes, atoms, entries):
         if not entries:
             return {
-	        'resolution': 100,
-	        'percent_clash': 100.0,
-	        'average_rsr': 1.0,
-	        'average_rscc': 0.0,
-	        'rfree': 1.0,
-	        'has': set(),
-	        'atoms': atoms,
-	        'clashes': clashes,
+                'resolution': 100,
+                'percent_clash': 100.0,
+                'average_rsr': 1.0,
+                'average_rscc': 0.0,
+                'rfree': 1.0,
+                'has': set(),
+                'atoms': atoms,
+                'clashes': clashes,
             }
 
         def avg_of(name, missing):
