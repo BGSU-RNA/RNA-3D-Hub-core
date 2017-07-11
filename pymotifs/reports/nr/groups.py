@@ -1,6 +1,9 @@
 """This module contains the logic to create the NR reports.
 """
 
+import operator as op
+import itertools as it
+import collections as coll
 from copy import deepcopy
 
 from pymotifs import core
@@ -94,10 +97,19 @@ class Groups(core.Reporter):
                 filter(mod.ChainInfo.entity_macromolecule_type == '')
 
             data = {}
-            for result in query:
-                entry = row2dict(result)
-                pdb_id = entry.pop('pdb_id')
-                data[pdb_id] = entry
+            grouped = it.imap(row2dict, query)
+            grouped = it.groupby(grouped, op.itemgetter('pdb_id'))
+            for pdb_id, results in grouped:
+                proteins = coll.defaultdict(list)
+                for result in results:
+                    for key, value in result.items():
+                        if key != 'pdb_id':
+                            proteins[key].append(value)
+
+                proteins = dict(proteins)
+                for key, value in proteins.items():
+                    proteins[key] = ', '.join(value)
+                data[pdb_id] = proteins
             return data
 
     def chain_info(self, ifes):
