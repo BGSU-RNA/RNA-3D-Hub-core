@@ -347,7 +347,13 @@ class Parser(object):
                 elif not entry['unit_ids'][1]:
                     entry['unit_ids'][1].extend(unit_ids)
                     entry['atoms'][1] = data['atom']
-                    assert len(entry['unit_ids'][1]) == len(entry['unit_ids'][0])
+                    if len(entry['unit_ids'][1]) != len(entry['unit_ids'][0]):
+                        if len(entry['unit_ids'][0]) == 1:
+                            fill = entry['unit_ids'][0] * len(entry['unit_ids'][1])
+                            entry['unit_ids']= (fill, entry['unit_ids'][1])
+                        else:
+                            raise core.InvalidState("Clash lengths do not align: %s, %s" %
+                                                    (residue.attrib, clash.attrib))
                 else:
                     raise core.InvalidState("Too many unit ids")
                 clashes[data['cid']] = entry

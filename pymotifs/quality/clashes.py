@@ -15,6 +15,7 @@ from fr3d.unit_ids import decode
 
 
 class Loader(core.SimpleLoader):
+    allow_no_data = True
     dependencies = set([InfoLoader, Downloader])
 
     def to_process(self, pdbs, **kwrags):
@@ -114,9 +115,13 @@ class Loader(core.SimpleLoader):
         """
         with open(filename, 'rb') as raw:
             parser = qual.Parser(raw.read())
-            for data in parser.clashes(mapping):
-                for clash in self.as_clash(data):
-                    yield clash
+            try:
+                for data in parser.clashes(mapping):
+                    for clash in self.as_clash(data):
+                        yield clash
+            except Exception as err:
+                self.logger.exception(err)
+                raise core.Skip("Could not load clashes for %s" % filename)
 
     def data(self, pdb, **kwargs):
         util = qual.Utils(self.config, self.session)
