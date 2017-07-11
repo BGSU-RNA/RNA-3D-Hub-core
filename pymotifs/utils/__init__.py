@@ -186,7 +186,7 @@ def known_subclasses(base, glob):
     return subclasses
 
 
-def known(config, pdb=False, cif=True, pdb1=False):
+def known(config, pdb=False, cif=True, pdb1=False, cifatoms=True):
     """Find all known mmCIF, pdb and/or PDB1 files. Giving all flags means
     getting all PDB, mmCIF or PDB1 files. This will check if we have a copy of
     the file downloaded with the correct extension.
@@ -214,6 +214,8 @@ def known(config, pdb=False, cif=True, pdb1=False):
     for filename in os.listdir(path):
         if not os.path.isfile(os.path.join(path, filename)):
             continue
+        if 'exemplar' in filename.lower():
+            continue
         name, ext = os.path.splitext(filename)
         ext = ext.replace('.', '')
         names[name][ext] = True
@@ -222,7 +224,8 @@ def known(config, pdb=False, cif=True, pdb1=False):
         if not pdb or (pdb and exts.get('pdb')):
             if not cif or (cif and exts.get('cif')):
                 if not pdb1 or (pdb1 and exts.get('pdb1')):
-                    yield name
+                    if not cifatoms or (cifatoms and exts.get('cifatoms')):
+                        yield name
 
 
 class RetryHelper(object):
