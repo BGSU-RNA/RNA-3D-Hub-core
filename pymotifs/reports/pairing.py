@@ -18,6 +18,13 @@ class Reporter(core.Reporter):
         'observed',
     ]
 
+    def exp_seq(self, pdb_id, chain):
+        with self.session() as session:
+            return session.query(mod.ExpSeqPdb).\
+                filter(pdb_id=pdb_id, chain_name=chain).\
+                one().\
+                exp_seq_id
+
     def positions(self, pdb, chain):
         exp_seq = self.exp_seq(pdb, chain)
         with self.session() as session:
@@ -30,7 +37,7 @@ class Reporter(core.Reporter):
                 esp.index,
                 esp.unit,
             ).join(esp, esp.exp_seq_position_id == esum.exp_seq_position_id).\
-                join(escm, escm.exp_seq_seq_id == esum.exp_seq_id).\
+                join(escm, escm.exp_seq_id == esum.exp_seq_id).\
                 join(ci, ci.chain_id == escm.chain_id).\
                 filter(ci.pdb_id == pdb).\
                 filter(ci.chain_name == chain)
