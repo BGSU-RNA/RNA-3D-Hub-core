@@ -16,8 +16,10 @@ class Groups(core.Reporter):
         'Release',
         'Group',
         'PDB',
+        'Title',
         'Chains',
         'Resolution',
+        'Method',
         'Observed Length',
         'Experimental Length',
         'Experimental Sequence',
@@ -126,12 +128,24 @@ class Groups(core.Reporter):
         with self.session() as session:
             query = session.query(
                 mod.PdbInfo.pdb_id.label('PDB'),
-                mod.PdbInfo.resolution.label('Resolution')
+                mod.PdbInfo.resolution.label('Resolution'),
+                mod.PdbInfo.experimental_technique.label('Method'),
+                mod.PdbInfo.title.label('Title'),
             ).filter(mod.PdbInfo.pdb_id.in_(pdb_ids))
 
             data = {}
             for result in query:
                 entry = row2dict(result)
+                method = entry.pop('Method')
+                if method == 'X-RAY DIFFRACTION':
+                    method = 'x-ray'
+                elif method == 'SOLUTION NMR':
+                    method = 'nmr'
+                elif method == 'ELECTRON MICROSCOPY':
+                    method = 'cyro-em'
+                else:
+                    method = method
+                entry['Method'] = method
                 data[entry['PDB']] = entry
         return data
 
