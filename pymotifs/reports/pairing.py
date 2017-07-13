@@ -37,7 +37,7 @@ class Reporter(core.Reporter):
                 esp.index,
                 esp.unit,
             ).join(esp, esp.exp_seq_position_id == esum.exp_seq_position_id).\
-                join(escm, escm.exp_seq_id == esum.exp_seq_id).\
+                join(escm, escm.exp_seq_chain_mapping_id == esum.exp_seq_chain_mapping_id).\
                 join(ci, ci.chain_id == escm.chain_id).\
                 filter(ci.pdb_id == pdb).\
                 filter(ci.chain_name == chain)
