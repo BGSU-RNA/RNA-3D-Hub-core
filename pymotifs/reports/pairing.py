@@ -21,7 +21,7 @@ class Reporter(core.Reporter):
     def exp_seq(self, pdb_id, chain):
         with self.session() as session:
             return session.query(mod.ExpSeqPdb).\
-                filter(pdb_id=pdb_id, chain_name=chain).\
+                filter_by(pdb_id=pdb_id, chain_name=chain).\
                 one().\
                 exp_seq_id
 
