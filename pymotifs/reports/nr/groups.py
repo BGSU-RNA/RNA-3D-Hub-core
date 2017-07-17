@@ -18,6 +18,7 @@ class Groups(core.Reporter):
         'Original Index',
         'Release',
         'Group',
+        'IFE ID',
         'PDB',
         'Title',
         'Chains',
@@ -232,6 +233,7 @@ class Groups(core.Reporter):
                     'Original Index': index,
                     'Release': release,
                     'Group': ife['name'],
+                    'IFE ID': ife['id'],
                 }
                 data.update(pdb_info[ife['pdb_id']])
                 if ife['chain_id'] in chain_info:
