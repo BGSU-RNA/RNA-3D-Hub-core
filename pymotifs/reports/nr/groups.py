@@ -12,6 +12,8 @@ from pymotifs.utils import row2dict
 
 from pymotifs.nr.representatives.using_quality import CompScore
 
+from sqlalchemy.sql.functions import coalesce
+
 
 class Groups(core.Reporter):
     headers = [
@@ -88,14 +90,15 @@ class Groups(core.Reporter):
             query = session.query(
                 mod.ChainInfo.pdb_id,
                 mod.ChainInfo.compound.label('Protein Compound'),
-                mod.SpeciesMapping.species_name.label('Protein Species'),
+                coalesce(mod.SpeciesMapping.species_name, 'None').label('Protein Species'),
             ).\
-                join(mod.ChainSpecies,
+                outerjoin(mod.ChainSpecies,
                      mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
-                join(mod.SpeciesMapping,
+                outerjoin(mod.SpeciesMapping,
                      mod.SpeciesMapping.species_id == mod.ChainSpecies.species_id).\
                 filter(mod.ChainInfo.pdb_id.in_(pdb_ids)).\
-                filter(mod.ChainInfo.entity_macromolecule_type == '')
+                filter(~mod.ChainInfo.entity_macromolecule_type.contains('RNA')).\
+                distinct()
 
             data = {}
             grouped = it.imap(row2dict, query)
