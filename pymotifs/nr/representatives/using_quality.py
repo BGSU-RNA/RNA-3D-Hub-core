@@ -197,58 +197,60 @@ class CompScore(QualityBase):
     def select_candidates(self, members):
         return [m for m in members if self.has_quality(m)]
 
+    def percent_clash(self, clashes, atoms, entries):
+        if entries[0]['clashscore'] is None:
+            return (False, 100)
+        percent_clash = 100 * clashes / atoms
+        return (True, percent_clash)
+
+    def average_rsr(self, clashes, atoms, entries):
+        values = [e['real_space_r'] or 0 for e in entries]
+        has_data = any(e['real_space_r'] is not None for e in entries)
+        return (has_data, np.mean(values))
+
+    def average_rscc(self, clashes, atoms, entries):
+        values = [e['rscc'] or 0 for e in entries]
+        has_data = any(e['rscc'] is not None for e in entries)
+        return (has_data, np.mean(values))
+
+    def resolution(self, clashes, atoms, entries):
+        values = set(e['resolution'] for e in entries)
+        if len(values) != 1:
+            raise core.InvalidState("Should only have 1 resolution: %s" %
+                                    entries)
+        return (True, values.pop())
+
+    def rfree(self, clashes, atoms, entries):
+        values = set(e['rfree'] for e in entries)
+        if len(values) != 1:
+            raise core.InvalidState("Should only have 1 rfree: %s" %
+                                    entries)
+        value = values.pop()
+        if value is None:
+            return (False, 1.0)
+        return (True, value)
+
     def as_quality(self, clashes, atoms, entries):
-        if not entries:
-            return {
-                'resolution': 100,
-                'percent_clash': 100.0,
-                'average_rsr': 1.0,
-                'average_rscc': 0.0,
-                'rfree': 1.0,
-                'has': set(),
-                'atoms': atoms,
-                'clashes': clashes,
-            }
+        parameters = [
+            'resolution',
+            'percent_clash',
+            'average_rsr',
+            'average_rscc',
+            'rfree',
+        ]
+        data = {'clashes': clashes, 'atoms': atoms, 'has': set()}
+        for name in parameters:
+            method = getattr(self, name)
+            has, value = method(clashes, atoms, entries)
+            if value < 0 and has:
+                raise core.InvalidState("%s should be positive: %s %s" %
+                                        (name, value, entries))
 
-        def avg_of(name, missing):
-            return np.mean([e[name] or missing for e in entries])
+            data[name] = value
+            if has:
+                data['has'].add(name)
 
-        def has_entry(name):
-            return any(e[name] is not None for e in entries)
-
-        def first_value(name):
-            values = set(entry[name] for entry in entries)
-            if len(values) > 1:
-                raise core.InvalidState("Excpected only a single value for %s"
-                                        % name)
-            return values.pop()
-
-        def assign(name, default, function, tracking, *args):
-            if has_entry(name):
-                tracking.add(name)
-                return (function(name, *args), tracking)
-            return (default, tracking)
-
-        resolution, has = assign('resolution', 100, first_value, set())
-        rfree, has = assign('rfree', 1, first_value, has)
-        average_rsr, has = assign('real_space_r', 1, avg_of, has, 1)
-        average_rscc, has = assign('rscc', 0, avg_of, has, 0)
-
-        percent_clash = 100
-        if entries[0]['clashscore'] is not None:
-            percent_clash = 100 * clashes / atoms
-            has.add('clashscore')
-
-        return {
-            'resolution': resolution,
-            'percent_clash': percent_clash,
-            'average_rsr': average_rsr,
-            'average_rscc': average_rscc,
-            'rfree': rfree,
-            'has': has,
-            'atoms': atoms,
-            'clashes': clashes,
-        }
+        return data
 
     def member_info(self, member):
         with self.session() as session:
@@ -325,6 +327,8 @@ class CompScore(QualityBase):
 
             query = self.__chain_query__(query, info, table=u1)
             query = self.__chain_query__(query, info, table=u2)
+            if query.count() < 0:
+                raise core.InvalidState("Negative clashes: %s" % info)
             return float(query.count())
 
     def load_quality(self, members):
@@ -350,7 +354,7 @@ class CompScore(QualityBase):
 
                 entries = [row2dict(r) for r in query]
             if not entries:
-                self.logger.error("Found no quality data for: %s", str(members))
+                raise core.InvalidState("No quality data for: %s" % members)
 
             clashes = self.count_clashes(info)
             member['quality'] = self.as_quality(clashes, atoms, entries)
@@ -358,11 +362,16 @@ class CompScore(QualityBase):
 
     def compscore(self, member):
         quality = member['quality']
-        average = np.mean([quality['resolution'],
-                           quality['percent_clash'],
-                           10 * quality['average_rsr'],
-                           10 * (1 - quality['average_rscc']),
-                           10 * quality['rfree']])
+        average = np.mean([
+            quality['resolution'],
+            quality['percent_clash'],
+            quality['average_rsr'] * 10,
+            1 - quality['average_rscc'] * 10,
+            quality['rfree'] * 10
+        ])
+
+        if average < 0:
+            raise core.InvalidState("Invalid compscore for %s" % member)
 
         return 100 * average
 
