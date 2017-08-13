@@ -12,12 +12,15 @@ from pymotifs.utils import row2dict
 
 from pymotifs.nr.representatives.using_quality import CompScore
 
+from sqlalchemy.sql.functions import coalesce
+
 
 class Groups(core.Reporter):
     headers = [
         'Original Index',
         'Release',
         'Group',
+        'IFE ID',
         'PDB',
         'Title',
         'Chains',
@@ -87,14 +90,15 @@ class Groups(core.Reporter):
             query = session.query(
                 mod.ChainInfo.pdb_id,
                 mod.ChainInfo.compound.label('Protein Compound'),
-                mod.SpeciesMapping.species_name.label('Protein Species'),
+                coalesce(mod.SpeciesMapping.species_name, 'None').label('Protein Species'),
             ).\
-                join(mod.ChainSpecies,
-                     mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
-                join(mod.SpeciesMapping,
-                     mod.SpeciesMapping.species_id == mod.ChainSpecies.species_id).\
+                outerjoin(mod.ChainSpecies,
+                          mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
+                outerjoin(mod.SpeciesMapping,
+                          mod.SpeciesMapping.species_id == mod.ChainSpecies.species_id).\
                 filter(mod.ChainInfo.pdb_id.in_(pdb_ids)).\
-                filter(mod.ChainInfo.entity_macromolecule_type == '')
+                filter(~mod.ChainInfo.entity_macromolecule_type.contains('RNA')).\
+                distinct()
 
             data = {}
             grouped = it.imap(row2dict, query)
@@ -232,6 +236,7 @@ class Groups(core.Reporter):
                     'Original Index': index,
                     'Release': release,
                     'Group': ife['name'],
+                    'IFE ID': ife['id'],
                 }
                 data.update(pdb_info[ife['pdb_id']])
                 if ife['chain_id'] in chain_info:
