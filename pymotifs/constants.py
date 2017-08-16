@@ -170,3 +170,12 @@ The collection of automatically selected representatives that have already
 been evaulated as worse than the manually selected ones, despite what the
 program things.
 """
+
+COMPSCORE_COEFFICENTS = {
+    'resolution': 1,
+    'average_rsr': 8,
+    'percent_clash': 0.6,
+    'average_rscc': 8,
+    'rfree': 18,
+    'fraction_unobserved': 4,
+}

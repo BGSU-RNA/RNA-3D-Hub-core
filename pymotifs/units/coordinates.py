@@ -104,7 +104,12 @@ class Loader(core.SimpleLoader):
         for unit in structure.residues():
             if unit.sequence == 'HOH':
                 continue
+            coord = self.coordinates(pdb, unit)
+            if not coord:
+                raise core.InvalidState("No coordinates computed for %s" %
+                                        unit)
+
             yield mod.UnitCoordinates(
                 unit_id=unit.unit_id(),
-                coordinates=self.coordinates(pdb, unit)
+                coordinates=coord,
             )

@@ -1,4 +1,5 @@
 import abc
+import operator as op
 
 import numpy as np
 
@@ -8,6 +9,7 @@ from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import row2dict
 
+from pymotifs.constants import COMPSCORE_COEFFICENTS
 from pymotifs.constants import MANUAL_IFE_REPRESENTATIVES
 from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
@@ -187,107 +189,6 @@ class CompScore(QualityBase):
     """
     method = 'compscore'
 
-    def has_quality(self, member):
-        has_quality = member['quality']['has']
-        return 'real_space_r' in has_quality and \
-            'rscc' in has_quality and \
-            'rfree' in has_quality and \
-            'resolution' in has_quality
-
-    def select_candidates(self, members):
-        return [m for m in members if self.has_quality(m)]
-
-    def as_quality(self, clashes, atoms, entries):
-        if not entries:
-            return {
-                'resolution': 100,
-                'percent_clash': 100.0,
-                'average_rsr': 1.0,
-                'average_rscc': 0.0,
-                'rfree': 1.0,
-                'has': set(),
-                'atoms': atoms,
-                'clashes': clashes,
-            }
-
-        def avg_of(name, missing):
-            return np.mean([e[name] or missing for e in entries])
-
-        def has_entry(name):
-            return any(e[name] is not None for e in entries)
-
-        def first_value(name):
-            values = set(entry[name] for entry in entries)
-            if len(values) > 1:
-                raise core.InvalidState("Excpected only a single value for %s"
-                                        % name)
-            return values.pop()
-
-        def assign(name, default, function, tracking, *args):
-            if has_entry(name):
-                tracking.add(name)
-                return (function(name, *args), tracking)
-            return (default, tracking)
-
-        resolution, has = assign('resolution', 100, first_value, set())
-        rfree, has = assign('rfree', 1, first_value, has)
-        average_rsr, has = assign('real_space_r', 1, avg_of, has, 1)
-        average_rscc, has = assign('rscc', 0, avg_of, has, 0)
-
-        percent_clash = 100
-        if entries[0]['clashscore'] is not None:
-            percent_clash = 100 * clashes / atoms
-            has.add('clashscore')
-
-        return {
-            'resolution': resolution,
-            'percent_clash': percent_clash,
-            'average_rsr': average_rsr,
-            'average_rscc': average_rscc,
-            'rfree': rfree,
-            'has': has,
-            'atoms': atoms,
-            'clashes': clashes,
-        }
-
-    def member_info(self, member):
-        with self.session() as session:
-            info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
-                                 mod.IfeInfo.model).\
-                filter_by(ife_id=member['id']).\
-                one()
-            info = row2dict(info)
-
-            with self.session() as session:
-                query = session.query(mod.ChainInfo.chain_name,
-                                      mod.IfeChains.is_structured,
-                                      ).\
-                    join(mod.IfeChains,
-                         mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
-                    filter_by(ife_id=member['id'])
-
-                if not query.count():
-                    raise core.InvalidState("Could not find chains for %s" %
-                                            member)
-
-                all_chains = [row2dict(c) for c in query]
-                chains = [c['chain_name'] for c in all_chains if c['is_structured']]
-                if not chains:
-                    chains = [c['chain_name'] for c in all_chains]
-
-            info['chains'] = chains
-            loader = self._create(IfeLoader)
-            info['sym_op'] = loader.sym_op(info['pdb'])
-
-            return info
-
-    def __chain_query__(self, query, info, table=mod.UnitInfo):
-        return query.filter(table.pdb_id == info['pdb']).\
-            filter(table.model == info['model']).\
-            filter(table.sym_op == info['sym_op']).\
-            filter(table.chain.in_(info['chains'])).\
-            filter(table.unit.in_(['A', 'C', 'G', 'U']))
-
     def count_atoms(self, info):
         with self.session() as session:
             query = session.query(mod.UnitCoordinates).\
@@ -325,46 +226,184 @@ class CompScore(QualityBase):
 
             query = self.__chain_query__(query, info, table=u1)
             query = self.__chain_query__(query, info, table=u2)
+            if query.count() < 0:
+                raise core.InvalidState("Negative clashes: %s" % info)
             return float(query.count())
 
-    def load_quality(self, members):
-        for member in members:
-            info = self.member_info(member)
-            atoms = self.count_atoms(info)
+    def has_quality(self, member):
+        has_quality = member['quality']['has']
+        return 'real_space_r' in has_quality and \
+            'rscc' in has_quality and \
+            'rfree' in has_quality and \
+            'resolution' in has_quality
+
+    def select_candidates(self, members):
+        return [m for m in members if self.has_quality(m)]
+
+    def percent_clash(self, info):
+        clashes = self.count_clashes(info)
+        if clashes is None:
+            return (False, 100)
+
+        atoms = self.count_atoms(info)
+        percent_clash = 100 * clashes / atoms
+        return (True, percent_clash)
+
+    def average_rsr(self, info):
+        with self.session() as session:
+            query = session.query(mod.UnitQuality.real_space_r).\
+                join(mod.UnitInfo.unit_id,
+                     mod.UnitInfo.unit_id == mod.UnitQuality.unit_id)
+
+            query = self.__chain_query__(query, info)
+            if not query.count():
+                return (False, 0)
+
+            rsr = np.mean([r.real_space_r for r in query])
+            return (True, rsr)
+
+    def average_rscc(self, info):
+        with self.session() as session:
+            query = session.query(mod.UnitQuality.rscc).\
+                join(mod.UnitInfo.unit_id,
+                     mod.UnitInfo.unit_id == mod.UnitQuality.unit_id)
+
+            query = self.__chain_query__(query, info)
+            if not query.count():
+                return (False, 0)
+
+            rscc = np.mean([r.rscc for r in query])
+            return (True, rscc)
+
+    def resolution(self, info):
+        with self.session() as session:
+            resolution = session.query(mod.PdbInfo.resolution).\
+                filter_by(pdb_id=info['pdb']).\
+                one().\
+                resolution
+            if resolution is None:
+                return (False, 100)
+            return (True, resolution)
+
+    def rfree(self, info):
+        with self.session() as session:
+            rfree = session.query(mod.PdbQuality).\
+                filter_by(pdb_id=info['pdb']).\
+                first()
+
+            if rfree is None:
+                return (False, 1.0)
+            return (True, rfree.dcc_rfree)
+
+    def experimental_length(self, info):
+        with self.session() as session:
+            return session.query(mod.ExpSeqInfo.length).\
+                join(mod.ExpSeqChainMapping,
+                     mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqInfo.exp_seq_id).\
+                join(mod.IfeChains,
+                     mod.IfeChains.chain_id == mod.ExpSeqChainMapping.chain_id).\
+                filter(mod.IfeChains.ife_id == info['id']).\
+                first().\
+                length
+
+    def observed_length(self, info):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.unit_id).\
+                distinct()
+            query = self.__chain_query__(query, info)
+            return query.count()
+
+    def fraction_unobserved(self, info):
+        observed = float(self.observed_length(info))
+        experimental = float(self.experimental_length(info))
+        return (True, observed / experimental)
+
+    def member_info(self, member):
+        with self.session() as session:
+            info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
+                                 mod.IfeInfo.model).\
+                filter_by(ife_id=member['id']).\
+                one()
+            info = row2dict(info)
 
             with self.session() as session:
-                query = session.query(
-                    mod.UnitQuality.real_space_r,
-                    mod.UnitQuality.clash_count,
-                    mod.UnitQuality.rscc,
-                    mod.PdbQuality.dcc_rfree.label('rfree'),
-                    mod.PdbQuality.clashscore,
-                    mod.PdbInfo.resolution,
-                ).join(mod.UnitInfo,
-                       mod.UnitQuality.unit_id == mod.UnitInfo.unit_id).\
-                    join(mod.PdbInfo,
-                         mod.PdbInfo.pdb_id == mod.UnitInfo.pdb_id).\
-                    join(mod.PdbQuality,
-                         mod.PdbQuality.pdb_id == mod.PdbInfo.pdb_id)
-                query = self.__chain_query__(query, info)
+                query = session.query(mod.ChainInfo.chain_name,
+                                      mod.IfeChains.is_structured,
+                                      ).\
+                    join(mod.IfeChains,
+                         mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
+                    filter_by(ife_id=member['id'])
 
-                entries = [row2dict(r) for r in query]
-            if not entries:
-                self.logger.error("Found no quality data for: %s", str(members))
+                if not query.count():
+                    raise core.InvalidState("Could not find chains for %s" %
+                                            member)
 
-            clashes = self.count_clashes(info)
-            member['quality'] = self.as_quality(clashes, atoms, entries)
+                all_chains = [row2dict(c) for c in query]
+                valid = op.itemgetter('is_structure')
+                chains = [c['chain_name'] for c in all_chains if valid(c)]
+                if not chains:
+                    chains = [c['chain_name'] for c in all_chains]
+
+            info['chains'] = chains
+            loader = self._create(IfeLoader)
+            info['sym_op'] = loader.sym_op(info['pdb'])
+
+            return info
+
+    def load_quality(self, members):
+        """
+        This will load and store all quality data for the given list of members
+        of the EC.
+        """
+
+        parameters = [
+            'resolution',
+            'percent_clash',
+            'average_rsr',
+            'average_rscc',
+            'rfree',
+            'fraction_unobserved',
+        ]
+
+        for member in members:
+            info = self.member_info(member)
+            data = {'has': set()}
+            for index, name in enumerate(parameters):
+                method = getattr(self, name)
+                has, value = method(info)
+                if value < 0 and has:
+                    raise core.InvalidState("%s should be positive: %s %s" %
+                                            (name, value, info))
+
+                data[name] = value
+                if has:
+                    data['has'].add((name, index))
+
+            member['quality'] = data
         return members
 
     def compscore(self, member):
         quality = member['quality']
-        average = np.mean([quality['resolution'],
-                           quality['percent_clash'],
-                           10 * quality['average_rsr'],
-                           10 * (1 - quality['average_rscc']),
-                           10 * quality['rfree']])
+        average = np.mean([
+            COMPSCORE_COEFFICENTS['resolution'] * quality['resolution'],
+            COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash'],
+            COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr'] * 10,
+            COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'] * 10),
+            COMPSCORE_COEFFICENTS['rfree'] * quality['rfree'] * 10,
+            COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved'],
+        ])
+
+        if average < 0:
+            raise core.InvalidState("Invalid compscore for %s" % member)
 
         return 100 * average
 
     def sort_by_quality(self, members):
         return sorted(members, key=self.compscore, reverse=True)
+
+    def __chain_query__(self, query, info, table=mod.UnitInfo):
+        return query.filter(table.pdb_id == info['pdb']).\
+            filter(table.model == info['model']).\
+            filter(table.sym_op == info['sym_op']).\
+            filter(table.chain.in_(info['chains'])).\
+            filter(table.unit.in_(['A', 'C', 'G', 'U']))

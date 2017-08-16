@@ -17,36 +17,33 @@ class DataTest(StageTest):
         return self.data(*args)[0]['quality']
 
     def test_computes_correct_average_rsr(self):
-        assert self.quality('1S72|1|0')['average_rsr'] == 0.133  # 0.15
-        # assert self.quality('4v9f|0|1')['average_rsr'] == 0.14
-        # assert self.quality('4v9f|9|2')['average_rsr'] == 0.13
-        # assert self.quality('4V7M|32|DB')['average_rsr'] == 0.23
+        assert_almost_equal(self.quality('1S72|1|0')['average_rsr'], 0.15, decimal=2)
+        assert_almost_equal(self.quality('4V9F|0|1')['average_rsr'], 0.14, decimal=2)
+        assert_almost_equal(self.quality('4V9F|9|2')['average_rsr'], 0.13, decimal=2)
+        assert_almost_equal(self.quality('4V7M|32|DB')['average_rsr'], 0.23, decimal=2)
 
     def test_computes_correct_percent_clash(self):
-        print(self.quality('1S72|1|0'))
-
-        assert self.quality('1S72|1|0')['percent_clash'] == 0.056
-        # assert self.quality('4v9f|0|1')['percent_clash'] == 0.07
-        # assert self.quality('4v9f|9|2')['percent_clash'] == 0.15
-        # assert self.quality('4V7M|32|DB')['percent_clash'] == 3.84
+        assert_almost_equal(self.quality('1S72|1|0')['percent_clash'], 0.056, decimal=2)
+        assert_almost_equal(self.quality('4v9f|0|1')['percent_clash'], 0.07, decimal=2)
+        assert_almost_equal(self.quality('4v9f|9|2')['percent_clash'], 0.15, decimal=2)
+        assert_almost_equal(self.quality('4V7M|32|DB')['percent_clash'], 3.84, decimal=2)
 
         assert 'percent_clash' in self.quality('1S72|1|0')['has']
-        # assert 'percent_clash' in self.quality('4V7M|32|DB')['has']
-        # assert 'percent_clash' in self.quality('4v9f|0|1')['has']
-        # assert 'percent_clash' in self.quality('4v9f|9|2')['has']
+        assert 'percent_clash' in self.quality('4V7M|32|DB')['has']
+        assert 'percent_clash' in self.quality('4v9f|0|1')['has']
+        assert 'percent_clash' in self.quality('4v9f|9|2')['has']
 
     def test_computes_correct_average_rscc(self):
-        assert_almost_equal(self.quality('1S72|1|0')['average_rscc'], 0.961,
-                            decimal=2)
-        # assert self.quality('4v9f|0|1')['average_rscc'] == -1 * (0.033 - 1)
-        # assert self.quality('4v9f|9|2')['average_rscc'] == -1 * (0.043 - 1)
-        # assert self.quality('4V7M|32|DB')['average_rscc'] == -1 * (0.277 - 1)
+        assert_almost_equal(self.quality('1S72|1|0')['average_rscc'], 0.961, decimal=2)
+        assert self.quality('4v9f|0|1')['average_rscc'] == -1 * (0.033 - 1)
+        assert self.quality('4v9f|9|2')['average_rscc'] == -1 * (0.043 - 1)
+        assert self.quality('4V7M|32|DB')['average_rscc'] == -1 * (0.277 - 1)
 
     def test_uses_correct_rfree(self):
         assert self.quality('1S72|1|0')['rfree'] == 0.22
-        # assert self.quality('4V7M|32|DB')['rfree'] == 0.27
-        # assert self.quality('4v9f|0|1')['rfree'] == 0.21
-        # assert self.quality('4v9f|9|2')['rfree] == 0.21
+        assert self.quality('4V7M|32|DB')['rfree'] == 0.27
+        assert self.quality('4v9f|0|1')['rfree'] == 0.21
+        assert self.quality('4v9f|9|2')['rfree'] == 0.21
 
 
     @pytest.mark.skip()
@@ -73,3 +70,18 @@ class SelectingRepresentativeTest(StageTest):
             self.data('4V7M|32|DB'),
         ]
         assert self.representative(members) == self.data('4v9f', 0, '1')
+
+
+class SpecificExamples(StageTest):
+    loader_class = CompScore
+
+    def compscore(self, ife_id):
+        info = {'id': ife_id}
+        members = self.loader.load_quality([info])
+        return self.loader.compscore(members[0])
+
+    def test_157D_A(self):
+        assert self.compscore('157D|1|A+157D|1|B') == 216.0
+
+    def test_1CGM(self):
+        assert self.compscore('1CGM|1|I') == 2223.33

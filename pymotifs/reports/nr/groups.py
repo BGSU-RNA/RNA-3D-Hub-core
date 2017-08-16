@@ -12,12 +12,15 @@ from pymotifs.utils import row2dict
 
 from pymotifs.nr.representatives.using_quality import CompScore
 
+from sqlalchemy.sql.functions import coalesce
+
 
 class Groups(core.Reporter):
     headers = [
         'Original Index',
         'Release',
         'Group',
+        'IFE ID',
         'PDB',
         'Title',
         'Chains',
@@ -47,10 +50,10 @@ class Groups(core.Reporter):
         members = deepcopy(ifes)
         compscore.load_quality(members)
         data = {}
-        for ife in ifes:
+        for ife in members:
             quality = ife['quality']
             data[ife['id']] = {
-                'Clashscore': quality['clashscore'],
+                'Clashscore': quality.get('clashscore', 100),
                 'Compscore': compscore.compscore(ife),
                 'Average RSR': quality['average_rsr'],
                 'Percent Clash': quality['percent_clash'],
@@ -64,7 +67,7 @@ class Groups(core.Reporter):
         with self.session() as session:
             query = session.query(
                 mod.IfeInfo.ife_id,
-                mod.IfeInfo.bps,
+                mod.IfeInfo.bp_count,
                 mod.IfeInfo.length.label('Observed Length')
             ).filter(mod.IfeInfo.ife_id.in_(ife_ids))
 
@@ -72,7 +75,7 @@ class Groups(core.Reporter):
             for result in query:
                 entry = row2dict(result)
                 nt = entry['Observed Length']
-                bp = entry.pop('bps')
+                bp = entry.pop('bp_count')
                 ife_id = entry.pop('ife_id')
                 entry['BP/NT'] = float(bp) / float(nt)
                 chain_ids = ife_id.split('+')
@@ -87,14 +90,15 @@ class Groups(core.Reporter):
             query = session.query(
                 mod.ChainInfo.pdb_id,
                 mod.ChainInfo.compound.label('Protein Compound'),
-                mod.SpeciesInfo.species_name.label('Protein Species'),
+                coalesce(mod.SpeciesMapping.species_name, 'None').label('Protein Species'),
             ).\
-                join(mod.ChainSpecies,
-                     mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
-                join(mod.SpeciesInfo,
-                     mod.SpeciesInfo.species_id == mod.ChainSpecies.species_id).\
+                outerjoin(mod.ChainSpecies,
+                          mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
+                outerjoin(mod.SpeciesMapping,
+                          mod.SpeciesMapping.species_id == mod.ChainSpecies.species_id).\
                 filter(mod.ChainInfo.pdb_id.in_(pdb_ids)).\
-                filter(mod.ChainInfo.entity_macromolecule_type == '')
+                filter(~mod.ChainInfo.entity_macromolecule_type.contains('RNA')).\
+                distinct()
 
             data = {}
             grouped = it.imap(row2dict, query)
@@ -119,12 +123,12 @@ class Groups(core.Reporter):
                 mod.ChainInfo.chain_id,
                 mod.ChainInfo.sequence.label('Experimental Sequence'),
                 mod.ChainInfo.compound.label('Nucleic Acid Compound'),
-                mod.SpeciesInfo.species_name.label('RNA Species'),
+                mod.SpeciesMapping.species_name.label('RNA Species'),
             ).\
                 join(mod.ChainSpecies,
                      mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
-                join(mod.SpeciesInfo,
-                     mod.SpeciesInfo.species_id == mod.ChainSpecies.species_id).\
+                join(mod.SpeciesMapping,
+                     mod.SpeciesMapping.species_id == mod.ChainSpecies.species_id).\
                 filter(mod.ChainInfo.chain_id.in_(chain_ids))
 
             data = {}
@@ -164,7 +168,7 @@ class Groups(core.Reporter):
     def load_nr_classes(self, release, resolution):
         with self.session() as session:
             query = session.query(
-                mod.NrChains.index,
+                mod.NrChains.rank.label('index'),
                 mod.NrChains.ife_id.label('id'),
                 mod.IfeInfo.pdb_id,
                 mod.IfeInfo.length,
@@ -180,12 +184,13 @@ class Groups(core.Reporter):
                 filter(mod.NrClasses.resolution == resolution).\
                 filter(mod.IfeChains.index == 0)
 
-            data = []
+            data = coll.defaultdict(list)
             for result in query:
                 entry = row2dict(result)
                 entry['rep'] = (entry['index'] == 0)
-                data.append(entry)
-        return data
+                nr = entry['name']
+                data[nr].append(entry)
+        return data.values()
 
     def order_nr_classes(self, nr_classes):
         def key(nr_class):
@@ -225,17 +230,21 @@ class Groups(core.Reporter):
             chain_info = self.chain_info(nr_class)
             ife_info = self.ife_info(nr_class)
             quality_data = self.quality_data(nr_class)
-            protein_data = self.protein_data(nr_class)
+            protein_data = self.protein_info(nr_class)
             for ife in nr_class:
                 data = {
                     'Original Index': index,
                     'Release': release,
                     'Group': ife['name'],
+                    'IFE ID': ife['id'],
                 }
                 data.update(pdb_info[ife['pdb_id']])
-                data.update(chain_info[ife['chain_id']])
+                if ife['chain_id'] in chain_info:
+                    data.update(chain_info[ife['chain_id']])
+                else:
+                    self.logger.error("No chain info for %s" % ife['id'])
                 data.update(ife_info[ife['id']])
                 data.update(quality_data[ife['id']])
-                data.update(protein_data[ife['pdb_id']])
+                data.update(protein_data.get(ife['pdb_id'], {}))
                 yield data
                 index + 1
