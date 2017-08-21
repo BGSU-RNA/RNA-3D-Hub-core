@@ -299,18 +299,6 @@ class CompScore(QualityBase):
                 return (False, 1.0)
             return (True, rfree.dcc_rfree)
 
-    def experimental_length(self, info):
-        with self.session() as session:
-            print(info)
-            return session.query(mod.ExpSeqInfo.length).\
-                join(mod.ExpSeqChainMapping,
-                     mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqInfo.exp_seq_id).\
-                join(mod.IfeChains,
-                     mod.IfeChains.chain_id == mod.ExpSeqChainMapping.chain_id).\
-                filter(mod.IfeChains.ife_id == info['id']).\
-                first().\
-                length
-
     def observed_length(self, info):
         with self.session() as session:
             query = session.query(mod.UnitInfo.unit_id).\
@@ -320,8 +308,8 @@ class CompScore(QualityBase):
 
     def fraction_unobserved(self, info):
         observed = float(self.observed_length(info))
-        experimental = float(self.experimental_length(info))
-        return (True, observed / experimental)
+        experimental = float(info['max_length'])
+        return (True, (observed - 1) / experimental)
 
     def member_info(self, member):
         with self.session() as session:
@@ -356,6 +344,18 @@ class CompScore(QualityBase):
 
             return info
 
+    def experimental_length(self, members):
+        ids = [m['id'] for m in members]
+        with self.session() as session:
+            query = session.query(mod.ExpSeqInfo.length).\
+                join(mod.ExpSeqChainMapping,
+                     mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqInfo.exp_seq_id).\
+                join(mod.IfeChains,
+                     mod.IfeChains.chain_id == mod.ExpSeqChainMapping.chain_id).\
+                filter(mod.IfeChains.ife_id.in_(ids))
+            return max(r.length for r in query)
+
+
     def load_quality(self, members):
         """
         This will load and store all quality data for the given list of members
@@ -371,8 +371,11 @@ class CompScore(QualityBase):
             'fraction_unobserved',
         ]
 
+        experimental_length = self.experimental_length(members)
+
         for member in members:
             info = self.member_info(member)
+            info['max_length'] = experimental_length
             data = {'has': set()}
             for index, name in enumerate(parameters):
                 method = getattr(self, name)
