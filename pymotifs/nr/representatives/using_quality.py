@@ -252,28 +252,32 @@ class CompScore(QualityBase):
     def average_rsr(self, info):
         with self.session() as session:
             query = session.query(mod.UnitQuality.real_space_r).\
-                join(mod.UnitInfo.unit_id,
+                join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.UnitQuality.unit_id)
 
             query = self.__chain_query__(query, info)
             if not query.count():
                 return (False, 0)
 
-            rsr = np.mean([r.real_space_r for r in query])
-            return (True, rsr)
+            values = [r.real_space_r for r in query if r.real_space_r is not None]
+            if not values:
+                return (False, 0)
+            return (True, np.mean(values))
 
     def average_rscc(self, info):
         with self.session() as session:
             query = session.query(mod.UnitQuality.rscc).\
-                join(mod.UnitInfo.unit_id,
+                join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.UnitQuality.unit_id)
 
             query = self.__chain_query__(query, info)
             if not query.count():
                 return (False, 0)
 
-            rscc = np.mean([r.rscc for r in query])
-            return (True, rscc)
+            values = [r.rscc for r in query if r.rscc is not None]
+            if not values:
+                return (False, 0)
+            return (True, np.mean(values))
 
     def resolution(self, info):
         with self.session() as session:
@@ -291,12 +295,13 @@ class CompScore(QualityBase):
                 filter_by(pdb_id=info['pdb']).\
                 first()
 
-            if rfree is None:
+            if rfree is None or rfree.dcc_rfree is None:
                 return (False, 1.0)
             return (True, rfree.dcc_rfree)
 
     def experimental_length(self, info):
         with self.session() as session:
+            print(info)
             return session.query(mod.ExpSeqInfo.length).\
                 join(mod.ExpSeqChainMapping,
                      mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqInfo.exp_seq_id).\
@@ -325,6 +330,7 @@ class CompScore(QualityBase):
                 filter_by(ife_id=member['id']).\
                 one()
             info = row2dict(info)
+            info.update(member)
 
             with self.session() as session:
                 query = session.query(mod.ChainInfo.chain_name,
@@ -339,7 +345,7 @@ class CompScore(QualityBase):
                                             member)
 
                 all_chains = [row2dict(c) for c in query]
-                valid = op.itemgetter('is_structure')
+                valid = op.itemgetter('is_structured')
                 chains = [c['chain_name'] for c in all_chains if valid(c)]
                 if not chains:
                     chains = [c['chain_name'] for c in all_chains]
@@ -388,13 +394,13 @@ class CompScore(QualityBase):
             COMPSCORE_COEFFICENTS['resolution'] * quality['resolution'],
             COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash'],
             COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr'] * 10,
-            COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'] * 10),
+            COMPSCORE_COEFFICENTS['average_rscc'] * ((1 - quality['average_rscc']) * 10),
             COMPSCORE_COEFFICENTS['rfree'] * quality['rfree'] * 10,
             COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved'],
         ])
 
         if average < 0:
-            raise core.InvalidState("Invalid compscore for %s" % member)
+            raise core.InvalidState("Invalid compscore (%s) for %s" % (average, member))
 
         return 100 * average
 
