@@ -40,6 +40,7 @@ class Groups(core.Reporter):
         'Percent Clash',
         'Average RSCC',
         'Rfree',
+        'Fraction unobserved',
     ]
 
     def class_property(self, ifes, name):
@@ -59,6 +60,7 @@ class Groups(core.Reporter):
                 'Percent Clash': quality['percent_clash'],
                 'Average RSCC': quality['average_rscc'],
                 'Rfree': quality['rfree'],
+                'Fraction unobserved': quality['fraction_unobserved'],
             }
         return data
 

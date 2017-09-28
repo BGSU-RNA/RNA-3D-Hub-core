@@ -392,20 +392,24 @@ class CompScore(QualityBase):
         return members
 
     def compscore(self, member):
+        """
+        Compute composite quality score using six indicators weighted by various coefficients
+        set in constants.py
+        """
         quality = member['quality']
-        average = np.mean([
-            COMPSCORE_COEFFICENTS['resolution'] * quality['resolution'],
-            COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash'],
-            COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr'] * 10,
-            COMPSCORE_COEFFICENTS['average_rscc'] * ((1 - quality['average_rscc']) * 10),
-            COMPSCORE_COEFFICENTS['rfree'] * quality['rfree'] * 10,
-            COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved'],
-        ])
 
-        if average < 0:
-            raise core.InvalidState("Invalid compscore (%s) for %s" % (average, member))
+        compscore = COMPSCORE_COEFFICENTS['resolution'] * quality['resolution']
+        compscore += COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash']
+        compscore += COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr']
+        compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'])
+        compscore += COMPSCORE_COEFFICENTS['rfree'] * quality['rfree']
+        compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved']
 
-        return 100 * average
+        if compscore < 0:
+            raise core.InvalidState("Invalid compscore (%s) for %s" % (compscore, member))
+
+        return compscore
+
 
     def sort_by_quality(self, members):
         return sorted(members, key=self.compscore, reverse=True)
