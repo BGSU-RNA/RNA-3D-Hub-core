@@ -172,6 +172,11 @@ been evaulated as worse than the manually selected ones, despite what the
 program things.
 """
 
+"""
+The coefficients below were set by Craig Zirbel in August 2017 with the
+goal of making each quality indicator contribute equally to the standard
+deviation of the composite quality score.
+"""
 COMPSCORE_COEFFICENTS = {
     'resolution': 1,
     'average_rsr': 8,
