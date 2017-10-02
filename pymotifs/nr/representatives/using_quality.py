@@ -380,7 +380,7 @@ class CompScore(QualityBase):
             for index, name in enumerate(parameters):
                 method = getattr(self, name)
                 has, value = method(info)
-                if value < 0 and has:
+                if value < 0 and has and name != 'average_rscc':
                     raise core.InvalidState("%s should be positive: %s %s" %
                                             (name, value, info))
 
