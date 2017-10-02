@@ -309,7 +309,11 @@ class CompScore(QualityBase):
     def fraction_unobserved(self, info):
         observed = float(self.observed_length(info))
         experimental = float(info['max_length'])
-        return (True, (observed - 1) / experimental)
+        #return (True, (observed - 1) / experimental)
+        self.logger.debug("info: %s" % info)
+        self.logger.debug("observed: %s" % observed)
+        self.logger.debug("experimental: %s" % experimental)
+        return (True, (1 - (observed / experimental)))
 
     def member_info(self, member):
         with self.session() as session:
