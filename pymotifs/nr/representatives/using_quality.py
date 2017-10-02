@@ -424,4 +424,5 @@ class CompScore(QualityBase):
             filter(table.model == info['model']).\
             filter(table.sym_op == info['sym_op']).\
             filter(table.chain.in_(info['chains'])).\
-            filter(table.unit.in_(['A', 'C', 'G', 'U']))
+            filter(table.unit.in_(['A', 'C', 'G', 'U'])).\
+            filter(table.alt_id.is_(None))
