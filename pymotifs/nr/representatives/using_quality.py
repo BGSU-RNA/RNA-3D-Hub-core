@@ -3,6 +3,7 @@ import operator as op
 
 import numpy as np
 
+from sqlalchemy import func
 from sqlalchemy.orm import aliased
 
 from pymotifs import core
@@ -351,14 +352,14 @@ class CompScore(QualityBase):
     def experimental_length(self, members):
         ids = [m['id'] for m in members]
         with self.session() as session:
-            query = session.query(mod.ExpSeqInfo.length).\
+            query = session.query(func.sum(mod.ExpSeqInfo.length).label('length')).\
                 join(mod.ExpSeqChainMapping,
                      mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqInfo.exp_seq_id).\
                 join(mod.IfeChains,
                      mod.IfeChains.chain_id == mod.ExpSeqChainMapping.chain_id).\
-                filter(mod.IfeChains.ife_id.in_(ids))
+                filter(mod.IfeChains.ife_id.in_(ids)).\
+                group_by(mod.IfeChains.ife_id)
             return max(r.length for r in query)
-
 
     def load_quality(self, members):
         """
