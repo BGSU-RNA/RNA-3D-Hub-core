@@ -425,4 +425,5 @@ class CompScore(QualityBase):
             filter(table.sym_op == info['sym_op']).\
             filter(table.chain.in_(info['chains'])).\
             filter(table.unit.in_(['A', 'C', 'G', 'U'])).\
+            filter(table.chain_index != None).\
             filter(table.alt_id.is_(None))
