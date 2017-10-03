@@ -3,6 +3,7 @@ import operator as op
 
 import numpy as np
 
+from sqlalchemy import func
 from sqlalchemy.orm import aliased
 
 from pymotifs import core
@@ -309,7 +310,11 @@ class CompScore(QualityBase):
     def fraction_unobserved(self, info):
         observed = float(self.observed_length(info))
         experimental = float(info['max_length'])
-        return (True, (observed - 1) / experimental)
+        #return (True, (observed - 1) / experimental)
+        self.logger.debug("info: %s" % info)
+        self.logger.debug("observed: %s" % observed)
+        self.logger.debug("experimental: %s" % experimental)
+        return (True, (1 - (observed / experimental)))
 
     def member_info(self, member):
         with self.session() as session:
@@ -347,14 +352,14 @@ class CompScore(QualityBase):
     def experimental_length(self, members):
         ids = [m['id'] for m in members]
         with self.session() as session:
-            query = session.query(mod.ExpSeqInfo.length).\
+            query = session.query(func.sum(mod.ExpSeqInfo.length).label('length')).\
                 join(mod.ExpSeqChainMapping,
                      mod.ExpSeqChainMapping.exp_seq_id == mod.ExpSeqInfo.exp_seq_id).\
                 join(mod.IfeChains,
                      mod.IfeChains.chain_id == mod.ExpSeqChainMapping.chain_id).\
-                filter(mod.IfeChains.ife_id.in_(ids))
+                filter(mod.IfeChains.ife_id.in_(ids)).\
+                group_by(mod.IfeChains.ife_id)
             return max(r.length for r in query)
-
 
     def load_quality(self, members):
         """
@@ -380,7 +385,7 @@ class CompScore(QualityBase):
             for index, name in enumerate(parameters):
                 method = getattr(self, name)
                 has, value = method(info)
-                if value < 0 and has:
+                if value < 0 and has and name != 'average_rscc':
                     raise core.InvalidState("%s should be positive: %s %s" %
                                             (name, value, info))
 
@@ -419,4 +424,5 @@ class CompScore(QualityBase):
             filter(table.model == info['model']).\
             filter(table.sym_op == info['sym_op']).\
             filter(table.chain.in_(info['chains'])).\
-            filter(table.unit.in_(['A', 'C', 'G', 'U']))
+            filter(table.unit.in_(['A', 'C', 'G', 'U'])).\
+            filter(table.alt_id.is_(None))
