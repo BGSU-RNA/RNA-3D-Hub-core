@@ -161,6 +161,16 @@ class Groups(core.Reporter):
                     method = 'nmr'
                 elif method == 'ELECTRON MICROSCOPY':
                     method = 'cyro-em'
+                elif method == 'FIBER DIFFRACTION':
+                    method = 'fib-dif'
+                elif method == 'FLUORESCENCE TRANSFER':
+                    method = 'fluo-trans'
+                elif method == 'SOLID-STATE NMR':
+                    method = 'nmr-sld-sta'
+                elif method == 'SOLUTION NMR, SOLUTION SCATTERING':
+                    method = 'nmr-sol-scat'
+                elif method == 'SOLUTION NMR, THEORETICAL MODEL':
+                    method = 'nmr-sol-theo'
                 else:
                     method = method
                 entry['Method'] = method
