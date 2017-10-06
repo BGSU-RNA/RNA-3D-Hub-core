@@ -246,6 +246,7 @@ class Groups(core.Reporter):
             quality_data = self.quality_data(nr_class)
             protein_data = self.protein_info(nr_class)
             for ife in nr_class:
+                self.logger.debug("Processing ife: %s" % ife['id'])
                 data = {
                     'Original Index': index,
                     'Release': release,
@@ -254,6 +255,7 @@ class Groups(core.Reporter):
                 }
                 data.update(pdb_info[ife['pdb_id']])
                 if ife['chain_id'] in chain_info:
+                    self.logger.debug("Processing chain: %s" % ife['chain_id'])
                     data.update(chain_info[ife['chain_id']])
                 else:
                     self.logger.error("No chain info for %s" % ife['id'])
