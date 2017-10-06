@@ -26,9 +26,10 @@ class Groups(core.Reporter):
         'Chains',
         'Resolution',
         'Method',
-        'Observed Length',
-        'Experimental Length',
-        'Experimental Sequence',
+        'Obs Length (II)',
+        'Exp Length (CI)',
+        #'Maximum Experimental Length',
+        'Exp Sequence (CI)',
         'BP/NT',
         'Nucleic Acid Compound',
         'RNA Species',
@@ -40,7 +41,7 @@ class Groups(core.Reporter):
         'Percent Clash',
         'Average RSCC',
         'Rfree',
-        'Fraction unobserved',
+        'Fraction Unobserved',
     ]
 
     def class_property(self, ifes, name):
@@ -60,7 +61,7 @@ class Groups(core.Reporter):
                 'Percent Clash': quality['percent_clash'],
                 'Average RSCC': quality['average_rscc'],
                 'Rfree': quality['rfree'],
-                'Fraction unobserved': quality['fraction_unobserved'],
+                'Fraction Unobserved': quality['fraction_unobserved'],
             }
         return data
 
@@ -70,13 +71,14 @@ class Groups(core.Reporter):
             query = session.query(
                 mod.IfeInfo.ife_id,
                 mod.IfeInfo.bp_count,
-                mod.IfeInfo.length.label('Observed Length')
-            ).filter(mod.IfeInfo.ife_id.in_(ife_ids))
+                mod.IfeInfo.length.label('Obs Length (II)')
+            ).\
+            filter(mod.IfeInfo.ife_id.in_(ife_ids))
 
             data = {}
             for result in query:
                 entry = row2dict(result)
-                nt = entry['Observed Length']
+                nt = entry['Obs Length (II)']
                 bp = entry.pop('bp_count')
                 ife_id = entry.pop('ife_id')
                 entry['BP/NT'] = float(bp) / float(nt)
@@ -123,7 +125,7 @@ class Groups(core.Reporter):
         with self.session() as session:
             query = session.query(
                 mod.ChainInfo.chain_id,
-                mod.ChainInfo.sequence.label('Experimental Sequence'),
+                mod.ChainInfo.sequence.label('Exp Sequence (CI)'),
                 mod.ChainInfo.compound.label('Nucleic Acid Compound'),
                 mod.SpeciesMapping.species_name.label('RNA Species'),
             ).\
@@ -136,7 +138,7 @@ class Groups(core.Reporter):
             data = {}
             for result in query:
                 entry = row2dict(result)
-                entry['Experimental Length'] = len(entry['Experimental Sequence'])
+                entry['Exp Length (CI)'] = len(entry['Exp Sequence (CI)'])
                 chain_id = entry.pop('chain_id')
                 data[chain_id] = entry
         return data
@@ -161,6 +163,16 @@ class Groups(core.Reporter):
                     method = 'nmr'
                 elif method == 'ELECTRON MICROSCOPY':
                     method = 'cyro-em'
+                elif method == 'FIBER DIFFRACTION':
+                    method = 'fib-dif'
+                elif method == 'FLUORESCENCE TRANSFER':
+                    method = 'fluo-trans'
+                elif method == 'SOLID-STATE NMR':
+                    method = 'nmr-sld-sta'
+                elif method == 'SOLUTION NMR, SOLUTION SCATTERING':
+                    method = 'nmr-sol-scat'
+                elif method == 'SOLUTION NMR, THEORETICAL MODEL':
+                    method = 'nmr-sol-theo'
                 else:
                     method = method
                 entry['Method'] = method
@@ -234,6 +246,7 @@ class Groups(core.Reporter):
             quality_data = self.quality_data(nr_class)
             protein_data = self.protein_info(nr_class)
             for ife in nr_class:
+                self.logger.debug("Processing ife: %s" % ife['id'])
                 data = {
                     'Original Index': index,
                     'Release': release,
@@ -242,6 +255,7 @@ class Groups(core.Reporter):
                 }
                 data.update(pdb_info[ife['pdb_id']])
                 if ife['chain_id'] in chain_info:
+                    self.logger.debug("Processing chain: %s" % ife['chain_id'])
                     data.update(chain_info[ife['chain_id']])
                 else:
                     self.logger.error("No chain info for %s" % ife['id'])
