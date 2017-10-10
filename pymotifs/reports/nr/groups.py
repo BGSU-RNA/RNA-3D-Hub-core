@@ -162,7 +162,7 @@ class Groups(core.Reporter):
                 elif method == 'SOLUTION NMR':
                     method = 'nmr'
                 elif method == 'ELECTRON MICROSCOPY':
-                    method = 'cyro-em'
+                    method = 'cryo-em'
                 elif method == 'FIBER DIFFRACTION':
                     method = 'fib-dif'
                 elif method == 'FLUORESCENCE TRANSFER':
