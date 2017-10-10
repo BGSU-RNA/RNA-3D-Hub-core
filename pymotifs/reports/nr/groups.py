@@ -16,6 +16,8 @@ from sqlalchemy import func
 from sqlalchemy.sql import operators
 from sqlalchemy.sql.functions import coalesce
 
+operators._PRECEDENCE['SEPARATOR'] = 0
+
 
 class Groups(core.Reporter):
     headers = [
