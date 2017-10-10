@@ -276,6 +276,7 @@ class Groups(core.Reporter):
         for nr_class in nr_classes:
             pdb_info = self.pdb_info(nr_class)
             chain_info = self.chain_info(nr_class)
+            rev_chain_info = self.revised_chain_info(nr_class)
             ife_info = self.ife_info(nr_class)
             quality_data = self.quality_data(nr_class)
             protein_data = self.protein_info(nr_class)
@@ -293,6 +294,7 @@ class Groups(core.Reporter):
                     data.update(chain_info[ife['chain_id']])
                 else:
                     self.logger.error("No chain info for %s" % ife['id'])
+                data.update(rev_chain_info[ife['id']])
                 data.update(ife_info[ife['id']])
                 data.update(quality_data[ife['id']])
                 data.update(protein_data.get(ife['pdb_id'], {}))
