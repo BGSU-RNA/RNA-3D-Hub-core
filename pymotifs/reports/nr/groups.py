@@ -12,7 +12,11 @@ from pymotifs.utils import row2dict
 
 from pymotifs.nr.representatives.using_quality import CompScore
 
+from sqlalchemy import func
+from sqlalchemy.sql import operators
 from sqlalchemy.sql.functions import coalesce
+
+operators._PRECEDENCE['SEPARATOR'] = 0
 
 
 class Groups(core.Reporter):
@@ -143,6 +147,36 @@ class Groups(core.Reporter):
                 data[chain_id] = entry
         return data
 
+    def revised_chain_info(self, ifes):
+        self.logger.debug('ifes: %s' % ifes)
+        ife_ids = self.class_property(ifes, 'id')
+        with self.session() as session:
+            query = session.query(
+                mod.IfeInfo.ife_id,
+                func.sum(mod.ChainInfo.chain_length).label('Exp Length (CI)'),
+                func.group_concat(mod.ChainInfo.sequence.op('SEPARATOR')('+')).label('Exp Sequence (CI)'),
+                func.group_concat(mod.ChainInfo.compound.op('SEPARATOR')(' + ')).label('Nucleic Acid Compound'),
+                func.group_concat(mod.SpeciesMapping.species_name.op('SEPARATOR')(' / ')).label('RNA Species'),
+            ).\
+                join(mod.IfeChains,
+                     mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
+                join(mod.ChainInfo,
+                     mod.ChainInfo.chain_id == mod.IfeChains.chain_id).\
+                join(mod.ChainSpecies,
+                     mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
+                outerjoin(mod.SpeciesMapping,
+                     mod.SpeciesMapping.species_mapping_id == mod.ChainSpecies.species_id).\
+                filter(mod.IfeInfo.ife_id.in_(ife_ids)).\
+                group_by(mod.IfeInfo.ife_id)
+
+            data = {}
+            for result in query:
+                entry = row2dict(result)
+                #entry['Exp Length (CI)'] = len(entry['Exp Sequence (CI)'])
+                ife_id = entry.pop('ife_id')
+                data[ife_id] = entry
+        return data
+
     def pdb_info(self, ifes):
         pdb_ids = self.class_property(ifes, 'pdb_id')
         with self.session() as session:
@@ -162,7 +196,7 @@ class Groups(core.Reporter):
                 elif method == 'SOLUTION NMR':
                     method = 'nmr'
                 elif method == 'ELECTRON MICROSCOPY':
-                    method = 'cyro-em'
+                    method = 'cryo-em'
                 elif method == 'FIBER DIFFRACTION':
                     method = 'fib-dif'
                 elif method == 'FLUORESCENCE TRANSFER':
