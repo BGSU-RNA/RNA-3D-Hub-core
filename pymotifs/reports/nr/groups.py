@@ -12,6 +12,8 @@ from pymotifs.utils import row2dict
 
 from pymotifs.nr.representatives.using_quality import CompScore
 
+from sqlalchemy import func
+from sqlalchemy.sql import operators
 from sqlalchemy.sql.functions import coalesce
 
 
