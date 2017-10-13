@@ -303,8 +303,10 @@ class CompScore(QualityBase):
             return (True, rfree.dcc_rfree)
 
     def observed_length(self, info):
+        self.logger.debug("info: %s" % info)
         with self.session() as session:
-            query = session.query(mod.UnitInfo.unit_id).\
+            #query = session.query(mod.UnitInfo.unit_id).\
+            query = session.query(mod.UnitInfo.chain_index).\
                 distinct()
             query = self.__chain_query__(query, info)
             return query.count()
@@ -395,6 +397,12 @@ class CompScore(QualityBase):
                 if has:
                     data['has'].add((name, index))
 
+            #if has:
+                #data['has'].add(('max_length', experimental_length))
+
+            data['max_length'] = experimental_length
+            data['obs_length'] = info['length']
+
             member['quality'] = data
         return members
 
@@ -427,5 +435,4 @@ class CompScore(QualityBase):
             filter(table.sym_op == info['sym_op']).\
             filter(table.chain.in_(info['chains'])).\
             filter(table.unit.in_(['A', 'C', 'G', 'U'])).\
-            filter(table.chain_index != None).\
-            filter(table.alt_id.is_(None))
+            filter(table.chain_index != None)
