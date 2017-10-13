@@ -251,6 +251,7 @@ class CompScore(QualityBase):
         return (True, percent_clash)
 
     def average_rsr(self, info):
+        default_avg_rsr = 40 # on 2017-10-12, maximum observed value was ~31
         with self.session() as session:
             query = session.query(mod.UnitQuality.real_space_r).\
                 join(mod.UnitInfo,
@@ -258,11 +259,11 @@ class CompScore(QualityBase):
 
             query = self.__chain_query__(query, info)
             if not query.count():
-                return (False, 0)
+                return (False, default_avg_rsr)
 
             values = [r.real_space_r for r in query if r.real_space_r is not None]
             if not values:
-                return (False, 0)
+                return (False, default_avg_rsr)
             return (True, np.mean(values))
 
     def average_rscc(self, info):
