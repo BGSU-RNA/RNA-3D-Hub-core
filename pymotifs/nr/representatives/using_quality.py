@@ -267,6 +267,7 @@ class CompScore(QualityBase):
             return (True, np.mean(values))
 
     def average_rscc(self, info):
+        default_average_rscc = -1 # minimum possible value for rscc
         with self.session() as session:
             query = session.query(mod.UnitQuality.rscc).\
                 join(mod.UnitInfo,
@@ -274,11 +275,11 @@ class CompScore(QualityBase):
 
             query = self.__chain_query__(query, info)
             if not query.count():
-                return (False, 0)
+                return (False, default_average_rscc)
 
             values = [r.rscc for r in query if r.rscc is not None]
             if not values:
-                return (False, 0)
+                return (False, default_average_rscc)
             return (True, np.mean(values))
 
     def resolution(self, info):
