@@ -251,6 +251,7 @@ class CompScore(QualityBase):
         return (True, percent_clash)
 
     def average_rsr(self, info):
+        default_avg_rsr = 40 # on 2017-10-12, maximum observed value was ~31
         with self.session() as session:
             query = session.query(mod.UnitQuality.real_space_r).\
                 join(mod.UnitInfo,
@@ -258,14 +259,15 @@ class CompScore(QualityBase):
 
             query = self.__chain_query__(query, info)
             if not query.count():
-                return (False, 0)
+                return (False, default_avg_rsr)
 
             values = [r.real_space_r for r in query if r.real_space_r is not None]
             if not values:
-                return (False, 0)
+                return (False, default_avg_rsr)
             return (True, np.mean(values))
 
     def average_rscc(self, info):
+        default_average_rscc = -1 # minimum possible value for rscc
         with self.session() as session:
             query = session.query(mod.UnitQuality.rscc).\
                 join(mod.UnitInfo,
@@ -273,11 +275,11 @@ class CompScore(QualityBase):
 
             query = self.__chain_query__(query, info)
             if not query.count():
-                return (False, 0)
+                return (False, default_average_rscc)
 
             values = [r.rscc for r in query if r.rscc is not None]
             if not values:
-                return (False, 0)
+                return (False, default_average_rscc)
             return (True, np.mean(values))
 
     def resolution(self, info):
@@ -301,8 +303,10 @@ class CompScore(QualityBase):
             return (True, rfree.dcc_rfree)
 
     def observed_length(self, info):
+        self.logger.debug("info: %s" % info)
         with self.session() as session:
-            query = session.query(mod.UnitInfo.unit_id).\
+            #query = session.query(mod.UnitInfo.unit_id).\
+            query = session.query(mod.UnitInfo.chain_index).\
                 distinct()
             query = self.__chain_query__(query, info)
             return query.count()
@@ -393,6 +397,12 @@ class CompScore(QualityBase):
                 if has:
                     data['has'].add((name, index))
 
+            #if has:
+                #data['has'].add(('max_length', experimental_length))
+
+            data['max_length'] = experimental_length
+            data['obs_length'] = info['length']
+
             member['quality'] = data
         return members
 
@@ -425,5 +435,4 @@ class CompScore(QualityBase):
             filter(table.sym_op == info['sym_op']).\
             filter(table.chain.in_(info['chains'])).\
             filter(table.unit.in_(['A', 'C', 'G', 'U'])).\
-            filter(table.chain_index != None).\
-            filter(table.alt_id.is_(None))
+            filter(table.chain_index != None)

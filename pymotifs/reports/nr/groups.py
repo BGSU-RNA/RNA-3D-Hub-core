@@ -31,8 +31,9 @@ class Groups(core.Reporter):
         'Resolution',
         'Method',
         'Obs Length (II)',
+        'Obs Length (UI)',
         'Exp Length (CI)',
-        #'Maximum Experimental Length',
+        'Maximum Experimental Length',
         'Exp Sequence (CI)',
         'BP/NT',
         'Nucleic Acid Compound',
@@ -58,6 +59,7 @@ class Groups(core.Reporter):
         data = {}
         for ife in members:
             quality = ife['quality']
+            self.logger.debug('quality: %s' % quality)
             data[ife['id']] = {
                 'Clashscore': quality.get('clashscore', 100),
                 'Compscore': compscore.compscore(ife),
@@ -66,6 +68,8 @@ class Groups(core.Reporter):
                 'Average RSCC': quality['average_rscc'],
                 'Rfree': quality['rfree'],
                 'Fraction Unobserved': quality['fraction_unobserved'],
+                'Maximum Experimental Length': quality['max_length'],
+                'Obs Length (UI)': quality['obs_length'],
             }
         return data
 
