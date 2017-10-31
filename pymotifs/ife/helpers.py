@@ -85,8 +85,11 @@ class IfeLoader(core.Base):
             query = session.query(mod.UnitInfo.sym_op,
                                   func.count(1).label('count'),
                                   ).\
-                filter_by(pdb_id=data['pdb'], chain=data['chain'],
-                          model=model, unit_type_id='rna').\
+                filter_by(pdb_id=data['pdb']).\
+                filter_by(chain=data['chain']).\
+                filter_by(model=model).\
+                filter_by(unit_type_id='rna').\
+                filter_by(unit.in_('A','C','G','U')).\
                 group_by(mod.UnitInfo.sym_op).\
                 limit(1)
             result = query.first()
