@@ -553,6 +553,18 @@ def report_loop_quality(ctx, ids, **kwargs):
     run(ctx, 'reports.loops.quality', ids, **kwargs)
 
 
+@report.command('pairing', short_help='A report about cWW pairing in a chain')
+@click.argument('pdb', nargs=1, type=PDB)
+@click.argument('chain', nargs=1, type=str)
+@click.option('--remove-pseudoknots', default=False, is_flag=True,
+              help='Remove all long range cWW pairs')
+@click.pass_context
+def report_pairing(ctx, pdb, chain, **kwargs):
+    kwargs.update(ctx.parent.objs)
+    id = (pdb, chain)
+    run(ctx, 'reports.pairing', id, **kwargs)
+
+
 @cli.group(short_help='Dump/Import data')
 @click.pass_context
 def transfer(ctx):
