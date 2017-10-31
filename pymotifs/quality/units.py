@@ -49,7 +49,8 @@ class Loader(core.SimpleLoader):
         filename : str
             The path to validation report for this file.
         """
-        return qual.filename(pdb)
+        util = qual.Utils(self.config, self.session)
+        return util.filename(pdb)
 
     def query(self, session, pdb):
         """Generate a query to find all entries in units_quality for the given
@@ -92,10 +93,10 @@ class Loader(core.SimpleLoader):
             'z_score'.
         """
         return {
-            'unit_id': entry['unit_id'],
+            'unit_id': entry['id'],
             'real_space_r': entry.get('real_space_r'),
             'density_correlation': entry.get('density_correlation'),
-            'rsrz': entry.get('real_space_r_z_score')
+            'z_score': entry.get('real_space_r_z_score')
         }
 
     def parse(self, filename, mapping):
@@ -123,7 +124,7 @@ class Loader(core.SimpleLoader):
         if not parser.has_rsr() and not parser.has_dcc():
             raise core.Skip("No RsR or DCC found")
 
-        data = it.imap(self.as_quality, parser.nts())
+        data = it.imap(self.as_quality, parser.nts(mapping))
         return it.imap(lambda d: mod.UnitQuality(**d), data)
 
     def data(self, pdb, **kwargs):
@@ -143,5 +144,5 @@ class Loader(core.SimpleLoader):
             An iterable of a quality assignments to store in the database.
         """
         util = qual.Utils(self.config, self.session)
-        mapping = util.mapping(pdb)
+        mapping = util.unit_mapping(pdb)
         return self.parse(self.filename(pdb), mapping)
