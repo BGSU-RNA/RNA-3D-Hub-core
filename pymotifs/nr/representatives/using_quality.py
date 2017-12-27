@@ -427,7 +427,8 @@ class CompScore(QualityBase):
 
 
     def sort_by_quality(self, members):
-        return sorted(members, key=self.compscore, reverse=True)
+        return sorted(members, key=self.compscore, reverse=False)
+        #return sorted(members, key=self.compscore, reverse=True)
 
     def __chain_query__(self, query, info, table=mod.UnitInfo):
         return query.filter(table.pdb_id == info['pdb']).\
