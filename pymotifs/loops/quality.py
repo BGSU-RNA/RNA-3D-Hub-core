@@ -477,7 +477,7 @@ class Loader(core.SimpleLoader):
                      mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
                 filter_by(unit_type_id='rna').\
                 filter_by(pdb_id=pdb)
-            data.update({r.unit_id: r.z_score for r in query})
+            data.update({r.unit_id: r.real_space_r_z_score for r in query})
             return data
 
     def is_fictional_loop(self, rsrz, loop):

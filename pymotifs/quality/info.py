@@ -144,7 +144,7 @@ class Parser(object):
                 data['real_space_r'] = float(residue.attrib['rsr'])
 
             if 'rsrz' in residue.attrib:
-                data['z_score'] = float(residue.attrib['rsrz'])
+                data['real_space_r_z_score'] = float(residue.attrib['rsrz'])
 
             if 'DCC' in residue.attrib:
                 data['density_correlation'] = float(residue['DCC'])
@@ -273,7 +273,7 @@ class Loader(core.SimpleLoader):
         ------
         entry : dict
             A dictionary of 'unit_id', 'real_space_r', 'density_correlation',
-            'z_score'.
+            'real_space_r_z_score'.
         """
 
         key = as_key(entry['id'])
@@ -286,7 +286,7 @@ class Loader(core.SimpleLoader):
                 'unit_id': unit_id,
                 'real_space_r': entry.get('real_space_r'),
                 'density_correlation': entry.get('density_correlation'),
-                'z_score': entry.get('z_score')
+                'real_space_r_z_score': entry.get('real_space_r_z_score')
             }
 
     def data(self, pdb, **kwargs):

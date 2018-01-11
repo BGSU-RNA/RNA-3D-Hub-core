@@ -89,7 +89,7 @@ class Loader(core.SimpleLoader):
         -------
         entry : dict
             A dictionary of 'unit_id', 'real_space_r', 'density_correlation',
-            'z_score'.
+            'real_space_r_z_score'.
         """
         return mod.UnitQuality(
             unit_id=entry['id'],
