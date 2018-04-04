@@ -84,6 +84,7 @@ class IfeQualityLoader(core.SimpleLoader):
 
         data = {
             'IFE ID': ife['id'],
+            'Observed Length': ife['length'],
         }
         data.update(ife_info[ife['id']])
         data.update(quality_data[ife['id']])
@@ -91,6 +92,7 @@ class IfeQualityLoader(core.SimpleLoader):
 
         yield mod.IfeCqs(
             ife_id = data['IFE ID'],
+            obs_length = data['Observed Length'],
             clashscore = data['Clashscore'],
             average_rsr = data['Average RSR'],
             average_rscc = data['Average RSCC'],
@@ -229,22 +231,20 @@ class IfeQualityLoader(core.SimpleLoader):
         release = None
 
         if kwargs.get('manual', {}).get('nr_release_id', False):
-            release = kwargs['manual']['nr_release_id']
+            release = kwargs['manual']['nr_release_id'] 
+            self.logger.info("IQL: to_process: release: %s" % release) 
+            with self.session() as session:
+                query = session.query(mod.NrChains.ife_id).\
+                    join(mod.NrClasses,
+                         mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
+                    filter(mod.NrClasses.nr_release_id == release).\
+                    filter(mod.NrClasses.resolution == resolution)
+                return [r.ife_id for r in query] 
         else:
-            data = self.cached(NR_CACHE_NAME)
-            if not data:
-                raise core.InvalidState("No precomputed grouping to store")
-            release = data['release']
-
-        self.logger.info("IQL: to_process: release: %s" % release) 
-
-        with self.session() as session:
-            query = session.query(mod.NrChains.ife_id).\
-                join(mod.NrClasses,
-                     mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
-                filter(mod.NrClasses.nr_release_id == release).\
-                filter(mod.NrClasses.resolution == resolution)
-            return [r.ife_id for r in query] 
+            with self.session() as session:
+                query = session.query(mod.IfeInfo.ife_id).\
+                    filter(mod.IfeInfo.model.isnot(None))
+                return [r.ife_id for r in query] 
 
         pass
 
