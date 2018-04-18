@@ -1,16 +1,21 @@
-"""Load the chain to chain discrepancies. This will look at good
-correspondences and extracts all the aligned chains and then compute the
-geometric discrepancy between them and then place them in the database.
+"""Load the chain to chain discrepancies. This will 1) look at good
+correspondences, 2) extract all the aligned chains, 3) compute the
+geometric discrepancy between them, and 4) place the discrepanices
+in the database.
 
 This will only compare the first chain in each IFE.
 """
 
-import operator as op
-import itertools as it
 import functools as ft
-
+import itertools as it
 import numpy as np
+import operator as op
+import pickle
+
+from sqlalchemy import and_
+from sqlalchemy import or_
 from sqlalchemy.orm import aliased
+from sqlalchemy.sql import union_all
 
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
@@ -27,9 +32,11 @@ from pymotifs.units.rotation import Loader as RotationLoader
 
 from pymotifs.nr.groups.simplified import Grouper
 
+from pymotifs.constants import CCC_CACHE_NAME
+
 
 def pick(preferences, key, iterable):
-    """Pick the most prefered value from a list of posibilities.
+    """Pick the most preferred value from a list of possibilities.
 
     Parameters
     ----------
@@ -189,6 +196,9 @@ class Loader(core.SimpleLoader):
             A list of pairs of chain ids to compare.
         """
 
+        self.logger.info("Entering to_process...")
+        self.logger.info("chain cache: %s" % CCC_CACHE_NAME)
+
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
         grouper.must_enforce_single_species = False
@@ -207,7 +217,20 @@ class Loader(core.SimpleLoader):
             chains = it.ifilter(has_centers, chains)
             chains = it.imap(op.itemgetter('db_id'), chains)
             possible.extend(it.combinations(chains, 2))
-        return sorted(possible)
+
+        self.logger.debug("Possibles collected...")
+
+        key = op.itemgetter(0)
+        ordered_chains = sorted(possible, key = key)
+        result = []
+        for (first, rest) in it.groupby(ordered_chains, key):
+            seconds = [r[1] for r in rest]
+            self.logger.debug("to_process: first: %s" % first)
+            self.logger.debug("to_process: seconds: %s" % seconds)
+            result.append((first, seconds))
+        #return sorted(possible)
+        self.logger.debug("to_process: result: %s" % result)
+        return result
 
     def query(self, session, pair):
         """Create a query to find the comparisions using the given pair of
@@ -228,10 +251,31 @@ class Loader(core.SimpleLoader):
             The query for chains.
         """
 
+        self.logger.info("query: first: %s" % pair[0])
+        self.logger.info("query: second: %s" % pair[1])
+        #self.logger.info("query: second (list): %s" % tuple(pair[1]))
+        self.logger.info("query: second (clean): %s" % pair[1][0])
+
         sim = mod.ChainChainSimilarity
+        #simf = session.query(sim).\
+        #    filter(sim.chain_id_1 == pair[0]).\
+        #    filter(sim.chain_id_2.in_(pair[1])).\
+        #    subquery()
+        #simr = session.query(sim).\
+        #    filter(sim.chain_id_2 == pair[0]).\
+        #    filter(sim.chain_id_1.in_(pair[1])).\
+        #    subquery()
+        ##simq = simf.union(simr)
+        #simq = session.query().select_entity_from(union_all(simf.select(), simr.select()))
+        #query = session.query("SELECT * FROM chain_chain_similiarity WHERE (chain_id_1 = %s AND chain_id_2 IN (%s) ) OR (chain_id_2 = %s AND chain_id_1 IN (%s) )" % (pair[0], tuple(pair[1][0]), pair[0], tuple(pair[1][0])))
+
+        #return query
+        #return session.query(simq)
         return session.query(sim).\
-            filter(((sim.chain_id_1 == pair[0]) & (sim.chain_id_2 == pair[1])) |
-                   ((sim.chain_id_1 == pair[1]) & (sim.chain_id_2 == pair[0])))
+            filter(or_(and_(sim.chain_id_1==pair[0],sim.chain_id_2.in_(pair[1])),
+                       and_(sim.chain_id_2==pair[0],sim.chain_id_1.in_(pair[1]))))
+        #    filter(((sim.chain_id_1 == pair[0]) & (sim.chain_id_2 == pair[1])) |
+        #           ((sim.chain_id_1 == pair[1]) & (sim.chain_id_2 == pair[0])))
 
     def matrices(self, corr_id, info1, info2, name='base'):
         """Load the matrices used to compute discrepancies. This will look up
@@ -560,6 +604,10 @@ class Loader(core.SimpleLoader):
             `num_nucleotides`.
         """
 
+        self.logger.info("entry: info1: " % info1)
+        self.logger.info("entry: info2: " % info2)
+        self.logger.info("entry: corr_id: " % corr_id)
+
         if not self.has_matrices(info1):
             self.logger.warning("Missing matrix data for %s", info1['name'])
             return []
@@ -607,7 +655,8 @@ class Loader(core.SimpleLoader):
             reversed
         ]
 
-    def data(self, pair, **kwargs):
+    #def data(self, pair, **kwargs):
+    def data(self, entry, **kwargs):
         """Compute all chain to chain similarity data. This will get all
         corresponding chains to chain alignment for all chains in this pdb and
         determine the geometric similarity for the chains, if the alignment is
@@ -625,9 +674,18 @@ class Loader(core.SimpleLoader):
             second to the first chains.
         """
 
-        chain1, chain2 = pair
+        #chain1, chain2 = pair
+        chain1, seconds = entry
         info1 = self.info(chain1)
-        info2 = self.info(chain2)
-        corr_id = self.corr_id(chain1, chain2)
-        entries = self.entry(info1, info2, corr_id)
-        return [mod.ChainChainSimilarity(**e) for e in entries]
+        for chain2 in seconds:
+            self.logger.info("data: chain2: %s" % chain2)
+            info2 = self.info(chain2)
+            corr_id = self.corr_id(chain1, chain2)
+            entries = self.entry(info1, info2, corr_id)
+
+        for e in entries:
+            yield mod.ChainChainSimilarity(**e)
+        #info2 = self.info(chain2)
+        #corr_id = self.corr_id(chain1, chain2)
+        #entries = self.entry(info1, info2, corr_id)
+        #return [mod.ChainChainSimilarity(**e) for e in entries]
