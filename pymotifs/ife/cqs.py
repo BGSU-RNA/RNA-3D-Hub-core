@@ -97,7 +97,8 @@ class IfeQualityLoader(core.SimpleLoader):
             average_rsr = data['Average RSR'],
             average_rscc = data['Average RSCC'],
             percent_clash = data['Percent Clash'],
-            rfree = data['Rfree'])
+            rfree = data['Rfree'],
+            resolution = data['Resolution'])
 
     def class_property(self, ifes, name):
         return {ife[name] for ife in ifes}
@@ -163,6 +164,7 @@ class IfeQualityLoader(core.SimpleLoader):
                 'Percent Clash': quality['percent_clash'],
                 'Average RSCC': quality['average_rscc'],
                 'Rfree': quality['rfree'],
+                'Resolution': quality['resolution'],
             }
         return data
 
@@ -247,7 +249,6 @@ class IfeQualityLoader(core.SimpleLoader):
                 return [r.ife_id for r in query] 
 
         pass
-
 
     def query(self, session, ife_id):
         return session.query(mod.IfeCqs.ife_id).filter_by(ife_id=ife_id)
