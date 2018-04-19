@@ -1,7 +1,12 @@
+"""This module contains the logic to create NR-level CQS (Composite
+Quality Score) data for subsequent import into the database.  Uses
+IFE-specific data that were previously generated using ife.cqs and
+stored in the database (table ife_cqs).
+"""
+
 import abc
 import collections as coll
 import pprint
-
 #import numpy as np
 #import operator as op
 
@@ -10,29 +15,34 @@ import pprint
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import COMPSCORE_COEFFICENTS
 from pymotifs.constants import NR_CACHE_NAME
-from pymotifs.ife.info import Loader as IfeInfoLoader
+#from pymotifs.ife.cqs import IfeQualityLoader
+#from pymotifs.ife.helpers import IfeLoader
+#from pymotifs.ife.info import Loader as IfeInfoLoader
 from pymotifs.nr.ordering import Loader as OrderingLoader
-from pymotifs.nr.representatives.using_quality import CompScore
-from pymotifs.reports.nr.cqs import Groups
+#from pymotifs.nr.representatives.using_quality import CompScore
+
+#from pymotifs.reports.nr.cqs import Groups
 from pymotifs.utils import row2dict
 
 #from .core import Representative
-#from pymotifs.ife.helpers import IfeLoader
 
 
-class IfeQualityLoader(core.SimpleLoader):
+class NrQualityLoader(core.SimpleLoader):
     """Loader to store quality data for an input equivalence class
-    in table ife_cqs.
+    in table nr_cqs.
     """
 
-    dependencies = set([IfeInfoLoader, OrderingLoader])
+    dependencies = set([OrderingLoader])
+    #dependencies = set([IfeQualityLoader, OrderingLoader])
 
     """We allow this to merge data since sometimes we want to replace.
 
     Blake thinks that this is unnecessary/undesirable.  However, if
-    a representative changes (and the IFE length as a consequence),
-    all of the CQS values for that EC will need to be updated.
+    class membership changes (and the maximum IFE length as a
+    consequence), all of the CQS values for that EC will need to be
+    updated.
     """
     merge_data = True
 
@@ -61,12 +71,9 @@ class IfeQualityLoader(core.SimpleLoader):
     #    return data
     """
 
-    # create some empty dictionaries to hold data (testing)
-    hold_ri = {}
-    hold_rd = {}
-
     def to_process(self, pdbs, **kwargs):
-        """Look up the release ID to process. Ignores the given PDBs.
+        """Collect the list of nr_class name values to process for the
+        specified release. Ignores the given PDBs.
 
         Parameters
         ----------
@@ -75,11 +82,13 @@ class IfeQualityLoader(core.SimpleLoader):
 
         Returns
         -------
-        latest : string
-            The NR release ID to process.
+        classlist : list
+            The list of NR class names to process.
         """
 
-        self.logger.info("IQL: to_process")
+        self.logger.info("NQL: to_process")
+
+        resolution = 'all'
 
         latest = None
         if kwargs.get('manual', {}).get('nr_release_id', False):
@@ -90,142 +99,187 @@ class IfeQualityLoader(core.SimpleLoader):
                 raise core.InvalidState("No precomputed grouping to store")
             latest = data['release']
 
-        self.logger.info("IfeQualityLoader: to_process: latest: %s" % latest)
+        self.logger.info("NQL: to_process: here")
+
+        classlist = self.list_nr_classes(latest, resolution)
+
+        self.logger.info("NQL: to_process: latest: %s" % latest)
+        self.logger.info("NQL: to_process: resolution: %s" % resolution)
+        self.logger.info("NQL: to_process: classlist: %s" % classlist)
 
         with self.session() as session:
-            return [(latest, 'foo')]
+            return classlist
 
 
-    def query(self, session, pair):
-        """Create a query to calculate all entries that will be added to
-        ife_cqs for the given class_id.
+    def load_ife_cqs_data(self, ife_list, nr_name):
+        with self.session() as session:
+            self.logger.info("NQL: data: LICD: query setup")
+            self.logger.info("NQL: data: LICD: ife_list: %s" % ife_list)
+            query = session.query(
+                mod.IfeCqs.ife_id,
+                mod.IfeCqs.obs_length,
+                mod.IfeCqs.clashscore,
+                mod.IfeCqs.average_rsr,
+                mod.IfeCqs.average_rscc,
+                mod.IfeCqs.percent_clash,
+                mod.IfeCqs.rfree,
+                mod.IfeCqs.resolution,
+                ).\
+                filter(mod.IfeCqs.ife_id.in_(ife_list))
+
+            self.logger.info("NQL: data: LICD: after query definition")
+
+            data = coll.defaultdict(list)
+
+            max_exp_len = 0
+
+            for result in query:
+                self.logger.debug("NQL: data: LICD: ife_id: %s" % result[0])
+                self.logger.debug("NQL: data: LICD: obs_length: %s" % result[1])
+                self.logger.debug("NQL: data: LICD: clashscore: %s" % result[2])
+                self.logger.debug("NQL: data: LICD: average_rsr: %s" % result[3])
+                self.logger.debug("NQL: data: LICD: average_rscc: %s" % result[4])
+                self.logger.debug("NQL: data: LICD: percent_clash: %s" % result[5])
+                self.logger.debug("NQL: data: LICD: rfree: %s" % result[6]) 
+                self.logger.debug("NQL: data: LICD: resolution: %s" % result[7]) 
+
+                entry = row2dict(result)
+                self.logger.debug("NQL: data: LICD: entry: %s" % entry)
+                ii = entry['ife_id']
+                entry['nr_name'] = nr_name
+                self.logger.info("NQL: data: LICD: entry (revised): %s" % entry)
+                data[ii].append(entry)
+                if result[1] > max_exp_len:
+                    max_exp_len = result[1]
+
+            self.logger.info("NQL: data: LICD: after IFE-CQS parsing")
+            self.logger.info("NQL: data: LICD: max_exp_len: %s" % max_exp_len)
+
+        for ife in ife_list:
+            self.logger.info("NQL: data: LICD: CQS iterator: %s" % ife)
+            self.logger.info("NQL: data: LICD: data: %s" % data[ife])
+            if data[ife]:
+                ife_data = data[ife]
+                obs_length = ife_data[0]['obs_length']
+                ife_data[0]['max_exp_len'] = max_exp_len
+            else:
+                self.logger.warning("NQL: data: LICD: no data for %s" % ife)
+                continue
+            self.logger.debug("NQL: data: LICD: observed_length: %s" % obs_length)
+            self.logger.debug("NQL: data: LICD: max exp length: %s" % max_exp_len)
+            truth, fraction_unobserved = self.fraction_unobserved(obs_length, max_exp_len)
+            percent_observed = (1 - fraction_unobserved)
+            self.logger.debug("NQL: data: LICD: frac_unobs: %s" % str(fraction_unobserved))
+            self.logger.debug("NQL: data: LICD: pct_obs: %s" % str(percent_observed))
+            data[ife][0]['fraction_unobserved'] = fraction_unobserved
+            data[ife][0]['percent_observed'] = percent_observed
+            compscore = self.compscore(data[ife])
+            self.logger.debug("NQL: data: LICD: cqs_value: %s" % str(compscore))
+            data[ife][0]['compscore'] = compscore
+
+        self.logger.debug("NQL: data: LICD: after NR-CQS parsing")
+        return data.values()
+
+    def list_nr_classes(self, release, resolution):
+        self.logger.debug("NQL: lnc: release: %s" % release)
+        self.logger.debug("NQL: lnc: resolution: %s" % resolution)
+        with self.session() as session:
+            query = session.query(mod.NrClasses.name).\
+                filter(mod.NrClasses.nr_release_id == release).\
+                filter(mod.NrClasses.resolution == resolution)
+
+            self.logger.debug("NQL: lnc: query defined")
+
+            data = []
+            for result in query:
+                self.logger.debug("NQL: lnc: result: %s" % result)
+                data.append(result[0])
+        return data
+
+    def query(self, session, nr_name):
+        self.logger.info("query: nr_name: %s" % nr_name)
+
+        return session.query(mod.NrCqs.nr_name).\
+            filter(mod.NrCqs.nr_name == nr_name)
+
+    def data(self, nr_name, **kwargs):
+        """Collect composite quality scoring data for the NR class.
 
         Parameters
         ----------
-        session : pymotifs.core.Session
-            The session to use.
-
-        pdb_id : int
-            The input PDB id (to be ignored)
+        nr_name : str
+            Name of class for which to collect NR-level composite
+            quality score (CQS) data.
 
         Returns
         -------
-        query : Query
-            The query.
+            The required data for the database update step.
         """
 
-        compscore = self._create(CompScore)
-        groups = self._create(Groups)
-        self.logger.info("IQL: query")
+        cqs_data = {}
 
-        _, class_id = pair
-        self.logger.info("IQL: query: release: %s" % _)
-        self.logger.info("IQL: query: class_id: %s" % class_id)
+        self.logger.info("NQL: data: nr_name: %s" % nr_name)
 
-        #self.resolutions = ['1.5', '2.0', '2.5', '3.0', '3.5', '4.0', '20.0', 'all']
-        #self.resolutions = ['all'] # for testing of revisions for single-pass CQS
-        self.resolutions = ['1.5'] # for faster testing
+        ife_list = []
 
-        for res in self.resolutions:
-            self.logger.info("IQL: query: res: %s" % res)
-            #foo = groups.data(_, 1.5)
-            foo = groups.data(_, res)
-            for x in foo:
-                self.logger.info("IQL: query: foo: %s" % x)
-                #
-                # need to separate "x" into two pools of data:
-                # 1) resolution-independent
-                # 2) resolution-dependent
-                #
-                # and then work out how to get those pools into the database
-                #
-                # Keywords:
-                ## 'Compscore'
-                ## 'Fraction Unobserved'
-                # 'Obs Length (UI)'
-                ## 'IFE ID'
-                # 'Group'
-                ## 'Percent Clash'
-                ## 'Rfree'
-                # 'Maximum Experimental Length'
-                ## 'Average RSR'
-                ## 'Average RSCC'
-                ## 'Clashscore'
-                ## 'Release'
-                ## 'Resolution'
-                # 'Exp Length (CI)'
+        with self.session() as session:
+            query = session.query(mod.NrChains.ife_id).\
+                join(mod.NrClasses, mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
+                filter(mod.NrClasses.name == nr_name)
 
-                x['id'] = x['IFE ID']
+            for result in query:
+                self.logger.info("NQL: data: result: %s" % result)
+                ife_list.append(result[0])
+    
+        self.logger.info("NQL: data: ife_list: %s" % ife_list)
+        data = self.load_ife_cqs_data(ife_list, nr_name)
+        self.logger.info("NQL: data: test load: %s" % data)
 
-                info = compscore.member_info(x)
-                self.logger.info("IQL: query: foo: %s" % info)
+        for ife_output in data:
+            self.logger.info("NQL: data: test output: ife_output: %s" % ife_output)
+            for ife_out in ife_output:
+                self.logger.info("NQL: data: test output: ife_id: %s" % ife_out['ife_id'])
+                self.logger.info("NQL: data: test output: max_exp_len: %s" % ife_out['max_exp_len'])
+                self.logger.info("NQL: data: test output: nr_name: %s" % nr_name)
+                self.logger.info("NQL: data: test output: fraction_unobserved: %s" % ife_out['fraction_unobserved'])
+                self.logger.info("NQL: data: test output: percent_observed: %s" % ife_out['percent_observed'])
+                self.logger.info("NQL: data: test output: compscore: %s" % ife_out['compscore'])
 
-                #localpc = compscore.percent_clash(x)
+                yield mod.NrCqs(
+                    ife_id = ife_out['ife_id'],
+                    nr_name = nr_name,
+                    maximum_experimental_length = ife_out['max_exp_len'],
+                    fraction_unobserved = ife_out['fraction_unobserved'],
+                    percent_observed = ife_out['percent_observed'],
+                    composite_quality_score = ife_out['compscore'])
 
-                self.hold_ri['release_id'] = _
-                self.hold_rd['release_id'] = _
-                self.hold_ri['ife_id'] = x['IFE ID']
-                self.hold_rd['ife_id'] = x['IFE ID']
-                self.hold_ri['clashscore'] = x['Clashscore']
-                self.hold_ri['average_rsr'] = x['Average RSR']
-                self.hold_ri['average_rscc'] = x['Average RSCC']
-                self.hold_ri['percent_clash'] = x['Percent Clash']
-                self.hold_ri['rfree'] = x['Rfree']
-                self.hold_rd['resolution'] = x['Resolution']
-                self.hold_rd['fraction_unobserved'] = x['Fraction Unobserved']
-                self.hold_rd['compscore'] = x['Compscore']
+    def fraction_unobserved(self, obs, max):
+        observed = float(obs)
+        experimental = float(max)
+        if experimental == 0:
+            return (True, 1)
+        self.logger.debug("observed: %s" % observed)
+        self.logger.debug("experimental: %s" % experimental)
+        return (True, (1 - (observed / experimental)))
 
-                self.logger.info("IQL: query: ri_release: %s" % self.hold_ri['release_id'])
-                self.logger.info("IQL: query: rd_release: %s" % self.hold_rd['release_id'])
-                self.logger.info("IQL: query: ri_ife_id: %s" % self.hold_ri['ife_id'])
-                self.logger.info("IQL: query: rd_ife_id: %s" % self.hold_rd['ife_id'])
-                self.logger.info("IQL: query: ri_clashscore: %s" % self.hold_ri['clashscore'])
-                self.logger.info("IQL: query: ri_average_rsr: %s" % self.hold_ri['average_rsr'])
-                self.logger.info("IQL: query: ri_average_rscc: %s" % self.hold_ri['average_rscc'])
-                self.logger.info("IQL: query: ri_percent_clash: %s" % self.hold_ri['percent_clash'])
-                self.logger.info("IQL: query: ri_rfree: %s" % self.hold_ri['rfree'])
-                self.logger.info("IQL: query: rd_resolution: %s" % self.hold_rd['resolution'])
-                self.logger.info("IQL: query: rd_fraction_unobserved: %s" % self.hold_rd['fraction_unobserved'])
-                self.logger.info("IQL: query: rd_compscore: %s" % self.hold_rd['compscore'])
+    def compscore(self, member):
+        """
+        Compute composite quality score using six indicators weighted by
+        various coefficients set in constants.py
+        """
+        self.logger.info("compscore: member: %s" % member)
 
-            self.logger.info("IQL: query: endfoo")
-        self.logger.info("IQL: query: endres")
+        compscore = COMPSCORE_COEFFICENTS['resolution'] * member[0]['resolution']
+        compscore += COMPSCORE_COEFFICENTS['percent_clash'] * member[0]['percent_clash']
+        compscore += COMPSCORE_COEFFICENTS['average_rsr'] * member[0]['average_rsr']
+        compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - member[0]['average_rscc'])
+        compscore += COMPSCORE_COEFFICENTS['rfree'] * member[0]['rfree']
+        compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * member[0]['fraction_unobserved']
 
-        pass # temporary
-        return session.query(mod.IfeCqs)#.\
-            #filter_by(ife_id=ife_id)
+        if compscore < 0:
+            raise core.InvalidState("Invalid compscore (%s) for %s" % (compscore, member))
 
-
-    def data(self, nr_class):
-        """Present only because required by the base class."""
-        pass
-
-
-    #def process_nr_class(self, nr_class_id):
-    #    with self.session() as session:
-    #        query = session.query(
-    #            mod.NrChains.rank.label('index'),
-    #            mod.NrChains.ife_id.label('id'),
-    #            mod.IfeInfo.pdb_id,
-    #            mod.IfeInfo.length,
-    #            mod.IfeChains.chain_id,
-    #            mod.NrClasses.name,
-    #        ).\
-    #            join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
-    #            join(mod.IfeChains,
-    #                 mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
-    #            join(mod.NrClasses,
-    #                 mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
-    #            filter(mod.NrClasses.nr_class_id == nr_class_id).\
-    #            filter(mod.IfeChains.index == 0)
-
-    #        data = coll.defaultdict(list)
-    #        for result in query:
-    #            entry = row2dict(result)
-    #            entry['rep'] = (entry['index'] == 0)
-    #            nr = entry['name']
-    #            data[nr].append(entry)
-    #    return data.values()
+        return compscore
 
     pass
 
