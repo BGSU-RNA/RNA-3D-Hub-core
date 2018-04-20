@@ -7,26 +7,14 @@ stored in the database (table ife_cqs).
 import abc
 import collections as coll
 import pprint
-#import numpy as np
-#import operator as op
-
-#from sqlalchemy import func
-#from sqlalchemy.orm import aliased
 
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.constants import COMPSCORE_COEFFICENTS
 from pymotifs.constants import NR_CACHE_NAME
-#from pymotifs.ife.cqs import IfeQualityLoader
-#from pymotifs.ife.helpers import IfeLoader
-#from pymotifs.ife.info import Loader as IfeInfoLoader
-from pymotifs.nr.ordering import Loader as OrderingLoader
-#from pymotifs.nr.representatives.using_quality import CompScore
-
-#from pymotifs.reports.nr.cqs import Groups
+from pymotifs.nr.chains import Loader as ChainLoader
+from pymotifs.nr.parent_counts import Loader as CountLoader
 from pymotifs.utils import row2dict
-
-#from .core import Representative
 
 
 class NrQualityLoader(core.SimpleLoader):
@@ -34,8 +22,7 @@ class NrQualityLoader(core.SimpleLoader):
     in table nr_cqs.
     """
 
-    dependencies = set([OrderingLoader])
-    #dependencies = set([IfeQualityLoader, OrderingLoader])
+    dependencies = set([ChainLoader, CountLoader])
 
     """We allow this to merge data since sometimes we want to replace.
 
@@ -86,8 +73,6 @@ class NrQualityLoader(core.SimpleLoader):
             The list of NR class names to process.
         """
 
-        self.logger.info("NQL: to_process")
-
         resolution = 'all'
 
         latest = None
@@ -99,13 +84,7 @@ class NrQualityLoader(core.SimpleLoader):
                 raise core.InvalidState("No precomputed grouping to store")
             latest = data['release']
 
-        self.logger.info("NQL: to_process: here")
-
         classlist = self.list_nr_classes(latest, resolution)
-
-        self.logger.info("NQL: to_process: latest: %s" % latest)
-        self.logger.info("NQL: to_process: resolution: %s" % resolution)
-        self.logger.info("NQL: to_process: classlist: %s" % classlist)
 
         with self.session() as session:
             return classlist
@@ -113,8 +92,6 @@ class NrQualityLoader(core.SimpleLoader):
 
     def load_ife_cqs_data(self, ife_list, nr_name):
         with self.session() as session:
-            self.logger.info("NQL: data: LICD: query setup")
-            self.logger.info("NQL: data: LICD: ife_list: %s" % ife_list)
             query = session.query(
                 mod.IfeCqs.ife_id,
                 mod.IfeCqs.obs_length,
@@ -127,37 +104,19 @@ class NrQualityLoader(core.SimpleLoader):
                 ).\
                 filter(mod.IfeCqs.ife_id.in_(ife_list))
 
-            self.logger.info("NQL: data: LICD: after query definition")
-
             data = coll.defaultdict(list)
 
             max_exp_len = 0
 
-            for result in query:
-                self.logger.debug("NQL: data: LICD: ife_id: %s" % result[0])
-                self.logger.debug("NQL: data: LICD: obs_length: %s" % result[1])
-                self.logger.debug("NQL: data: LICD: clashscore: %s" % result[2])
-                self.logger.debug("NQL: data: LICD: average_rsr: %s" % result[3])
-                self.logger.debug("NQL: data: LICD: average_rscc: %s" % result[4])
-                self.logger.debug("NQL: data: LICD: percent_clash: %s" % result[5])
-                self.logger.debug("NQL: data: LICD: rfree: %s" % result[6]) 
-                self.logger.debug("NQL: data: LICD: resolution: %s" % result[7]) 
-
+            for result in query: 
                 entry = row2dict(result)
-                self.logger.debug("NQL: data: LICD: entry: %s" % entry)
                 ii = entry['ife_id']
                 entry['nr_name'] = nr_name
-                self.logger.info("NQL: data: LICD: entry (revised): %s" % entry)
                 data[ii].append(entry)
                 if result[1] > max_exp_len:
                     max_exp_len = result[1]
 
-            self.logger.info("NQL: data: LICD: after IFE-CQS parsing")
-            self.logger.info("NQL: data: LICD: max_exp_len: %s" % max_exp_len)
-
         for ife in ife_list:
-            self.logger.info("NQL: data: LICD: CQS iterator: %s" % ife)
-            self.logger.info("NQL: data: LICD: data: %s" % data[ife])
             if data[ife]:
                 ife_data = data[ife]
                 obs_length = ife_data[0]['obs_length']
@@ -165,40 +124,27 @@ class NrQualityLoader(core.SimpleLoader):
             else:
                 self.logger.warning("NQL: data: LICD: no data for %s" % ife)
                 continue
-            self.logger.debug("NQL: data: LICD: observed_length: %s" % obs_length)
-            self.logger.debug("NQL: data: LICD: max exp length: %s" % max_exp_len)
             truth, fraction_unobserved = self.fraction_unobserved(obs_length, max_exp_len)
             percent_observed = (1 - fraction_unobserved)
-            self.logger.debug("NQL: data: LICD: frac_unobs: %s" % str(fraction_unobserved))
-            self.logger.debug("NQL: data: LICD: pct_obs: %s" % str(percent_observed))
             data[ife][0]['fraction_unobserved'] = fraction_unobserved
             data[ife][0]['percent_observed'] = percent_observed
             compscore = self.compscore(data[ife])
-            self.logger.debug("NQL: data: LICD: cqs_value: %s" % str(compscore))
             data[ife][0]['compscore'] = compscore
 
-        self.logger.debug("NQL: data: LICD: after NR-CQS parsing")
         return data.values()
 
     def list_nr_classes(self, release, resolution):
-        self.logger.debug("NQL: lnc: release: %s" % release)
-        self.logger.debug("NQL: lnc: resolution: %s" % resolution)
         with self.session() as session:
             query = session.query(mod.NrClasses.name).\
                 filter(mod.NrClasses.nr_release_id == release).\
                 filter(mod.NrClasses.resolution == resolution)
 
-            self.logger.debug("NQL: lnc: query defined")
-
             data = []
             for result in query:
-                self.logger.debug("NQL: lnc: result: %s" % result)
                 data.append(result[0])
         return data
 
     def query(self, session, nr_name):
-        self.logger.info("query: nr_name: %s" % nr_name)
-
         return session.query(mod.NrCqs.nr_name).\
             filter(mod.NrCqs.nr_name == nr_name)
 
@@ -218,8 +164,6 @@ class NrQualityLoader(core.SimpleLoader):
 
         cqs_data = {}
 
-        self.logger.info("NQL: data: nr_name: %s" % nr_name)
-
         ife_list = []
 
         with self.session() as session:
@@ -228,23 +172,12 @@ class NrQualityLoader(core.SimpleLoader):
                 filter(mod.NrClasses.name == nr_name)
 
             for result in query:
-                self.logger.info("NQL: data: result: %s" % result)
                 ife_list.append(result[0])
     
-        self.logger.info("NQL: data: ife_list: %s" % ife_list)
         data = self.load_ife_cqs_data(ife_list, nr_name)
-        self.logger.info("NQL: data: test load: %s" % data)
 
         for ife_output in data:
-            self.logger.info("NQL: data: test output: ife_output: %s" % ife_output)
             for ife_out in ife_output:
-                self.logger.info("NQL: data: test output: ife_id: %s" % ife_out['ife_id'])
-                self.logger.info("NQL: data: test output: max_exp_len: %s" % ife_out['max_exp_len'])
-                self.logger.info("NQL: data: test output: nr_name: %s" % nr_name)
-                self.logger.info("NQL: data: test output: fraction_unobserved: %s" % ife_out['fraction_unobserved'])
-                self.logger.info("NQL: data: test output: percent_observed: %s" % ife_out['percent_observed'])
-                self.logger.info("NQL: data: test output: compscore: %s" % ife_out['compscore'])
-
                 yield mod.NrCqs(
                     ife_id = ife_out['ife_id'],
                     nr_name = nr_name,
@@ -258,8 +191,6 @@ class NrQualityLoader(core.SimpleLoader):
         experimental = float(max)
         if experimental == 0:
             return (True, 1)
-        self.logger.debug("observed: %s" % observed)
-        self.logger.debug("experimental: %s" % experimental)
         return (True, (1 - (observed / experimental)))
 
     def compscore(self, member):
@@ -267,8 +198,6 @@ class NrQualityLoader(core.SimpleLoader):
         Compute composite quality score using six indicators weighted by
         various coefficients set in constants.py
         """
-        self.logger.info("compscore: member: %s" % member)
-
         compscore = COMPSCORE_COEFFICENTS['resolution'] * member[0]['resolution']
         compscore += COMPSCORE_COEFFICENTS['percent_clash'] * member[0]['percent_clash']
         compscore += COMPSCORE_COEFFICENTS['average_rsr'] * member[0]['average_rsr']
