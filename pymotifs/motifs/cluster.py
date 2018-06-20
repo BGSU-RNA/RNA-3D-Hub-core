@@ -230,6 +230,6 @@ class ClusterMotifs(core.Base):
             raise matlab.MatlabFailed(err_msg)
 
         self._clean_up()
-        self.logger.info('Successful clustering')
+        self.logger.info('Successful clustering of %s' % loop_type)
 
         return output_dir
