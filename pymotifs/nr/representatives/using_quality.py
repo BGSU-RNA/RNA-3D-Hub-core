@@ -412,18 +412,34 @@ class CompScore(QualityBase):
         set in constants.py
         """
         quality = member['quality']
+        ife_id = member['id']
+        nr_class = member['name']
 
-        compscore = COMPSCORE_COEFFICENTS['resolution'] * quality['resolution']
-        compscore += COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash']
-        compscore += COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr']
-        compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'])
-        compscore += COMPSCORE_COEFFICENTS['rfree'] * quality['rfree']
-        compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved']
+        with self.session() as session:
+            query = session.query(mod.NrCqs.ife_id,
+                                  mod.NrCqs.nr_name,
+                                  mod.NrCqs.composite_quality_score.label('cqs'),
+                                  ).\
+                filter(mod.NrCqs.ife_id == ife_id).\
+                filter(mod.NrCqs.nr_name == nr_class).\
+                limit(1)
 
-        if compscore < 0:
-            raise core.InvalidState("Invalid compscore (%s) for %s" % (compscore, member))
+            for result in query:
+                cqs = result.cqs
 
-        return compscore
+        self.logger.debug("test compscore: %s" % cqs)
+
+        #compscore = COMPSCORE_COEFFICENTS['resolution'] * quality['resolution']
+        #compscore += COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash']
+        #compscore += COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr']
+        #compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'])
+        #compscore += COMPSCORE_COEFFICENTS['rfree'] * quality['rfree']
+        #compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved']
+
+        if cqs < 0:
+            raise core.InvalidState("Invalid compscore (%s) for %s" % (cqs, member))
+
+        return cqs
 
 
     def sort_by_quality(self, members):
