@@ -196,8 +196,8 @@ class Loader(core.SimpleLoader):
             A list of pairs of chain ids to compare.
         """
 
-        self.logger.info("Entering to_process...")
-        self.logger.info("chain cache: %s" % CCC_CACHE_NAME)
+        self.logger.debug("Entering to_process...")
+        self.logger.debug("chain cache: %s" % CCC_CACHE_NAME)
 
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
@@ -251,10 +251,9 @@ class Loader(core.SimpleLoader):
             The query for chains.
         """
 
-        self.logger.info("query: first: %s" % pair[0])
-        self.logger.info("query: second: %s" % pair[1])
-        #self.logger.info("query: second (list): %s" % tuple(pair[1]))
-        self.logger.info("query: second (clean): %s" % pair[1][0])
+        self.logger.debug("query: first: %s" % pair[0])
+        self.logger.debug("query: second: %s" % pair[1])
+        self.logger.debug("query: second (clean): %s" % pair[1][0])
 
         sim = mod.ChainChainSimilarity
         #simf = session.query(sim).\
@@ -523,6 +522,9 @@ class Loader(core.SimpleLoader):
             The correspondence id for the alignment between the two chains.
         """
 
+        self.logger.debug("corr_id: chain_id1: %s" % chain_id1)
+        self.logger.debug("corr_id: chain_id2: %s" % chain_id2)
+
         corr_id = self.__correspondence_query__(chain_id1, chain_id2)
         if corr_id is None:
             corr_id = self.__correspondence_query__(chain_id2, chain_id1)
@@ -604,9 +606,9 @@ class Loader(core.SimpleLoader):
             `num_nucleotides`.
         """
 
-        self.logger.info("entry: info1: " % info1)
-        self.logger.info("entry: info2: " % info2)
-        self.logger.info("entry: corr_id: " % corr_id)
+        self.logger.debug("entry: info1: %s" % info1)
+        self.logger.debug("entry: info2: %s" % info2)
+        self.logger.debug("entry: corr_id: %s" % corr_id)
 
         if not self.has_matrices(info1):
             self.logger.warning("Missing matrix data for %s", info1['name'])
@@ -655,7 +657,6 @@ class Loader(core.SimpleLoader):
             reversed
         ]
 
-    #def data(self, pair, **kwargs):
     def data(self, entry, **kwargs):
         """Compute all chain to chain similarity data. This will get all
         corresponding chains to chain alignment for all chains in this pdb and
@@ -674,18 +675,14 @@ class Loader(core.SimpleLoader):
             second to the first chains.
         """
 
-        #chain1, chain2 = pair
         chain1, seconds = entry
         info1 = self.info(chain1)
         for chain2 in seconds:
-            self.logger.info("data: chain2: %s" % chain2)
+            self.logger.debug("data: chain2: %s" % chain2)
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
+            self.logger.debug("data: corr_id: %s" % corr_id)
             entries = self.entry(info1, info2, corr_id)
 
         for e in entries:
             yield mod.ChainChainSimilarity(**e)
-        #info2 = self.info(chain2)
-        #corr_id = self.corr_id(chain1, chain2)
-        #entries = self.entry(info1, info2, corr_id)
-        #return [mod.ChainChainSimilarity(**e) for e in entries]
