@@ -536,10 +536,10 @@ class Loader(core.SimpleLoader):
             return 5
         if self.is_complementary(loop):
             return 6
-        # if self.is_fictional(assess.rsrz, loop):
-        #     return 8
-        # if self.has_fictional_pair(assess.rsrz, loop):
-        #     return 9
+        if self.is_fictional_loop(assess.rsrz, loop):
+            return 8
+        if self.is_fictional_pair(assess.rsrz, loop):
+            return 9
         return 1
 
     def quality(self, assess, release_id, loop):
