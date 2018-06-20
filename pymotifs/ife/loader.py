@@ -24,6 +24,7 @@ pymotifs.ife.grouper.
 from pymotifs import core
 
 from pymotifs.ife.info import Loader as InfoLoader
+from pymotifs.ife.cqs import IfeQualityLoader
 
 
 class Loader(core.StageContainer):
@@ -33,4 +34,4 @@ class Loader(core.StageContainer):
     pymotifs.ife.info and pymotifs.ife.chains.
     """
 
-    stages = set([InfoLoader])
+    stages = set([InfoLoader, IfeQualityLoader])
