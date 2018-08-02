@@ -427,14 +427,18 @@ class CompScore(QualityBase):
             for result in query:
                 cqs = result.cqs
 
-        self.logger.debug("test compscore: %s" % cqs)
+        try:
+            cqs
+        except NameError:
+            pass
+            cqs = COMPSCORE_COEFFICENTS['resolution'] * quality['resolution']
+            cqs += COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash']
+            cqs += COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr']
+            cqs += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'])
+            cqs += COMPSCORE_COEFFICENTS['rfree'] * quality['rfree']
+            cqs += COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved']
 
-        #compscore = COMPSCORE_COEFFICENTS['resolution'] * quality['resolution']
-        #compscore += COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash']
-        #compscore += COMPSCORE_COEFFICENTS['average_rsr'] * quality['average_rsr']
-        #compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'])
-        #compscore += COMPSCORE_COEFFICENTS['rfree'] * quality['rfree']
-        #compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved']
+        self.logger.debug("test compscore: %s" % cqs)
 
         if cqs < 0:
             raise core.InvalidState("Invalid compscore (%s) for %s" % (cqs, member))
