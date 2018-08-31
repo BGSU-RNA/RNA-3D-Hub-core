@@ -52,6 +52,19 @@ class Loader(core.Loader):
             motif['motif_id'] + '.png',
         )
 
+    def web_directory(self, loop_type, release):
+        return os.path.join(
+            self.config['locations']['web_dir'],
+            loop_type + release
+        )
+
+    def web_location(self, release, motif):
+        type = motif['motif_id'].split('_')[0]
+        return os.path.join(
+            self.web_directory(type, release),
+            motif['motif_id'] + '.png',
+        )
+
     def has_data(self, pair, **kwargs):
         return False
 
@@ -70,12 +83,31 @@ class Loader(core.Loader):
             raise core.InvalidState("No cached data")
 
         directory = self.final_directory(loop_type, release)
-        if not directory:
+        self.logger.debug("Use directory %s...", directory)
+        if not os.path.isdir(directory):
             os.makedirs(directory)
+            self.logger.debug("Needed to create directory %s", directory)
+
+        if not os.path.isdir(directory):
+            self.logger.debug("Failed to create directory %s", directory)
+
+        web_dir = self.web_directory(loop_type, release)
+        self.logger.debug("Web directory: %s", web_dir)
+        if not os.path.isdir(web_dir):
+            os.makedirs(web_dir)
+            self.logger.debug("Needed to create directory %s", web_dir)
+
+        if not os.path.isdir(web_dir):
+            self.logger.debug("Failed to create directory %s", web_dir)
 
         for motif in cached['motifs']:
             location = self.final_location(release, motif)
+            web_location = self.web_location(release, motif)
             self.logger.debug("Copying motif 2d %s %s to %s",
                               motif['motif_id'], motif['2d'], location)
             shutil.copy(motif['2d'], location)
+            self.logger.debug("Copying motif 2d %s %s to %s",
+                              motif['motif_id'], motif['2d'], web_location)
+            shutil.copy(motif['2d'], web_location)
+
         return None
