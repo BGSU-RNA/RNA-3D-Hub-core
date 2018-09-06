@@ -131,6 +131,10 @@ MOTIF_GROUP_NAME = '{type}_{handle}.{version}'
 """Filename to cache to NR data to"""
 NR_CACHE_NAME = 'nr'
 
+"""Filename to cache chain_chain comparison data to"""
+CCC_CACHE_NAME = 'ccc'
+
+
 """Max discrepancy to allow for chain chain discrepancies"""
 MAX_RESOLUTION_DISCREPANCY = 4.0
 
