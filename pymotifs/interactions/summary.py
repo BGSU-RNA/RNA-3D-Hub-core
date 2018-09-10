@@ -179,7 +179,8 @@ class Loader(core.SimpleLoader):
                 outerjoin(mod.UnitPairsInteractions,
                           mod.UnitInfo.unit_id == mod.UnitPairsInteractions.unit_id_1).\
                 filter(mod.UnitInfo.pdb_id == pdb_id).\
-                filter(mod.UnitInfo.unit_type_id == 'rna')
+                filter(mod.UnitInfo.unit_type_id == 'rna').\
+                filter(mod.UnitInfo.unit.in_('A','C','G','U'))
 
             data = coll.defaultdict(lambda: coll.defaultdict(int))
             for result in query:
