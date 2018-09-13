@@ -12,19 +12,19 @@ class Wrapper(coll.namedtuple('Wrapper', ['initial', 'final', 'fn'])):
         return self.fn(*args, **kwargs)
 
 
-def maybe_str(value, strip=False):
+def maybe_str(value, strip=False, also_none=set()):
     val = value
     if val:
         if strip and isinstance(val, str):
             val = value.strip()
-        if val:
+        if val and val.lower() not in also_none:
             return str(val)
     return None
 
 
-def none_or(func, strip=True):
-    def fn(value, strip=strip):
-        val = maybe_str(value, strip=strip)
+def none_or(func, strip=True, also_none=set()):
+    def fn(value, strip=strip, also_none=also_none):
+        val = maybe_str(value, strip=strip, also_none=also_none)
         if not val:
             return None
         return func(val)

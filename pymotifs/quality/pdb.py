@@ -4,6 +4,8 @@ pdb_quality table.
 """
 import os
 
+import os
+
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.quality.utils import Parser
@@ -91,4 +93,6 @@ class Loader(core.SimpleLoader):
             The quality data for the structure.
         """
         filename = self._create(Utils).filename(pdb)
+        if not os.path.exists(filename):
+            raise core.Skip("No quality for %s" % pdb)
         return self.parse(filename)

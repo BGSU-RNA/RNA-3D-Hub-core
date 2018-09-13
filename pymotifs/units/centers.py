@@ -28,6 +28,6 @@ class Loader(core.SimpleLoader):
                     yield mod.UnitCenters(unit_id=residue.unit_id(),
                                           name=name,
                                           pdb_id=pdb,
-                                          x=center[0],
-                                          y=center[1],
-                                          z=center[2])
+                                          x=float(center[0]),
+                                          y=float(center[1]),
+                                          z=float(center[2]))

@@ -126,7 +126,6 @@ class Loader(core.SimpleLoader):
             loop_id = self._get_loop_id(full_id, pdb, loop_type, mapping)
             loops[index].Filename = loop_id
 
-            print((loop_id, loop.full_id))
             data.append(mod.LoopInfo(
                 loop_id=loop_id,
                 type=loop_type,
