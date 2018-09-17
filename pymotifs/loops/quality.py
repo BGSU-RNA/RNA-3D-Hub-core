@@ -480,7 +480,7 @@ class Loader(core.SimpleLoader):
                 filter_by(unit_type_id='rna').\
                 filter_by(unit.in_('A','C','G','U')).\
                 filter_by(pdb_id=pdb)
-            data.update({r.unit_id: r.z_score for r in query})
+            data.update({r.unit_id: r.real_space_r_z_score for r in query})
             return data
 
     def is_fictional_loop(self, rsrz, loop):
@@ -539,10 +539,10 @@ class Loader(core.SimpleLoader):
             return 5
         if self.is_complementary(loop):
             return 6
-        # if self.is_fictional(assess.rsrz, loop):
-        #     return 8
-        # if self.has_fictional_pair(assess.rsrz, loop):
-        #     return 9
+        if self.is_fictional_loop(assess.rsrz, loop):
+            return 8
+        if self.is_fictional_pair(assess.rsrz, loop):
+            return 9
         return 1
 
     def quality(self, assess, release_id, loop):

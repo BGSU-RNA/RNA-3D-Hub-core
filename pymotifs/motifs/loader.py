@@ -14,8 +14,12 @@ from pymotifs.motifs.assignments import Loader as AssignmentLoader
 from pymotifs.motifs.discrepancies import Loader as DiscrepancyLoader
 from pymotifs.motifs.loop_positions import Loader as LoopPositionLoader
 # from pymotifs.motifs.parent_counts import Loader as ParentCountsLoader
+from pymotifs.motifs.annotations import Loader as AnnotationLoader
+from pymotifs.motifs.secondary_structure import Loader as SecondaryStructureLoader
 
 
 class Loader(core.StageContainer):
     stages = set([ReleaseLoader, DiscrepancyLoader, MotifLoader, LoopOrderLoader,
-              LoopPositionLoader, AssignmentLoader, ParentLoader])
+              LoopPositionLoader, AssignmentLoader, AnnotationLoader, 
+              SecondaryStructureLoader, ParentLoader])
+

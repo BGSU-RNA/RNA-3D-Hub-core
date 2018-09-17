@@ -22,11 +22,14 @@ from pymotifs.interactions.loader import Loader as InteractionLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
 from pymotifs.chain_chain.loader import Loader as ChainChainLoader
+from pymotifs.quality.loader import Loader as QualityLoader
+from pymotifs.units.loader import Loader as UnitsLoader
 
 
 class Loader(core.MassLoader):
     dependencies = set([ChainLoader, ChainSpeciesLoader, InteractionLoader,
-                        IfeLoader, CorrespondenceLoader, ChainChainLoader])
+                        IfeLoader, CorrespondenceLoader, ChainChainLoader,
+                        QualityLoader, UnitsLoader])
     update_gap = dt.timedelta(7)
 
     def has_data(self, *args, **kwargs):

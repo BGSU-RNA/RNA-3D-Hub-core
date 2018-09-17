@@ -1,5 +1,6 @@
 import unittest
 import pytest
+from collections import Counter
 
 from test import StageTest
 
@@ -178,3 +179,20 @@ class UnusualUnitsTest(StageTest):
             }
         }
         pass
+
+
+class ModelsTest(StageTest):
+    @classmethod
+    def setUpClass(cls):
+        with open('test/files/validation/1zbl_validation.xml.gz', 'rb') as raw:
+            cls.parser = ntq.Parser(raw.read())
+            cls.nts = list(cls.parser.nts())
+
+    @pytest.mark.skip()
+    def test_maps_all_nts(self):
+        pass
+
+    def test_can_generate_unique_mappings_with_models(self):
+        counts = Counter(self.nts)
+        assert '1ZBL|1|C|G|1' in counts()
+        assert counts.most_common[0] == 1

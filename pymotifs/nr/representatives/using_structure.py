@@ -1,15 +1,12 @@
-import abc
-import copy
-import inspect
 import operator as op
 import itertools as it
 
 from pymotifs import core
-from pymotifs.utils import known_subclasses
 
 from pymotifs.constants import NR_BP_PERCENT_INCREASE
 from pymotifs.constants import NR_LENGTH_PERCENT_INCREASE
-from pymotifs.constants import NR_ALLOWED_METHODS
+
+from .core import Representative
 
 
 def bp_per_nt(chain):
@@ -28,66 +25,28 @@ def bp_per_nt(chain):
     return (ratio, resolution, chain['id'])
 
 
-class Representative(core.Base):
-    """Just a base class for all things that find representatives. This is only
-    for book keeping purposes and implements nothing.
-    """
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractproperty
-    def method(self):
-        """The method name for this representative finder. This should be a
-        unique string among all representative subclasses.
-        """
-        return None
-
-
-def known():
-    finders = []
-    for subclass in known_subclasses(Representative, globals()):
-        finders.append((subclass.method, subclass))
-    return finders
-
-
-def fetch(name):
-    """Get the class that implements the given method name.
-
-    Parameters
-    ----------
-    name : str
-        Method name to use
-
-    Returns
-    -------
-    finder : class
-        A class that implements the given method.
-    """
-    for key, value in globals().items():
-        if inspect.isclass(value) and issubclass(value, Representative) and \
-                getattr(value, 'method', None) == name:
-            return value
-    raise ValueError("Unknown method %s" % name)
-
-
 class Naive(Representative):
-    """This will select the naive representative. This just selects the chain
+    """
+    This will select the naive representative. This just selects the chain
     with the most bp/nt and uses that as the representative.
     """
     method = 'naive'
 
     def __call__(self, group):
-        return sorted(group['members'], key=bp_per_nt, reverse=True)[0]
+        return sorted(group['members'], key=bp_per_nt, reverse=True)
 
 
 class Increase(Representative):
-    """A class to find the representative for a group of ifes. This will find
+    """
+    A class to find the representative for a group of ifes. This will find
     the best in terms of bp/nt and attempt to find all those with more bp's and
     nts in the set.
     """
     method = 'percent-increase'
 
     def initial_representative(self, group):
-        """Find the best chain terms of bps/nts. This is the starting point for
+        """
+        Find the best chain terms of bps/nts. This is the starting point for
         finding the representative in a set of ifes. This method is naive
         because it does not favor more complete structures. In addition, it is
         very sensitive to minor changes in number of basepairs and nts.
@@ -102,10 +61,11 @@ class Increase(Representative):
             The initial representative.
         """
         naive = Naive(self.config, self.session)
-        return naive(group)
+        return naive(group)[0]
 
     def candidates(self, best, members):
-        """Find all possible candidates for a representative within the group,
+        """
+        Find all possible candidates for a representative within the group,
         given a current best ife. This finds all chains that have at least as
         many basepairs and nucleotides as the best chain. The chains will be
         returned in sorted order.
@@ -117,14 +77,18 @@ class Increase(Representative):
 
         len = op.itemgetter('length')
         bp = op.itemgetter('bp')
-        same = lambda c: bp(c) == bp(best) and len(c) == len(best)
+
+        def same(chain):
+            return bp(chain) == bp(best) and len(chain) == len(best)
+
         possible = it.ifilter(lambda c: len(c) >= len(best), members)
         possible = it.ifilter(lambda c: bp(c) >= bp(best), possible)
         possible = it.ifilterfalse(same, possible)
         return sorted(possible, key=bp_per_nt, reverse=True)
 
     def increase(self, first, second, key):
-        """Compute the percent increase for the given set of dictionaries and
+        """
+        Compute the percent increase for the given set of dictionaries and
         with the given key. If the second one is 0 then we return 100 for 100%
         increase.
 
@@ -142,7 +106,8 @@ class Increase(Representative):
 
     def best_above_cutoffs(self, representative, candidates, length_increase,
                            bp_increase):
-        """This will find the true representative given a current one and a
+        """
+        This will find the true representative given a current one and a
         list of candidates. This will attempt to maximize the number of bps and
         nts in the candidate as compared to the current representative. In
         addition, it will only change representatives if we have have enough of
@@ -161,40 +126,10 @@ class Increase(Representative):
                 return candidate
         return representative
 
-    def filter_group(self, group, methods=NR_ALLOWED_METHODS):
-        """This will filter the group that is being examiend to just a copy of
-        the parent, and members entries. This is done so that we have a group
-        that we can manipulate without messing up parts elsewhere. In addition,
-        the members of the group will be filtered to only those with allowed
-        methods. These are the methods listed in the methods set.
-
-        Parameters
-        ----------
-        group : dict
-            A group dictonary that must have 'parent' and 'members' entries.
-        methods : set
-            A set of method names that are allowed. If no members have the
-            given method then all are used.
-
-        Returns
-        -------
-        copied : dict
-            A group dictonary with only the 'parent' and 'members' entries.
-        """
-
-        meth = op.itemgetter('method')
-        members = [ife for ife in group['members'] if meth(ife) in methods]
-        if not members:
-            members = group['members']
-
-        return {
-            'parent': copy.deepcopy(group.get('parent', [])),
-            'members': copy.deepcopy(members),
-        }
-
     def __call__(self, initial, length_increase=NR_LENGTH_PERCENT_INCREASE,
                  bp_increase=NR_BP_PERCENT_INCREASE):
-        """Find the representative for the group.
+        """
+        Find the representative for the group.
 
         Parameters
         ----------
@@ -213,7 +148,7 @@ class Increase(Representative):
         The ife which should be the representative.
         """
 
-        group = self.filter_group(initial)
+        group = self.filter_group_by_method(initial)
         best = self.initial_representative(group)
         if not best:
             raise core.InvalidState("No current representative")
@@ -237,11 +172,14 @@ class Increase(Representative):
             raise core.InvalidState("No representative found")
 
         self.logger.debug("Computed representative: %s", rep['id'])
-        return rep
+        return self.insert_as_representative(rep,
+                                             initial['members'],
+                                             sort=bp_per_nt)
 
 
 class AnyIncrease(Increase):
-    """A modification of the percent-increase representative method that will
+    """
+    A modification of the percent-increase representative method that will
     instead select the representative if it has any increase in length and bp.
     """
     method = 'any-increase'
@@ -253,14 +191,16 @@ class AnyIncrease(Increase):
 
 
 class ParentIncrease(Increase):
-    """This is a modification of the percent increase method which uses the
+    """
+    This is a modification of the percent increase method which uses the
     parent representative as the initial representative, if possible. If this
     is not possible then it will go back to the simple bp/nt selection.
     """
     method = 'parent-percent-increase'
 
     def initial_representative(self, group):
-        """Select the initial representative. This will be the representative
+        """
+        Select the initial representative. This will be the representative
         for the parent if there is only 1 parent. If there is more than 1
         parent, or none, then this will switch to bp/nt.
 

@@ -131,13 +131,17 @@ MOTIF_GROUP_NAME = '{type}_{handle}.{version}'
 """Filename to cache to NR data to"""
 NR_CACHE_NAME = 'nr'
 
+"""Filename to cache chain_chain comparison data to"""
+CCC_CACHE_NAME = 'ccc'
+
+
 """Max discrepancy to allow for chain chain discrepancies"""
 MAX_RESOLUTION_DISCREPANCY = 4.0
 
 """Min number of nts to need for computing discrepancies"""
 MIN_NT_DISCREPANCY = 3
 
-NR_REPRESENTATIVE_METHOD = 'percent-increase'
+NR_REPRESENTATIVE_METHOD = 'compscore'
 """What representative selection method to use"""
 
 RSRZ_PAIRED_OUTLIERS = 1
@@ -157,7 +161,31 @@ MOTIF_RESOLUTION_CUTOFF = '4.0'
 """The resolution cutoff for representatives to use in the ML atlas"""
 
 MANUAL_IFE_REPRESENTATIVES = set([
-  '4LFB|1|A',  # TTh SSU
-    ])
-"""List of IFEs to use as the representative of its equivalence class"""
-"""Until superseded by some criteria that the pipeline is able to check"""
+    '4LFB|1|A',  # TTh SSU
+    '4V9F|1|0',  # Hm LSU
+])
+"""
+List of IFEs to use as the representative of its equivalence class
+Until superseded by some criteria that the pipeline is able to check
+"""
+
+WORSE_THAN_MANUAL_IFE_REPRESENTATIVES = set()
+"""
+The collection of automatically selected representatives that have already
+been evaulated as worse than the manually selected ones, despite what the
+program things.
+"""
+
+"""
+The coefficients below were set by Craig Zirbel in August 2017 with the
+goal of making each quality indicator contribute equally to the standard
+deviation of the composite quality score.
+"""
+COMPSCORE_COEFFICENTS = {
+    'resolution': 1,
+    'average_rsr': 8,
+    'percent_clash': 0.6,
+    'average_rscc': 8,
+    'rfree': 18,
+    'fraction_unobserved': 4,
+}

@@ -22,6 +22,7 @@ from pymotifs.constants import NR_CACHE_NAME
 
 from pymotifs.nr.chains import Loader as NrChainLoader
 from pymotifs.nr.classes import Loader as NrClassLoader
+from pymotifs.nr.cqs import NrQualityLoader
 from pymotifs.chain_chain.comparision import Loader as SimilarityLoader
 
 
@@ -35,7 +36,7 @@ class Loader(core.SimpleLoader):
     """
 
     trials = 10
-    dependencies = set([NrChainLoader, NrClassLoader, SimilarityLoader])
+    dependencies = set([NrChainLoader, NrClassLoader, NrQualityLoader, SimilarityLoader])
 
     def to_process(self, pdbs, **kwargs):
         """Look up all NR classes. This ignores the given PDBs and just creates

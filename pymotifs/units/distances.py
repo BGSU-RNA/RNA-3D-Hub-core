@@ -171,4 +171,4 @@ class Loader(core.SimpleLoader):
             distance = self.distance(residue1, residue2)
             yield mod.UnitPairsDistances(unit_id_1=residue1.unit_id(),
                                          unit_id_2=residue2.unit_id(),
-                                         distance=distance)
+                                         distance=float(distance))
