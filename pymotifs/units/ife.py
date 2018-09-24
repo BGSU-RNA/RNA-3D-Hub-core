@@ -10,15 +10,15 @@ import pymotifs.core as core
 
 from pymotifs import models as mod
 from pymotifs.utils import units
-from pymotifs.download import Downloader
-from pymotifs.pdbs.info import Loader as PdbLoader
+#from pymotifs.download import Downloader
+#from pymotifs.pdbs.info import Loader as PdbLoader
 
 
 class Loader(core.SimpleLoader):
     """The loader that will populate the unit_info table in the database.
     """
 
-    dependencies = set([Downloader, PdbLoader])
+    #dependencies = set([Downloader, PdbLoader])
     """The dependencies for this stage."""
 
     def query(self, session, pdb):
@@ -36,7 +36,9 @@ class Loader(core.SimpleLoader):
         query : sqlalchemy.orm.query.Query
             A query to find all units from the given structure.
         """
-        return session.query(mod.UnitIfe).filter_by(pdb_id=pdb)
+        return session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
+        #return session.query(mod.UnitInfo).filter_by(pdb_id=pdb).\
+        #                        filter_by(unit_type_id='rna')
 
     def ife_list(self, session, pdb):
         """Identify all valid IFEs for the input PDB.
@@ -56,18 +58,24 @@ class Loader(core.SimpleLoader):
         return session.query(mod.IfeInfo.ife_id).filter_by(pdb_id=pdb)
 
     def as_unit(self, nt):
-        """Turn a `Component` into a `UnitInfo`.
+        """Turn a `Component` into a `UnitIfe`.
 
         Parameters
         ----------
         nt : Component
-            The `Component` to turn into a `UnitInfo`.
+            The `Component` to turn into a `UnitIfe`.
 
         Returns
         -------
-        unit : UnitInfo
-            The `Component` as a `UnitInfo`
+        unit : UnitIfe
+            The `Component` as a `UnitIfe`
         """
+        ife_parts = [nt.pdb, nt.model, nt.chain]
+        pseudo_ife = '|'.join(ife_parts)
+
+        self.logger.info("Pseudo_ife = %s", pseudo_ife)
+
+        pass
 
         return mod.UnitInfo(unit_id=nt.unit_id(),
                             pdb_id=nt.pdb,
@@ -96,6 +104,12 @@ class Loader(core.SimpleLoader):
         data : iterator
             An iterable over all units in the structure.
         """
+        self.logger.info("PDB file: %s", pdb)
 
         structure = self.structure(pdb)
-        return it.imap(self.as_unit, structure.residues(polymeric=None))
+        self.logger.info("Structure: %s", structure)
+
+        mapping = it.imap(self.as_unit, structure.residues(polymeric=None))
+        self.logger.info("Mapping: %s", mapping)
+        return mapping
+        #return it.imap(self.as_unit, structure.residues(polymeric=None))
