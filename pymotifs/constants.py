@@ -134,7 +134,6 @@ NR_CACHE_NAME = 'nr'
 """Filename to cache chain_chain comparison data to"""
 CCC_CACHE_NAME = 'ccc'
 
-
 """Max discrepancy to allow for chain chain discrepancies"""
 MAX_RESOLUTION_DISCREPANCY = 4.0
 
@@ -154,20 +153,23 @@ NR_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
 """List of methods are allowed when selecting the representative of an NR
 group"""
 
-MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION', 'ELECTRON MICROSCOPY'])
+MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
+#MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION', 'ELECTRON MICROSCOPY'])
 """list of methods allowed when selected loops from representatives."""
 
 MOTIF_RESOLUTION_CUTOFF = '4.0'
 """The resolution cutoff for representatives to use in the ML atlas"""
 
-MANUAL_IFE_REPRESENTATIVES = set([
-    '4LFB|1|A',  # TTh SSU
-    '4V9F|1|0',  # Hm LSU
-])
+MANUAL_IFE_REPRESENTATIVES = set()
+#MANUAL_IFE_REPRESENTATIVES = set([
+#    '4LFB|1|A',  # TTh SSU
+#    '4V9F|1|0',  # Hm LSU
+#])
 """
 List of IFEs to use as the representative of its equivalence class
 Until superseded by some criteria that the pipeline is able to check
 """
+# two entries inactivated on 2018-01-09 (JJC)
 
 WORSE_THAN_MANUAL_IFE_REPRESENTATIVES = set()
 """
