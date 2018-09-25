@@ -1,6 +1,6 @@
 function [Text] = motifToVarna(Search, Location, execute)
 
-    javaCommand = 'java -Djava.awt.headless=true -cp ../VARNAv3-7.jar fr.orsay.lri.varna.applications.VARNAcmd';
+    javaCommand = 'java -Djava.awt.headless=true -cp ../bin/VARNAv3-7.jar fr.orsay.lri.varna.applications.VARNAcmd';
     destination = [Location filesep '2ds'];
     if ~exist(destination,'dir'), mkdir(destination); end
 

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT request="Taxon:4930&amp;display=xml">
+<taxon scientificName="Saccharomyces" taxId="4930" parentTaxId="4893" rank="genus" hidden="false" taxonomicDivision="FUN" geneticCode="1" mitochondrialGeneticCode="3">
+        <lineage>
+            <taxon scientificName="Saccharomycetaceae" taxId="4893" rank="family" hidden="false"></taxon>
+            <taxon scientificName="Saccharomycetales" commonName="budding yeasts" taxId="4892" rank="order" hidden="false"></taxon>
+            <taxon scientificName="Saccharomycetes" taxId="4891" rank="class" hidden="false"></taxon>
+            <taxon scientificName="Saccharomycotina" taxId="147537" rank="subphylum" hidden="false"></taxon>
+            <taxon scientificName="saccharomyceta" taxId="716545" hidden="true"></taxon>
+            <taxon scientificName="Ascomycota" commonName="ascomycetes" taxId="4890" rank="phylum" hidden="false"></taxon>
+            <taxon scientificName="Dikarya" taxId="451864" rank="subkingdom" hidden="false"></taxon>
+            <taxon scientificName="Fungi" commonName="fungi" taxId="4751" rank="kingdom" hidden="false"></taxon>
+            <taxon scientificName="Opisthokonta" taxId="33154" hidden="true"></taxon>
+            <taxon scientificName="Eukaryota" commonName="eucaryotes" taxId="2759" rank="superkingdom" hidden="false"></taxon>
+            <taxon scientificName="cellular organisms" taxId="131567" hidden="true"></taxon>
+            <taxon scientificName="root" taxId="1" hidden="true"></taxon>
+        </lineage>
+        <children>
+            <taxon scientificName="Saccharomyces sp. KPU5" taxId="111793" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. A6" taxId="134820" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 6904" taxId="138942" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces norbensis" taxId="190979" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces douglasii" taxId="46617" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Actiflore RB2" taxId="317875" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Anchor VIN13" taxId="317876" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 319" taxId="323433" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 441" taxId="323431" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces castelli" taxId="340169" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W46" taxId="367818" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W150" taxId="367823" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. AS 2.3317" taxId="443866" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 11011" taxId="325952" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces uvarum" taxId="489137" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. GE14S01" taxId="588747" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. XJ-CW-65Y" taxId="684751" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. MTCC 1512" taxId="693070" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces arboricola" taxId="706196" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. TCJ250" taxId="765297" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces bayanus x Saccharomyces uvarum" taxId="1219477" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 1489" taxId="1337547" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. NI_22a-4" taxId="1387537" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. YC9.13" taxId="1447902" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. DBP57" taxId="1703990" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 12-C1-P5A1" taxId="1749046" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 7662" taxId="138944" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. KI3" taxId="225366" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces ellipsoideus" taxId="62271" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Zymaflore F10" taxId="317874" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. W46" taxId="323430" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 11002" taxId="325949" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 11003" taxId="325950" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. W108" taxId="374799" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CW3.6" taxId="676024" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WLY-2" taxId="690522" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. TCJ251" taxId="765298" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Z5Y36" taxId="1123634" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. NI_22a-1" taxId="1387534" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 16-C2-P2A4" taxId="1749049" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae" commonName="baker's yeast" taxId="4932" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Anchor NT50" taxId="342595" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W48" taxId="367819" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W40" taxId="367822" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces bayanus x Saccharomyces cerevisiae" taxId="89981" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 13w-2" taxId="575894" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. GJ11M03" taxId="639378" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. J-2" taxId="690521" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. TCJ245" taxId="765295" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. LCF-05" taxId="1041476" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. BTPJ1" taxId="1131873" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces kudriavzevii x Saccharomyces bayanus" taxId="1219479" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 96c" taxId="1353329" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 6903" taxId="1337643" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 2909" taxId="1337548" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 1227" taxId="1337546" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. DBP56" taxId="1703989" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 5-C1-P8B5" taxId="1749059" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces kudriavzevii" taxId="114524" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 6463" taxId="138941" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. IFO 11058" taxId="200337" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. ALP1" taxId="218926" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces paradoxus" taxId="27291" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces pastorianus" taxId="27292" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces chevalieri" taxId="62270" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cariocus" taxId="109211" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 11004" taxId="325951" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. DSM Fermicru VB1" taxId="342592" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W9" taxId="367814" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 798_2_CP03" taxId="576037" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. EU15S03" taxId="639377" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. XG-1" taxId="690523" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 46ANBNE05" taxId="913579" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. S433Y12" taxId="1123632" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 98c" taxId="1353330" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 19-C2-P5B5" taxId="1749051" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. A4" taxId="134819" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 4906" taxId="138937" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. IFO 11059" taxId="200338" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. IFO 11060" taxId="200339" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 'boulardii'" taxId="252598" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Lalvin W46" taxId="317877" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces bayanus x cerevisiae x cf. kudriavzevii" taxId="332110" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces bayanus x Saccharomyces cerevisiae x Saccharomyces kudriavzevii" taxId="332111" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 172" taxId="323432" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 2834" taxId="323439" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. W27" taxId="323429" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Anchor Vin7" taxId="342591" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W23" taxId="367815" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W10" taxId="367821" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W19" taxId="370045" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Assmannshausen RCRG2005" taxId="342593" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 4w-2" taxId="575895" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. EN14S01" taxId="588746" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces paradoxus" taxId="595493" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CW4.4" taxId="676026" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. XJ-Q0-45" taxId="697944" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cf. cerevisiae/paradoxus RS-2012" taxId="1186044" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. AGY1" taxId="1239392" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. NI_22a-3" taxId="1387536" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. NCYC D5088" taxId="1423350" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces kudriavzevii x Saccharomyces uvarum" taxId="1431717" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces eubayanus x Saccharomyces uvarum" taxId="1470621" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 26-C4-P8F5" taxId="1749058" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 25-C4-P8A9" taxId="1749057" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 24-C4-P4D5" taxId="1749056" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 22-C3-P3A5" taxId="1749054" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces mikatae" taxId="114525" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 2248" taxId="138936" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 3006" taxId="138938" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 3007" taxId="138939" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. DH1-1A" taxId="173900" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. IFO 10917" taxId="197675" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces globosus" taxId="27290" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CID1" taxId="89980" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Lalvin ICV-D254" taxId="317873" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 126" taxId="323434" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 8614" taxId="323440" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. SPG16-91" taxId="323436" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 11000" taxId="325948" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W43" taxId="367816" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W45" taxId="367817" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W135" taxId="368605" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. ST-422" taxId="374374" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cariocanus" taxId="114526" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. NRRL 409-1B" taxId="138940" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. YS35" taxId="358413" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. C8-5" taxId="610361" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CW3.5" taxId="676023" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CW3.9" taxId="676025" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces bayanus" taxId="1219478" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. NI_22a-2" taxId="1387535" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 20-C2-P2D6" taxId="1749052" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 14-C2-P9G9" taxId="1749048" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 2440" taxId="208489" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. S6U" taxId="95684" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces kudriavzevii" taxId="332112" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 1885" taxId="323437" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. SPG14-91" taxId="323435" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W58" taxId="367820" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 5p-1" taxId="575896" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 8c-m" taxId="575897" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces carlsbergensis" taxId="571644" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. GY27S05" taxId="588748" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. TCJ247" taxId="765296" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Z5Y40" taxId="1123635" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. Z5Y33" taxId="1123633" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 4255" taxId="1337551" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 7-C1-P9C1" taxId="1749060" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 2165" taxId="208488" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces uvarum" taxId="230603" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces bayanus" taxId="4931" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp." taxId="4935" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. URFJ 50791" taxId="90929" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 1388" taxId="325946" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CECT 1990" taxId="325947" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W8" taxId="367824" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. WW-W157" taxId="368606" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. ST-394" taxId="374373" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 6334" taxId="218929" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 8615" taxId="323438" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces cf. kudriavzevii" taxId="332083" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 9c-1" taxId="575898" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces eubayanus" taxId="1080349" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces cerevisiae x Saccharomyces mikatae" taxId="1325678" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 2919" taxId="1337550" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. CBS 1464" taxId="1337545" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. PVK14" taxId="1455581" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces aff. eubayanus FYB-2014" taxId="1485226" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 23-C3-P3A1" taxId="1749055" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 21-C2-P8A1" taxId="1749053" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 18-C2-P8C9" taxId="1749050" rank="species"></taxon>
+            <taxon scientificName="Saccharomyces sp. 13-C2-P5C1" taxId="1749047" rank="species"></taxon>
+        </children>
+        <synonym type="synonym" name="Pachytichospora"></synonym>
+    </taxon>
+</ROOT>

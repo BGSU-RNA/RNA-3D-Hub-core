@@ -21,6 +21,9 @@ function [] = groupsToGraphML(Location, groups, M, names, cutoff)
         load( fullfile(Location, 'Groups', sprintf('Group_%03d',i)) );        
         
         [a,b,c] = intersect(groups{i},names);        
+        b = reshape(b, 1, []);
+        c = reshape(c, 1, []);
+
         submatrix = M(c,c);
         
         fprintf(fid,'<node id="Group_%03d">\n',i);
@@ -35,6 +38,9 @@ function [] = groupsToGraphML(Location, groups, M, names, cutoff)
                         
             if i ~= j
                 [x,y,z] = intersect(groups{j},names);                
+                y = reshape(y, 1, []);
+                z = reshape(z, 1, []);
+
                 if ~isempty(find((M(c,z)<=cutoff),1))
                     submatrix = M(c,z);
                     fprintf(fid,'<edge id="%ito%i" source="Group_%03d" target="Group_%03d">\n',i,j,i,j);

@@ -72,6 +72,7 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, saveMatFile)
 
              % extra nucleotides in the original file
             [extra,indExtra] = setdiff(indices2, indices1);
+            indExtra         = reshape(indExtra, 1, []);
 
             F2.Edge = fix(abs(F2.Edge));
             interactions         = reshape(F2.Edge(indExtra,:),1,[]);
@@ -133,6 +134,7 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, saveMatFile)
 
         for nt1 = indExtra
             [a,b] = intersect(F2.Edge(nt1,:), disallowed_interactions);
+            b = reshape(b, 1, []);
             % extra nucleotides can make more than one basepair
             for nt2 = b
                 nt1_name = sprintf('%s%s', F2.NT(nt1).Base, F2.NT(nt1).Number);

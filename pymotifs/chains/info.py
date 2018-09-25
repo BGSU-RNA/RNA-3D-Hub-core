@@ -1,0 +1,95 @@
+"""Query PDB for chain level information.
+
+This asks PDB for the chain level information like sequence and compound for
+the database. This works across several structures at once. This will merge the
+data into the database if run several times the same data.
+"""
+
+from pymotifs import core
+from pymotifs import models as mod
+from pymotifs.utils.pdb import CustomReportHelper
+
+from pymotifs.pdbs.loader import Loader as PdbLoader
+
+
+class Loader(core.MassLoader):
+    merge_data = True
+    dependencies = set([PdbLoader])
+    @property
+    def table(self):
+        return mod.ChainInfo
+
+    names = {
+        'structureId': 'pdb_id',
+        'chainId': 'chain_name',
+        'classification': 'classification',
+        'macromoleculeType': 'macromolecule_type',
+        'entityId': 'entity_name',
+        'sequence': 'sequence',
+        'chainLength': 'chain_length',
+        'source': 'source',
+        'taxonomyId': 'taxonomy_id',
+        'entityMacromoleculeType': 'entity_macromolecule_type',
+        'compound': 'compound'
+    }
+
+    def rename(self, report):
+        renamed = {}
+        for key, name in self.names.items():
+            renamed[name] = report.get(key)
+        renamed['chain_id'] = report.get('chain_id')
+        return renamed
+
+    def get_ids(self, reports):
+        pdbs = [report['structureId'] for report in reports]
+        chains = [report['chainId'] for report in reports]
+
+        mapping = {}
+        known_pdbs = set()
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.chain_id,
+                                  mod.ChainInfo.pdb_id,
+                                  mod.ChainInfo.chain_name).\
+                filter(mod.ChainInfo.pdb_id.in_(pdbs)).\
+                filter(mod.ChainInfo.chain_name.in_(chains))
+
+            for result in query:
+                mapping[(result.pdb_id, result.chain_name)] = result.chain_id
+                known_pdbs.add(result.pdb_id)
+
+        for report in reports:
+            db_id = mapping.get((report['structureId'], report['chainId']))
+            if not db_id and report['structureId'] in known_pdbs:
+                self.logger.error("It seems a new chain %s was added to %s",
+                                  report['chainId'], report['structureId'])
+
+            if db_id:
+                report['chain_id'] = db_id
+
+        return reports
+
+    def has_data(self, pdb, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.ChainInfo).\
+                filter_by(pdb_id=pdb).\
+                limit(1)
+
+            return bool(query.count())
+
+    def data(self, pdbs, **kwargs):
+        helper = CustomReportHelper(fields=self.names)
+        reports = helper(pdbs)
+        data = []
+        for report in self.get_ids(reports):
+            renamed = self.rename(report)
+            data.append(renamed)
+
+        known = set(pdbs)
+        seen = set(entry['pdb_id'] for entry in data)
+
+        if len(seen) != len(known):
+            missing = known - seen
+            self.logger.error("Could not get info on all pdbs: %s",
+                              ','.join(missing))
+
+        return data

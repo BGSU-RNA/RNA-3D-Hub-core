@@ -23,8 +23,8 @@ function [filename, err_msg] = loadRedundantNucleotides(pdb_id)
         N = length(indexes);
         for i = 1:N
             [x, y] = ind2sub(F.NumNT, indexes(i));
-            nt_id1 = aGetNTId(F, x);
-            nt_id2 = aGetNTId(F, y);
+            nt_id1 = F.NT(x).ID;
+            nt_id2 = F.NT(y).ID;
             fprintf(fid, '"%s","%s"\n', nt_id1, nt_id2);            
         end               
         

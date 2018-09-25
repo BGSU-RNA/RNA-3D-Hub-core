@@ -31,3 +31,23 @@ publish
 
 # project specific
 *.m~
+.python-version
+.agignore
+todo.txt
+.tasks
+.envrc
+.direnv/
+
+GTAGS
+GPATH
+GRTAGS
+conf/*.json
+data/
+logs/
+tags
+.opengrok/
+cache/
+ss-diagrams/
+
+docs/build/*
+default.nix

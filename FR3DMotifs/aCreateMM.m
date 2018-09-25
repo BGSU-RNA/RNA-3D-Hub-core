@@ -52,6 +52,7 @@ function MM = aCreateMM(loop_ids)
         	no_candidates = textscan(fid, '%s');
         	fclose(fid);
             [a,b] = intersect(loop_ids, no_candidates{1});
+            b = reshape(b, 1, []);
             if ~isempty(b)
                 MM(i,b) = NO_MATCH;
             end
@@ -72,6 +73,7 @@ function MM = aCreateMM(loop_ids)
         targets = arrayfun(@(x) x.name(13:23), filelist, 'UniformOutput', false);
         
         [a,b] = intersect(loop_ids, targets);
+        b = reshape(b, 1, []);
         
         for j = 1:length(b)
             

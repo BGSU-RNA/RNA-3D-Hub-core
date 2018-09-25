@@ -1,0 +1,27 @@
+{
+    "email": {
+        "subject": "Pipeline results",
+        "host": "your-host",
+        "from": "bob",
+        "to": "joe",
+        "login": false,
+        "password": false
+    },
+
+    "db": {
+        "uri": "mysql://user:pass@127.0.0.1/database-name"
+    },
+
+    "release_mode": {
+        "loops": "minor",
+        "motifs": "minor",
+        "nrlist": "major"
+    },
+
+    "locations": {
+        "mlab_app": "/usr/local/bin/matlab",
+        "interactions_gz": "/home/pipeline/hub-core/pymotifs/interactions.gz",
+        "loops_gz": "/home/pipeline/hub-core/MotifAtlas/loops.gz"
+    }
+
+}

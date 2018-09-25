@@ -49,11 +49,12 @@ function [FILENAME, status, err_msg] = loadInteractions(pdb_id)
 
             [nt1, nt2] = ind2sub(File.NumNT, interactions(i));
 
-            nt_id1 = aGetNTId(File, nt1);
-            nt_id2 = aGetNTId(File, nt2);
+            nt_id1 = File.NT(nt1).ID;
+            nt_id2 = File.NT(nt2).ID;
 
             textAnnotation = functionHandle( matrix(nt1, nt2) );
-            crossing = File.Crossing(nt1, nt2);
+            crossing = full(File.Crossing(nt1, nt2));
+            crossing = crossing(1, 1);
 
             if strcmp(textAnnotation,'---- ') || strcmp(textAnnotation,'----')
                 continue;
