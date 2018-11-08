@@ -25,9 +25,9 @@ dwsync.xml
 
 # Folders to ignore
 .hg
+.idea
 .svn
 publish
-.idea
 
 # project specific
 *.m~
@@ -37,6 +37,8 @@ todo.txt
 .tasks
 .envrc
 .direnv/
+munge/
+report-files/
 
 GTAGS
 GPATH
