@@ -89,7 +89,7 @@ class IfeLoader(core.Base):
                 filter_by(chain=data['chain']).\
                 filter_by(model=model).\
                 filter_by(unit_type_id='rna').\
-                filter_by(unit.in_('A','C','G','U')).\
+                filter(mod.UnitInfo.unit.in_('A','C','G','U')).\
                 group_by(mod.UnitInfo.sym_op).\
                 limit(1)
             result = query.first()
