@@ -50,11 +50,11 @@ function [disc] = pairwiseSearch(file1, file2, exactSizeLimit)
     if ~exist('File2', 'var')
         [File2, file2] = getNameAndData(file2);
     end
- 
+
     % preserved from master branch during merge commit
     % do not search some large loops because they cause Matlab to run out of memory
-    % TODO: replace this temporary fix with a more general solution  
-    %if strcmp(file1, 'IL_1NBS_003') || strcmp(file1, 'IL_1NBS_010') || strcmp(file2, 'IL_1NBS_003') || strcmp(file2, 'IL_1NBS_010')        
+    % TODO: replace this temporary fix with a more general solution
+    %if strcmp(file1, 'IL_1NBS_003') || strcmp(file1, 'IL_1NBS_010') || strcmp(file2, 'IL_1NBS_003') || strcmp(file2, 'IL_1NBS_010')
     %   disc = Inf;
     %   addToNoCandidatesFile(file2, P);
     %   return;
@@ -185,8 +185,10 @@ function [matched] = aSearchFlankingBases(File1, File2, P)
 
     Query.Diagonal(1:Query.NumNT) = {'N'};
     Query.Edges = cell(Query.NumNT, Query.NumNT);
-    Query.Edges{1,4} = 'cWW';
-    Query.Edges{2,3} = 'cWW';
+    Query.Edges{1,Query.NumNT} = 'cWW';  % first and last make "outer" cWW
+    for kk = 2:2:(Query.NumNT-1),        % loop through all chain breaks
+        Query.Edges{kk,kk+1} = 'cWW';
+    end
 
     Query.DiscCutoff = P.Discrepancy;
     Query.RelCutoff  = Query.DiscCutoff;
@@ -205,17 +207,19 @@ function [matched] = aSearchFlankingBases(File1, File2, P)
 end
 
 function [File, Indices] = leaveOnlyFlankingBases(File)
-    chbr = File.chain_breaks;
-    Indices = [1 chbr chbr+1 length(File.NT)];
+    % File should contain only nucleotides from an HL, IL, J3, etc.
+    chbr = File.chain_breaks;      % already identified strand starts and ends
+    Indices = [1 chbr chbr+1 length(File.NT)];  % positions in the file of flanking cWWs
+    Indices = sort(Indices);          % put in increasing order, for J3, J4, ...
     fn = fieldnames(File);
-    for j = 1:length(fn)
+    for j = 1:length(fn)              % loop over fields in File data structure, for example Edge, Distance, ...
         [r,c] = size(File.(fn{j}));
-        if r == c && r == File.NumNT
-            File.(fn{j}) = File.(fn{j})(Indices, Indices);
+        if r == c && r == File.NumNT  % this field is a square matrix, one row/column for each nucleotide
+            File.(fn{j}) = File.(fn{j})(Indices, Indices); % pull out submatrix corresponding to Indices
         end
     end
-    File.NT = File.NT(Indices);
-    File.NumNT = 4;
+    File.NT = File.NT(Indices);       % keep just the nucleotides of the flanking pairs
+    File.NumNT = length(Indices);     % will work for IL, J3, J4, etc.
 end
 
 function [Query,S] = aConstructPairwiseSearch(File1, File2, P)
@@ -224,11 +228,11 @@ function [Query,S] = aConstructPairwiseSearch(File1, File2, P)
     S.File = [File1 File2];
     S.QIndex = [1 2];
 
-    if strcmp(F.Filename(1:2),'IL')
+    if strcmp(F.Filename(1:2),'HL')
+        Indices = 1:length(F.NT);     % keep bulged bases in HL comparisons
+    else
         bulges = aDetectBulgedBases(F);
         Indices = setdiff(1:length(F.NT),bulges);
-    else
-        Indices = 1:length(F.NT);
     end
 
     Query.Geometric      = 1;
@@ -254,21 +258,27 @@ function [Query,S] = aConstructPairwiseSearch(File1, File2, P)
         Query.Diff{i+1,i} = '>';
     end
 
-    if strcmp(File1.Filename(1:2), 'IL')
-        Query.Edges{1,Query.NumNT} = 'cWW';
-        chainbreak = find(Indices==File1.chain_breaks);
-        Query.Diff{chainbreak+1,chainbreak} = '';
-        Query.Edges{chainbreak,chainbreak+1} = 'cWW';
-
-        if File1.Flank(1,File1.chain_breaks) == 1
-            Query.Edges{1, find(Indices==File1.chain_breaks)} = 'flankSS';
-        end
-
-        if File1.Flank(File1.chain_breaks+1, end) == 1
-            Query.Edges{find(Indices==File1.chain_breaks+1), end} = 'flankSS';
-        end
-    else % HL
+    if strcmp(File1.Filename(1:2), 'HL')
         Query.Edges{1, Query.NumNT} = 'cWW flankSS';
+    else   % IL, J3, J4, ...
+        Query.Edges{1,Query.NumNT} = 'cWW';               % outer cWW basepair
+
+        chainbreak = find(Indices==File1.chain_breaks);   % indices of chain breaks, even after removing bulges
+        for kk = 1:length(chainbreak),
+            Query.Diff{chainbreak(kk)+1,chainbreak(kk)} = '';      % allow non-increasing nt number at strand breaks
+            Query.Edges{chainbreak(kk),chainbreak(kk)+1} = 'cWW';  % cWW interactions across chain breaks
+        end
+
+%       Commented out the following lines 2018-11-27 because:
+%       A. They would need to be recoded for J3, J4, ...
+%       B. Within strands, the first and last nucleotide should already satisfy the BorderSS or flankSS relation
+%        if File1.Flank(1,File1.chain_breaks) == 1
+%            Query.Edges{1, find(Indices==File1.chain_breaks)} = 'flankSS';
+%        end
+
+%        if File1.Flank(File1.chain_breaks+1, end) == 1
+%            Query.Edges{find(Indices==File1.chain_breaks+1), end} = 'flankSS';
+%        end
     end
 
 end
