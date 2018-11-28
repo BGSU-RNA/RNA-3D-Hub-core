@@ -317,13 +317,15 @@ function [FILENAME, err_msg] = aLoopQualityAssurance(pdb_id)
         if strcmp(loop_type,'IL') && unique_chains > 2
             isAbnormal = 1;
         end
-        if strcmp(loop_type,'J3') && unique_chains > 3
-            isAbnormal = 1;
+        for kk = 3:20,
+            if strcmp(loop_type,['J' num2str(kk)]) && unique_chains > kk
+                isAbnormal = 1;
+            end
         end
 
     end % foundChainAbnormalities
 
-    % Only for ILs. Return 0 is not self-complementary, 1 otherwise.
+    % Only for ILs. Return 0 if not self-complementary, 1 otherwise.
     function [isSelfCompl, seqs] = checkSelfComplementarity()
 
         isSelfCompl = 0; % by default not self-complementary
