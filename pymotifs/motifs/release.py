@@ -60,7 +60,9 @@ class Loader(core.MassLoader):
     data.
     """
 
-    types = ['IL', 'HL']
+    types = ['IL']
+    #types = ['J3']
+    #types = ['IL', 'HL']
     dependencies = set([NrLoader, LoopLoader])
 
     def nr_release_id(self, before_date=None, **kwargs):
