@@ -42,7 +42,10 @@ function [] = aAaSearches(loop_ids, start, stop, exactSizeLimit)
 
         for j = 1:N
             if isempty(intersect(done, loop_ids{j}))
+                fprintf('DEBUG(as): N, i, j:  %s, %s, %s\n', num2str(N), num2str(i), num2str(j));
+                fprintf('DEBUG(as): before pairwiseSearch\n');
                 pairwiseSearch(File, loop_ids{j}, exactSizeLimit);
+                fprintf('DEBUG(as): after pairwiseSearch\n');
             end
         end
 

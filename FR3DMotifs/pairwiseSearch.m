@@ -83,15 +83,21 @@ function [disc] = pairwiseSearch(file1, file2, exactSizeLimit)
     % try searching
     Search = struct;
 
+    fprintf('DEBUG(ps): before aSearchFlankingBases\n');
+
     if aSearchFlankingBases(File1,File2,P) == 1
 
+        fprintf('DEBUG(ps): before aConstructPairwiseSearch\n');
         [Query,S] = aConstructPairwiseSearch(File1, File2, P);
+        fprintf('DEBUG(ps): after aConstructPairwiseSearch\n');
 
         % S.File(1) - query file, S.File(2) - target file.
         if Query.NumNT <= S.File(2).NumNT
             Search = aFR3DSearch(Query,S);
         end
     end
+
+    fprintf('DEBUG(ps): after aSearchFlankingBases\n');
 
     if ~isfield(Search,'Candidates') || isempty(Search.Candidates)
         addToNoCandidatesFile(file2, P);
@@ -193,7 +199,11 @@ function [matched] = aSearchFlankingBases(File1, File2, P)
     Query.DiscCutoff = P.Discrepancy;
     Query.RelCutoff  = Query.DiscCutoff;
 
+    fprintf('DEBUG(sfb): before aFR3DSearch\n');
     Search = aFR3DSearch(Query,S);
+    fprintf('DEBUG(sfb): after aFR3DSearch\n');
+
+    fprintf('DEBUG(sfb): HERE\n');
 
     if isfield(Search,'Candidates') && ~isempty(Search.Candidates)
         matched = 1;

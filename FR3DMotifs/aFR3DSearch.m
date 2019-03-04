@@ -52,8 +52,10 @@ end
 
 % ------------------------------------------- Find candidates ---------------
 
+%fprintf('DEBUG(fs): before xFindCandidates\n');
 starttime = cputime;
 Candidates = xFindCandidates(File(SIndex),Query,Verbose);  % screen for candidates
+%fprintf('DEBUG(fs): after xFindCandidates\n');
 
 
 if ~isempty(Candidates)                         % some candidate(s) found
@@ -112,7 +114,9 @@ if ~isempty(Candidates)                         % some candidate(s) found
     Search.Candidates  = Candidates;
     Search.Discrepancy = Discrepancy;
 
+    fprintf('DEBUG(fs): before xAddFiletoSearch\n');
     Search = xAddFiletoSearch(File(SIndex),Search);
+    fprintf('DEBUG(fs): after xAddFiletoSearch\n');
 
     if ~isempty(Search.Candidates)
         if isfield(Query,'SaveDir')
@@ -121,17 +125,32 @@ if ~isempty(Candidates)                         % some candidate(s) found
             outdir = 'tempResults';
         end
 
+        fprintf('DEBUG(fs): outdir = %s\n', outdir);
+
         if ~exist(outdir,'dir')
+            fprinf('DEBUG(fs): creating outdir\n');
             mkdir(outdir);
         end
+
+        fprintf('DEBUG(fs): before save attempt\n');
+        Query
+        Search
+        [outdir filesep Query.Name]
+        exist([outdir filesep Query.Name])
         save([outdir filesep Query.Name], 'Search');
+        fprintf('DEBUG(fs): after save attempt\n');
     end
 
+    fprintf('DEBUG(fs): HERE\n');
 
 else
 
+    fprintf('DEBUG(fs): else clause\n');
+    Query
     Search.Query = Query;
 
 end
+
+fprintf('DEBUG(fs): end of function\n');
 
 end
