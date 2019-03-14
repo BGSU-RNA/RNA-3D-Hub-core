@@ -77,6 +77,7 @@ def defaults():
             "fr3d_root": os.path.join(base, "FR3D"),
             'quality_reports': os.path.join(base, "MotifAtlas", 'quality',
                                             'validation-reports'),
+            "pickle_fr3d": os.path.join(base, "pickle-FR3D"),
         },
         'recaculate': collections.defaultdict(lambda: False)
     }
