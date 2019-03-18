@@ -213,7 +213,8 @@ class Exporter(core.Loader):
 
         with open(filename, 'wb') as fh:
             self.logger.debug("process: filename open: %s" % filename)
-            pickle.dump(uinfo, fh, pickle.HIGHEST_PROTOCOL)
+            # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
+            pickle.dump(uinfo, fh, 2)
 
         pass
 
