@@ -64,7 +64,7 @@ class Exporter(core.Loader):
 
         self.logger.debug("filename: chain_string: %s" % chain_string)
 
-        return os.path.join("pickle-FR3D",chain_string + ".pickle")
+        return os.path.join("pickle-FR3D",chain_string + "_RNA.pickle")
 
 
     def cenrot(self, ichain):
