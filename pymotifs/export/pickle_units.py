@@ -103,6 +103,7 @@ class Exporter(core.Loader):
                                mod.UnitRotations.cell_2_0,
                                mod.UnitRotations.cell_2_1,
                                mod.UnitRotations.cell_2_2).\
+                     distinct().\
                      join(mod.UnitCenters, mod.UnitInfo.unit_id == mod.UnitCenters.unit_id).\
                      join(mod.UnitRotations, mod.UnitInfo.unit_id == mod.UnitRotations.unit_id).\
                      join(mod.ExpSeqUnitMapping, mod.UnitInfo.unit_id == mod.ExpSeqUnitMapping.unit_id).\
