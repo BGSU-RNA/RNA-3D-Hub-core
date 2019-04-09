@@ -407,8 +407,8 @@ class Loader(core.SimpleLoader):
         ife_chain_1 = info1['ife_id'].replace('|','-')
         ife_chain_2 = info2['ife_id'].replace('|','-')
 
-        self.logger.info("ife_chain_1: %s" % ife_chain_1)
-        self.logger.info("ife_chain_2: %s" % ife_chain_2)
+        self.logger.debug("ife_chain_1: %s" % ife_chain_1)
+        self.logger.debug("ife_chain_2: %s" % ife_chain_2)
 
         with self.session() as session:
             units1 = aliased(mod.UnitInfo)
@@ -449,12 +449,12 @@ class Loader(core.SimpleLoader):
                 for chunk in splitchain:
                     outfile = 'pickle-FR3D/' + chunk + '_RNA.pickle'
 
-                    self.logger.info("Pickle file: %s" % str(outfile))
+                    self.logger.debug("Pickle file: %s" % str(outfile))
 
                     with open(outfile, 'rb') as fh:
                         data = map(list,map(None,*pickle.load(fh)))
 
-                        self.logger.info("Data for %s: %s" % (key, str(data)))
+                        self.logger.debug("Data for %s: %s" % (key, str(data)))
 
                         for line in data:
                             unitid = line[0]
