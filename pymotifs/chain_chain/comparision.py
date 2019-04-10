@@ -257,6 +257,7 @@ class Loader(core.SimpleLoader):
         self.logger.debug("query: first: %s" % pair[0])
         self.logger.debug("query: second: %s" % pair[1])
         self.logger.debug("query: second (clean): %s" % pair[1][0])
+        self.logger.info("query: first: %s // second (clean): %s" % (pair[0], pair[1][0]))
 
         sim = mod.ChainChainSimilarity
         #simf = session.query(sim).\
@@ -303,6 +304,8 @@ class Loader(core.SimpleLoader):
             This returns 4 lists, which are in order, centers1, centers2,
             rotation1, rotation2.
         """
+
+        self.logger.info("matrices: corr_id: %s // i1: %s // i2: %s" % (corr_id, info1['pdb_id']+'|'+info1['model']+'|'+info1['chain_id'], info2['pdb_id']+'|'+info2['model']+'|'+info2['chain_id']))
 
         with self.session() as session:
             centers1 = aliased(mod.UnitCenters)
@@ -409,6 +412,9 @@ class Loader(core.SimpleLoader):
 
         self.logger.debug("ife_chain_1: %s" % ife_chain_1)
         self.logger.debug("ife_chain_2: %s" % ife_chain_2)
+        self.logger.info("pickledata: ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
+
+        self.logger.info("pickledata: start query for %s // %s" % (ife_chain_1, ife_chain_2))
 
         with self.session() as session:
             units1 = aliased(mod.UnitInfo)
@@ -481,10 +487,12 @@ class Loader(core.SimpleLoader):
                     r1.append(allunitdictionary[r.unit1][3])
                     r2.append(allunitdictionary[r.unit2][3])
 
+        self.logger.info("pickledata: end query for %s // %s" % (ife_chain_1, ife_chain_2))
+
         return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
 
-    def discrepancy(self, corr_id, centers1, centers2, rot1, rot2):
+    def discrepancy(self, corr_id, name1, name2, centers1, centers2, rot1, rot2):
         """Compare the chains. This will filter out all residues in the chain
         that do not have a base center computed.
 
@@ -508,7 +516,7 @@ class Loader(core.SimpleLoader):
             the discrepancy.
         """
 
-        self.logger.info("Comparing %i pairs of residues", len(centers1))
+        self.logger.info("Comparing %i pairs of residues for %s, %s" % (len(centers1), name1, name2))
         disc = matrix_discrepancy(centers1, rot1, centers2, rot2)
 
         if np.isnan(disc):
@@ -735,15 +743,15 @@ class Loader(core.SimpleLoader):
             self.logger.warning("Missing matrix data for %s", info2['name'])
             return []
 
-        matrices = self.matrices(corr_id, info1, info2)
-        if len(filter(lambda m: len(m), matrices)) != len(matrices):
-            self.logger.warning("Did not load all data for %s, %s",
-                                info1['name'], info2['name'])
-            return []
+        #matrices = self.matrices(corr_id, info1, info2)
+        #if len(filter(lambda m: len(m), matrices)) != len(matrices):
+        #    self.logger.warning("Did not load all data for %s, %s",
+        #                        info1['name'], info2['name'])
+        #    return []
 
-        if len(matrices[0]) < 3:
-            raise core.Skip("Not enough centers for pair: %s, %s" %
-                            (info1, info2))
+        #if len(matrices[0]) < 3:
+        #    raise core.Skip("Not enough centers for pair: %s, %s" %
+        #                    (info1, info2))
 
         #try:
         #    disc, length = self.discrepancy(corr_id, *matrices)
@@ -780,7 +788,7 @@ class Loader(core.SimpleLoader):
                             (info1, info2))
 
         try:
-            pdisc, plength = self.discrepancy(corr_id, *pickledata)
+            pdisc, plength = self.discrepancy(corr_id, info1['name'], info2['name'], *pickledata)
         except Exception as err:
             self.logger.error("Could not compute discrepancy for %s %s" %
                               (info1['name'], info2['name']))
@@ -834,12 +842,12 @@ class Loader(core.SimpleLoader):
         chain1, seconds = entry
         info1 = self.info(chain1)
         for chain2 in seconds:
-            self.logger.debug("data: chain2: %s" % chain2)
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
-            self.logger.debug("data: corr_id: %s" % corr_id)
+            self.logger.info("data: c1: %s // c2: %s // corr_id: %s" % (chain1, chain2, corr_id))
             entries = self.entry(info1, info2, corr_id)
 
         for e in entries:
+            self.logger.info("data: Entry to load: %s" % e)
             yield mod.ChainChainSimilarity(**e)
 
