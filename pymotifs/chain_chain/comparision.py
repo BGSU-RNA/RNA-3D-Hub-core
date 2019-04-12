@@ -839,6 +839,8 @@ class Loader(core.SimpleLoader):
             second to the first chains.
         """
 
+        self.logger.info("data: entry: %s" % str(entry))
+
         chain1, seconds = entry
         info1 = self.info(chain1)
         for chain2 in seconds:
