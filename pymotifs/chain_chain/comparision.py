@@ -790,10 +790,15 @@ class Loader(core.SimpleLoader):
         try:
             pdisc, plength = self.discrepancy(corr_id, info1['name'], info2['name'], *pickledata)
         except Exception as err:
-            self.logger.error("Could not compute discrepancy for %s %s" %
+            #self.logger.error("Could not compute discrepancy for %s %s" %
+            #                  (info1['name'], info2['name']))
+            #self.logger.exception(err)
+            #return []
+            self.logger.warning("Could not compute discrepancy for %s %si, using magic values instead" %
                               (info1['name'], info2['name']))
             self.logger.exception(err)
-            return []
+            pdisc = -1
+            plength = 0
 
         pcompare = {
             'chain_id_1': info1['chain_id'],
