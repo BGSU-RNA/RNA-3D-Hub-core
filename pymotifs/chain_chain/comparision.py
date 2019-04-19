@@ -794,7 +794,7 @@ class Loader(core.SimpleLoader):
             #                  (info1['name'], info2['name']))
             #self.logger.exception(err)
             #return []
-            self.logger.warning("Could not compute discrepancy for %s %si, using magic values instead" %
+            self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
                               (info1['name'], info2['name']))
             self.logger.exception(err)
             pdisc = -1
