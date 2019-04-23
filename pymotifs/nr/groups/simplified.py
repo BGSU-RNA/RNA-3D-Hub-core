@@ -301,7 +301,7 @@ class Grouper(core.Base):
                               group1['id'], group2['id'])
             return False
 
-        if discrepancy[db_id2] > NR_DISCREPANCY_CUTOFF:
+        if discrepancy[db_id2] > NR_DISCREPANCY_CUTOFF or discrepancy[db_id2] < 0:
             self.logger.debug("Splitting %s %s: Too large discrepancy %f",
                               group1['id'], group2['id'], discrepancy[db_id2])
             return False

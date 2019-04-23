@@ -203,7 +203,8 @@ class Loader(core.SimpleLoader):
 
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
-        grouper.must_enforce_single_species = False
+        #grouper.must_enforce_single_species = False
+        grouper.must_enforce_single_species = True
         groups = grouper(pdbs)
         if not groups:
             raise core.InvalidState("No groups produced")
@@ -652,8 +653,10 @@ class Loader(core.SimpleLoader):
             corr_id = self.__correspondence_query__(chain_id2, chain_id1)
 
         if corr_id is None:
-            raise core.Skip("No good correspondence between %s, %s" %
-                            (chain_id1, chain_id2))
+            #raise core.Skip("No good correspondence between %s, %s" %
+            #                (chain_id1, chain_id2))
+            self.logger.warning("No good correspondence between %s, %s" % 
+                                (chain_id1, chain_id2))
         return corr_id
 
 
@@ -781,7 +784,7 @@ class Loader(core.SimpleLoader):
         if len(filter(lambda m: len(m), pickledata)) != len(pickledata):
             self.logger.warning("Did not load all data for %s, %s",
                                 info1['name'], info2['name'])
-            return []
+            #return []
 
         if len(pickledata[0]) < 3:
             raise core.Skip("Not enough centers for pair: %s, %s" %
@@ -852,7 +855,8 @@ class Loader(core.SimpleLoader):
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
             self.logger.info("data: c1: %s // c2: %s // corr_id: %s" % (chain1, chain2, corr_id))
-            entries = self.entry(info1, info2, corr_id)
+            if corr_id is not None:
+                entries = self.entry(info1, info2, corr_id)
 
         for e in entries:
             self.logger.info("data: Entry to load: %s" % e)
