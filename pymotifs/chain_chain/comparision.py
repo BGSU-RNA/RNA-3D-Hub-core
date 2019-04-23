@@ -788,7 +788,7 @@ class Loader(core.SimpleLoader):
 
         if len(pickledata[0]) < 3:
             raise core.Skip("Not enough centers for pair: %s, %s" %
-                            (info1, info2))
+                            (info1['chain_id'], info2['chain_id']))
 
         try:
             pdisc, plength = self.discrepancy(corr_id, info1['name'], info2['name'], *pickledata)
