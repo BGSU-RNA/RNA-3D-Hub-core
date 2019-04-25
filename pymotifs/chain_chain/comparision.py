@@ -282,104 +282,104 @@ class Loader(core.SimpleLoader):
         #           ((sim.chain_id_1 == pair[1]) & (sim.chain_id_2 == pair[0])))
 
 
-    def matrices(self, corr_id, info1, info2, name='base'):
-        """Load the matrices used to compute discrepancies. This will look up
-        all the centers and rotation matrices in one query. If any centers or
-        rotation matrices are missing it will log an error. If there are alt
-        ids the 'A' one will be used.
+    #def matrices(self, corr_id, info1, info2, name='base'):
+    #    """Load the matrices used to compute discrepancies. This will look up
+    #    all the centers and rotation matrices in one query. If any centers or
+    #    rotation matrices are missing it will log an error. If there are alt
+    #    ids the 'A' one will be used.
 
-        Parameters
-        ----------
-        corr_id : int
-            The correspondence id.
-        info1 : dict
-            The result of `info` for the first chain to compare.
-        info2 : dict
-            The result of `info` for the second chain to compare.
-        name : str, optional
-            The type of base center to use.
+    #    Parameters
+    #    ----------
+    #    corr_id : int
+    #        The correspondence id.
+    #    info1 : dict
+    #        The result of `info` for the first chain to compare.
+    #    info2 : dict
+    #        The result of `info` for the second chain to compare.
+    #    name : str, optional
+    #        The type of base center to use.
 
-        Returns
-        -------
-        data : (list, list, list, list)
-            This returns 4 lists, which are in order, centers1, centers2,
-            rotation1, rotation2.
-        """
+    #    Returns
+    #    -------
+    #    data : (list, list, list, list)
+    #        This returns 4 lists, which are in order, centers1, centers2,
+    #        rotation1, rotation2.
+    #    """
 
-        self.logger.info("matrices: corr_id: %s // i1: %s // i2: %s" % (corr_id, info1['pdb_id']+'|'+info1['model']+'|'+info1['chain_id'], info2['pdb_id']+'|'+info2['model']+'|'+info2['chain_id']))
+    #    self.logger.info("matrices: corr_id: %s // i1: %s // i2: %s" % (corr_id, info1['pdb_id']+'|'+info1['model']+'|'+info1['chain_id'], info2['pdb_id']+'|'+info2['model']+'|'+info2['chain_id']))
 
-        with self.session() as session:
-            centers1 = aliased(mod.UnitCenters)
-            centers2 = aliased(mod.UnitCenters)
-            units1 = aliased(mod.UnitInfo)
-            units2 = aliased(mod.UnitInfo)
-            rot1 = aliased(mod.UnitRotations)
-            rot2 = aliased(mod.UnitRotations)
-            corr_units = mod.CorrespondenceUnits
-            corr = mod.CorrespondencePdbs
+    #    with self.session() as session:
+    #        centers1 = aliased(mod.UnitCenters)
+    #        centers2 = aliased(mod.UnitCenters)
+    #        units1 = aliased(mod.UnitInfo)
+    #        units2 = aliased(mod.UnitInfo)
+    #        rot1 = aliased(mod.UnitRotations)
+    #        rot2 = aliased(mod.UnitRotations)
+    #        corr_units = mod.CorrespondenceUnits
+    #        corr = mod.CorrespondencePdbs
 
-            columns = [corr.correspondence_id]
-            columns.extend(label_center(centers1, 1))
-            columns.extend(label_center(centers2, 2))
-            columns.extend(label_rotation(rot1, 1))
-            columns.extend(label_rotation(rot2, 2))
+    #        columns = [corr.correspondence_id]
+    #        columns.extend(label_center(centers1, 1))
+    #        columns.extend(label_center(centers2, 2))
+    #        columns.extend(label_rotation(rot1, 1))
+    #        columns.extend(label_rotation(rot2, 2))
 
-            query = session.query(*columns).\
-                join(corr_units,
-                     corr.correspondence_id == corr_units.correspondence_id).\
-                join(units1, units1.unit_id == corr_units.unit_id_1).\
-                join(units2, units2.unit_id == corr_units.unit_id_2).\
-                join(centers1, centers1.unit_id == corr_units.unit_id_1).\
-                join(centers2, centers2.unit_id == corr_units.unit_id_2).\
-                join(rot1, rot1.unit_id == corr_units.unit_id_1).\
-                join(rot2, rot2.unit_id == corr_units.unit_id_2).\
-                filter(corr.pdb_id_1 == corr_units.pdb_id_1).\
-                filter(corr.pdb_id_2 == corr_units.pdb_id_2).\
-                filter(corr.chain_name_1 == corr_units.chain_name_1).\
-                filter(corr.chain_name_2 == corr_units.chain_name_2).\
-                filter(centers1.name == centers2.name).\
-                filter(centers1.name == name).\
-                filter(corr.correspondence_id == corr_id).\
-                filter(corr.chain_id_1 == info1['chain_id']).\
-                filter(corr.chain_id_2 == info2['chain_id']).\
-                filter(units1.sym_op == info1['sym_op']).\
-                filter(units2.sym_op == info2['sym_op']).\
-                filter(units1.alt_id == info1['alt_id']).\
-                filter(units2.alt_id == info2['alt_id']).\
-                filter(units1.model == info1['model']).\
-                filter(units2.model == info2['model']).\
-                order_by(corr_units.correspondence_index).\
-                distinct()
+    #        query = session.query(*columns).\
+    #            join(corr_units,
+    #                 corr.correspondence_id == corr_units.correspondence_id).\
+    #            join(units1, units1.unit_id == corr_units.unit_id_1).\
+    #            join(units2, units2.unit_id == corr_units.unit_id_2).\
+    #            join(centers1, centers1.unit_id == corr_units.unit_id_1).\
+    #            join(centers2, centers2.unit_id == corr_units.unit_id_2).\
+    #            join(rot1, rot1.unit_id == corr_units.unit_id_1).\
+    #            join(rot2, rot2.unit_id == corr_units.unit_id_2).\
+    #            filter(corr.pdb_id_1 == corr_units.pdb_id_1).\
+    #            filter(corr.pdb_id_2 == corr_units.pdb_id_2).\
+    #            filter(corr.chain_name_1 == corr_units.chain_name_1).\
+    #            filter(corr.chain_name_2 == corr_units.chain_name_2).\
+    #            filter(centers1.name == centers2.name).\
+    #            filter(centers1.name == name).\
+    #            filter(corr.correspondence_id == corr_id).\
+    #            filter(corr.chain_id_1 == info1['chain_id']).\
+    #            filter(corr.chain_id_2 == info2['chain_id']).\
+    #            filter(units1.sym_op == info1['sym_op']).\
+    #            filter(units2.sym_op == info2['sym_op']).\
+    #            filter(units1.alt_id == info1['alt_id']).\
+    #            filter(units2.alt_id == info2['alt_id']).\
+    #            filter(units1.model == info1['model']).\
+    #            filter(units2.model == info2['model']).\
+    #            order_by(corr_units.correspondence_index).\
+    #            distinct()
 
-            if not query.count():
-                self.logger.warning("No geometric data for %s %s", info1, info2)
-                raise core.Skip("Missing geometric data")
+    #        if not query.count():
+    #            self.logger.warning("No geometric data for %s %s", info1, info2)
+    #            raise core.Skip("Missing geometric data")
 
-            c1 = []
-            c2 = []
-            r1 = []
-            r2 = []
-            seen = set()
-            for r in query:
-                if r.unit1 in seen:
-                    raise core.InvalidState("Got duplicate unit %s" % r.unit1)
-                seen.add(r.unit1)
+    #        c1 = []
+    #        c2 = []
+    #        r1 = []
+    #        r2 = []
+    #        seen = set()
+    #        for r in query:
+    #            if r.unit1 in seen:
+    #                raise core.InvalidState("Got duplicate unit %s" % r.unit1)
+    #            seen.add(r.unit1)
 
-                if r.unit2 in seen:
-                    raise core.InvalidState("Got duplicate unit %s" % r.unit2)
-                seen.add(r.unit2)
+    #            if r.unit2 in seen:
+    #                raise core.InvalidState("Got duplicate unit %s" % r.unit2)
+    #            seen.add(r.unit2)
 
-                r1.append(np.array([[r.cell_00_1, r.cell_01_1, r.cell_02_1],
-                                    [r.cell_10_1, r.cell_11_1, r.cell_12_1],
-                                    [r.cell_20_1, r.cell_21_1, r.cell_22_1]]))
-                r2.append(np.array([[r.cell_00_2, r.cell_01_2, r.cell_02_2],
-                                    [r.cell_10_2, r.cell_11_2, r.cell_12_2],
-                                    [r.cell_20_2, r.cell_21_2, r.cell_22_2]]))
+    #            r1.append(np.array([[r.cell_00_1, r.cell_01_1, r.cell_02_1],
+    #                                [r.cell_10_1, r.cell_11_1, r.cell_12_1],
+    #                                [r.cell_20_1, r.cell_21_1, r.cell_22_1]]))
+    #            r2.append(np.array([[r.cell_00_2, r.cell_01_2, r.cell_02_2],
+    #                                [r.cell_10_2, r.cell_11_2, r.cell_12_2],
+    #                                [r.cell_20_2, r.cell_21_2, r.cell_22_2]]))
 
-                c1.append(np.array([r.x1, r.y1, r.z1]))
-                c2.append(np.array([r.x2, r.y2, r.z2]))
+    #            c1.append(np.array([r.x1, r.y1, r.z1]))
+    #            c2.append(np.array([r.x2, r.y2, r.z2]))
 
-        return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
+    #    return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
 
     def pickledata(self, corr_id, info1, info2, name='base'):
@@ -856,9 +856,11 @@ class Loader(core.SimpleLoader):
             corr_id = self.corr_id(chain1, chain2)
             self.logger.info("data: c1: %s // c2: %s // corr_id: %s" % (chain1, chain2, corr_id))
             if corr_id is not None:
-                entries = self.entry(info1, info2, corr_id)
+                #entries = self.entry(info1, info2, corr_id)
+                entries.append(self.entry(info1, info2, corr_id))
 
-        for e in entries:
-            self.logger.info("data: Entry to load: %s" % e)
-            yield mod.ChainChainSimilarity(**e)
+        if entries is not None:
+            for e in entries:
+                self.logger.info("data: Entry to load: %s" % e)
+                yield mod.ChainChainSimilarity(**e)
 
