@@ -127,6 +127,9 @@ class Loader(core.SimpleLoader):
     """The tuple of chains can't be marked in the database."""
     mark = False
 
+    """We allow for no data to be written when appropriate."""
+    allow_no_data = True
+
     """The dependencies for this stage"""
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         IfeLoader, CenterLoader, RotationLoader])
