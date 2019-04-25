@@ -413,9 +413,8 @@ class Loader(core.SimpleLoader):
 
         self.logger.debug("ife_chain_1: %s" % ife_chain_1)
         self.logger.debug("ife_chain_2: %s" % ife_chain_2)
-        self.logger.info("pickledata: ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
-
-        self.logger.info("pickledata: start query for %s // %s" % (ife_chain_1, ife_chain_2))
+        self.logger.info("pickledata (1): ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2)) 
+        self.logger.info("pickledata (2): start query for %s // %s" % (ife_chain_1, ife_chain_2))
 
         with self.session() as session:
             units1 = aliased(mod.UnitInfo)
@@ -450,6 +449,8 @@ class Loader(core.SimpleLoader):
                 self.logger.warning("No geometric data for %s %s", info1, info2)
                 raise core.Skip("Missing geometric data")
 
+            self.logger.info("pickledata (3): obtained correspondence units")
+
             for key in ( ife_chain_1, ife_chain_2 ):
                 splitchain = key.split("+")
 
@@ -466,6 +467,8 @@ class Loader(core.SimpleLoader):
                         for line in data:
                             unitid = line[0]
                             allunitdictionary[unitid] = line
+
+            self.logger.info("pickledata (4): pickle data import complete")
 
             c1 = []
             c2 = []
@@ -488,7 +491,7 @@ class Loader(core.SimpleLoader):
                     r1.append(allunitdictionary[r.unit1][3])
                     r2.append(allunitdictionary[r.unit2][3])
 
-        self.logger.info("pickledata: end query for %s // %s" % (ife_chain_1, ife_chain_2))
+        self.logger.info("pickledata (5): end query for %s // %s" % (ife_chain_1, ife_chain_2))
 
         return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
