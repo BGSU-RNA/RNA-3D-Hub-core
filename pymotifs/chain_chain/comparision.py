@@ -853,7 +853,7 @@ class Loader(core.SimpleLoader):
             second to the first chains.
         """
 
-        entries = []
+        #entries = []
 
         self.logger.info("data: entry: %s" % str(entry))
 
@@ -864,11 +864,11 @@ class Loader(core.SimpleLoader):
             corr_id = self.corr_id(chain1, chain2)
             self.logger.info("data: c1: %s // c2: %s // corr_id: %s" % (chain1, chain2, corr_id))
             if corr_id is not None:
-                #entries = self.entry(info1, info2, corr_id)
-                entries.append(self.entry(info1, info2, corr_id))
+                entries = self.entry(info1, info2, corr_id)
+                #entries.append(self.entry(info1, info2, corr_id))
 
-        if entries is not None:
-            for e in entries:
-                self.logger.info("data: Entry to load: %s" % e)
-                yield mod.ChainChainSimilarity(**e)
+            if entries is not None:
+                for e in entries:
+                    self.logger.info("data: Entry to load: %s" % e)
+                    yield mod.ChainChainSimilarity(**e)
 
