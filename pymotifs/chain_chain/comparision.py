@@ -229,7 +229,7 @@ class Loader(core.SimpleLoader):
         key = op.itemgetter(0)
         ordered_chains = sorted(possible, key = key)
         result = []
-        comp_limit = 10
+        comp_limit = 30
 
         for (first, rest) in it.groupby(ordered_chains, key):
             seconds = [r[1] for r in rest]
@@ -862,7 +862,7 @@ class Loader(core.SimpleLoader):
             second to the first chains.
         """
 
-        #entries = []
+        entries = []
 
         self.logger.info("data: entry: %s" % str(entry))
 
