@@ -229,11 +229,16 @@ class Loader(core.SimpleLoader):
         key = op.itemgetter(0)
         ordered_chains = sorted(possible, key = key)
         result = []
+        comp_limit = 10
+
         for (first, rest) in it.groupby(ordered_chains, key):
             seconds = [r[1] for r in rest]
             self.logger.debug("to_process: first: %s" % first)
             self.logger.debug("to_process: seconds: %s" % seconds)
-            result.append((first, seconds))
+            if len(seconds) < comp_limit:
+                result.append((first, seconds))
+            else:
+                self.logger.warning("length pass (%s > %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
         #return sorted(possible)
         self.logger.debug("to_process: result: %s" % result)
         return result
@@ -418,6 +423,8 @@ class Loader(core.SimpleLoader):
         self.logger.debug("ife_chain_2: %s" % ife_chain_2)
         self.logger.info("pickledata (1): ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2)) 
         self.logger.info("pickledata (2): start query for %s // %s" % (ife_chain_1, ife_chain_2))
+        self.logger.info("pickledata (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
+        self.logger.info("pickledata (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
 
         with self.session() as session:
             units1 = aliased(mod.UnitInfo)
@@ -447,6 +454,8 @@ class Loader(core.SimpleLoader):
                 filter(units2.model == info2['model']).\
                 order_by(corr_units.correspondence_index).\
                 distinct()
+
+            self.logger.info("pickledata (3.0):  result set length: %s" % query.count())
 
             if not query.count():
                 self.logger.warning("No geometric data for %s %s", info1, info2)
