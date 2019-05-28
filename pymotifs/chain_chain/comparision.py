@@ -119,6 +119,14 @@ def label_rotation(table, number):
     ]
 
 
+def make_unique_list(input_list):
+    unique_list = []
+    for foo in input_list:
+        if foo not in unique_list:
+            unique_list.append(foo)
+    return unique_list
+
+
 class Loader(core.SimpleLoader):
     """A Loader to get all chain to chain similarity data. This will use the
     correspondences between ifes to compute the discrepancy between them.
@@ -229,8 +237,9 @@ class Loader(core.SimpleLoader):
         key = op.itemgetter(0)
         ordered_chains = sorted(possible, key = key)
         result = []
+        comp_limit = 200
         #comp_limit = 30
-        comp_limit = 3000
+        #comp_limit = 3000
 
         calc_limit = 1
 
@@ -239,9 +248,14 @@ class Loader(core.SimpleLoader):
         for (first, rest) in it.groupby(ordered_chains, key):
             #if calc >= calc_limit:
             #    continue
-            seconds = [r[1] for r in rest]
-            self.logger.debug("to_process: first: %s" % first)
-            self.logger.debug("to_process: seconds: %s" % seconds)
+            #seconds = [r[1] for r in rest]
+            temp = [r[1] for r in rest]
+            #uniq_sec = make_unique_list([r[1] for r in rest])
+            #uniq_sec = make_unique_list(seconds)
+            seconds = make_unique_list(temp)
+            self.logger.info("to_process: first: %s" % first)
+            self.logger.info("to_process: seconds: %s" % seconds)
+            #self.logger.info("to_process: uniq_sec: %s" % uniq_sec)
             if len(seconds) < comp_limit:
                 result.append((first, seconds))
             else:
@@ -250,6 +264,26 @@ class Loader(core.SimpleLoader):
         #return sorted(possible)
         self.logger.debug("to_process: result: %s" % result)
         return result
+
+
+    def is_missing(self, entry, **kwargs):
+        """Determine if we do not have any data. If we have no data then we
+        will recompute. This method must be implemented by inhering classes
+        and is how we determine if we have data or not.
+
+        Parameters
+        ----------
+        entry : object
+            The data to check
+        **kwargs : dict
+            Generic keyword arguments
+
+        Returns
+        -------
+        missing : bool
+            True if the data is missing.
+        """
+        return True
 
 
     def query(self, session, pair):
@@ -271,9 +305,6 @@ class Loader(core.SimpleLoader):
             The query for chains.
         """
 
-        self.logger.debug("query: first: %s" % pair[0])
-        self.logger.debug("query: second: %s" % pair[1])
-        self.logger.debug("query: second (clean): %s" % pair[1][0])
         self.logger.info("query: first: %s // second (clean): %s" % (pair[0], pair[1][0]))
 
         sim = mod.ChainChainSimilarity
@@ -428,8 +459,8 @@ class Loader(core.SimpleLoader):
         ife_chain_2 = info2['ife_id'].replace('|','-')
 
         self.logger.info("pickledata (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
-        self.logger.info("pickledata (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
-        self.logger.info("pickledata (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
+        self.logger.debug("pickledata (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
+        self.logger.debug("pickledata (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
 
         with self.session() as session:
             units1 = aliased(mod.UnitInfo)
@@ -464,7 +495,7 @@ class Loader(core.SimpleLoader):
 
             if not query.count():
                 self.logger.warning("No geometric data for %s %s", info1, info2)
-                raise core.Skip("Missing geometric data")
+                #raise core.Skip("Missing geometric data")
 
             self.logger.info("pickledata (3): obtained correspondence units")
 
@@ -494,7 +525,8 @@ class Loader(core.SimpleLoader):
             seen = set()
 
             for r in query:
-                self.logger.info("pickledata (5): row: %s" % str(r))
+                self.logger.debug("pickledata (5): row: %s" % str(r))
+
                 if r.unit1 in seen:
                     raise core.InvalidState("pickledata: Got duplicate unit (unit1) %s" % r.unit1)
                 seen.add(r.unit1)
@@ -546,8 +578,8 @@ class Loader(core.SimpleLoader):
         ife_chain_2 = info2['ife_id'].replace('|','-')
 
         self.logger.info("pd2 (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
-        self.logger.info("pd2 (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
-        self.logger.info("pd2 (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
+        self.logger.debug("pd2 (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
+        self.logger.debug("pd2 (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
 
         with self.session() as session:
             corr_units = mod.CorrespondenceUnits
@@ -567,7 +599,7 @@ class Loader(core.SimpleLoader):
 
             if not query.count():
                 self.logger.warning("No geometric data for %s %s", info1, info2)
-                raise core.Skip("Missing geometric data")
+                #raise core.Skip("Missing geometric data")
 
             self.logger.info("pd2 (3): obtained correspondence units")
 
@@ -618,20 +650,15 @@ class Loader(core.SimpleLoader):
 
                                 self.logger.info("pd2: Extended unit %s to be used" % unitid)
 
-                            #self.logger.info("pd2: type of info_d['model']: %s" % type(info_d['model']))
-                            #self.logger.info("pd2: type of split_unit[1] (model): %s" % type(split_unit[1]))
-
                             if split_unit[1] != str(info_d['model']):
                                 self.logger.info("pd2: skipped %s for model number %s" % (unitid, split_unit[1]))
                                 continue
 
                             if key == ife_chain_1:
                                 unit_dict_1[unitid] = line
-                                self.logger.info("pd2: unit_dict_1 for unitid %s" % unitid)
                                 self.logger.debug("pd2: unit_dict_1 for unitid %s: %s" % (unitid, line))
                             else:
                                 unit_dict_2[unitid] = line 
-                                self.logger.info("pd2: unit_dict_2 for unitid %s" % unitid)
                                 self.logger.debug("pd2: unit_dict_2 for unitid %s: %s" % (unitid, line))
 
             self.logger.info("pd2: unit_dict lengths:  %s / %s" % (len(unit_dict_1), len(unit_dict_2)))
@@ -643,7 +670,7 @@ class Loader(core.SimpleLoader):
             pd2seen = set()
 
             for r in query:
-                self.logger.info("pd2 (5): row: %s" % str(r))
+                self.logger.debug("pd2 (5): row: %s" % str(r))
 
                 uspl1 = r.unit1.split('|')
                 uspl2 = r.unit2.split('|')
@@ -972,7 +999,8 @@ class Loader(core.SimpleLoader):
             #return []
 
         if len(pickledata[0]) < 3:
-            raise core.Skip("Not enough centers for pair: %s, %s" %
+            self.logger.warning("Not enough centers for pair: %s, %s" %
+            #raise core.Skip("Not enough centers for pair: %s, %s" %
                             (info1['chain_id'], info2['chain_id']))
 
         try:
@@ -984,7 +1012,7 @@ class Loader(core.SimpleLoader):
             #return []
             self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
                               (info1['name'], info2['name']))
-            self.logger.exception(err)
+            #self.logger.exception(err)
             pdisc = -1
             plength = 0
 
@@ -1012,8 +1040,10 @@ class Loader(core.SimpleLoader):
 
         if len(p2data[0]) < 3:
             self.logger.warning("pd2: p2data[0] = %s" % p2data[0])
-            raise core.Skip("Not enough centers for pair: %s, %s" %
-                            (info1['chain_id'], info2['chain_id']))
+            self.logger.warning("Not enough centers for pair: %s, %s" %
+                                (info1['chain_id'], info2['chain_id']))
+            #raise core.Skip("Not enough centers for pair: %s, %s" %
+            #                (info1['chain_id'], info2['chain_id']))
 
         try:
             p2disc, p2length = self.discrepancy(corr_id, info1['name'], info2['name'], *p2data)
@@ -1024,7 +1054,7 @@ class Loader(core.SimpleLoader):
             #return []
             self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
                               (info1['name'], info2['name']))
-            self.logger.exception(err)
+            #self.logger.exception(err)
             p2disc = -1
             p2length = 0
 
@@ -1034,8 +1064,8 @@ class Loader(core.SimpleLoader):
             'model_1': info1['model'],
             'model_2': info2['model'],
             'correspondence_id': corr_id,
-            'discrepancy': float(pdisc),
-            'num_nucleotides': plength,
+            'discrepancy': float(p2disc),
+            'num_nucleotides': p2length,
         }
 
         pd2r = dict(pcompare)
@@ -1049,8 +1079,10 @@ class Loader(core.SimpleLoader):
         return [
             #compare,
             #reversed,
-            pcompare,
-            preversed
+            #pcompare,
+            #preversed
+            pd2c,
+            pd2r
         ]
 
 
@@ -1072,13 +1104,12 @@ class Loader(core.SimpleLoader):
             second to the first chains.
         """
 
-        entries = []
-
         self.logger.info("data: entry: %s" % str(entry))
 
         chain1, seconds = entry
         info1 = self.info(chain1)
         for chain2 in seconds:
+            entries = [] 
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
             self.logger.info("data: chain1: %s // chain2: %s // corr_id: %s" % (chain1, chain2, corr_id))
