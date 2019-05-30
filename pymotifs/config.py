@@ -63,7 +63,7 @@ def defaults():
 
     return {
         'db': {
-            'pool_size': 20,
+            'pool_size': 40,
             'max_overflow': 10,
         },
         "locations": {
