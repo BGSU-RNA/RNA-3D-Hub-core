@@ -237,8 +237,8 @@ class Loader(core.SimpleLoader):
         key = op.itemgetter(0)
         ordered_chains = sorted(possible, key = key)
         result = []
-        comp_limit = 200
-        #comp_limit = 30
+        #comp_limit = 200
+        comp_limit = 30
         #comp_limit = 3000
 
         calc_limit = 1
@@ -260,7 +260,7 @@ class Loader(core.SimpleLoader):
                 result.append((first, seconds))
             else:
                 self.logger.warning("length pass (%s > %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
-            calc = 1 + calc
+            #calc = 1 + calc
         #return sorted(possible)
         self.logger.debug("to_process: result: %s" % result)
         return result
@@ -1106,9 +1106,37 @@ class Loader(core.SimpleLoader):
 
         self.logger.info("data: entry: %s" % str(entry))
 
-        chain1, seconds = entry
+        chain1, candidates = entry
+        #chain1, seconds = entry
+
         info1 = self.info(chain1)
+
+        sim = mod.ChainChainSimilarity
+
+        with self.session() as session:
+            query = session.query(sim).\
+                filter(or_(and_(sim.chain_id_1==entry[0],sim.chain_id_2.in_(entry[1])),
+                           and_(sim.chain_id_2==entry[0],sim.chain_id_1.in_(entry[1]))))
+
+        knowns = []
+        seconds = []
+
+        for r in query:
+            self.logger.info("data: known: (%s, %s)" % (r.chain_id_1,r.chain_id_2))
+            knowns.append((r.chain_id_1,r.chain_id_2))        
+
+        for chain in candidates:
+            if ((chain1, chain)) in knowns:
+                self.logger.info("data: already have discrepancy for (%s, %s)" % (chain1, chain))
+                continue
+
+            self.logger.info("data: adding %s to list of pending calculations" % chain)
+            seconds.append(chain)
+
         for chain2 in seconds:
+            if chain2 == chain1:
+                continue
+
             entries = [] 
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
