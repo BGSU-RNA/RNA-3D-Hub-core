@@ -308,125 +308,11 @@ class Loader(core.SimpleLoader):
         self.logger.info("query: first: %s // second (clean): %s" % (pair[0], pair[1][0]))
 
         sim = mod.ChainChainSimilarity
-        #simf = session.query(sim).\
-        #    filter(sim.chain_id_1 == pair[0]).\
-        #    filter(sim.chain_id_2.in_(pair[1])).\
-        #    subquery()
-        #simr = session.query(sim).\
-        #    filter(sim.chain_id_2 == pair[0]).\
-        #    filter(sim.chain_id_1.in_(pair[1])).\
-        #    subquery()
-        ##simq = simf.union(simr)
-        #simq = session.query().select_entity_from(union_all(simf.select(), simr.select()))
-        #query = session.query("SELECT * FROM chain_chain_similiarity WHERE (chain_id_1 = %s AND chain_id_2 IN (%s) ) OR (chain_id_2 = %s AND chain_id_1 IN (%s) )" % (pair[0], tuple(pair[1][0]), pair[0], tuple(pair[1][0])))
 
-        #return query
-        #return session.query(simq)
         return session.query(sim).\
             filter(or_(and_(sim.chain_id_1==pair[0],sim.chain_id_2.in_(pair[1])),
                        and_(sim.chain_id_2==pair[0],sim.chain_id_1.in_(pair[1]))))
-        #    filter(((sim.chain_id_1 == pair[0]) & (sim.chain_id_2 == pair[1])) |
-        #           ((sim.chain_id_1 == pair[1]) & (sim.chain_id_2 == pair[0])))
 
-
-    #def matrices(self, corr_id, info1, info2, name='base'):
-    #    """Load the matrices used to compute discrepancies. This will look up
-    #    all the centers and rotation matrices in one query. If any centers or
-    #    rotation matrices are missing it will log an error. If there are alt
-    #    ids the 'A' one will be used.
-
-    #    Parameters
-    #    ----------
-    #    corr_id : int
-    #        The correspondence id.
-    #    info1 : dict
-    #        The result of `info` for the first chain to compare.
-    #    info2 : dict
-    #        The result of `info` for the second chain to compare.
-    #    name : str, optional
-    #        The type of base center to use.
-
-    #    Returns
-    #    -------
-    #    data : (list, list, list, list)
-    #        This returns 4 lists, which are in order, centers1, centers2,
-    #        rotation1, rotation2.
-    #    """
-
-    #    self.logger.info("matrices: corr_id: %s // i1: %s // i2: %s" % (corr_id, info1['pdb_id']+'|'+info1['model']+'|'+info1['chain_id'], info2['pdb_id']+'|'+info2['model']+'|'+info2['chain_id']))
-
-    #    with self.session() as session:
-    #        centers1 = aliased(mod.UnitCenters)
-    #        centers2 = aliased(mod.UnitCenters)
-    #        units1 = aliased(mod.UnitInfo)
-    #        units2 = aliased(mod.UnitInfo)
-    #        rot1 = aliased(mod.UnitRotations)
-    #        rot2 = aliased(mod.UnitRotations)
-    #        corr_units = mod.CorrespondenceUnits
-    #        corr = mod.CorrespondencePdbs
-
-    #        columns = [corr.correspondence_id]
-    #        columns.extend(label_center(centers1, 1))
-    #        columns.extend(label_center(centers2, 2))
-    #        columns.extend(label_rotation(rot1, 1))
-    #        columns.extend(label_rotation(rot2, 2))
-
-    #        query = session.query(*columns).\
-    #            join(corr_units,
-    #                 corr.correspondence_id == corr_units.correspondence_id).\
-    #            join(units1, units1.unit_id == corr_units.unit_id_1).\
-    #            join(units2, units2.unit_id == corr_units.unit_id_2).\
-    #            join(centers1, centers1.unit_id == corr_units.unit_id_1).\
-    #            join(centers2, centers2.unit_id == corr_units.unit_id_2).\
-    #            join(rot1, rot1.unit_id == corr_units.unit_id_1).\
-    #            join(rot2, rot2.unit_id == corr_units.unit_id_2).\
-    #            filter(corr.pdb_id_1 == corr_units.pdb_id_1).\
-    #            filter(corr.pdb_id_2 == corr_units.pdb_id_2).\
-    #            filter(corr.chain_name_1 == corr_units.chain_name_1).\
-    #            filter(corr.chain_name_2 == corr_units.chain_name_2).\
-    #            filter(centers1.name == centers2.name).\
-    #            filter(centers1.name == name).\
-    #            filter(corr.correspondence_id == corr_id).\
-    #            filter(corr.chain_id_1 == info1['chain_id']).\
-    #            filter(corr.chain_id_2 == info2['chain_id']).\
-    #            filter(units1.sym_op == info1['sym_op']).\
-    #            filter(units2.sym_op == info2['sym_op']).\
-    #            filter(units1.alt_id == info1['alt_id']).\
-    #            filter(units2.alt_id == info2['alt_id']).\
-    #            filter(units1.model == info1['model']).\
-    #            filter(units2.model == info2['model']).\
-    #            order_by(corr_units.correspondence_index).\
-    #            distinct()
-
-    #        if not query.count():
-    #            self.logger.warning("No geometric data for %s %s", info1, info2)
-    #            raise core.Skip("Missing geometric data")
-
-    #        c1 = []
-    #        c2 = []
-    #        r1 = []
-    #        r2 = []
-    #        seen = set()
-    #        for r in query:
-    #            if r.unit1 in seen:
-    #                raise core.InvalidState("Got duplicate unit %s" % r.unit1)
-    #            seen.add(r.unit1)
-
-    #            if r.unit2 in seen:
-    #                raise core.InvalidState("Got duplicate unit %s" % r.unit2)
-    #            seen.add(r.unit2)
-
-    #            r1.append(np.array([[r.cell_00_1, r.cell_01_1, r.cell_02_1],
-    #                                [r.cell_10_1, r.cell_11_1, r.cell_12_1],
-    #                                [r.cell_20_1, r.cell_21_1, r.cell_22_1]]))
-    #            r2.append(np.array([[r.cell_00_2, r.cell_01_2, r.cell_02_2],
-    #                                [r.cell_10_2, r.cell_11_2, r.cell_12_2],
-    #                                [r.cell_20_2, r.cell_21_2, r.cell_22_2]]))
-
-    #            c1.append(np.array([r.x1, r.y1, r.z1]))
-    #            c2.append(np.array([r.x2, r.y2, r.z2]))
-
-    #    return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
 
     def pickledata(self, corr_id, info1, info2, name='base'):
@@ -623,13 +509,6 @@ class Loader(core.SimpleLoader):
                         data = map(list,map(None,*pickle.load(fh)))
 
                         self.logger.debug("Data for %s: %s" % (key, str(data)))
-
-                        ###
-                        ###
-                        ### FIXME:  need to apply alt_id and sym_op filters here, to prevent
-                        ### that data from entering the unit_dict_# dictionaries
-                        ###
-                        ###
 
                         for line in data:
                             unitid = line[0]
@@ -958,40 +837,6 @@ class Loader(core.SimpleLoader):
             self.logger.warning("Missing matrix data for %s", info2['name'])
             return []
 
-        #matrices = self.matrices(corr_id, info1, info2)
-        #if len(filter(lambda m: len(m), matrices)) != len(matrices):
-        #    self.logger.warning("Did not load all data for %s, %s",
-        #                        info1['name'], info2['name'])
-        #    return []
-
-        #if len(matrices[0]) < 3:
-        #    raise core.Skip("Not enough centers for pair: %s, %s" %
-        #                    (info1, info2))
-
-        #try:
-        #    disc, length = self.discrepancy(corr_id, *matrices)
-        #except Exception as err:
-        #    self.logger.error("Could not compute discrepancy for %s %s" %
-        #                      (info1['name'], info2['name']))
-        #    self.logger.exception(err)
-        #    return []
-
-        #compare = {
-        #    'chain_id_1': info1['chain_id'],
-        #    'chain_id_2': info2['chain_id'],
-        #    'model_1': info1['model'],
-        #    'model_2': info2['model'],
-        #    'correspondence_id': corr_id,
-        #    'discrepancy': float(disc),
-        #    'num_nucleotides': length,
-        #}
-
-        #reversed = dict(compare)
-        #reversed['chain_id_1'] = compare['chain_id_2']
-        #reversed['chain_id_2'] = compare['chain_id_1']
-        #reversed['model_1'] = compare['model_2']
-        #reversed['model_2'] = compare['model_1']
-
         pickledata = self.pickledata(corr_id, info1, info2)
         if len(filter(lambda m: len(m), pickledata)) != len(pickledata):
             self.logger.warning("Did not load all data for %s, %s",
@@ -1006,13 +851,8 @@ class Loader(core.SimpleLoader):
         try:
             pdisc, plength = self.discrepancy(corr_id, info1['name'], info2['name'], *pickledata)
         except Exception as err:
-            #self.logger.error("Could not compute discrepancy for %s %s" %
-            #                  (info1['name'], info2['name']))
-            #self.logger.exception(err)
-            #return []
             self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
                               (info1['name'], info2['name']))
-            #self.logger.exception(err)
             pdisc = -1
             plength = 0
 
@@ -1042,19 +882,12 @@ class Loader(core.SimpleLoader):
             self.logger.warning("pd2: p2data[0] = %s" % p2data[0])
             self.logger.warning("Not enough centers for pair: %s, %s" %
                                 (info1['chain_id'], info2['chain_id']))
-            #raise core.Skip("Not enough centers for pair: %s, %s" %
-            #                (info1['chain_id'], info2['chain_id']))
 
         try:
             p2disc, p2length = self.discrepancy(corr_id, info1['name'], info2['name'], *p2data)
         except Exception as err:
-            #self.logger.error("Could not compute discrepancy for %s %s" %
-            #                  (info1['name'], info2['name']))
-            #self.logger.exception(err)
-            #return []
             self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
                               (info1['name'], info2['name']))
-            #self.logger.exception(err)
             p2disc = -1
             p2length = 0
 
