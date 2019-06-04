@@ -237,31 +237,20 @@ class Loader(core.SimpleLoader):
         key = op.itemgetter(0)
         ordered_chains = sorted(possible, key = key)
         result = []
-        #comp_limit = 200
-        #comp_limit = 30
-        #comp_limit = 3000
-        comp_limit = 460
 
-        calc_limit = 1
-
-        calc = 0
+        #calc = 0
+        #calc_limit = 1
+        comp_limit = 30
 
         for (first, rest) in it.groupby(ordered_chains, key):
             #if calc >= calc_limit:
             #    continue
-            #seconds = [r[1] for r in rest]
             temp = [r[1] for r in rest]
-            #uniq_sec = make_unique_list([r[1] for r in rest])
-            #uniq_sec = make_unique_list(seconds)
             seconds = make_unique_list(temp)
-            self.logger.info("to_process: first: %s" % first)
-            self.logger.info("to_process: seconds: %s" % seconds)
-            #self.logger.info("to_process: uniq_sec: %s" % uniq_sec)
-            #if len(seconds) < comp_limit:
-            if (1 + len(seconds)) == comp_limit:
+            self.logger.debug("to_process: first / seconds: %s / %s" % (first, seconds))
+            if len(seconds) < comp_limit:
                 result.append((first, seconds))
             else:
-                #self.logger.warning("length pass (%s > %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
                 self.logger.warning("length skip (%s < %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
             #calc = 1 + calc
         #return sorted(possible)
