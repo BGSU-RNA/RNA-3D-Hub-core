@@ -951,6 +951,9 @@ class Loader(core.SimpleLoader):
             knowns.append((r.chain_id_1,r.chain_id_2))        
 
         for chain in candidates:
+            if chain == chain1:
+                continue
+
             if ((chain1, chain)) in knowns:
                 self.logger.info("data: already have discrepancy for (%s, %s)" % (chain1, chain))
                 continue
@@ -959,9 +962,6 @@ class Loader(core.SimpleLoader):
             seconds.append(chain)
 
         for chain2 in seconds:
-            if chain2 == chain1:
-                continue
-
             entries = [] 
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
