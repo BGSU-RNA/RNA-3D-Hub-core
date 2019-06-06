@@ -240,7 +240,7 @@ class Loader(core.SimpleLoader):
 
         #calc = 0
         #calc_limit = 1
-        comp_limit = 30
+        comp_limit = 50
 
         for (first, rest) in it.groupby(ordered_chains, key):
             #if calc >= calc_limit:
@@ -961,11 +961,19 @@ class Loader(core.SimpleLoader):
             self.logger.info("data: adding %s to list of pending calculations" % chain)
             seconds.append(chain)
 
+        data_count = 0
+        data_limit = 20
+
         for chain2 in seconds:
+            data_count = 1 + data_count
+            if data_count > data_limit:
+                self.logger.info("data: data_limit (%s) exceeded: %s" % (data_limit, data_count))
+                continue
             entries = [] 
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
-            self.logger.info("data: chain1: %s // chain2: %s // corr_id: %s" % (chain1, chain2, corr_id))
+            self.logger.info("data: count: %s // chain1: %s // chain2: %s // corr_id: %s" % 
+                             (data_count, chain1, chain2, corr_id))
             if corr_id is not None:
                 entries = self.entry(info1, info2, corr_id)
                 #entries.append(self.entry(info1, info2, corr_id))
