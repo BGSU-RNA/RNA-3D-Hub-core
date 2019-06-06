@@ -138,6 +138,8 @@ def cli(ctx, **options):
 @click.option('--ignore-time', is_flag=True, help='Ignore time for rerunning')
 @click.option('--manual', type=KEY_VALUE, multiple=True,
               help='Define a variable')
+@click.option('--comp-limit', type=int, help='Set maximum group size for discrepancy calcuations')
+@click.option('--data-limit', type=int, help='Maximum number of discrepancy calculations per group')
 @click.argument('name')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context

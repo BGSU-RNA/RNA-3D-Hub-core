@@ -212,6 +212,10 @@ class Loader(core.SimpleLoader):
 
         self.logger.debug("Entering to_process...")
 
+        self.logger.info("kwargs: %s" % kwargs)
+        self.logger.info("kwargs: comp_limit: %s" % kwargs['comp_limit'])
+        self.logger.info("kwargs: data_limit: %s" % kwargs['data_limit'])
+
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
         #grouper.must_enforce_single_species = False
@@ -240,7 +244,9 @@ class Loader(core.SimpleLoader):
 
         #calc = 0
         #calc_limit = 1
-        comp_limit = 100
+        comp_limit = kwargs.get('comp_limit', 100)
+
+        self.logger.info("comp_limit: %s" % comp_limit)
 
         for (first, rest) in it.groupby(ordered_chains, key):
             #if calc >= calc_limit:
@@ -962,7 +968,9 @@ class Loader(core.SimpleLoader):
             seconds.append(chain)
 
         data_count = 0
-        data_limit = 20
+        data_limit = kwargs.get('data_limit', 20)
+
+        self.logger.info("data_limit: %s" % data_limit)
 
         for chain2 in seconds:
             data_count = 1 + data_count
