@@ -240,7 +240,7 @@ class Loader(core.SimpleLoader):
 
         #calc = 0
         #calc_limit = 1
-        comp_limit = 50
+        comp_limit = 100
 
         for (first, rest) in it.groupby(ordered_chains, key):
             #if calc >= calc_limit:
@@ -879,7 +879,7 @@ class Loader(core.SimpleLoader):
         #    p2disc, p2length = self.discrepancy(corr_id, info1['name'], info2['name'], *p2data)
         #except Exception as err:
         #    self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
-                              (info1['name'], info2['name']))
+        #                      (info1['name'], info2['name']))
         #    p2disc = -1
         #    p2length = 0
 
