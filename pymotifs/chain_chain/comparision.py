@@ -424,156 +424,156 @@ class Loader(core.SimpleLoader):
         return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
 
-    def pd2(self, corr_id, info1, info2, name='base'):
-        """Load the matrices used to compute discrepancies. This will look up
-        all the centers and rotation matrices in one query. If any centers or
-        rotation matrices are missing it will log an error. If there are alt
-        ids the 'A' one will be used.
+    #def pd2(self, corr_id, info1, info2, name='base'):
+    #    """Load the matrices used to compute discrepancies. This will look up
+    #    all the centers and rotation matrices in one query. If any centers or
+    #    rotation matrices are missing it will log an error. If there are alt
+    #    ids the 'A' one will be used.
 
-        Parameters
-        ----------
-        corr_id : int
-            The correspondence id.
-        info1 : dict
-            The result of `info` for the first chain to compare.
-        info2 : dict
-            The result of `info` for the second chain to compare.
-        name : str, optional
-            The type of base center to use.
+    #    Parameters
+    #    ----------
+    #    corr_id : int
+    #        The correspondence id.
+    #    info1 : dict
+    #        The result of `info` for the first chain to compare.
+    #    info2 : dict
+    #        The result of `info` for the second chain to compare.
+    #    name : str, optional
+    #        The type of base center to use.
 
-        Returns
-        -------
-        data : (list, list, list, list)
-            This returns 4 lists, which are in order, centers1, centers2,
-            rotation1, rotation2.
-        """
+    #    Returns
+    #    -------
+    #    data : (list, list, list, list)
+    #        This returns 4 lists, which are in order, centers1, centers2,
+    #        rotation1, rotation2.
+    #    """
 
-        allunitdictionary = defaultdict()
-        unit_dict_1 = defaultdict()
-        unit_dict_2 = defaultdict()
+    #    allunitdictionary = defaultdict()
+    #    unit_dict_1 = defaultdict()
+    #    unit_dict_2 = defaultdict()
 
-        ife_chain_1 = info1['ife_id'].replace('|','-')
-        ife_chain_2 = info2['ife_id'].replace('|','-')
+    #    ife_chain_1 = info1['ife_id'].replace('|','-')
+    #    ife_chain_2 = info2['ife_id'].replace('|','-')
 
-        self.logger.info("pd2 (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
-        self.logger.debug("pd2 (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
-        self.logger.debug("pd2 (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
+    #    self.logger.info("pd2 (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
+    #    self.logger.debug("pd2 (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
+    #    self.logger.debug("pd2 (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
 
-        with self.session() as session:
-            corr_units = mod.CorrespondenceUnits
+    #    with self.session() as session:
+    #        corr_units = mod.CorrespondenceUnits
 
-            columns = [corr_units.correspondence_id, corr_units.unit_id_1.label('unit1'), corr_units.unit_id_2.label('unit2')]
+    #        columns = [corr_units.correspondence_id, corr_units.unit_id_1.label('unit1'), corr_units.unit_id_2.label('unit2')]
 
-            query = session.query(*columns).\
-                filter(corr_units.correspondence_id == corr_id).\
-                filter(corr_units.pdb_id_1 == info1['pdb']).\
-                filter(corr_units.pdb_id_2 == info2['pdb']).\
-                filter(corr_units.chain_name_1 == info1['chain_name']).\
-                filter(corr_units.chain_name_2 == info2['chain_name']).\
-                order_by(corr_units.correspondence_index).\
-                distinct()
+    #        query = session.query(*columns).\
+    #            filter(corr_units.correspondence_id == corr_id).\
+    #            filter(corr_units.pdb_id_1 == info1['pdb']).\
+    #            filter(corr_units.pdb_id_2 == info2['pdb']).\
+    #            filter(corr_units.chain_name_1 == info1['chain_name']).\
+    #            filter(corr_units.chain_name_2 == info2['chain_name']).\
+    #            order_by(corr_units.correspondence_index).\
+    #            distinct()
 
-            self.logger.info("pd2 (3.0):  result set length: %s" % query.count())
+    #        self.logger.info("pd2 (3.0):  result set length: %s" % query.count())
 
-            if not query.count():
-                self.logger.warning("No geometric data for %s %s", info1, info2)
-                #raise core.Skip("Missing geometric data")
+    #        if not query.count():
+    #            self.logger.warning("No geometric data for %s %s", info1, info2)
+    #            #raise core.Skip("Missing geometric data")
 
-            self.logger.info("pd2 (3): obtained correspondence units")
+    #        self.logger.info("pd2 (3): obtained correspondence units")
 
-            for key in ( ife_chain_1, ife_chain_2 ):
-                splitchain = key.split("+")
+    #        for key in ( ife_chain_1, ife_chain_2 ):
+    #            splitchain = key.split("+")
 
-                if key == ife_chain_1:
-                    info_d = info1
-                else:
-                    info_d = info2
+    #            if key == ife_chain_1:
+    #                info_d = info1
+    #            else:
+    #                info_d = info2
 
-                self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" % 
-                                 (key,info_d['ife_id'],info_d['alt_id'],info_d['sym_op'],info_d['model']))
+    #            self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" % 
+    #                             (key,info_d['ife_id'],info_d['alt_id'],info_d['sym_op'],info_d['model']))
 
-                for chunk in splitchain:
-                    outfile = 'pickle-FR3D/' + chunk + '_RNA.pickle'
+    #            for chunk in splitchain:
+    #                outfile = 'pickle-FR3D/' + chunk + '_RNA.pickle'
 
-                    self.logger.debug("Pickle file: %s" % str(outfile))
+    #                self.logger.debug("Pickle file: %s" % str(outfile))
 
-                    with open(outfile, 'rb') as fh:
-                        data = map(list,map(None,*pickle.load(fh)))
+    #                with open(outfile, 'rb') as fh:
+    #                    data = map(list,map(None,*pickle.load(fh)))
 
-                        self.logger.debug("Data for %s: %s" % (key, str(data)))
+    #                    self.logger.debug("Data for %s: %s" % (key, str(data)))
 
-                        for line in data:
-                            unitid = line[0]
-                            split_unit = unitid.split('|')
+    #                    for line in data:
+    #                        unitid = line[0]
+    #                        split_unit = unitid.split('|')
 
-                            if len(split_unit) > 6:
-                                #if split_unit[6] is not None and split_unit[6] <> info_d['alt_id']:
-                                #if (split_unit[6] == "" and info_d['alt_id'] is not None) or split_unit[6] <> info_d['alt_id']:
-                                if split_unit[6] in ("B", "C"):
-                                    self.logger.info("pd2: Extended unit %s, alt_id (desired/actual):  [%s/%s]" % (unitid, info_d['alt_id'], split_unit[6]))
-                                    continue
+    #                        if len(split_unit) > 6:
+    #                            #if split_unit[6] is not None and split_unit[6] <> info_d['alt_id']:
+    #                            #if (split_unit[6] == "" and info_d['alt_id'] is not None) or split_unit[6] <> info_d['alt_id']:
+    #                            if split_unit[6] in ("B", "C"):
+    #                                self.logger.info("pd2: Extended unit %s, alt_id (desired/actual):  [%s/%s]" % (unitid, info_d['alt_id'], split_unit[6]))
+    #                                continue
 
-                                if len(split_unit) > 8:
-                                    #if split_unit[8] != info_d['sym_op']:
-                                    if split_unit[8] is not None:
-                                        self.logger.info("pd2: Extended unit %s, sym_op (desired/actual):  %s/%s" % (unitid, info_d['sym_op'], split_unit[8]))
-                                        continue
+    #                            if len(split_unit) > 8:
+    #                                #if split_unit[8] != info_d['sym_op']:
+    #                                if split_unit[8] is not None:
+    #                                    self.logger.info("pd2: Extended unit %s, sym_op (desired/actual):  %s/%s" % (unitid, info_d['sym_op'], split_unit[8]))
+    #                                    continue
 
-                                self.logger.info("pd2: Extended unit %s to be used" % unitid)
+    #                            self.logger.info("pd2: Extended unit %s to be used" % unitid)
 
-                            if split_unit[1] != str(info_d['model']):
-                                self.logger.info("pd2: skipped %s for model number %s" % (unitid, split_unit[1]))
-                                continue
+    #                        if split_unit[1] != str(info_d['model']):
+    #                            self.logger.info("pd2: skipped %s for model number %s" % (unitid, split_unit[1]))
+    #                            continue
 
-                            if key == ife_chain_1:
-                                unit_dict_1[unitid] = line
-                                self.logger.debug("pd2: unit_dict_1 for unitid %s: %s" % (unitid, line))
-                            else:
-                                unit_dict_2[unitid] = line 
-                                self.logger.debug("pd2: unit_dict_2 for unitid %s: %s" % (unitid, line))
+    #                        if key == ife_chain_1:
+    #                            unit_dict_1[unitid] = line
+    #                            self.logger.debug("pd2: unit_dict_1 for unitid %s: %s" % (unitid, line))
+    #                        else:
+    #                            unit_dict_2[unitid] = line 
+    #                            self.logger.debug("pd2: unit_dict_2 for unitid %s: %s" % (unitid, line))
 
-            self.logger.info("pd2: unit_dict lengths:  %s / %s" % (len(unit_dict_1), len(unit_dict_2)))
+    #        self.logger.info("pd2: unit_dict lengths:  %s / %s" % (len(unit_dict_1), len(unit_dict_2)))
 
-            c1 = []
-            c2 = []
-            r1 = []
-            r2 = []
-            pd2seen = set()
+    #        c1 = []
+    #        c2 = []
+    #        r1 = []
+    #        r2 = []
+    #        pd2seen = set()
 
-            for r in query:
-                self.logger.debug("pd2 (5): row: %s" % str(r))
+    #        for r in query:
+    #            self.logger.debug("pd2 (5): row: %s" % str(r))
 
-                uspl1 = r.unit1.split('|')
-                uspl2 = r.unit2.split('|')
+    #            uspl1 = r.unit1.split('|')
+    #            uspl2 = r.unit2.split('|')
 
-                if str(uspl1[1]) != '1' or str(uspl2[1]) != '1':
-                    continue 
+    #            if str(uspl1[1]) != '1' or str(uspl2[1]) != '1':
+    #                continue 
 
-                #if r.unit1 in pd2seen:
-                #    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
-                #pd2seen.add(r.unit1)
+    #            #if r.unit1 in pd2seen:
+    #            #    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
+    #            #pd2seen.add(r.unit1)
 
-                #if r.unit2 in pd2seen:
-                #    raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
-                #pd2seen.add(r.unit2)
+    #            #if r.unit2 in pd2seen:
+    #            #    raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
+    #            #pd2seen.add(r.unit2)
 
-                if unit_dict_1.get(r.unit1) is not None and unit_dict_2.get(r.unit2) is not None:
-                    if r.unit1 in pd2seen:
-                        raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
-                    pd2seen.add(r.unit1)
+    #            if unit_dict_1.get(r.unit1) is not None and unit_dict_2.get(r.unit2) is not None:
+    #                if r.unit1 in pd2seen:
+    #                    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
+    #                pd2seen.add(r.unit1)
 
-                    if r.unit2 in pd2seen:
-                        raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
-                    pd2seen.add(r.unit2)
+    #                if r.unit2 in pd2seen:
+    #                    raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
+    #                pd2seen.add(r.unit2)
 
-                    c1.append(unit_dict_1[r.unit1][2])
-                    c2.append(unit_dict_2[r.unit2][2])
-                    r1.append(unit_dict_1[r.unit1][3])
-                    r2.append(unit_dict_2[r.unit2][3])
+    #                c1.append(unit_dict_1[r.unit1][2])
+    #                c2.append(unit_dict_2[r.unit2][2])
+    #                r1.append(unit_dict_1[r.unit1][3])
+    #                r2.append(unit_dict_2[r.unit2][3])
 
-        self.logger.info("pd2 (6): end query for %s // %s" % (ife_chain_1, ife_chain_2))
+    #    self.logger.info("pd2 (6): end query for %s // %s" % (ife_chain_1, ife_chain_2))
 
-        return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
+    #    return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
 
     def discrepancy(self, corr_id, name1, name2, centers1, centers2, rot1, rot2):
@@ -864,50 +864,50 @@ class Loader(core.SimpleLoader):
         preversed['model_1'] = pcompare['model_2']
         preversed['model_2'] = pcompare['model_1']
 
-        p2data = self.pd2(corr_id, info1, info2)
-        if len(filter(lambda m: len(m), p2data)) != len(p2data):
-            self.logger.warning("Did not load all data for %s, %s",
-                                info1['name'], info2['name'])
-            #return []
+        #p2data = self.pd2(corr_id, info1, info2)
+        #if len(filter(lambda m: len(m), p2data)) != len(p2data):
+        #    self.logger.warning("Did not load all data for %s, %s",
+        #                        info1['name'], info2['name'])
+        #    #return []
 
-        if len(p2data[0]) < 3:
-            self.logger.warning("pd2: p2data[0] = %s" % p2data[0])
-            self.logger.warning("Not enough centers for pair: %s, %s" %
-                                (info1['chain_id'], info2['chain_id']))
+        #if len(p2data[0]) < 3:
+        #    self.logger.warning("pd2: p2data[0] = %s" % p2data[0])
+        #    self.logger.warning("Not enough centers for pair: %s, %s" %
+        #                        (info1['chain_id'], info2['chain_id']))
 
-        try:
-            p2disc, p2length = self.discrepancy(corr_id, info1['name'], info2['name'], *p2data)
-        except Exception as err:
-            self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
+        #try:
+        #    p2disc, p2length = self.discrepancy(corr_id, info1['name'], info2['name'], *p2data)
+        #except Exception as err:
+        #    self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
                               (info1['name'], info2['name']))
-            p2disc = -1
-            p2length = 0
+        #    p2disc = -1
+        #    p2length = 0
 
-        pd2c = {
-            'chain_id_1': info1['chain_id'],
-            'chain_id_2': info2['chain_id'],
-            'model_1': info1['model'],
-            'model_2': info2['model'],
-            'correspondence_id': corr_id,
-            'discrepancy': float(p2disc),
-            'num_nucleotides': p2length,
-        }
+        #pd2c = {
+        #    'chain_id_1': info1['chain_id'],
+        #    'chain_id_2': info2['chain_id'],
+        #    'model_1': info1['model'],
+        #    'model_2': info2['model'],
+        #    'correspondence_id': corr_id,
+        #    'discrepancy': float(p2disc),
+        #    'num_nucleotides': p2length,
+        #}
 
-        pd2r = dict(pcompare)
-        pd2r['chain_id_1'] = pd2c['chain_id_2']
-        pd2r['chain_id_2'] = pd2c['chain_id_1']
-        pd2r['model_1'] = pd2c['model_2']
-        pd2r['model_2'] = pd2c['model_1']
+        #pd2r = dict(pcompare)
+        #pd2r['chain_id_1'] = pd2c['chain_id_2']
+        #pd2r['chain_id_2'] = pd2c['chain_id_1']
+        #pd2r['model_1'] = pd2c['model_2']
+        #pd2r['model_2'] = pd2c['model_1']
 
-        self.logger.info("IFE1/IFE2: %s / %s : Discrepancies/Length (pickle/revised): %s / %s : %s / %s" % (info1['name'], info2['name'], pcompare['discrepancy'], pcompare['num_nucleotides'], pd2c['discrepancy'], pd2c['num_nucleotides']))
+        #self.logger.info("IFE1/IFE2: %s / %s : Discrepancies/Length (pickle/revised): %s / %s : %s / %s" % (info1['name'], info2['name'], pcompare['discrepancy'], pcompare['num_nucleotides'], pd2c['discrepancy'], pd2c['num_nucleotides']))
 
         return [
             #compare,
             #reversed,
-            #pcompare,
-            #preversed
-            pd2c,
-            pd2r
+            pcompare,
+            preversed
+            #pd2c,
+            #pd2r
         ]
 
 
