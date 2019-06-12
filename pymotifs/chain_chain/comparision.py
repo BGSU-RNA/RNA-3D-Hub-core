@@ -12,6 +12,7 @@ import itertools as it
 import numpy as np
 import operator as op
 import pickle
+import time
 
 from collections import defaultdict
 
@@ -215,6 +216,7 @@ class Loader(core.SimpleLoader):
         self.logger.info("kwargs: %s" % kwargs)
         self.logger.info("kwargs: comp_limit: %s" % kwargs['comp_limit'])
         self.logger.info("kwargs: data_limit: %s" % kwargs['data_limit'])
+        self.logger.info("input config: %s" % self.config['db'])
 
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
@@ -244,7 +246,11 @@ class Loader(core.SimpleLoader):
 
         #calc = 0
         #calc_limit = 1
-        comp_limit = kwargs.get('comp_limit', 100)
+
+        if 'comp_limit' in kwargs and kwargs.get('comp_limit') is not None:
+            comp_limit = kwargs.get('comp_limit', 100)
+        else:
+            comp_limit = 100
 
         self.logger.info("comp_limit: %s" % comp_limit)
 
@@ -907,6 +913,8 @@ class Loader(core.SimpleLoader):
 
         #self.logger.info("IFE1/IFE2: %s / %s : Discrepancies/Length (pickle/revised): %s / %s : %s / %s" % (info1['name'], info2['name'], pcompare['discrepancy'], pcompare['num_nucleotides'], pd2c['discrepancy'], pd2c['num_nucleotides']))
 
+        #time.sleep(1)
+
         return [
             #compare,
             #reversed,
@@ -968,7 +976,11 @@ class Loader(core.SimpleLoader):
             seconds.append(chain)
 
         data_count = 0
-        data_limit = kwargs.get('data_limit', 20)
+
+        if 'data_limit' in kwargs and kwargs.get('data_limit') is not None:
+            data_limit = kwargs.get('data_limit', 20)
+        else:
+            data_limit = 20
 
         self.logger.info("data_limit: %s" % data_limit)
 
