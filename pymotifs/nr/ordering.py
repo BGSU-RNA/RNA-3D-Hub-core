@@ -62,6 +62,8 @@ class Loader(core.SimpleLoader):
                 raise core.InvalidState("No precomputed grouping to store")
             latest = data['release']
 
+        self.logger.info("to_process: latest: %s" % latest)
+
         with self.session() as session:
             query = session.query(mod.NrClasses.nr_class_id).\
                 filter_by(nr_release_id=latest)
@@ -86,6 +88,9 @@ class Loader(core.SimpleLoader):
         """
 
         _, class_id = pair
+
+        self.logger.info("query: class_id: %s" % class_id)
+
         return session.query(mod.NrOrdering).\
             filter_by(nr_class_id=class_id)
 
@@ -103,6 +108,9 @@ class Loader(core.SimpleLoader):
             A list of tuples (ife_id, nr_chain_id) for all members that are
             part of the class.
         """
+
+        self.logger.info("members: class_id: %s" % class_id)
+
         with self.session() as session:
             query = session.query(mod.NrChains.ife_id,
                                   mod.NrChains.nr_chain_id).\
@@ -136,6 +144,9 @@ class Loader(core.SimpleLoader):
             A dict of dict's that represents the distances. The keys will be
             ife ids, and the values will be the discrepancies between each ife.
         """
+
+        self.logger.info("distances: class_id: %s" % class_id)
+        self.logger.info("distances: members %s" % members)
 
         with self.session() as session:
             chains1 = aliased(mod.IfeChains)
@@ -193,6 +204,8 @@ class Loader(core.SimpleLoader):
             as those things without distances will be skipped.
         """
 
+        self.logger.info("ordered: members: %s" % members)
+
         dist = np.zeros((len(members), len(members)))
         for index1, member1 in enumerate(members):
             curr = distances.get(member1[0], {})
@@ -232,6 +245,10 @@ class Loader(core.SimpleLoader):
         """
 
         nr_release_id, class_id = pair
+
+        self.logger.info("data: nr_release_id: %s" % nr_release_id)
+        self.logger.info("data: class_id: %s" % class_id)
+
         members = self.members(class_id)
         distances = self.distances(nr_release_id, class_id, members)
         ordered = self.ordered(members, distances)
