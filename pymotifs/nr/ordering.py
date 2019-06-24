@@ -127,8 +127,9 @@ class Loader(core.SimpleLoader):
         return session.query(mod.NrOrdering).\
             filter_by(nr_class_id=class_id)
 
-    def get_original_release(self, class_name):
-        """Obtain the first nr_release_id for the input class_name.
+    def get_original_info(self, class_name):
+        """Obtain the first nr_release_id and the corresponding
+        nr_class_id value for the input class_name.
 
         Parameters
         ----------
@@ -145,7 +146,8 @@ class Loader(core.SimpleLoader):
             ncl = aliased(mod.NrClasses)
             nre = aliased(mod.NrReleases)
 
-            query = session.query(nre.nr_release_id).\
+            query = session.query(nre.nr_release_id,
+                                  ncl.nr_class_id).\
                 join(ncl, ncl.nr_release_id == nre.nr_release_id).\
                 filter(ncl.name == class_name).\
                 order_by(nre.index).\
@@ -153,10 +155,33 @@ class Loader(core.SimpleLoader):
 
             for r in query:
                 orig_release_id = r.nr_release_id
+                orig_class_id = r.nr_class_id
 
-            return orig_release_id
+            return (orig_release_id, orig_class_id)
 
-    def members_revised(self, class_name):
+    def members_revised(self, class_name, release_id):
+        """Get all members of the class.
+
+        Parameters
+        ----------
+        class_name : in
+            The name of the the NR class.
+
+        release_id : in
+            The first representative sets release that contains the class.
+
+        Returns
+        -------
+        members : list
+            A list of tuples (ife_id, nr_chain_id, chain_id) for all 
+            members of the class.
+        """
+
+        self.logger.info("members_revised:  class_name: %s" % class_name)
+
+        with self.session() as session:
+            pass
+
         pass
 
     def members(self, class_id):
@@ -323,11 +348,10 @@ class Loader(core.SimpleLoader):
         get_nr_class_name = self.get_nrclassname(class_id)
         nr_class_name = get_nr_class_name[0]
 
-        self.logger.info("data: USING: nr_class_name %s for class_id %s" % (nr_class_name, class_id))
+        orig_release_id, orig_class_id = self.get_original_info(nr_class_name)
 
-        orig_release_id = self.get_original_release(nr_class_name)
-
-        self.logger.info("data: USING: nr_release_id %s for nr_class_name %s" % (orig_release_id, nr_class_name))
+        self.logger.info("data: USING: orig_release_id %s and orig_class_id %s for nr_class_name %s for class_id %s" 
+                         % (orig_release_id, orig_class_id, nr_class_name, class_id))
 
         members = self.members(class_id)
         distances = self.distances(nr_release_id, class_id, members)
