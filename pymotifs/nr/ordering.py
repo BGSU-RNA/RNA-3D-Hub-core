@@ -11,6 +11,7 @@ import collections as coll
 
 import numpy as np
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
 from fr3d.ordering.greedyInsertion import orderWithPathLengthFromDistanceMatrix
@@ -69,6 +70,38 @@ class Loader(core.SimpleLoader):
                 filter_by(nr_release_id=latest)
             return [(latest, r.nr_class_id) for r in query]
 
+    #def is_missing(self, entry, **kwargs):
+    #    """Placeholder to see how to properly ID the classes that need 
+    #    attention.
+    #    """
+    #    pass
+
+    def has_data(self, entry, **kwargs):
+        rel, class_id = entry
+
+        with self.session() as session:
+            query = session.query(mod.NrClasses.name).\
+                filter_by(nr_class_id=class_id)
+
+            class_name = [r.name for r in query]
+
+            query = session.query(mod.NrChains.ife_id).\
+                filter_by(nr_class_id=class_id)
+
+            results = [r.ife_id for r in query]
+
+            query = session.query(mod.NrOrderingTemp.ife_id).filter_by(nr_class_name=class_name[0])
+
+            count = query.count()
+
+            self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" % 
+                             (count, class_name[0], class_id, len(results), str(results)))
+
+            if count == len(results):
+                return True
+
+        return False
+
     def query(self, session, pair):
         """Create a query to find all entries in nr_ordering for the given
         class id.
@@ -93,6 +126,38 @@ class Loader(core.SimpleLoader):
 
         return session.query(mod.NrOrdering).\
             filter_by(nr_class_id=class_id)
+
+    def get_original_release(self, class_name):
+        """Obtain the first nr_release_id for the input class_name.
+
+        Parameters
+        ----------
+        class_name : in
+            The name of the the NR class.
+
+        Returns
+        -------
+        orig_release_id : string
+            The first release_id in which the NR class appears.
+        """
+
+        with self.session() as session:
+            ncl = aliased(mod.NrClasses)
+            nre = aliased(mod.NrReleases)
+
+            query = session.query(nre.nr_release_id).\
+                join(ncl, ncl.nr_release_id == nre.nr_release_id).\
+                filter(ncl.name == class_name).\
+                order_by(nre.index).\
+                limit(1)
+
+            for r in query:
+                orig_release_id = r.nr_release_id
+
+            return orig_release_id
+
+    def members_revised(self, class_name):
+        pass
 
     def members(self, class_id):
         """Get all members of the class.
@@ -145,8 +210,7 @@ class Loader(core.SimpleLoader):
             ife ids, and the values will be the discrepancies between each ife.
         """
 
-        self.logger.info("distances: class_id: %s" % class_id)
-        self.logger.info("distances: members %s" % members)
+        self.logger.info("distances: class_id (%s) has %s members" % (class_id, len(members)))
 
         with self.session() as session:
             chains1 = aliased(mod.IfeChains)
@@ -204,7 +268,7 @@ class Loader(core.SimpleLoader):
             as those things without distances will be skipped.
         """
 
-        self.logger.info("ordered: members: %s" % members)
+        self.logger.info("ordered: %s members" % len(members))
 
         dist = np.zeros((len(members), len(members)))
         for index1, member1 in enumerate(members):
@@ -214,6 +278,7 @@ class Loader(core.SimpleLoader):
                 if member2[0] not in curr:
                     val = None
                 dist[index1, index2] = val
+                self.logger.debug("ordered: dist[%s, %s] = %s" % (index1, index2, val))
 
         ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
                                                                self.trials,
@@ -222,6 +287,13 @@ class Loader(core.SimpleLoader):
 
     def mark_processed(self, pair, **kwargs):
         return super(Loader, self).mark_processed(pair[1], **kwargs)
+
+    def get_nrclassname(self, class_id):
+        with self.session() as session:
+            query = session.query(mod.NrClasses.name).\
+                filter_by(nr_class_id=class_id)
+
+            return [r.name for r in query]
 
     def data(self, pair, **kwargs):
         """Compute the ordering rows to store. This will lookup the distances
@@ -246,8 +318,16 @@ class Loader(core.SimpleLoader):
 
         nr_release_id, class_id = pair
 
-        self.logger.info("data: nr_release_id: %s" % nr_release_id)
-        self.logger.info("data: class_id: %s" % class_id)
+        self.logger.info("data: INPUT: nr_release_id: %s, class_id: %s" % (nr_release_id, class_id))
+
+        get_nr_class_name = self.get_nrclassname(class_id)
+        nr_class_name = get_nr_class_name[0]
+
+        self.logger.info("data: USING: nr_class_name %s for class_id %s" % (nr_class_name, class_id))
+
+        orig_release_id = self.get_original_release(nr_class_name)
+
+        self.logger.info("data: USING: nr_release_id %s for nr_class_name %s" % (orig_release_id, nr_class_name))
 
         members = self.members(class_id)
         distances = self.distances(nr_release_id, class_id, members)
