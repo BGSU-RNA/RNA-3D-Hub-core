@@ -159,13 +159,13 @@ class Loader(core.SimpleLoader):
 
             return (orig_release_id, orig_class_id)
 
-    def members_revised(self, class_name, release_id):
+    def members_revised(self, class_id, release_id):
         """Get all members of the class.
 
         Parameters
         ----------
-        class_name : in
-            The name of the the NR class.
+        class_id : in
+            The first class_id value for the NR class.
 
         release_id : in
             The first representative sets release that contains the class.
@@ -177,12 +177,19 @@ class Loader(core.SimpleLoader):
             members of the class.
         """
 
-        self.logger.info("members_revised:  class_name: %s" % class_name)
+        self.logger.info("members_revised:  class_id: %s" % class_id)
 
         with self.session() as session:
-            pass
+            nch = aliased(mod.NrChains)
+            ich = aliased(mod.IfeChains)
 
-        pass
+            query = session.query(nch.ife_id, nch.nr_chain_id, ich.chain_id).\
+                join(ich, nch.ife_id == ich.ife_id).\
+                filter(nch.nr_class_id == class_id)
+
+            result = [(r.ife_id, r.nr_chain_id, r.chain_id) for r in query]
+
+        return result
 
     def members(self, class_id):
         """Get all members of the class.
@@ -354,6 +361,11 @@ class Loader(core.SimpleLoader):
                          % (orig_release_id, orig_class_id, nr_class_name, class_id))
 
         members = self.members(class_id)
+        members_revised = self.members_revised(orig_class_id, orig_release_id)
+
+        self.logger.info("data: members: %s (class_id %s)" % (str(members), class_id))
+        self.logger.info("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
+
         distances = self.distances(nr_release_id, class_id, members)
         ordered = self.ordered(members, distances)
         data = []
