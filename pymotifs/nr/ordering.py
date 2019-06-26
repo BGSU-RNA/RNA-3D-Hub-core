@@ -222,6 +222,74 @@ class Loader(core.SimpleLoader):
 
         return members
 
+    def distances_revised(self, release_id, class_id, members):
+        """Load all available computed distances between members of the NR class.
+        Note that all possible chain-to-chain comparisons are not computed;
+        for example, chains with very poor resolution are skipped during the
+        discrepancy calculations.
+
+        Parameters
+        ----------
+        class_id : in
+            The first class_id value for the NR class.
+
+        release_id : in
+            The first representative sets release that contains the class.
+
+        members : list
+            A list of members as from `Loader.members`.  (Actually generated
+            in members_revised)
+
+        Returns
+        -------
+        distances_revised : collections.defaultdict
+            A dict-of-dicts that represents the distances. The keys will be
+            ife_ids, and the values will be the discrepancies between each pair
+            of IFEs.
+        """
+
+        self.logger.info("distances_revised: class_id (%s) has %s members" % (class_id, len(members)))
+
+        with self.session() as session:
+            chains1 = aliased(mod.IfeChains)
+            chains2 = aliased(mod.IfeChains)
+            nr1 = aliased(mod.NrChains)
+            nr2 = aliased(mod.NrChains)
+            sim = mod.ChainChainSimilarity
+
+            query = session.query(sim.discrepancy,
+                                  chains1.ife_id.label('ife1'),
+                                  chains2.ife_id.label('ife2'),
+                                  ).\
+                join(chains1, chains1.chain_id == sim.chain_id_1).\
+                join(chains2, chains2.chain_id == sim.chain_id_2).\
+                join(nr1, nr1.ife_id == chains1.ife_id).\
+                join(nr2, nr2.ife_id == chains2.ife_id).\
+                filter(nr1.nr_class_id == nr2.nr_class_id).\
+                filter(nr1.nr_class_id == class_id).\
+                filter(nr1.nr_release_id == nr2.nr_release_id).\
+                filter(nr1.nr_release_id == release_id).\
+                order_by(nr1.ife_id, nr2.ife_id)
+
+            distances_revised = coll.defaultdict(lambda: coll.defaultdict(int))
+
+            ifes = set(m[0] for m in members)
+
+            for result in query:
+                if result.ife1 not in ifes or result.ife2 not in ifes:
+                    continue
+                distances_revised[result.ife1][result.ife2] = result.discrepancy
+
+        if not distances_revised:
+            raise core.Skip("No distances, skipping class: %i" % class_id)
+
+        if set(distances_revised.keys()) != ifes:
+            missing = ', '.join(ifes - set(distances_revised.keys()))
+            self.logger.warning("Did not load distances for all pairs in: %i."
+                                " Missing %s", class_id, missing)
+
+        return distances_revised
+
     def distances(self, nr_release_id, class_id, members):
         """Load all compute distances for members of the NR class. This may not
         load distances for all members, as we do not compute discrepancies for
@@ -367,6 +435,11 @@ class Loader(core.SimpleLoader):
         self.logger.info("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
 
         distances = self.distances(nr_release_id, class_id, members)
+        distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
+
+        self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
+        self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
+
         ordered = self.ordered(members, distances)
         data = []
         for index, (ife_id, chain_id) in enumerate(ordered):
