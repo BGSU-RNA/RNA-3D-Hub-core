@@ -349,6 +349,43 @@ class Loader(core.SimpleLoader):
 
         return distances
 
+    def ordered_revised(self, members, distances):
+        """Compute an ordering for the members of an equivalence set given the
+        distance matrix.
+
+        Parameters
+        ----------
+        members : list
+            A list of members as from `Loader.members`.
+        distances : collections.defaultdict
+            A defaultdict of distances as from `Loader.distances`.
+
+        Returns
+        -------
+        ordered_members : list
+            A sparse list of the given members in an order as specified by the
+            discrepancies. (Sparse because any members without distances will 
+            be skipped.)
+        """
+
+        self.logger.info("ordered_revised: %s members" % len(members))
+
+        dist = np.zeros((len(members), len(members)))
+
+        for index1, member1 in enumerate(members):
+            curr = distances.get(member1[0], {})
+            for index2, member2 in enumerate(members):
+                val = curr.get(member2[0], None)
+                if member2[0] not in curr:
+                    val = None
+                dist[index1, index2] = val
+                self.logger.debug("ordered: dist[%s, %s] = %s" % (index1, index2, val))
+
+        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
+                                                               self.trials,
+                                                               scanForNan=True)
+        return [members[index] for index in ordering]
+
     def ordered(self, members, distances):
         """Compute an ordering for the members of an equivalence set given the
         distance matrix.
@@ -441,6 +478,11 @@ class Loader(core.SimpleLoader):
         self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
 
         ordered = self.ordered(members, distances)
+        ordered_revised = self.ordered_revised(members_revised, distances_revised)
+
+        self.logger.info("data: ordered: %s (class_id %s)" % (str(ordered), class_id))
+        self.logger.info("data: ordered_revised: %s (class_id %s)" % (str(ordered_revised), orig_class_id))
+
         data = []
         for index, (ife_id, chain_id) in enumerate(ordered):
             data.append(mod.NrOrdering(
