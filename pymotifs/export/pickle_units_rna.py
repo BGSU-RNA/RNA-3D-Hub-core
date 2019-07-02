@@ -173,24 +173,20 @@ class Exporter(core.Loader):
 
         Returns
         -------
-        (pdb_id, model, chain_name) : tuple
+        (pdb_id, model, chain) : tuple
             The components of the IFE-chains to be processed.
         """
 
         with self.session() as session:
             query = session.query(
-                       mod.IfeInfo.pdb_id,
-                       mod.IfeInfo.model,
-                       mod.ChainInfo.chain_name
+                       mod.UnitInfo.pdb_id,
+                       mod.UnitInfo.model,
+                       mod.UnitInfo.chain
                    ).\
                    distinct().\
-                   join(mod.IfeChains,
-                        mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
-                   join(mod.ChainInfo,
-                        mod.ChainInfo.chain_id == mod.IfeChains.chain_id).\
-                   filter(mod.IfeInfo.model.isnot(None))
+                   filter(mod.UnitInfo.unit_type_id == 'rna')
 
-            return [(r.pdb_id, r.model, r.chain_name) for r in query]
+            return [(r.pdb_id, r.model, r.chain) for r in query]
 
         pass
 

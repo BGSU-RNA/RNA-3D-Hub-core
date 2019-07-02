@@ -13,10 +13,10 @@ from pymotifs.core import StageContainer
 from pymotifs.export.cifatom import Exporter as CifAtom
 from pymotifs.export.interactions import Exporter as InteractionExporter
 from pymotifs.export.loops import Exporter as LoopExporter
-from pymotifs.export.pickle_units import Exporter as PickleExporter
+from pymotifs.export.pickle_units_rna import Exporter as PickleURExporter
 
 
 class Exporter(StageContainer):
     """The actual stage to run."""
 
-    stages = set([CifAtom, InteractionExporter, LoopExporter, PickleExporter])
+    stages = set([CifAtom, InteractionExporter, LoopExporter, PickleURExporter])
