@@ -16,6 +16,8 @@ from sqlalchemy.orm import aliased
 
 from fr3d.ordering.greedyInsertion import orderWithPathLengthFromDistanceMatrix
 
+from pprint import pprint
+
 from pymotifs import core
 from pymotifs import models as mod
 
@@ -90,7 +92,7 @@ class Loader(core.SimpleLoader):
 
             results = [r.ife_id for r in query]
 
-            query = session.query(mod.NrOrderingTemp.ife_id).filter_by(nr_class_name=class_name[0])
+            query = session.query(mod.NrOrderingTest.ife_id).filter_by(nr_class_name=class_name[0])
 
             count = query.count()
 
@@ -173,7 +175,7 @@ class Loader(core.SimpleLoader):
         Returns
         -------
         members : list
-            A list of tuples (ife_id, nr_chain_id, chain_id) for all 
+            A list of tuples (ife_id, nr_chain_id) for all 
             members of the class.
         """
 
@@ -181,15 +183,19 @@ class Loader(core.SimpleLoader):
 
         with self.session() as session:
             nch = aliased(mod.NrChains)
-            ich = aliased(mod.IfeChains)
 
-            query = session.query(nch.ife_id, nch.nr_chain_id, ich.chain_id).\
-                join(ich, nch.ife_id == ich.ife_id).\
+            query = session.query(nch.ife_id, nch.nr_chain_id).\
                 filter(nch.nr_class_id == class_id)
 
-            result = [(r.ife_id, r.nr_chain_id, r.chain_id) for r in query]
+            members = [(r.ife_id, r.nr_chain_id) for r in query]
 
-        return result
+        if len(members) == 1:
+            raise core.Skip("Skip group of size 1")
+
+        if not members:
+            raise core.InvalidState("No members in NR class: %i" % class_id)
+
+        return members
 
     def members(self, class_id):
         """Get all members of the class.
@@ -474,20 +480,37 @@ class Loader(core.SimpleLoader):
         distances = self.distances(nr_release_id, class_id, members)
         distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
 
-        self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
-        self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
+        #self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
+        #self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
 
         ordered = self.ordered(members, distances)
         ordered_revised = self.ordered_revised(members_revised, distances_revised)
 
-        self.logger.info("data: ordered: %s (class_id %s)" % (str(ordered), class_id))
-        self.logger.info("data: ordered_revised: %s (class_id %s)" % (str(ordered_revised), orig_class_id))
+        #self.logger.info("data: ordered: %s (class_id %s)" % (str(ordered), class_id))
+        #self.logger.info("data: ordered_revised: %s (class_id %s)" % (str(ordered_revised), orig_class_id))
 
-        data = []
-        for index, (ife_id, chain_id) in enumerate(ordered):
-            data.append(mod.NrOrdering(
-                nr_chain_id=chain_id,
-                nr_class_id=class_id,
-                index=index,
+        #data = []
+        #for index, (ife_id, chain_id) in enumerate(ordered):
+        #    self.logger.info("data: data: class_id %s / index %s / chain_id %s" % (class_id, index, chain_id))
+        #    data.append(mod.NrOrdering(
+        #        nr_chain_id=chain_id,
+        #        nr_class_id=class_id,
+        #        index=index,
+        #    ))
+
+        data_revised = []
+        for index, (ife_id, nr_chain_id) in enumerate(ordered_revised):
+            self.logger.info("data: data_revised: nr_class_id %s / index %s / nr_chain_id %s / nr_class_name %s / ife_id %s " % (orig_class_id, index, nr_chain_id, nr_class_name, ife_id))
+            data_revised.append(mod.NrOrderingTest(
+                nr_class_id=orig_class_id,
+                nr_class_name=nr_class_name,
+                nr_chain_id=nr_chain_id,
+                ife_id=ife_id,
+                class_order=index,
             ))
-        return data
+
+        #self.logger.info("data: output data: %s (class_id %s)" % (repr(data), class_id))
+        self.logger.info("data: output data_revised: %s (class_id %s)" % (repr(data_revised), class_id))
+
+        return data_revised
+        #return data
