@@ -67,7 +67,7 @@ class Exporter(core.Loader):
         return os.path.join("pickle-FR3D",chain_string + "_RNA.pickle")
 
 
-    def cenrot(self, ichain):
+    def data(self, ichain, **kwargs):
         """Get all unit listings for the given IFE-chain, centers and
         rotations, and format them for convenient use by FR3D.
 
@@ -142,27 +142,6 @@ class Exporter(core.Loader):
             return rsset
 
 
-    def data(self, session, cenrot, filename, **kwargs):
-        """Load centers/rotations data for the given IFE-chain.
-
-        Parameters
-        ----------
-        cenrot : list of dicts
-            The centers/rotations data to write
-
-        filename : text
-            The name of the output pickle file.
-
-
-        Returns
-        -------
-        pickle : pickle
-            A pickle file containing data for all units in the input chain.
-        """
-
-        pass
-
-
     def to_process(self, pdbs, **kwargs):
         """Look up the list of IFE-chains to process.  Ignores the pdbs input.
 
@@ -188,13 +167,9 @@ class Exporter(core.Loader):
 
             return [(r.pdb_id, r.model, r.chain) for r in query]
 
-        pass
-
 
     def process(self, entry, **kwargs):
-        """Process this entry. In the case of loaders this will parse the data
-        and put it into the database, exporters may go to the database and then
-        generate the file. Inheriting classes must implement this.
+        """Load centers/rotations data for the given IFE-chain.
 
         Parameters
         ----------
@@ -206,12 +181,10 @@ class Exporter(core.Loader):
 
         filename = self.filename(entry)
 
-        uinfo = self.cenrot(entry)
+        uinfo = self.data(entry)
 
         with open(filename, 'wb') as fh:
             self.logger.debug("process: filename open: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(uinfo, fh, 2)
-
-        pass
 
