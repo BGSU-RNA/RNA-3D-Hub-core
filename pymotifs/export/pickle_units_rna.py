@@ -16,6 +16,8 @@ from pymotifs.exp_seq.mapping import Loader as MappingLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
 
+from os import path
+
 
 class Exporter(core.Loader):
     """Export unit data in pickle format, one file per 
@@ -30,7 +32,14 @@ class Exporter(core.Loader):
                         PositionLoader, IfeInfoLoader, MappingLoader])
 
 
-    def has_data(self, *args, **kwargs):
+    def has_data(self, entry, *args, **kwargs):
+        self.logger.info("has_data: entry: %s" % str(entry))
+        filename = self.filename(entry)
+        self.logger.info("has_data: filename: %s" % filename)
+        if os.path.exists(filename) is True:
+            self.logger.info("has_data: filename %s exists" % filename)
+            return True
+        self.logger.info("has_data: filename %s is missing" % filename)
         return False
 
 
