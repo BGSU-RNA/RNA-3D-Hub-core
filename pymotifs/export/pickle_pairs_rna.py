@@ -105,6 +105,12 @@ class Exporter(core.Loader):
 
             subqueryI = session.query(iupi.unit_id_1,
                                iupi.unit_id_2,
+                               iui1.model,
+                               iui1.chain,
+                               iui1.chain_index,
+                               iui2.model,
+                               iui2.chain,
+                               iui2.chain_index,
                                iupi.f_lwbp,
                                iupi.f_stacks,
                                iupi.f_bphs,
@@ -123,6 +129,12 @@ class Exporter(core.Loader):
 
             subqueryF = session.query(fupf.unit_id_1,
                                fupf.unit_id_2,
+                               fui1.model,
+                               fui1.chain,
+                               fui1.chain_index,
+                               fui2.model,
+                               fui2.chain,
+                               fui2.chain_index,
                                fupi.f_lwbp,
                                fupi.f_stacks,
                                fupi.f_bphs,
@@ -139,7 +151,8 @@ class Exporter(core.Loader):
                     filter(fui2.unit_type_id == 'rna').\
                     filter(fupf.pdb_id == pdb)
 
-            query = subqueryI.union(subqueryF)
+            query = subqueryI.union(subqueryF).order_by(iui1.model, iui1.chain, iui1.chain_index,
+                               iui2.model, iui2.chain, iui2.chain_index)
 
             self.logger.debug("data: query built: %s" % str(query))
 
