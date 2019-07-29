@@ -209,35 +209,6 @@ class Exporter(core.Loader):
             return constraintToPair
 
 
-    #def to_process(self, pdbs, **kwargs):
-    #    """Process the input list of PDBs.
-
-    #    Parameters
-    #    ----------
-    #    pdbs : list
-    #        To process.
-
-    #    Returns
-    #    -------
-    #    (pdb_id, model, chain) : tuple
-    #        The components of the IFE-chains to be processed.
-    #    """
-
-    #    #with self.session() as session:
-    #    #    query = session.query(
-    #    #               mod.UnitInfo.pdb_id,
-    #    #               mod.UnitInfo.model,
-    #    #               mod.UnitInfo.chain
-    #    #           ).\
-    #    #           distinct().\
-    #    #           filter(mod.UnitInfo.unit_type_id == 'rna')
-
-    #    #    return [(r.pdb_id, r.model, r.chain) for r in query]
-
-    #    #pass
-    #    return pdbs
-
-
     def process(self, entry, **kwargs):
         """Load centers/rotations data for the given IFE-chain.
 
