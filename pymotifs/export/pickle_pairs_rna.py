@@ -249,6 +249,8 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
 
+        webroot = self.config['locations']['fr3d_pickle_base'] + "/pairs/"
+
         filename = self.filename(entry)
 
         pinfo = self.data(entry)
@@ -259,6 +261,9 @@ class Exporter(core.Loader):
             self.logger.info("process: filename open: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(pinfo, fh, 2)
+
+        os.system("rsync -u %s %s" % (filename, webroot))
+        self.logger.info("rsync -u %s %s" % (filename, webroot))
 
         pass
 
