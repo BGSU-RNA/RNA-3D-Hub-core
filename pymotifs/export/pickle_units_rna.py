@@ -16,6 +16,8 @@ from pymotifs.exp_seq.mapping import Loader as MappingLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
 
+from os import path
+
 
 class Exporter(core.Loader):
     """Export unit data in pickle format, one file per 
@@ -30,7 +32,14 @@ class Exporter(core.Loader):
                         PositionLoader, IfeInfoLoader, MappingLoader])
 
 
-    def has_data(self, *args, **kwargs):
+    def has_data(self, entry, *args, **kwargs):
+        self.logger.info("has_data: entry: %s" % str(entry))
+        filename = self.filename(entry)
+        self.logger.info("has_data: filename: %s" % filename)
+        if os.path.exists(filename) is True:
+            self.logger.info("has_data: filename %s exists" % filename)
+            return True
+        self.logger.info("has_data: filename %s is missing" % filename)
         return False
 
 
@@ -67,7 +76,7 @@ class Exporter(core.Loader):
         return os.path.join("pickle-FR3D",chain_string + "_RNA.pickle")
 
 
-    def cenrot(self, ichain):
+    def data(self, ichain, **kwargs):
         """Get all unit listings for the given IFE-chain, centers and
         rotations, and format them for convenient use by FR3D.
 
@@ -142,27 +151,6 @@ class Exporter(core.Loader):
             return rsset
 
 
-    def data(self, session, cenrot, filename, **kwargs):
-        """Load centers/rotations data for the given IFE-chain.
-
-        Parameters
-        ----------
-        cenrot : list of dicts
-            The centers/rotations data to write
-
-        filename : text
-            The name of the output pickle file.
-
-
-        Returns
-        -------
-        pickle : pickle
-            A pickle file containing data for all units in the input chain.
-        """
-
-        pass
-
-
     def to_process(self, pdbs, **kwargs):
         """Look up the list of IFE-chains to process.  Ignores the pdbs input.
 
@@ -173,32 +161,24 @@ class Exporter(core.Loader):
 
         Returns
         -------
-        (pdb_id, model, chain_name) : tuple
+        (pdb_id, model, chain) : tuple
             The components of the IFE-chains to be processed.
         """
 
         with self.session() as session:
             query = session.query(
-                       mod.IfeInfo.pdb_id,
-                       mod.IfeInfo.model,
-                       mod.ChainInfo.chain_name
+                       mod.UnitInfo.pdb_id,
+                       mod.UnitInfo.model,
+                       mod.UnitInfo.chain
                    ).\
                    distinct().\
-                   join(mod.IfeChains,
-                        mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
-                   join(mod.ChainInfo,
-                        mod.ChainInfo.chain_id == mod.IfeChains.chain_id).\
-                   filter(mod.IfeInfo.model.isnot(None))
+                   filter(mod.UnitInfo.unit_type_id == 'rna')
 
-            return [(r.pdb_id, r.model, r.chain_name) for r in query]
-
-        pass
+            return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
     def process(self, entry, **kwargs):
-        """Process this entry. In the case of loaders this will parse the data
-        and put it into the database, exporters may go to the database and then
-        generate the file. Inheriting classes must implement this.
+        """Load centers/rotations data for the given IFE-chain.
 
         Parameters
         ----------
@@ -208,14 +188,17 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
 
+        webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
+
         filename = self.filename(entry)
 
-        uinfo = self.cenrot(entry)
+        uinfo = self.data(entry)
 
         with open(filename, 'wb') as fh:
             self.logger.debug("process: filename open: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(uinfo, fh, 2)
 
-        pass
+        os.system("rsync -u %s %s" % (filename, webroot))
+        self.logger.debug("rsync -u %s %s" % (filename, webroot))
 
