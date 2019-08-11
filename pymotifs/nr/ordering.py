@@ -13,7 +13,9 @@ import numpy as np
 
 from sqlalchemy.orm import aliased
 
-from fr3d.ordering.greedyInsertion import orderWithPathLengthFromDistanceMatrix
+#from fr3d.ordering.greedyInsertion import orderWithPathLengthFromDistanceMatrix
+from orderEquivalenceClass import orderEquivalenceClassWithOLO
+from orderEquivalenceClass import orderEquivalenceClassWithPathLength
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -137,6 +139,8 @@ class Loader(core.SimpleLoader):
             ife ids, and the values will be the discrepancies between each ife.
         """
 
+        self.logger.info("Retrieving distances from a group with "+str(len(members))+" members")
+
         with self.session() as session:
             chains1 = aliased(mod.IfeChains)
             chains2 = aliased(mod.IfeChains)
@@ -193,18 +197,27 @@ class Loader(core.SimpleLoader):
             as those things without distances will be skipped.
         """
 
-        dist = np.zeros((len(members), len(members)))
-        for index1, member1 in enumerate(members):
-            curr = distances.get(member1[0], {})
-            for index2, member2 in enumerate(members):
-                val = curr.get(member2[0], None)
-                if member2[0] not in curr:
-                    val = None
-                dist[index1, index2] = val
+        self.logger.info("Calculating ordering")
 
-        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
-                                                               self.trials,
-                                                               scanForNan=True)
+        if len(members) == 2:
+            ordering = [0,1]
+        else:
+            dist = np.zeros((len(members), len(members)))
+            for index1, member1 in enumerate(members):
+                curr = distances.get(member1[0], {})
+                for index2, member2 in enumerate(members):
+                    val = curr.get(member2[0], -1)
+                    if member2[0] not in curr:
+                        val = -1
+                    dist[index1, index2] = val
+
+    #        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
+    #                                                               self.trials,
+    #                                                               scanForNan=True)
+    #        ordering = orderEquivalenceClassWithOLO(dist,scanForNan=True)
+
+            ordering = orderEquivalenceClassWithPathLength(dist,scanForNan=True,repetitions=100)
+
         return [members[index] for index in ordering]
 
     def mark_processed(self, pair, **kwargs):
@@ -233,13 +246,20 @@ class Loader(core.SimpleLoader):
 
         nr_release_id, class_id = pair
         members = self.members(class_id)
-        distances = self.distances(nr_release_id, class_id, members)
-        ordered = self.ordered(members, distances)
-        data = []
+        if len(members) < 400:
+            distances = self.distances(nr_release_id, class_id, members)
+            ordered = self.ordered(members, distances)
+            data = []
+        else:
+            # don't bother to load distances and order ... these are too big to load anyway
+            print("Not ordering the group that has "+str(len(members))+"members and includes "+members[0]+","+members[1])
+            ordered = members
+
         for index, (ife_id, chain_id) in enumerate(ordered):
             data.append(mod.NrOrdering(
                 nr_chain_id=chain_id,
                 nr_class_id=class_id,
                 index=index,
             ))
+
         return data
