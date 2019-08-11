@@ -76,6 +76,8 @@ class Loader(core.SimpleLoader):
             os.remove(ifn)
             return data
         elif status == 2:
-            raise core.Skip('Pdb file %s has no nucleotides' % pdb)
+            raise core.Skip('PDB file %s has no nucleotides' % pdb)
+        elif status == 3:
+            raise core.Skip('PDB file %s has no flanking interactions' % pdb)
         raise core.InvalidState('Matlab error code %i when analyzing %s' %
                                 status, pdb)
