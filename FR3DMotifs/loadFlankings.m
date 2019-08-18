@@ -6,6 +6,7 @@
 %   0 = success
 %   1 = failure
 %   2 = no nucleotides in pdb file
+%   3 = no flanking interactions in the pdb file
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -20,13 +21,17 @@ function [FILENAME, status, err_msg] = loadFlankings(pdb_id)
         File = zAddNTData(pdb_id);
 
         if isempty(File.NT)
+            status = 2;
+            return;
+        end
+
+        if isempty(find(File.Flank))
+            status = 3;
             return;
         end
 
         fid = fopen(FILENAME,'w');
-
         processMatrix(File.Flank);
-
         fclose(fid);
         status = 0;
 
@@ -35,7 +40,6 @@ function [FILENAME, status, err_msg] = loadFlankings(pdb_id)
         disp(err_msg);
         status = 1;
     end
-
 
     function processMatrix(matrix)
 
@@ -47,12 +51,8 @@ function [FILENAME, status, err_msg] = loadFlankings(pdb_id)
 
             nt_id1 = File.NT(nt1).ID;
             nt_id2 = File.NT(nt2).ID;
-           
 
             fprintf(fid, '"%s","%s","%i"\n', nt_id1, nt_id2, 1);
-
         end
-
     end
-
 end
