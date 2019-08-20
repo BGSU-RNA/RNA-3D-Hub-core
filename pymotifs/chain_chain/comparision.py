@@ -218,6 +218,13 @@ class Loader(core.SimpleLoader):
         self.logger.info("kwargs: data_limit: %s" % kwargs['data_limit'])
         self.logger.info("input config: %s" % self.config['db'])
 
+        if 'comp_limit' in kwargs and kwargs.get('comp_limit') is not None:
+            comp_limit = kwargs.get('comp_limit', 100)
+        else:
+            comp_limit = 100
+
+        self.logger.info("comp_limit: %s" % comp_limit)
+
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
         #grouper.must_enforce_single_species = False
@@ -232,6 +239,10 @@ class Loader(core.SimpleLoader):
                                  self.known_unit_entries(mod.UnitRotations))
         possible = []
         for group in groups:
+            self.logger.info("Group members length is "+str(len(group['members'])))
+            if len(group['members']) > comp_limit:
+                self.logger.info("Group larger than comp_limit, skipping it")
+                continue
             chains = it.ifilter(disc.valid_chain, group['members'])
             chains = it.ifilter(has_rotations, chains)
             chains = it.ifilter(has_centers, chains)
@@ -244,15 +255,6 @@ class Loader(core.SimpleLoader):
         ordered_chains = sorted(possible, key = key)
         result = []
 
-        #calc = 0
-        #calc_limit = 1
-
-        if 'comp_limit' in kwargs and kwargs.get('comp_limit') is not None:
-            comp_limit = kwargs.get('comp_limit', 100)
-        else:
-            comp_limit = 100
-
-        self.logger.info("comp_limit: %s" % comp_limit)
 
         for (first, rest) in it.groupby(ordered_chains, key):
             #if calc >= calc_limit:
@@ -263,7 +265,7 @@ class Loader(core.SimpleLoader):
             if len(seconds) < comp_limit:
                 result.append((first, seconds))
             else:
-                self.logger.warning("length skip (%s < %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
+                self.logger.warning("length skip (%s > %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
             #calc = 1 + calc
         #return sorted(possible)
         self.logger.debug("to_process: result: %s" % result)
@@ -501,7 +503,7 @@ class Loader(core.SimpleLoader):
     #            else:
     #                info_d = info2
 
-    #            self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" % 
+    #            self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" %
     #                             (key,info_d['ife_id'],info_d['alt_id'],info_d['sym_op'],info_d['model']))
 
     #            for chunk in splitchain:
@@ -541,7 +543,7 @@ class Loader(core.SimpleLoader):
     #                            unit_dict_1[unitid] = line
     #                            self.logger.debug("pd2: unit_dict_1 for unitid %s: %s" % (unitid, line))
     #                        else:
-    #                            unit_dict_2[unitid] = line 
+    #                            unit_dict_2[unitid] = line
     #                            self.logger.debug("pd2: unit_dict_2 for unitid %s: %s" % (unitid, line))
 
     #        self.logger.info("pd2: unit_dict lengths:  %s / %s" % (len(unit_dict_1), len(unit_dict_2)))
@@ -559,7 +561,7 @@ class Loader(core.SimpleLoader):
     #            uspl2 = r.unit2.split('|')
 
     #            if str(uspl1[1]) != '1' or str(uspl2[1]) != '1':
-    #                continue 
+    #                continue
 
     #            #if r.unit1 in pd2seen:
     #            #    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
@@ -750,7 +752,7 @@ class Loader(core.SimpleLoader):
         if corr_id is None:
             #raise core.Skip("No good correspondence between %s, %s" %
             #                (chain_id1, chain_id2))
-            self.logger.warning("No good correspondence between %s, %s" % 
+            self.logger.warning("No good correspondence between %s, %s" %
                                 (chain_id1, chain_id2))
         return corr_id
 
@@ -962,7 +964,7 @@ class Loader(core.SimpleLoader):
 
         for r in query:
             self.logger.info("data: known: (%s, %s)" % (r.chain_id_1,r.chain_id_2))
-            knowns.append((r.chain_id_1,r.chain_id_2))        
+            knowns.append((r.chain_id_1,r.chain_id_2))
 
         for chain in candidates:
             if chain == chain1:
@@ -989,10 +991,10 @@ class Loader(core.SimpleLoader):
             if data_count > data_limit:
                 self.logger.info("data: data_limit (%s) exceeded: %s" % (data_limit, data_count))
                 continue
-            entries = [] 
+            entries = []
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
-            self.logger.info("data: count: %s // chain1: %s // chain2: %s // corr_id: %s" % 
+            self.logger.info("data: count: %s // chain1: %s // chain2: %s // corr_id: %s" %
                              (data_count, chain1, chain2, corr_id))
             if corr_id is not None:
                 entries = self.entry(info1, info2, corr_id)

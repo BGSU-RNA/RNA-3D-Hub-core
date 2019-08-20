@@ -252,7 +252,9 @@ class Loader(core.SimpleLoader):
             data = []
         else:
             # don't bother to load distances and order ... these are too big to load anyway
-            print("Not ordering the group that has "+str(len(members))+"members and includes "+members[0]+","+members[1])
+            print("Not ordering the group that has "+str(len(members))+"members and includes ")
+            print(members[0])
+            print(members[1])
             ordered = members
 
         for index, (ife_id, chain_id) in enumerate(ordered):
