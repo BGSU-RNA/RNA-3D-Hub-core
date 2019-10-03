@@ -15,6 +15,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
 from fr3d.ordering.greedyInsertion import orderWithPathLengthFromDistanceMatrix
+from orderBySimilarity import imputeNANValues
+from orderBySimilarity import treePenalizedPathLength
 
 from pprint import pprint
 
@@ -38,7 +40,7 @@ class Loader(core.SimpleLoader):
         The number to runs to use when sorting the members of each group.
     """
 
-    trials = 10
+    trials = 100
     dependencies = set([NrChainLoader, NrClassLoader, NrQualityLoader, SimilarityLoader])
 
     def to_process(self, pdbs, **kwargs):
@@ -73,7 +75,7 @@ class Loader(core.SimpleLoader):
             return [(latest, r.nr_class_id) for r in query]
 
     #def is_missing(self, entry, **kwargs):
-    #    """Placeholder to see how to properly ID the classes that need 
+    #    """Placeholder to see how to properly ID the classes that need
     #    attention.
     #    """
     #    pass
@@ -96,7 +98,7 @@ class Loader(core.SimpleLoader):
 
             count = query.count()
 
-            self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" % 
+            self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
                              (count, class_name[0], class_id, len(results), str(results)))
 
             if count == len(results):
@@ -175,7 +177,7 @@ class Loader(core.SimpleLoader):
         Returns
         -------
         members : list
-            A list of tuples (ife_id, nr_chain_id) for all 
+            A list of tuples (ife_id, nr_chain_id) for all
             members of the class.
         """
 
@@ -370,7 +372,7 @@ class Loader(core.SimpleLoader):
         -------
         ordered_members : list
             A sparse list of the given members in an order as specified by the
-            discrepancies. (Sparse because any members without distances will 
+            discrepancies. (Sparse because any members without distances will
             be skipped.)
         """
 
@@ -387,9 +389,14 @@ class Loader(core.SimpleLoader):
                 dist[index1, index2] = val
                 self.logger.debug("ordered: dist[%s, %s] = %s" % (index1, index2, val))
 
-        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
-                                                               self.trials,
-                                                               scanForNan=True)
+#        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
+#                                                               self.trials,
+#                                                               scanForNan=True)
+
+        newDist = imputeNANValues(dist)
+        print(newDist)
+        ordering = treePenalizedPathLength(newDist,self.trials)
+
         return [members[index] for index in ordering]
 
     def ordered(self, members, distances):
@@ -468,7 +475,7 @@ class Loader(core.SimpleLoader):
 
         orig_release_id, orig_class_id = self.get_original_info(nr_class_name)
 
-        self.logger.info("data: USING: orig_release_id %s and orig_class_id %s for nr_class_name %s for class_id %s" 
+        self.logger.info("data: USING: orig_release_id %s and orig_class_id %s for nr_class_name %s for class_id %s"
                          % (orig_release_id, orig_class_id, nr_class_name, class_id))
 
         members = self.members(class_id)
@@ -477,14 +484,21 @@ class Loader(core.SimpleLoader):
         self.logger.info("data: members: %s (class_id %s)" % (str(members), class_id))
         self.logger.info("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
 
-        distances = self.distances(nr_release_id, class_id, members)
-        distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
+        if len(members) <= 300:
 
-        #self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
-        #self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
+            #distances = self.distances(nr_release_id, class_id, members)
+            distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
 
-        ordered = self.ordered(members, distances)
-        ordered_revised = self.ordered_revised(members_revised, distances_revised)
+            #self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
+            #self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
+
+            #ordered = self.ordered(members, distances)
+            ordered_revised = self.ordered_revised(members_revised, distances_revised)
+
+        else:
+            self.logger.info("data: too many members, using random order")
+            print(0 / 0)
+            ordered_revised = members_revised  # don't re-order, just use random order, that's OK for now
 
         #self.logger.info("data: ordered: %s (class_id %s)" % (str(ordered), class_id))
         #self.logger.info("data: ordered_revised: %s (class_id %s)" % (str(ordered_revised), orig_class_id))
