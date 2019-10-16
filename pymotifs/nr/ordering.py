@@ -8,8 +8,10 @@ chains will not show up in the final ordering.
 """
 
 import collections as coll
+from collections import defaultdict
 
 import numpy as np
+import time
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
@@ -58,6 +60,7 @@ class Loader(core.SimpleLoader):
             A list of all NR class ids.
         """
 
+        # determine desired release or retrieve most recent release
         latest = None
         if kwargs.get('manual', {}).get('nr_release_id', False):
             latest = kwargs['manual']['nr_release_id']
@@ -69,10 +72,53 @@ class Loader(core.SimpleLoader):
 
         self.logger.info("to_process: latest: %s" % latest)
 
+        # find all nr_class_id values associated with this release
+        if 0 > 1:
+            with self.session() as session:
+                query = session.query(mod.NrClasses.nr_class_id).\
+                    filter_by(nr_release_id=latest)
+                return [(latest, r.nr_class_id) for r in query]
+
+        # fill in all orderings from release 2.* and 3.*
         with self.session() as session:
-            query = session.query(mod.NrClasses.nr_class_id).\
-                filter_by(nr_release_id=latest)
-            return [(latest, r.nr_class_id) for r in query]
+            # get all triples of nr_release_id and nr_class_id and equivalence class name
+            query = session.query(mod.NrClasses.nr_release_id,mod.NrClasses.nr_class_id,mod.NrClasses.name)
+
+            # retrieve all nr_class_id values after releases 0.* and 1.*
+            all_triples = []
+            for r in query:
+                if not r.nr_release_id[0:2] == "0." and not r.nr_release_id[0:2] == "1.":
+                    all_triples.append((r.nr_release_id,r.nr_class_id,r.name))
+
+            # sort by equivalence class name and then by release number
+            all_triples = sorted(all_triples, key = lambda r: (r[2], r[1]))
+
+            self.logger.info("to_process: sorted triples", all_triples)
+
+            # get all pairs of nr_class_id and ife_id
+            query = session.query(mod.NrOrderingTest.nr_class_name)
+            ordered_nr_class_name = [r.nr_class_name for r in query]
+
+            # loop through triples, save first class_id for each name, save pair if not already ordered
+            one_class_id_per_name = {}
+            pairs_to_process = []
+            for (nr_release,nr_class,nr_name) in all_triples:
+                if not nr_name in one_class_id_per_name:
+                    one_class_id_per_name[nr_name] = (nr_release,nr_class)
+                    if not nr_name in ordered_nr_class_name:
+                        self.logger.info("to_process: need to order release %s class %s" % (nr_release,nr_name))
+                        pairs_to_process.append((nr_release,nr_class))
+                    else:
+                        self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
+
+            return pairs_to_process
+
+#        return [(latest, r.nr_class_id) for r in query]
+
+
+            # the pairs returned here will be passed to the data method one by one
+            # make sure to only pass each nr_class_id one time, not once for each release
+
 
     #def is_missing(self, entry, **kwargs):
     #    """Placeholder to see how to properly ID the classes that need
@@ -81,19 +127,30 @@ class Loader(core.SimpleLoader):
     #    pass
 
     def has_data(self, entry, **kwargs):
+        # for each equivalence class id, which is an integer,
+        # check if there is already an ordering with enough data in it
+        # release rel is not used
         rel, class_id = entry
 
         with self.session() as session:
+            # find full equivalence class names matching the class_id in entry
+            # NrClasses is the table nr_classes
+            # .name is something like NR_1.5_01181.1
             query = session.query(mod.NrClasses.name).\
                 filter_by(nr_class_id=class_id)
 
+            # the list below should have length one, usually does
+            # only the 0 element will be used
             class_name = [r.name for r in query]
 
+            # NrChains is the table nr_chains
             query = session.query(mod.NrChains.ife_id).\
                 filter_by(nr_class_id=class_id)
 
+            # list of the ife_id's associated with this equivalence class
             results = [r.ife_id for r in query]
 
+            # retrieve all ordering information for the first class_name
             query = session.query(mod.NrOrderingTest.ife_id).filter_by(nr_class_name=class_name[0])
 
             count = query.count()
@@ -101,7 +158,12 @@ class Loader(core.SimpleLoader):
             self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
                              (count, class_name[0], class_id, len(results), str(results)))
 
-            if count == len(results):
+            if not count == len(results):
+                self.logger.info("has_data: Number previously ordered is different from number of members.")
+
+            # if there is one piece of ordering data for each IFE in this class, we have data
+            # if count == len(results):  # a small number of classes have different numbers; don't re-order
+            if count > 0:
                 return True
 
         return False
@@ -191,8 +253,8 @@ class Loader(core.SimpleLoader):
 
             members = [(r.ife_id, r.nr_chain_id) for r in query]
 
-        if len(members) == 1:
-            raise core.Skip("Skip group of size 1")
+#        if len(members) == 1:
+#            raise core.Skip("Skip group of size 1")
 
         if not members:
             raise core.InvalidState("No members in NR class: %i" % class_id)
@@ -212,6 +274,7 @@ class Loader(core.SimpleLoader):
         members : list
             A list of tuples (ife_id, nr_chain_id) for all members that are
             part of the class.
+            ife_id is like 2A43|1|A and nr_chain_id is like 11890928
         """
 
         self.logger.info("members: class_id: %s" % class_id)
@@ -256,7 +319,7 @@ class Loader(core.SimpleLoader):
             of IFEs.
         """
 
-        self.logger.info("distances_revised: class_id (%s) has %s members" % (class_id, len(members)))
+        self.logger.info("distances_revised: class_id (%s) has %s members including %s" % (class_id, len(members), members[0]))
 
         with self.session() as session:
             chains1 = aliased(mod.IfeChains)
@@ -389,13 +452,9 @@ class Loader(core.SimpleLoader):
                 dist[index1, index2] = val
                 self.logger.debug("ordered: dist[%s, %s] = %s" % (index1, index2, val))
 
-#        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
-#                                                               self.trials,
-#                                                               scanForNan=True)
-
         newDist = imputeNANValues(dist)
         print(newDist)
-        ordering = treePenalizedPathLength(newDist,self.trials)
+        ordering = treePenalizedPathLength(newDist,max(self.trials,len(members)))
 
         return [members[index] for index in ordering]
 
@@ -446,12 +505,14 @@ class Loader(core.SimpleLoader):
             return [r.name for r in query]
 
     def data(self, pair, **kwargs):
-        """Compute the ordering rows to store. This will lookup the distances
+        """Compute the ordering rows to store. This will look up the distances
         and members as needed. It is possible for this to raise a
         `pymotifs.core.Skip` if there are no distances stored.
 
         Parameters
         ----------
+        pair consists of nr_release_id and class_id
+
         class_id : int
             The class id to compute distances for.
 
@@ -468,26 +529,39 @@ class Loader(core.SimpleLoader):
 
         nr_release_id, class_id = pair
 
-        self.logger.info("data: INPUT: nr_release_id: %s, class_id: %s" % (nr_release_id, class_id))
-
+        # query database to get class name like NR_1.5_09579.1
         get_nr_class_name = self.get_nrclassname(class_id)
         nr_class_name = get_nr_class_name[0]
 
-        orig_release_id, orig_class_id = self.get_original_info(nr_class_name)
+        self.logger.info("data: INPUT: nr_release_id: %s, class_id: %s, nr_class_name: %s" % (nr_release_id, class_id, nr_class_name))
 
+        # look up release_id and class_id when this class was first created, based on its name
+        # that way we can just focus on one class_id instead of keeping all of them in play
+        orig_release_id, orig_class_id = self.get_original_info(nr_class_name)
         self.logger.info("data: USING: orig_release_id %s and orig_class_id %s for nr_class_name %s for class_id %s"
                          % (orig_release_id, orig_class_id, nr_class_name, class_id))
 
-        members = self.members(class_id)
-        members_revised = self.members_revised(orig_class_id, orig_release_id)
+        # members = self.members(class_id)
+        # self.logger.info("data: members: %s (class_id %s)" % (str(members), class_id))
 
-        self.logger.info("data: members: %s (class_id %s)" % (str(members), class_id))
+        members_revised = self.members_revised(orig_class_id, orig_release_id)
         self.logger.info("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
 
-        if len(members) <= 300:
+        if len(members_revised) <= 2:
+            # no need to try to find an ordering, all possible orderings are equivalent
+            ordered_revised = members_revised
+        elif len(members_revised) <= 300:
+            # look up distances using database for smallish groups
+            # on 10/15/2019, database lookup of a group with 299 members took 1.04 seconds
+            # flat file reading of groups up to 450 members took under 2 seconds
+            # 300 is a good cutoff between the two
+            # before reading the flat file, it could take hours to look up discrepancies from the database for large groups
 
+            starttime = time.clock()
             #distances = self.distances(nr_release_id, class_id, members)
             distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
+
+            self.logger.info("data: time to read a group of size %d from database was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
 
             #self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
             #self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
@@ -496,9 +570,38 @@ class Loader(core.SimpleLoader):
             ordered_revised = self.ordered_revised(members_revised, distances_revised)
 
         else:
-            self.logger.info("data: too many members, using random order")
-            print(0 / 0)
-            ordered_revised = members_revised  # don't re-order, just use random order, that's OK for now
+            self.logger.info("large group %s:  reading flat file of discrepancies" % nr_class_name)
+            print("large group:  reading flat file of discrepancies")
+            discDict = defaultdict(lambda: None)
+            # put discrepancy information into a dictionary
+            starttime = time.clock()
+            infileNameWithPath = "/tmp/discrepancy2.txt"
+            with open(infileNameWithPath,"r") as infile:
+                for line in infile:
+                    fields = line.replace("\n","").split("\t")
+                    ife1 = fields[0]
+                    ife2 = fields[1]
+                    discrepancy = float(fields[2])
+                    discDict[(ife1,ife2)] = discrepancy
+                    discDict[(ife2,ife1)] = discrepancy
+
+            self.logger.info("large group:  read flat file of discrepancies")
+            self.logger.info("data: time to read a group of size %d from flat file was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
+
+            dist = np.zeros((len(members_revised), len(members_revised)))
+
+            for index1, member1 in enumerate(members_revised):
+                for index2, member2 in enumerate(members_revised):
+                    val = discDict[(member1[0],member2[0])]
+                    dist[index1, index2] = val
+
+            newDist = imputeNANValues(dist)
+            print(newDist)
+            ordering = treePenalizedPathLength(newDist,max(self.trials,len(members_revised)))
+
+            ordered_revised = [members_revised[index] for index in ordering]
+            self.logger.info("large group:  produced a new ordering")
+
 
         #self.logger.info("data: ordered: %s (class_id %s)" % (str(ordered), class_id))
         #self.logger.info("data: ordered_revised: %s (class_id %s)" % (str(ordered_revised), orig_class_id))
@@ -524,7 +627,7 @@ class Loader(core.SimpleLoader):
             ))
 
         #self.logger.info("data: output data: %s (class_id %s)" % (repr(data), class_id))
-        self.logger.info("data: output data_revised: %s (class_id %s)" % (repr(data_revised), class_id))
+        #self.logger.info("data: output data_revised: %s (class_id %s)" % (repr(data_revised), class_id))
 
         return data_revised
         #return data
