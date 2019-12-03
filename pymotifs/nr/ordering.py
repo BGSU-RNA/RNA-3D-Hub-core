@@ -67,7 +67,7 @@ class Loader(core.SimpleLoader):
         else:
             data = self.cached(NR_CACHE_NAME)
             if not data:
-                raise core.InvalidState("No precomputed grouping to store")
+                raise core.InvalidState("No precomputed grouping to store; specify a release")
             latest = data['release']
 
         self.logger.info("to_process: latest: %s" % latest)
@@ -453,7 +453,6 @@ class Loader(core.SimpleLoader):
                 self.logger.debug("ordered: dist[%s, %s] = %s" % (index1, index2, val))
 
         newDist = imputeNANValues(dist)
-        print(newDist)
         ordering = treePenalizedPathLength(newDist,max(self.trials,len(members)))
 
         return [members[index] for index in ordering]
@@ -571,11 +570,10 @@ class Loader(core.SimpleLoader):
 
         else:
             self.logger.info("large group %s:  reading flat file of discrepancies" % nr_class_name)
-            print("large group:  reading flat file of discrepancies")
             discDict = defaultdict(lambda: None)
             # put discrepancy information into a dictionary
             starttime = time.clock()
-            infileNameWithPath = "/tmp/discrepancy2.txt"
+            infileNameWithPath = "/var/www/html/discrepancy/IFEdiscrepancy.txt"
             with open(infileNameWithPath,"r") as infile:
                 for line in infile:
                     fields = line.replace("\n","").split("\t")
@@ -596,7 +594,6 @@ class Loader(core.SimpleLoader):
                     dist[index1, index2] = val
 
             newDist = imputeNANValues(dist)
-            print(newDist)
             ordering = treePenalizedPathLength(newDist,max(self.trials,len(members_revised)))
 
             ordered_revised = [members_revised[index] for index in ordering]
