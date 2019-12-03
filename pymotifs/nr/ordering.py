@@ -16,7 +16,8 @@ import time
 from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
-from fr3d.ordering.greedyInsertion import orderWithPathLengthFromDistanceMatrix
+from orderEquivalenceClass import orderEquivalenceClassWithOLO
+from orderEquivalenceClass import orderEquivalenceClassWithPathLength
 from orderBySimilarity import imputeNANValues
 from orderBySimilarity import treePenalizedPathLength
 
@@ -476,21 +477,27 @@ class Loader(core.SimpleLoader):
             as those things without distances will be skipped.
         """
 
-        self.logger.info("ordered: %s members" % len(members))
+        self.logger.info("Calculating ordering")
 
-        dist = np.zeros((len(members), len(members)))
-        for index1, member1 in enumerate(members):
-            curr = distances.get(member1[0], {})
-            for index2, member2 in enumerate(members):
-                val = curr.get(member2[0], None)
-                if member2[0] not in curr:
-                    val = None
-                dist[index1, index2] = val
-                self.logger.debug("ordered: dist[%s, %s] = %s" % (index1, index2, val))
+        if len(members) == 2:
+            ordering = [0,1]
+        else:
+            dist = np.zeros((len(members), len(members)))
+            for index1, member1 in enumerate(members):
+                curr = distances.get(member1[0], {})
+                for index2, member2 in enumerate(members):
+                    val = curr.get(member2[0], -1)
+                    if member2[0] not in curr:
+                        val = -1
+                    dist[index1, index2] = val
 
-        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
-                                                               self.trials,
-                                                               scanForNan=True)
+    #        ordering, _, _ = orderWithPathLengthFromDistanceMatrix(dist,
+    #                                                               self.trials,
+    #                                                               scanForNan=True)
+    #        ordering = orderEquivalenceClassWithOLO(dist,scanForNan=True)
+
+            ordering = orderEquivalenceClassWithPathLength(dist,scanForNan=True,repetitions=100)
+
         return [members[index] for index in ordering]
 
     def mark_processed(self, pair, **kwargs):
@@ -540,91 +547,22 @@ class Loader(core.SimpleLoader):
         self.logger.info("data: USING: orig_release_id %s and orig_class_id %s for nr_class_name %s for class_id %s"
                          % (orig_release_id, orig_class_id, nr_class_name, class_id))
 
-        # members = self.members(class_id)
-        # self.logger.info("data: members: %s (class_id %s)" % (str(members), class_id))
+        members = self.members(class_id)
 
-        members_revised = self.members_revised(orig_class_id, orig_release_id)
-        self.logger.info("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
-
-        if len(members_revised) <= 2:
-            # no need to try to find an ordering, all possible orderings are equivalent
-            ordered_revised = members_revised
-        elif len(members_revised) <= 300:
-            # look up distances using database for smallish groups
-            # on 10/15/2019, database lookup of a group with 299 members took 1.04 seconds
-            # flat file reading of groups up to 450 members took under 2 seconds
-            # 300 is a good cutoff between the two
-            # before reading the flat file, it could take hours to look up discrepancies from the database for large groups
-
-            starttime = time.clock()
-            #distances = self.distances(nr_release_id, class_id, members)
-            distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
-
-            self.logger.info("data: time to read a group of size %d from database was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
-
-            #self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
-            #self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
-
-            #ordered = self.ordered(members, distances)
-            ordered_revised = self.ordered_revised(members_revised, distances_revised)
-
+        if len(members) < 400:
+            distances = self.distances(nr_release_id, class_id, members)
+            ordered = self.ordered(members, distances)
+            data = []
         else:
-            self.logger.info("large group %s:  reading flat file of discrepancies" % nr_class_name)
-            discDict = defaultdict(lambda: None)
-            # put discrepancy information into a dictionary
-            starttime = time.clock()
-            infileNameWithPath = "/var/www/html/discrepancy/IFEdiscrepancy.txt"
-            with open(infileNameWithPath,"r") as infile:
-                for line in infile:
-                    fields = line.replace("\n","").split("\t")
-                    ife1 = fields[0]
-                    ife2 = fields[1]
-                    discrepancy = float(fields[2])
-                    discDict[(ife1,ife2)] = discrepancy
-                    discDict[(ife2,ife1)] = discrepancy
+            # don't bother to load distances and order ... these are too big to load anyway
+            print("Not ordering the group that has "+str(len(members))+"members and includes "+members[0]+","+members[1])
+            ordered = members
 
-            self.logger.info("large group:  read flat file of discrepancies")
-            self.logger.info("data: time to read a group of size %d from flat file was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
-
-            dist = np.zeros((len(members_revised), len(members_revised)))
-
-            for index1, member1 in enumerate(members_revised):
-                for index2, member2 in enumerate(members_revised):
-                    val = discDict[(member1[0],member2[0])]
-                    dist[index1, index2] = val
-
-            newDist = imputeNANValues(dist)
-            ordering = treePenalizedPathLength(newDist,max(self.trials,len(members_revised)))
-
-            ordered_revised = [members_revised[index] for index in ordering]
-            self.logger.info("large group:  produced a new ordering")
-
-
-        #self.logger.info("data: ordered: %s (class_id %s)" % (str(ordered), class_id))
-        #self.logger.info("data: ordered_revised: %s (class_id %s)" % (str(ordered_revised), orig_class_id))
-
-        #data = []
-        #for index, (ife_id, chain_id) in enumerate(ordered):
-        #    self.logger.info("data: data: class_id %s / index %s / chain_id %s" % (class_id, index, chain_id))
-        #    data.append(mod.NrOrdering(
-        #        nr_chain_id=chain_id,
-        #        nr_class_id=class_id,
-        #        index=index,
-        #    ))
-
-        data_revised = []
-        for index, (ife_id, nr_chain_id) in enumerate(ordered_revised):
-            self.logger.info("data: data_revised: nr_class_id %s / index %s / nr_chain_id %s / nr_class_name %s / ife_id %s " % (orig_class_id, index, nr_chain_id, nr_class_name, ife_id))
-            data_revised.append(mod.NrOrderingTest(
-                nr_class_id=orig_class_id,
-                nr_class_name=nr_class_name,
-                nr_chain_id=nr_chain_id,
-                ife_id=ife_id,
-                class_order=index,
+        for index, (ife_id, chain_id) in enumerate(ordered):
+            data.append(mod.NrOrdering(
+                nr_chain_id=chain_id,
+                nr_class_id=class_id,
+                index=index,
             ))
 
-        #self.logger.info("data: output data: %s (class_id %s)" % (repr(data), class_id))
-        #self.logger.info("data: output data_revised: %s (class_id %s)" % (repr(data_revised), class_id))
-
-        return data_revised
-        #return data
+        return data
