@@ -130,6 +130,7 @@ SKIP = set([
     , '6EM5' # failing units.distances (No data saved) as of 2018-02-28 (JJC)
     , '6C6K' # failing species.mapping as of 2018-05-25 (JJC)
     , '5ZZM' # failing units.distances (No data saved) as of 2018-07-02 (JJC)
+    , '6SAE' # failing export.cifatom as of 2019-12-04 (CLZ)
         #, '5Z56' # failing ife.info as of 2018-10-03 (JJC)
         #, '5Z57' # failing ife.info as of 2018-10-03 (JJC)
         #, '5Z58' # failing ife.info as of 2018-10-03 (JJC)
