@@ -211,6 +211,10 @@ class Loader(core.SimpleLoader):
             A list of pairs of chain ids to compare.
         """
 
+        # set direction to work through data, for weeks with many discrepancy calculations to do
+        direction = 1        # work through in given order, default
+        direction = -1       # work through in reverse order, for extra computations
+
         self.logger.debug("Entering to_process...")
 
         self.logger.info("kwargs: %s" % kwargs)
@@ -259,9 +263,16 @@ class Loader(core.SimpleLoader):
             #    continue
             temp = [r[1] for r in rest]
             seconds = make_unique_list(temp)
+
+            if direction < 0:
+                seconds = seconds[::-1]
+
             self.logger.debug("to_process: first / seconds: %s / %s" % (first, seconds))
             if len(seconds) < comp_limit:
-                result.append((first, seconds))
+                if direction > 0:
+                    result.append((first, seconds))        # add to end of list
+                else:
+                    result = [(first,seconds)] + result    # add to beginning of list
             else:
                 self.logger.warning("length skip (%s < %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
             #calc = 1 + calc
@@ -501,7 +512,7 @@ class Loader(core.SimpleLoader):
     #            else:
     #                info_d = info2
 
-    #            self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" % 
+    #            self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" %
     #                             (key,info_d['ife_id'],info_d['alt_id'],info_d['sym_op'],info_d['model']))
 
     #            for chunk in splitchain:
@@ -541,7 +552,7 @@ class Loader(core.SimpleLoader):
     #                            unit_dict_1[unitid] = line
     #                            self.logger.debug("pd2: unit_dict_1 for unitid %s: %s" % (unitid, line))
     #                        else:
-    #                            unit_dict_2[unitid] = line 
+    #                            unit_dict_2[unitid] = line
     #                            self.logger.debug("pd2: unit_dict_2 for unitid %s: %s" % (unitid, line))
 
     #        self.logger.info("pd2: unit_dict lengths:  %s / %s" % (len(unit_dict_1), len(unit_dict_2)))
@@ -559,7 +570,7 @@ class Loader(core.SimpleLoader):
     #            uspl2 = r.unit2.split('|')
 
     #            if str(uspl1[1]) != '1' or str(uspl2[1]) != '1':
-    #                continue 
+    #                continue
 
     #            #if r.unit1 in pd2seen:
     #            #    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
@@ -750,7 +761,7 @@ class Loader(core.SimpleLoader):
         if corr_id is None:
             #raise core.Skip("No good correspondence between %s, %s" %
             #                (chain_id1, chain_id2))
-            self.logger.warning("No good correspondence between %s, %s" % 
+            self.logger.warning("No good correspondence between %s, %s" %
                                 (chain_id1, chain_id2))
         return corr_id
 
@@ -962,7 +973,7 @@ class Loader(core.SimpleLoader):
 
         for r in query:
             self.logger.info("data: known: (%s, %s)" % (r.chain_id_1,r.chain_id_2))
-            knowns.append((r.chain_id_1,r.chain_id_2))        
+            knowns.append((r.chain_id_1,r.chain_id_2))
 
         for chain in candidates:
             if chain == chain1:
@@ -989,10 +1000,10 @@ class Loader(core.SimpleLoader):
             if data_count > data_limit:
                 self.logger.info("data: data_limit (%s) exceeded: %s" % (data_limit, data_count))
                 continue
-            entries = [] 
+            entries = []
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
-            self.logger.info("data: count: %s // chain1: %s // chain2: %s // corr_id: %s" % 
+            self.logger.info("data: count: %s // chain1: %s // chain2: %s // corr_id: %s" %
                              (data_count, chain1, chain2, corr_id))
             if corr_id is not None:
                 entries = self.entry(info1, info2, corr_id)
