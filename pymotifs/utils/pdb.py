@@ -23,9 +23,18 @@ class RnaPdbsHelper(object):
         if not dates:
             return True
 
-        min_date = dates[0] or datetime.date.min
-        max_date = dates[1] or datetime.date.max
+        if dates[0]:
+            min_date = datetime.datetime.strptime(dates[0], r'%Y-%m-%d').date()
+        else:
+            min_date = datetime.date.min
+
+        if dates[1]:
+            max_date = datetime.datetime.strptime(dates[1], r'%Y-%m-%d').date()
+        else:
+            max_date = datetime.date.max
+
         release_date = datetime.datetime.strptime(release, r'%Y-%m-%d').date()
+
         return min_date <= release_date <= max_date
 
     def __call__(self, dates=(None, None)):
