@@ -6,6 +6,7 @@ import sys
 import csv
 import random
 import logging
+from datetime import datetime
 
 import click
 
@@ -131,13 +132,19 @@ def cli(ctx, **options):
 @click.option('--known', is_flag=True, help="Use only downloaded files")
 @click.option('--after-date', default=None,
               type=DATE, help='Get files posted after DATE (YYYY-MM-DD)')
-@click.option('--before-date', default=None,
-              type=DATE, help='Get files posted before DATE (YYYY-MM-DD)')
+#@click.option('--before-date', default=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+#              help='Get files posted before DATE (YYYY-MM-DD)')
+@click.option('--before-date', default=datetime.strftime(datetime.now(), '%Y-%m-%d'),
+              help='Get files posted before DATE (YYYY-MM-DD)')
+#@click.option('--before-date', default=datetime.now(),
+#              help='Get files posted before DATE (YYYY-MM-DD)')
 @click.option('--exclude', multiple=True, type=PDB,
               help='Excluded PDB(s)')
 @click.option('--ignore-time', is_flag=True, help='Ignore time for rerunning')
 @click.option('--manual', type=KEY_VALUE, multiple=True,
               help='Define a variable')
+@click.option('--comp-limit', type=int, help='Set maximum group size for discrepancy calcuations')
+@click.option('--data-limit', type=int, help='Maximum number of discrepancy calculations per group')
 @click.argument('name')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context

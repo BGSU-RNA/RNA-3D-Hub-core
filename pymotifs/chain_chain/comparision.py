@@ -6,11 +6,15 @@ in the database.
 This will only compare the first chain in each IFE.
 """
 
+
 import functools as ft
 import itertools as it
 import numpy as np
 import operator as op
 import pickle
+import time
+
+from collections import defaultdict
 
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -31,8 +35,6 @@ from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
 
 from pymotifs.nr.groups.simplified import Grouper
-
-from pymotifs.constants import CCC_CACHE_NAME
 
 
 def pick(preferences, key, iterable):
@@ -118,6 +120,14 @@ def label_rotation(table, number):
     ]
 
 
+def make_unique_list(input_list):
+    unique_list = []
+    for foo in input_list:
+        if foo not in unique_list:
+            unique_list.append(foo)
+    return unique_list
+
+
 class Loader(core.SimpleLoader):
     """A Loader to get all chain to chain similarity data. This will use the
     correspondences between ifes to compute the discrepancy between them.
@@ -125,6 +135,9 @@ class Loader(core.SimpleLoader):
 
     """The tuple of chains can't be marked in the database."""
     mark = False
+
+    """We allow for no data to be written when appropriate."""
+    allow_no_data = True
 
     """The dependencies for this stage"""
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
@@ -154,6 +167,7 @@ class Loader(core.SimpleLoader):
                 distinct()
             return set((r.pdb_id, r.chain) for r in query)
 
+
     def is_member(self, known, chain):
         """Check if a chain is a member of the set of knowns.
 
@@ -171,6 +185,7 @@ class Loader(core.SimpleLoader):
         """
         getter = op.itemgetter('pdb', 'name')
         return getter(chain) in known
+
 
     def to_process(self, pdbs, **kwargs):
         """This will compute all pairs to compare. This will group all pdbs
@@ -196,12 +211,21 @@ class Loader(core.SimpleLoader):
             A list of pairs of chain ids to compare.
         """
 
+        # set direction to work through data, for weeks with many discrepancy calculations to do
+        direction = 1        # work through in given order, default
+        direction = -1       # work through in reverse order, for extra computations
+
         self.logger.debug("Entering to_process...")
-        self.logger.debug("chain cache: %s" % CCC_CACHE_NAME)
+
+        self.logger.info("kwargs: %s" % kwargs)
+        self.logger.info("kwargs: comp_limit: %s" % kwargs['comp_limit'])
+        self.logger.info("kwargs: data_limit: %s" % kwargs['data_limit'])
+        self.logger.info("input config: %s" % self.config['db'])
 
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
-        grouper.must_enforce_single_species = False
+        #grouper.must_enforce_single_species = False
+        grouper.must_enforce_single_species = True
         groups = grouper(pdbs)
         if not groups:
             raise core.InvalidState("No groups produced")
@@ -223,14 +247,59 @@ class Loader(core.SimpleLoader):
         key = op.itemgetter(0)
         ordered_chains = sorted(possible, key = key)
         result = []
+
+        #calc = 0
+        #calc_limit = 1
+
+        if 'comp_limit' in kwargs and kwargs.get('comp_limit') is not None:
+            comp_limit = kwargs.get('comp_limit', 100)
+        else:
+            comp_limit = 100
+
+        self.logger.info("comp_limit: %s" % comp_limit)
+
         for (first, rest) in it.groupby(ordered_chains, key):
-            seconds = [r[1] for r in rest]
-            self.logger.debug("to_process: first: %s" % first)
-            self.logger.debug("to_process: seconds: %s" % seconds)
-            result.append((first, seconds))
+            #if calc >= calc_limit:
+            #    continue
+            temp = [r[1] for r in rest]
+            seconds = make_unique_list(temp)
+
+            if direction < 0:
+                seconds = seconds[::-1]
+
+            self.logger.debug("to_process: first / seconds: %s / %s" % (first, seconds))
+            if len(seconds) < comp_limit:
+                if direction > 0:
+                    result.append((first, seconds))        # add to end of list
+                else:
+                    result = [(first,seconds)] + result    # add to beginning of list
+            else:
+                self.logger.warning("length skip (%s < %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
+            #calc = 1 + calc
         #return sorted(possible)
         self.logger.debug("to_process: result: %s" % result)
         return result
+
+
+    def is_missing(self, entry, **kwargs):
+        """Determine if we do not have any data. If we have no data then we
+        will recompute. This method must be implemented by inhering classes
+        and is how we determine if we have data or not.
+
+        Parameters
+        ----------
+        entry : object
+            The data to check
+        **kwargs : dict
+            Generic keyword arguments
+
+        Returns
+        -------
+        missing : bool
+            True if the data is missing.
+        """
+        return True
+
 
     def query(self, session, pair):
         """Create a query to find the comparisions using the given pair of
@@ -251,32 +320,17 @@ class Loader(core.SimpleLoader):
             The query for chains.
         """
 
-        self.logger.debug("query: first: %s" % pair[0])
-        self.logger.debug("query: second: %s" % pair[1])
-        self.logger.debug("query: second (clean): %s" % pair[1][0])
+        self.logger.info("query: first: %s // second (clean): %s" % (pair[0], pair[1][0]))
 
         sim = mod.ChainChainSimilarity
-        #simf = session.query(sim).\
-        #    filter(sim.chain_id_1 == pair[0]).\
-        #    filter(sim.chain_id_2.in_(pair[1])).\
-        #    subquery()
-        #simr = session.query(sim).\
-        #    filter(sim.chain_id_2 == pair[0]).\
-        #    filter(sim.chain_id_1.in_(pair[1])).\
-        #    subquery()
-        ##simq = simf.union(simr)
-        #simq = session.query().select_entity_from(union_all(simf.select(), simr.select()))
-        #query = session.query("SELECT * FROM chain_chain_similiarity WHERE (chain_id_1 = %s AND chain_id_2 IN (%s) ) OR (chain_id_2 = %s AND chain_id_1 IN (%s) )" % (pair[0], tuple(pair[1][0]), pair[0], tuple(pair[1][0])))
 
-        #return query
-        #return session.query(simq)
         return session.query(sim).\
             filter(or_(and_(sim.chain_id_1==pair[0],sim.chain_id_2.in_(pair[1])),
                        and_(sim.chain_id_2==pair[0],sim.chain_id_1.in_(pair[1]))))
-        #    filter(((sim.chain_id_1 == pair[0]) & (sim.chain_id_2 == pair[1])) |
-        #           ((sim.chain_id_1 == pair[1]) & (sim.chain_id_2 == pair[0])))
 
-    def matrices(self, corr_id, info1, info2, name='base'):
+
+
+    def pickledata(self, corr_id, info1, info2, name='base'):
         """Load the matrices used to compute discrepancies. This will look up
         all the centers and rotation matrices in one query. If any centers or
         rotation matrices are missing it will log an error. If there are alt
@@ -300,40 +354,35 @@ class Loader(core.SimpleLoader):
             rotation1, rotation2.
         """
 
+        allunitdictionary = defaultdict()
+
+        ife_chain_1 = info1['ife_id'].replace('|','-')
+        ife_chain_2 = info2['ife_id'].replace('|','-')
+
+        self.logger.info("pickledata (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
+        self.logger.debug("pickledata (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
+        self.logger.debug("pickledata (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
+
         with self.session() as session:
-            centers1 = aliased(mod.UnitCenters)
-            centers2 = aliased(mod.UnitCenters)
             units1 = aliased(mod.UnitInfo)
             units2 = aliased(mod.UnitInfo)
-            rot1 = aliased(mod.UnitRotations)
-            rot2 = aliased(mod.UnitRotations)
             corr_units = mod.CorrespondenceUnits
-            corr = mod.CorrespondencePdbs
+            corr_pdb = mod.CorrespondencePdbs
 
-            columns = [corr.correspondence_id]
-            columns.extend(label_center(centers1, 1))
-            columns.extend(label_center(centers2, 2))
-            columns.extend(label_rotation(rot1, 1))
-            columns.extend(label_rotation(rot2, 2))
+            columns = [corr_pdb.correspondence_id, corr_units.unit_id_1.label('unit1'), corr_units.unit_id_2.label('unit2')]
 
             query = session.query(*columns).\
                 join(corr_units,
-                     corr.correspondence_id == corr_units.correspondence_id).\
+                     corr_pdb.correspondence_id == corr_units.correspondence_id).\
                 join(units1, units1.unit_id == corr_units.unit_id_1).\
                 join(units2, units2.unit_id == corr_units.unit_id_2).\
-                join(centers1, centers1.unit_id == corr_units.unit_id_1).\
-                join(centers2, centers2.unit_id == corr_units.unit_id_2).\
-                join(rot1, rot1.unit_id == corr_units.unit_id_1).\
-                join(rot2, rot2.unit_id == corr_units.unit_id_2).\
-                filter(corr.pdb_id_1 == corr_units.pdb_id_1).\
-                filter(corr.pdb_id_2 == corr_units.pdb_id_2).\
-                filter(corr.chain_name_1 == corr_units.chain_name_1).\
-                filter(corr.chain_name_2 == corr_units.chain_name_2).\
-                filter(centers1.name == centers2.name).\
-                filter(centers1.name == name).\
-                filter(corr.correspondence_id == corr_id).\
-                filter(corr.chain_id_1 == info1['chain_id']).\
-                filter(corr.chain_id_2 == info2['chain_id']).\
+                filter(corr_pdb.pdb_id_1 == corr_units.pdb_id_1).\
+                filter(corr_pdb.pdb_id_2 == corr_units.pdb_id_2).\
+                filter(corr_pdb.chain_name_1 == corr_units.chain_name_1).\
+                filter(corr_pdb.chain_name_2 == corr_units.chain_name_2).\
+                filter(corr_pdb.correspondence_id == corr_id).\
+                filter(corr_pdb.chain_id_1 == info1['chain_id']).\
+                filter(corr_pdb.chain_id_2 == info2['chain_id']).\
                 filter(units1.sym_op == info1['sym_op']).\
                 filter(units2.sym_op == info2['sym_op']).\
                 filter(units1.alt_id == info1['alt_id']).\
@@ -343,37 +392,214 @@ class Loader(core.SimpleLoader):
                 order_by(corr_units.correspondence_index).\
                 distinct()
 
+            self.logger.info("pickledata (3.0):  result set length: %s" % query.count())
+
             if not query.count():
                 self.logger.warning("No geometric data for %s %s", info1, info2)
-                raise core.Skip("Missing geometric data")
+                #raise core.Skip("Missing geometric data")
+
+            self.logger.info("pickledata (3): obtained correspondence units")
+
+            for key in ( ife_chain_1, ife_chain_2 ):
+                splitchain = key.split("+")
+
+                for chunk in splitchain:
+                    outfile = 'pickle-FR3D/' + chunk + '_RNA.pickle'
+
+                    self.logger.debug("Pickle file: %s" % str(outfile))
+
+                    with open(outfile, 'rb') as fh:
+                        data = map(list,map(None,*pickle.load(fh)))
+
+                        self.logger.debug("Data for %s: %s" % (key, str(data)))
+
+                        for line in data:
+                            unitid = line[0]
+                            allunitdictionary[unitid] = line
+
+            self.logger.info("pickledata (4): pickle data import complete")
 
             c1 = []
             c2 = []
             r1 = []
             r2 = []
             seen = set()
+
             for r in query:
+                self.logger.debug("pickledata (5): row: %s" % str(r))
+
                 if r.unit1 in seen:
-                    raise core.InvalidState("Got duplicate unit %s" % r.unit1)
+                    raise core.InvalidState("pickledata: Got duplicate unit (unit1) %s" % r.unit1)
                 seen.add(r.unit1)
 
                 if r.unit2 in seen:
-                    raise core.InvalidState("Got duplicate unit %s" % r.unit2)
+                    raise core.InvalidState("pickledata: Got duplicate unit (unit2) %s" % r.unit2)
                 seen.add(r.unit2)
 
-                r1.append(np.array([[r.cell_00_1, r.cell_01_1, r.cell_02_1],
-                                    [r.cell_10_1, r.cell_11_1, r.cell_12_1],
-                                    [r.cell_20_1, r.cell_21_1, r.cell_22_1]]))
-                r2.append(np.array([[r.cell_00_2, r.cell_01_2, r.cell_02_2],
-                                    [r.cell_10_2, r.cell_11_2, r.cell_12_2],
-                                    [r.cell_20_2, r.cell_21_2, r.cell_22_2]]))
+                if allunitdictionary.get(r.unit1) is not None and allunitdictionary.get(r.unit2) is not None:
+                    c1.append(allunitdictionary[r.unit1][2])
+                    c2.append(allunitdictionary[r.unit2][2])
+                    r1.append(allunitdictionary[r.unit1][3])
+                    r2.append(allunitdictionary[r.unit2][3])
 
-                c1.append(np.array([r.x1, r.y1, r.z1]))
-                c2.append(np.array([r.x2, r.y2, r.z2]))
+        self.logger.info("pickledata (6): end query for %s // %s" % (ife_chain_1, ife_chain_2))
 
         return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 
-    def discrepancy(self, corr_id, centers1, centers2, rot1, rot2):
+
+    #def pd2(self, corr_id, info1, info2, name='base'):
+    #    """Load the matrices used to compute discrepancies. This will look up
+    #    all the centers and rotation matrices in one query. If any centers or
+    #    rotation matrices are missing it will log an error. If there are alt
+    #    ids the 'A' one will be used.
+
+    #    Parameters
+    #    ----------
+    #    corr_id : int
+    #        The correspondence id.
+    #    info1 : dict
+    #        The result of `info` for the first chain to compare.
+    #    info2 : dict
+    #        The result of `info` for the second chain to compare.
+    #    name : str, optional
+    #        The type of base center to use.
+
+    #    Returns
+    #    -------
+    #    data : (list, list, list, list)
+    #        This returns 4 lists, which are in order, centers1, centers2,
+    #        rotation1, rotation2.
+    #    """
+
+    #    allunitdictionary = defaultdict()
+    #    unit_dict_1 = defaultdict()
+    #    unit_dict_2 = defaultdict()
+
+    #    ife_chain_1 = info1['ife_id'].replace('|','-')
+    #    ife_chain_2 = info2['ife_id'].replace('|','-')
+
+    #    self.logger.info("pd2 (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
+    #    self.logger.debug("pd2 (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
+    #    self.logger.debug("pd2 (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
+
+    #    with self.session() as session:
+    #        corr_units = mod.CorrespondenceUnits
+
+    #        columns = [corr_units.correspondence_id, corr_units.unit_id_1.label('unit1'), corr_units.unit_id_2.label('unit2')]
+
+    #        query = session.query(*columns).\
+    #            filter(corr_units.correspondence_id == corr_id).\
+    #            filter(corr_units.pdb_id_1 == info1['pdb']).\
+    #            filter(corr_units.pdb_id_2 == info2['pdb']).\
+    #            filter(corr_units.chain_name_1 == info1['chain_name']).\
+    #            filter(corr_units.chain_name_2 == info2['chain_name']).\
+    #            order_by(corr_units.correspondence_index).\
+    #            distinct()
+
+    #        self.logger.info("pd2 (3.0):  result set length: %s" % query.count())
+
+    #        if not query.count():
+    #            self.logger.warning("No geometric data for %s %s", info1, info2)
+    #            #raise core.Skip("Missing geometric data")
+
+    #        self.logger.info("pd2 (3): obtained correspondence units")
+
+    #        for key in ( ife_chain_1, ife_chain_2 ):
+    #            splitchain = key.split("+")
+
+    #            if key == ife_chain_1:
+    #                info_d = info1
+    #            else:
+    #                info_d = info2
+
+    #            self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" %
+    #                             (key,info_d['ife_id'],info_d['alt_id'],info_d['sym_op'],info_d['model']))
+
+    #            for chunk in splitchain:
+    #                outfile = 'pickle-FR3D/' + chunk + '_RNA.pickle'
+
+    #                self.logger.debug("Pickle file: %s" % str(outfile))
+
+    #                with open(outfile, 'rb') as fh:
+    #                    data = map(list,map(None,*pickle.load(fh)))
+
+    #                    self.logger.debug("Data for %s: %s" % (key, str(data)))
+
+    #                    for line in data:
+    #                        unitid = line[0]
+    #                        split_unit = unitid.split('|')
+
+    #                        if len(split_unit) > 6:
+    #                            #if split_unit[6] is not None and split_unit[6] <> info_d['alt_id']:
+    #                            #if (split_unit[6] == "" and info_d['alt_id'] is not None) or split_unit[6] <> info_d['alt_id']:
+    #                            if split_unit[6] in ("B", "C"):
+    #                                self.logger.info("pd2: Extended unit %s, alt_id (desired/actual):  [%s/%s]" % (unitid, info_d['alt_id'], split_unit[6]))
+    #                                continue
+
+    #                            if len(split_unit) > 8:
+    #                                #if split_unit[8] != info_d['sym_op']:
+    #                                if split_unit[8] is not None:
+    #                                    self.logger.info("pd2: Extended unit %s, sym_op (desired/actual):  %s/%s" % (unitid, info_d['sym_op'], split_unit[8]))
+    #                                    continue
+
+    #                            self.logger.info("pd2: Extended unit %s to be used" % unitid)
+
+    #                        if split_unit[1] != str(info_d['model']):
+    #                            self.logger.info("pd2: skipped %s for model number %s" % (unitid, split_unit[1]))
+    #                            continue
+
+    #                        if key == ife_chain_1:
+    #                            unit_dict_1[unitid] = line
+    #                            self.logger.debug("pd2: unit_dict_1 for unitid %s: %s" % (unitid, line))
+    #                        else:
+    #                            unit_dict_2[unitid] = line
+    #                            self.logger.debug("pd2: unit_dict_2 for unitid %s: %s" % (unitid, line))
+
+    #        self.logger.info("pd2: unit_dict lengths:  %s / %s" % (len(unit_dict_1), len(unit_dict_2)))
+
+    #        c1 = []
+    #        c2 = []
+    #        r1 = []
+    #        r2 = []
+    #        pd2seen = set()
+
+    #        for r in query:
+    #            self.logger.debug("pd2 (5): row: %s" % str(r))
+
+    #            uspl1 = r.unit1.split('|')
+    #            uspl2 = r.unit2.split('|')
+
+    #            if str(uspl1[1]) != '1' or str(uspl2[1]) != '1':
+    #                continue
+
+    #            #if r.unit1 in pd2seen:
+    #            #    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
+    #            #pd2seen.add(r.unit1)
+
+    #            #if r.unit2 in pd2seen:
+    #            #    raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
+    #            #pd2seen.add(r.unit2)
+
+    #            if unit_dict_1.get(r.unit1) is not None and unit_dict_2.get(r.unit2) is not None:
+    #                if r.unit1 in pd2seen:
+    #                    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
+    #                pd2seen.add(r.unit1)
+
+    #                if r.unit2 in pd2seen:
+    #                    raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
+    #                pd2seen.add(r.unit2)
+
+    #                c1.append(unit_dict_1[r.unit1][2])
+    #                c2.append(unit_dict_2[r.unit2][2])
+    #                r1.append(unit_dict_1[r.unit1][3])
+    #                r2.append(unit_dict_2[r.unit2][3])
+
+    #    self.logger.info("pd2 (6): end query for %s // %s" % (ife_chain_1, ife_chain_2))
+
+    #    return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
+
+
+    def discrepancy(self, corr_id, name1, name2, centers1, centers2, rot1, rot2):
         """Compare the chains. This will filter out all residues in the chain
         that do not have a base center computed.
 
@@ -397,13 +623,14 @@ class Loader(core.SimpleLoader):
             the discrepancy.
         """
 
-        self.logger.debug("Comparing %i pairs of residues", len(centers1))
+        self.logger.info("Comparing %i pairs of residues for %s, %s" % (len(centers1), name1, name2))
         disc = matrix_discrepancy(centers1, rot1, centers2, rot2)
 
         if np.isnan(disc):
             raise core.InvalidState("NaN for discrepancy")
 
         return disc, len(centers1)
+
 
     def info(self, chain_id):
         """Load the required information about a chain. Since we want to use
@@ -419,7 +646,7 @@ class Loader(core.SimpleLoader):
         -------
         ife_info : dict
             A dict with a 'chain_name', 'chain_id', `pdb`, `model`, `ife_id`,
-            `sym_op`, and `name` keys.
+            `sym_op`, 'alt_id', and `name` keys.
         """
 
         with self.session() as session:
@@ -464,6 +691,7 @@ class Loader(core.SimpleLoader):
             ife['name'] = ife['ife_id'] + '+' + ife['sym_op']
             return ife
 
+
     def __correspondence_query__(self, chain1, chain2):
         """Create a query for correspondences between the two chains. This only
         checks in the given direction.
@@ -498,6 +726,7 @@ class Loader(core.SimpleLoader):
                 return result.correspondence_id
             return None
 
+
     def corr_id(self, chain_id1, chain_id2):
         """Given two chain ids, load the correspondence id between them. This
         will raise an exception if these chains have not been aligned, or if
@@ -530,9 +759,12 @@ class Loader(core.SimpleLoader):
             corr_id = self.__correspondence_query__(chain_id2, chain_id1)
 
         if corr_id is None:
-            raise core.Skip("No good correspondence between %s, %s" %
-                            (chain_id1, chain_id2))
+            #raise core.Skip("No good correspondence between %s, %s" %
+            #                (chain_id1, chain_id2))
+            self.logger.warning("No good correspondence between %s, %s" %
+                                (chain_id1, chain_id2))
         return corr_id
+
 
     def __check_matrices__(self, table, info):
         """Check the that there are entries for the given info dict in the
@@ -563,6 +795,7 @@ class Loader(core.SimpleLoader):
 
             return bool(query.count())
 
+
     def has_matrices(self, info):
         """Check if the given info has all the required matrices. This will
         check in the database for entries in the unit_centers and
@@ -581,6 +814,7 @@ class Loader(core.SimpleLoader):
 
         return self.__check_matrices__(mod.UnitCenters, info) and \
             self.__check_matrices__(mod.UnitRotations, info)
+
 
     def entry(self, info1, info2, corr_id):
         """Compute the discrepancy between two given chains. The info
@@ -618,44 +852,89 @@ class Loader(core.SimpleLoader):
             self.logger.warning("Missing matrix data for %s", info2['name'])
             return []
 
-        matrices = self.matrices(corr_id, info1, info2)
-        if len(filter(lambda m: len(m), matrices)) != len(matrices):
+        pickledata = self.pickledata(corr_id, info1, info2)
+        if len(filter(lambda m: len(m), pickledata)) != len(pickledata):
             self.logger.warning("Did not load all data for %s, %s",
                                 info1['name'], info2['name'])
-            return []
+            #return []
 
-        if len(matrices[0]) < 3:
-            raise core.Skip("Not enough centers for pair: %s, %s" %
-                            (info1, info2))
+        if len(pickledata[0]) < 3:
+            self.logger.warning("Not enough centers for pair: %s, %s" %
+            #raise core.Skip("Not enough centers for pair: %s, %s" %
+                            (info1['chain_id'], info2['chain_id']))
 
         try:
-            disc, length = self.discrepancy(corr_id, *matrices)
+            pdisc, plength = self.discrepancy(corr_id, info1['name'], info2['name'], *pickledata)
         except Exception as err:
-            self.logger.error("Could not compute discrepancy for %s %s" %
+            self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
                               (info1['name'], info2['name']))
-            self.logger.exception(err)
-            return []
+            pdisc = -1
+            plength = 0
 
-        compare = {
+        pcompare = {
             'chain_id_1': info1['chain_id'],
             'chain_id_2': info2['chain_id'],
             'model_1': info1['model'],
             'model_2': info2['model'],
             'correspondence_id': corr_id,
-            'discrepancy': float(disc),
-            'num_nucleotides': length,
+            'discrepancy': float(pdisc),
+            'num_nucleotides': plength,
         }
 
-        reversed = dict(compare)
-        reversed['chain_id_1'] = compare['chain_id_2']
-        reversed['chain_id_2'] = compare['chain_id_1']
-        reversed['model_1'] = compare['model_2']
-        reversed['model_2'] = compare['model_1']
+        preversed = dict(pcompare)
+        preversed['chain_id_1'] = pcompare['chain_id_2']
+        preversed['chain_id_2'] = pcompare['chain_id_1']
+        preversed['model_1'] = pcompare['model_2']
+        preversed['model_2'] = pcompare['model_1']
+
+        #p2data = self.pd2(corr_id, info1, info2)
+        #if len(filter(lambda m: len(m), p2data)) != len(p2data):
+        #    self.logger.warning("Did not load all data for %s, %s",
+        #                        info1['name'], info2['name'])
+        #    #return []
+
+        #if len(p2data[0]) < 3:
+        #    self.logger.warning("pd2: p2data[0] = %s" % p2data[0])
+        #    self.logger.warning("Not enough centers for pair: %s, %s" %
+        #                        (info1['chain_id'], info2['chain_id']))
+
+        #try:
+        #    p2disc, p2length = self.discrepancy(corr_id, info1['name'], info2['name'], *p2data)
+        #except Exception as err:
+        #    self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
+        #                      (info1['name'], info2['name']))
+        #    p2disc = -1
+        #    p2length = 0
+
+        #pd2c = {
+        #    'chain_id_1': info1['chain_id'],
+        #    'chain_id_2': info2['chain_id'],
+        #    'model_1': info1['model'],
+        #    'model_2': info2['model'],
+        #    'correspondence_id': corr_id,
+        #    'discrepancy': float(p2disc),
+        #    'num_nucleotides': p2length,
+        #}
+
+        #pd2r = dict(pcompare)
+        #pd2r['chain_id_1'] = pd2c['chain_id_2']
+        #pd2r['chain_id_2'] = pd2c['chain_id_1']
+        #pd2r['model_1'] = pd2c['model_2']
+        #pd2r['model_2'] = pd2c['model_1']
+
+        #self.logger.info("IFE1/IFE2: %s / %s : Discrepancies/Length (pickle/revised): %s / %s : %s / %s" % (info1['name'], info2['name'], pcompare['discrepancy'], pcompare['num_nucleotides'], pd2c['discrepancy'], pd2c['num_nucleotides']))
+
+        #time.sleep(1)
 
         return [
-            compare,
-            reversed
+            #compare,
+            #reversed,
+            pcompare,
+            preversed
+            #pd2c,
+            #pd2r
         ]
+
 
     def data(self, entry, **kwargs):
         """Compute all chain to chain similarity data. This will get all
@@ -675,14 +954,63 @@ class Loader(core.SimpleLoader):
             second to the first chains.
         """
 
-        chain1, seconds = entry
+        self.logger.info("data: entry: %s" % str(entry))
+
+        chain1, candidates = entry
+        #chain1, seconds = entry
+
         info1 = self.info(chain1)
+
+        sim = mod.ChainChainSimilarity
+
+        with self.session() as session:
+            query = session.query(sim).\
+                filter(or_(and_(sim.chain_id_1==entry[0],sim.chain_id_2.in_(entry[1])),
+                           and_(sim.chain_id_2==entry[0],sim.chain_id_1.in_(entry[1]))))
+
+        knowns = []
+        seconds = []
+
+        for r in query:
+            self.logger.info("data: known: (%s, %s)" % (r.chain_id_1,r.chain_id_2))
+            knowns.append((r.chain_id_1,r.chain_id_2))
+
+        for chain in candidates:
+            if chain == chain1:
+                continue
+
+            if ((chain1, chain)) in knowns:
+                self.logger.info("data: already have discrepancy for (%s, %s)" % (chain1, chain))
+                continue
+
+            self.logger.info("data: adding %s to list of pending calculations" % chain)
+            seconds.append(chain)
+
+        data_count = 0
+
+        if 'data_limit' in kwargs and kwargs.get('data_limit') is not None:
+            data_limit = kwargs.get('data_limit', 20)
+        else:
+            data_limit = 20
+
+        self.logger.info("data_limit: %s" % data_limit)
+
         for chain2 in seconds:
-            self.logger.debug("data: chain2: %s" % chain2)
+            data_count = 1 + data_count
+            if data_count > data_limit:
+                self.logger.info("data: data_limit (%s) exceeded: %s" % (data_limit, data_count))
+                continue
+            entries = []
             info2 = self.info(chain2)
             corr_id = self.corr_id(chain1, chain2)
-            self.logger.debug("data: corr_id: %s" % corr_id)
-            entries = self.entry(info1, info2, corr_id)
+            self.logger.info("data: count: %s // chain1: %s // chain2: %s // corr_id: %s" %
+                             (data_count, chain1, chain2, corr_id))
+            if corr_id is not None:
+                entries = self.entry(info1, info2, corr_id)
+                #entries.append(self.entry(info1, info2, corr_id))
 
-        for e in entries:
-            yield mod.ChainChainSimilarity(**e)
+            if entries is not None:
+                for e in entries:
+                    self.logger.info("data: Entry to load: %s" % e)
+                    yield mod.ChainChainSimilarity(**e)
+
