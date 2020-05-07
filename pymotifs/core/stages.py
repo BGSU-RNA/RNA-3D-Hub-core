@@ -22,10 +22,87 @@ from pymotifs import utils as ut
 from pymotifs import models as mod
 from pymotifs.core import savers
 
-# This is a very large virus file that should be skipped. Add other files as
-# necessary
-SKIP = set(['4V3P', '4V4G'])
-
+# Files that should be skipped.  Add others as necessary, and note reason
+# for exclusion when known.
+#
+# This is a very large virus file that should be skipped.
+# (JJC, 2017-02-09:  no idea what this old comment refers to.  Neither 4V3P
+#   nor 4V4G.)
+#
+SKIP = set([
+           '4V3P'
+         , '4V4G'
+         , '104D' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '169D' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '170D' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1CK5' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1CK8' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1CN8' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1CN9' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1DHH' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1DRN' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1DZS' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1E6T' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1E7X' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1EOR' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1FC8' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1FJF' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1GKV' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1GKW' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1GTC' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1H8J' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1HDW' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1HE0' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1HE6' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1HO6' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1HOQ' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1JJM' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1JJN' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1NLE' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1NYZ' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1OKA' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1T42' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1VS9' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1ZFR' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '2I1C' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '2NVS' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '2NYO' # failing export.cifatom (no pdbx_struct_oper_list block) - 2019-03-16
+         , '1GIY' # failing units.distances - 2019-03-18
+         , '1P6G' # failing units.distances - 2019-03-18
+         , '1P85' # failing units.distances - 2019-03-18
+         , '1P86' # failing units.distances - 2019-03-18
+         , '1P87' # failing units.distances - 2019-03-18
+         , '2AGN' # failing units.distances - 2019-03-18
+         , '2OB7' # failing units.distances - 2019-03-18
+         , '2R1G' # failing units.distances - 2019-03-18
+         , '2RDO' # failing units.distances - 2019-03-18
+         , '2VAZ' # failing units.distances - 2019-03-18
+         , '3CW1' # failing units.distances - 2019-03-18
+         , '3DG0' # failing units.distances - 2019-03-18
+         , '3DG2' # failing units.distances - 2019-03-18
+         , '3DG4' # failing units.distances - 2019-03-18
+         , '3DG5' # failing units.distances - 2019-03-18
+         , '3EP2' # failing units.distances - 2019-03-18
+         , '3EQ3' # failing units.distances - 2019-03-18
+         , '3EQ4' # failing units.distances - 2019-03-18
+         , '3IY8' # failing units.distances - 2019-03-18
+         , '3IY9' # failing units.distances - 2019-03-18
+         , '3J2K' # failing units.distances - 2019-03-18
+         , '3J64' # failing units.distances - 2019-03-18
+         , '3JCR' # failing units.distances - 2019-03-18
+         , '4ADX' # failing units.distances - 2019-03-18
+         , '4V47' # failing units.distances - 2019-03-18
+         , '4V48' # failing units.distances - 2019-03-18
+         , '4V7F' # failing units.distances - 2019-03-18
+         , '5ZZM' # failing units.distances - 2019-03-18
+         , '6EM3' # failing units.distances - 2019-03-18
+         , '6EM4' # failing units.distances - 2019-03-18
+         , '6EM5' # failing units.distances - 2019-03-18
+         , '1R9F' # failing chain_chain.similarity - 2019-04-18
+         , '6BJG' # failing chain_chain.similarity - 2019-04-18
+         , '6BJH' # failing chain_chain.similarity - 2019-04-18
+         , '6BJV' # failing chain_chain.similarity - 2019-04-18
+]) 
 
 class Stage(base.Base):
     """This is a base class for both loaders and exporters to inherit from. It
