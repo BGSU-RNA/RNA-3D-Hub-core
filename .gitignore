@@ -28,6 +28,7 @@ dwsync.xml
 .idea
 .svn
 publish
+DATA
 
 # project specific
 *.m~
@@ -53,3 +54,6 @@ ss-diagrams/
 
 docs/build/*
 default.nix
+
+# temporary files
+pymotifs/export/pairFileParsing.py
