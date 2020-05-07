@@ -1,15 +1,16 @@
 # Numerous always-ignore extensions
+*.cfg
 *.diff
 *.err
-*.orig
 *.log
+*.orig
+*.preserve
+*.pyc
 *.rej
 *.swo
 *.swp
 *.vi
 *~
-*.pyc
-*.cfg
 
 # OS or Editor folders
 .DS_Store
@@ -28,6 +29,7 @@ dwsync.xml
 .idea
 .svn
 publish
+munge
 
 # project specific
 *.m~
