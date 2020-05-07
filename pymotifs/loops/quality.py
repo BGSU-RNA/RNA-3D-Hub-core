@@ -107,21 +107,6 @@ class Loader(core.SimpleLoader):
             raise core.Skip("Nothing to process")
         return to_use
 
-    def current_id(self):
-        """Compute the current loop release id.
-
-        :returns: The current loop release id string, eg 1.2.
-        """
-        with self.session() as session:
-            query = session.query(mod.LoopReleases.loop_release_id).\
-                order_by(desc(mod.LoopReleases.date)).\
-                limit(1)
-
-            if not query.count():
-                return '0.0'
-
-            return query.one().loop_release_id
-
     def query(self, session, pdb):
         """Create a query to find all loop qa entries for the given pdb.
 
@@ -130,11 +115,9 @@ class Loader(core.SimpleLoader):
         :returns: The query to use.
         """
 
-        release_id = self.current_id()
         return session.query(mod.LoopQa).\
             join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
-            filter(mod.LoopInfo.pdb_id == pdb).\
-            filter(mod.LoopQa.loop_release_id == release_id)
+            filter(mod.LoopInfo.pdb_id == pdb)
 
     def paired(self, pdb):
         """Load all within loop basepairs.
@@ -607,7 +590,6 @@ class Loader(core.SimpleLoader):
             'modifications': mods,
             'nt_signature': ', '.join(str(s) for s in loop['signature']),
             'complementary': seq,
-            'loop_release_id': release_id,
         }
 
     def assessment_data(self, pdb):
@@ -622,6 +604,5 @@ class Loader(core.SimpleLoader):
         :returns: A list of the status entries for all loops in the structure.
         """
 
-        release_id = self.current_id()
         assess = self.assessment_data(pdb)
-        return [self.quality(assess, release_id, l) for l in self.loops(pdb)]
+        return [self.quality(assess, l) for l in self.loops(pdb)]
