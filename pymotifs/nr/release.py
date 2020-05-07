@@ -64,9 +64,13 @@ class Loader(core.MassLoader):
 
     def data(self, pdbs, **kwargs):
 
-        now = dt.datetime.now()
-        if kwargs.get('before_date', None):
-            now = kwargs.get('before_date', dt.datetime.now())
+        now = kwargs.get('before_date', dt.datetime.strftime(dt.datetime.now(), '%Y-%m-%d %H:%M:%S'))
+
+        if ":" in now:
+            nowstring = dt.datetime.strftime(dt.datetime.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
+        else:
+#            nowstring = now.strftime("%Y%m%d"),
+            nowstring = now.replace("-","")
 
         current, index = self.current_id()
         next = self.next_id(current)
@@ -77,5 +81,5 @@ class Loader(core.MassLoader):
         return mod.NrReleases(nr_release_id=next,
                               date=now,
                               parent_nr_release_id=parent,
-                              description=now.strftime("%Y%m%d"),
+                              description = nowstring,
                               index=index + 1)

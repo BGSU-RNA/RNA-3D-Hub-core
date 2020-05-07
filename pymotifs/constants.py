@@ -135,7 +135,7 @@ NR_CACHE_NAME = 'nr'
 CCC_CACHE_NAME = 'ccc'
 
 """Max discrepancy to allow for chain chain discrepancies"""
-MAX_RESOLUTION_DISCREPANCY = 4.0
+MAX_RESOLUTION_DISCREPANCY = 20.0
 
 """Min number of nts to need for computing discrepancies"""
 MIN_NT_DISCREPANCY = 3

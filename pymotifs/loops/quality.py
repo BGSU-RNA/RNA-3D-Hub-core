@@ -1,6 +1,6 @@
 """
 Program for importing loop quality assurance data into the RNA 3D Hub database.
-
+Data goes in the table loop_qa
 Some loops should be disqualified because they have unresolved or missing
 nucleotides. The disqualification codes are:
 
@@ -11,8 +11,8 @@ nucleotides. The disqualification codes are:
 5 - incomplete nucleotides
 6 - self-complementary internal loop
 7 - Too many symmetry operators
-8 - A fictional loop
-9 - A loop with pair outside of the range
+8 - A fictional loop ... one with too high values of RSRZ
+9 - A loop with pair outside of the RSRZ range
 """
 
 from collections import defaultdict
@@ -269,23 +269,50 @@ class Loader(core.SimpleLoader):
         """
 
         self.logger.debug("Finding position for %s", unit)
-        with self.session() as session:
-            pos = mod.ExpSeqPosition
-            mapping = mod.ExpSeqUnitMapping
-            result = session.query(pos.index,
-                                   pos.exp_seq_id,
-                                   mod.UnitInfo.chain,
-                                   mod.UnitInfo.model,
-                                   mod.UnitInfo.sym_op,
-                                   ).\
-                join(mapping,
-                     mapping.exp_seq_position_id == pos.exp_seq_position_id).\
-                join(mod.UnitInfo,
-                     mod.UnitInfo.unit_id == mapping.unit_id).\
-                filter(mapping.unit_id == unit).\
-                one()
+        try:
+            with self.session() as session:
+                pos = mod.ExpSeqPosition
+                mapping = mod.ExpSeqUnitMapping
+                result = session.query(pos.index,
+                                       pos.exp_seq_id,
+                                       mod.UnitInfo.chain,
+                                       mod.UnitInfo.model,
+                                       mod.UnitInfo.sym_op,
+                                       ).\
+                    join(mapping,
+                         mapping.exp_seq_position_id == pos.exp_seq_position_id).\
+                    join(mod.UnitInfo,
+                         mod.UnitInfo.unit_id == mapping.unit_id).\
+                    filter(mapping.unit_id == unit).\
+                    one()
 
             return row2dict(result)
+        except:
+            # handle the case where the unit id in the database table ends with ||A or ||B
+            # but that is not being stored in unit.  Not sure why not.
+            self.logger.info('Looking up sequence position of alternates of '+unit)
+            newunit = '%' + unit + '%'
+            with self.session() as session:
+                pos = mod.ExpSeqPosition
+                mapping = mod.ExpSeqUnitMapping
+                result = session.query(pos.index,
+                                       pos.exp_seq_id,
+                                       mod.UnitInfo.chain,
+                                       mod.UnitInfo.model,
+                                       mod.UnitInfo.sym_op,
+                                       ).\
+                    join(mapping,
+                         mapping.exp_seq_position_id == pos.exp_seq_position_id).\
+                    join(mod.UnitInfo,
+                         mod.UnitInfo.unit_id == mapping.unit_id).\
+                    filter(mapping.unit_id.like(newunit)).\
+                    first()
+
+            if not result:
+                self.logger.info('No experimental sequence position for ' + unit)
+
+            return row2dict(result)
+
 
     def units_between(self, unit1, unit2):
         """Get a list of all units between two units. This assumes they are on
@@ -471,6 +498,8 @@ class Loader(core.SimpleLoader):
         -------
         data : dict
             A dict mapping from unit id to the rsr z_score.
+            Removed the following line because it crashed:
+#                filter_by(unit.in_('A','C','G','U')).\
         """
         data = defaultdict(lambda: None)
         with self.session() as session:
@@ -478,7 +507,6 @@ class Loader(core.SimpleLoader):
                 join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
                 filter_by(unit_type_id='rna').\
-                filter_by(unit.in_('A','C','G','U')).\
                 filter_by(pdb_id=pdb)
             data.update({r.unit_id: r.real_space_r_z_score for r in query})
             return data
@@ -541,8 +569,9 @@ class Loader(core.SimpleLoader):
             return 6
         if self.is_fictional_loop(assess.rsrz, loop):
             return 8
-        if self.is_fictional_pair(assess.rsrz, loop):
-            return 9
+# The following check is not able to work; need to pass in pairs, how to get it?
+#        if self.is_fictional_pair(assess.rsrz, loop):
+#            return 9
         return 1
 
     def quality(self, assess, release_id, loop):

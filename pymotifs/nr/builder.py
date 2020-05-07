@@ -166,6 +166,7 @@ class Builder(core.Base):
         """
         grouper = Grouper(self.config, self.session)
         conf = self.config['nr']
+        self.logger.warning("conf: %s" % str(conf))
         grouper.use_discrepancy = conf.get('use_discrepancy',
                                            grouper.use_discrepancy)
         grouper.use_species = conf.get('use_species', grouper.use_species)

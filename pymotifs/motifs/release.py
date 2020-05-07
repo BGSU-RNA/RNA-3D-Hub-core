@@ -336,9 +336,12 @@ class Loader(core.MassLoader):
         ifes = self.ifes(releases.nr)
         self.logger.info("Found %i ifes", len(ifes))
 
-        now = dt.datetime.now()
-        if kwargs.get('before_date', None):
-            now = kwargs.get('before_date', dt.datetime.now())
+        now = kwargs.get('before_date', dt.strftime(dt.now(), '%Y-%m-%d %H:%M:%S'))
+
+        if ":" in now:
+            nowstring = dt.strftime(dt.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
+        else:
+            nowstring = now.replace("-","")
 
         data = []
         for loop_type in self.types:

@@ -164,15 +164,18 @@ class Loader(core.Loader):
 
             row['unit_id'] = normalizer(row['unit_id'])
             if row['loop_id'] not in mapping:
-                raise core.InvalidState("Unknown loop: %s" % row['loop_id'])
+#                raise core.InvalidState("Unknown loop: %s" % row['loop_id'])
+                self.logger.error("Unknown loop: %s" % row['loop_id'])
+            else:
+                if row['unit_id'] not in mapping[row['loop_id']]:
+                    msg = "Unit %s not part of expected units %s for %s"
+                    entry = (row['unit_id'], mapping[row['loop_id']], row['loop_id'])
 
-            if row['unit_id'] not in mapping[row['loop_id']]:
-                msg = "Unit %s not part of expected units %s for %s"
-                entry = (row['unit_id'], mapping[row['loop_id']], row['loop_id'])
-                raise core.InvalidState(msg % entry)
-
-            entry.update(row)
-            entry['loop_id'] = row['loop_id']
-            data.append(mod.LoopPositions(**entry))
+#                    raise core.InvalidState(msg % entry)
+                    self.logger.error(msg % entry)
+                else:
+                    entry.update(row)
+                    entry['loop_id'] = row['loop_id']
+                    data.append(mod.LoopPositions(**entry))
 
         return data
