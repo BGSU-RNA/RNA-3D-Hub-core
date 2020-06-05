@@ -6,6 +6,7 @@ that have ever been obsoleted and a partially setup database will not have data
 on all PDB's.
 """
 
+import time
 from datetime import datetime
 from cStringIO import StringIO
 
@@ -91,11 +92,18 @@ class Loader(core.MassLoader):
         data : list
             A list of dictonaries as from `Parser`.
         """
+        attempts = 0
 
-        try:
-            ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
-            return ftp('/pub/pdb/data/status/obsolete.dat')
-        except Exception as err:
-            self.logger.critical("Could not get obsolete ids")
-            self.logger.exception(err)
-            raise core.StageFailed("Could not get obsolete ids")
+        while attempts < 100:
+
+            try:
+                ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
+                return ftp('/pub/pdb/data/status/obsolete.dat')
+            except Exception as err:
+                attempts += 1
+                print("Failed %d times to get obsolete ids" % attempts)
+                time.sleep(5)
+                self.logger.critical("Could not get obsolete ids")
+                self.logger.exception(err)
+
+        raise core.StageFailed("Could not get obsolete ids")
