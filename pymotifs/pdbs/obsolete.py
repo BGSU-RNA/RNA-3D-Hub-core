@@ -16,6 +16,8 @@ from pymotifs import models as mod
 
 from pymotifs.pdbs.info import Loader as InfoLoader
 
+import urllib2
+
 
 class Parser(object):
     """A class to help parsing the file fetched from PDB's FTP site. This is a
@@ -92,6 +94,19 @@ class Loader(core.MassLoader):
         data : list
             A list of dictonaries as from `Parser`.
         """
+        attempts = 0
+
+        while attempts < 100:
+
+            try:
+                response = urllib2.urlopen('https://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat')
+                html = response.read()
+                return html
+            except Exception as err:
+                attempts += 1
+                print("Failed %d times to get obsolete ids via URL" % attempts)
+                time.sleep(5)
+
         attempts = 0
 
         while attempts < 100:
