@@ -97,7 +97,6 @@ class Loader(core.MassLoader):
         attempts = 0
 
         while attempts < 100:
-
             try:
                 response = urllib2.urlopen('https://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat')
                 html = response.read()
@@ -110,7 +109,6 @@ class Loader(core.MassLoader):
         attempts = 0
 
         while attempts < 100:
-
             try:
                 ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
                 return ftp('/pub/pdb/data/status/obsolete.dat')
