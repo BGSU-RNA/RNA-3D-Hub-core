@@ -30,6 +30,7 @@ class CifAtomSaver(core.FileHandleSaver):
 
     @contextmanager
     def writer(self, pdb, **kwargs):
+        self.logger.info("Writing cifatom file for %s", pdb)
         with super(CifAtomSaver, self).writer(pdb, **kwargs) as handle:
             writer = CifAtom(handle)
             try:
@@ -49,6 +50,7 @@ class Exporter(core.Loader):
     def filename(self, pdb, **kwargs):
         """Create the filename for the given pdb file.
         """
+
         return os.path.join(self.config['locations']['fr3d_root'], "PDBFiles",
                             pdb + ".cifatoms")
 
