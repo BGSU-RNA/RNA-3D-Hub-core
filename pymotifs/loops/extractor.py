@@ -11,16 +11,16 @@ from pymotifs.utils import matlab
 from pymotifs import models as mod
 from pymotifs.utils.correct_units import Correcter
 
-from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
 from pymotifs.units.info import Loader as UnitLoader
-
+from pymotifs.mat_files import Loader as MatLoader
+from pymotifs.interactions.loader import Loader as InteractionLoader
 
 class Loader(core.SimpleLoader):
     loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
-    dependencies = set([ReleaseLoader, PdbLoader, UnitLoader])
+    dependencies = set([PdbLoader, MatLoader, InteractionLoader, UnitLoader])
     save_loops = True
 
     def query(self, session, pdb):

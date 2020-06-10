@@ -37,7 +37,7 @@ from pymotifs.units.incomplete import Entry
 from pymotifs.constants import RSRZ_PAIRED_OUTLIERS as PAIR
 from pymotifs.constants import RSRZ_FICTIONAL_CUTOFF as FICTIONAL_CUTOFF
 
-from pymotifs.loops.release import Loader as ReleaseLoader
+#from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
 from pymotifs.loops.positions import Loader as PositionLoader
 from pymotifs.units.incomplete import Loader as IncompleteLoader
@@ -69,7 +69,7 @@ class AssessmentData(nt('AssessmentData', ['incomplete', 'pairs', 'rsrz'])):
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([ReleaseLoader, InfoLoader, PositionLoader,
+    dependencies = set([InfoLoader, PositionLoader,
                         ExpSeqPositionLoader, ExpSeqMappingLoader,
                         IncompleteLoader])
 
@@ -557,15 +557,13 @@ class Loader(core.SimpleLoader):
 #            return 9
         return 1
 
-    def quality(self, assess, release_id, loop):
+    def quality(self, assess, loop):
         """Compute the quality information for the given loop.
 
         Parameters
         ----------
         assess : AssessmentData
             The assessment data to use.
-        release_id : str
-            The loop release id to use
         loop : dict
             A loop dictionary to use.
 
@@ -589,7 +587,7 @@ class Loader(core.SimpleLoader):
             'status': self.status(assess, loop),
             'modifications': mods,
             'nt_signature': ', '.join(str(s) for s in loop['signature']),
-            'complementary': seq,
+            'complementary': seq
         }
 
     def assessment_data(self, pdb):
