@@ -1,7 +1,6 @@
 # About
 
-RNA-3D-Hub-core is the backend for the [RNA 3D
-Hub](http://rna.bgsu.edu/rna3dhub).
+RNA-3D-Hub-core is the backend for the [RNA 3D Hub](http://rna.bgsu.edu/rna3dhub).
 
 RNA-3D-Hub-core contains:
 
