@@ -12,12 +12,10 @@ from pymotifs.utils import matlab
 from pymotifs.utils.correct_units import Correcter
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
-from pymotifs.loops.release import Loader as ReleaseLoader
-
 
 class Loader(core.Loader):
     merge_data = True
-    dependencies = set([UnitInfoLoader, InfoLoader, ReleaseLoader])
+    dependencies = set([UnitInfoLoader, InfoLoader])
     allow_no_data = True
 
     def __init__(self, *args, **kwargs):
@@ -155,8 +153,20 @@ class Loader(core.Loader):
 
         data = []
         known = self.known(pdb)
+
+        print("loops/positions.py known")
+        print(known)
+
         mapping = self.loop_units_mapping(pdb)
+
+        print("loops/positions.py mapping")
+        print(mapping)
+
         normalizer = self.normalizer(pdb)
+
+        print("loops/positions.py mapping")
+        print(normalizer)
+
         for row in self.annotations(pdb):
             entry = known.get((row['loop_id'], row['position']), {})
             if not entry:
