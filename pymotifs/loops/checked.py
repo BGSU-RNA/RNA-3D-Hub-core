@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
 """ Program to indicate whether loops have been checked or not. """
 
 from pymotifs import core
@@ -31,14 +26,17 @@ class Loader(core.SimpleLoader):
             
             new_pdbs = [r.pdb_id for r in query]
             
-        pdbs_checked = set(pdbs).intersection(new_pdbs)
+        checked = sorted(set(pdbs).intersection(new_pdbs))
             
-        return pdbs_checked
+        if not checked:
+            raise core.Skip("Nothing to process")
+        
+        return checked
         
     def data(self, pdbs, **kwargs):
         
         data = []
-        
+        #I'm not sure if the syntax is correct here...
         for pdb in self.list_of_checked(pdbs):
             data.append({'pdb_id': pdb,
                         'loops_checked': 1
