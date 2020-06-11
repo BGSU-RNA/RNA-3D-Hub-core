@@ -3,7 +3,6 @@
 
 # In[ ]:
 
-
 """ Program to indicate whether loops have been checked or not. """
 
 from pymotifs import core
@@ -27,10 +26,12 @@ class Loader(core.SimpleLoader):
     
     def list_of_checked(self, pdbs, **kwargs):
         with self.session as session():
-            query = session.query(mod.PdbInfo.pdb_id).                filter(mod.PdbInfo.loops_checked == 0)
-            temp = [r.pdb_id for r in query]
+            query = session.query(mod.PdbInfo.pdb_id).\               
+            filter(mod.PdbInfo.loops_checked == 0).\
             
-        pdbs_checked = set(pdbs).intersection(temp)
+            new_pdbs = [r.pdb_id for r in query]
+            
+        pdbs_checked = set(pdbs).intersection(new_pdbs)
             
         return pdbs_checked
         
