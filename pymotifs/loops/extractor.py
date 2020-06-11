@@ -23,6 +23,15 @@ class Loader(core.SimpleLoader):
     dependencies = set([PdbLoader, MatLoader, InteractionLoader, UnitLoader])
     save_loops = True
 
+    def to_process(self, pdbs, **kwargs):
+        #Filter pdbs by loops_checked
+        with self.session as session():
+            query = session.query(mod.PdbInfo.pdb_id).\
+                filter(mod.PdbInfo.loops_checked==0) .\
+                filter(mod.PdbInfo.pdb_id.in_(pdbs)).\
+                distinct()
+            return [r.pdb_id for r in query]
+                     
     def query(self, session, pdb):
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
