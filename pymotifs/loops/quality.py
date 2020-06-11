@@ -80,8 +80,8 @@ class Loader(core.SimpleLoader):
         return mod.LoopQa
 
     def to_process(self, pdbs, **kwargs):
-        """Convert the list of pdbs to only those PDB's that have a loop. By
-        doing this this stage is able assert that this always data produced.
+        """Convert the list of pdbs to only those PDB's with loops that have not been checked by quality yet. By
+        doing this this stage is able assert that data is always produced.
 
         Parameters
         ----------
@@ -91,14 +91,17 @@ class Loader(core.SimpleLoader):
         Returns
         -------
         pdbs : list
-            A list of PDBs from the original list that contain loops.
+            A list of PDBs from the original list that contain loops and have not been checked for quality yet.
         """
 
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
+                join(mod.PdbInfo,
+                     mod.PdbInfo.pdb_id == mod.LoopInfo.pdb_id).\
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
-                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
+                filter(mod.PdbInfo.loops_checked==0).\
+             #  filter(mod.LoopInfo.pdb_id.in_(pdbs)).\ # Why do we need this line if we find the intersection anyway?
                 distinct()
             known = {r.pdb_id for r in query}
 
