@@ -25,6 +25,9 @@ class Loader(core.Loader):
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
+                join(mod.PdbInfo,
+                     mod.PdbInfo.pdb_id == mod.LoopInfo.pdb_id).\
+                filter(mod.PdbInfo.loops_checked==0).\
                 filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
                 distinct()
             return [r.pdb_id for r in query]
