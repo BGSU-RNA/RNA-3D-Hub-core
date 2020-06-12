@@ -101,9 +101,11 @@ class Loader(core.SimpleLoader):
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
                 filter(mod.PdbInfo.loops_checked==0).\
-             #  filter(mod.LoopInfo.pdb_id.in_(pdbs)).\ # Why do we need this line if we find the intersection anyway?
                 distinct()
             known = {r.pdb_id for r in query}
+
+        # removed from above; can't seem to leave comment lines in the middle of a query
+        #  filter(mod.LoopInfo.pdb_id.in_(pdbs)).\ # Why do we need this line if we find the intersection anyway?
 
         to_use = sorted(set(pdbs).intersection(known))
         if not to_use:

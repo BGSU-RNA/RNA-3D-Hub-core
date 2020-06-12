@@ -27,11 +27,13 @@ class Loader(core.SimpleLoader):
         #Filter pdbs by loops_checked
         with self.session as session():
             query = session.query(mod.PdbInfo.pdb_id).\
-                filter(mod.PdbInfo.loops_checked==0) .\
                 filter(mod.PdbInfo.pdb_id.in_(pdbs)).\
                 distinct()
             return [r.pdb_id for r in query]
-                     
+
+# removed from above:                filter(mod.PdbInfo.loops_checked==0).\
+
+
     def query(self, session, pdb):
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
