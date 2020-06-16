@@ -17,7 +17,7 @@ from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 
 class Loader(core.SimpleLoader):
-    loop_types = ['IL', 'HL', 'J3', 'NA'] #Added loop_type "NA"
+    loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
     dependencies = set([PdbLoader, MatLoader, InteractionLoader, UnitLoader])
@@ -36,7 +36,7 @@ class Loader(core.SimpleLoader):
 
 
     def query(self, session, pdb):
-        return session.query(mod.LoopInfo).filter_by(pdb_id=pdb) #Does this need to be pdb_id==pdb?
+        return session.query(mod.LoopInfo).filter_by(pdb_id==pdb) #Changed from pdb_id=pdb
 
     def remove(self, *args, **kwargs):
         """Does not actually remove from the DB. We always want the loop ids to
@@ -103,6 +103,13 @@ class Loader(core.SimpleLoader):
             mapping[units] = str(loop_id)
 
         return mapping[units]
+    
+    def _get_fake_loop_id(self, pdb_id):
+        
+        loop_id = '%s_%s_%s' % ('NA', pdb_id, 001)
+        self.logger.info('Created new fake loop id for %s, for pdb_id %s', loop_id, pdb_id)
+        
+        return loop_id
 
     def _extract_loops(self, pdb, loop_type, mapping, normalize):
         """Uses matlab to extract the loops for a given structure of a specific
@@ -127,7 +134,8 @@ class Loader(core.SimpleLoader):
 
         if loops == 0:
             self.logger.warning('No %s in %s', loop_type, pdb)
-            return []
+            loop_id = self._get_fake_loop_id(pdb)
+            return [mod.LoopInfo(loop_id=loop_id, pdb_id=pdb)]
 
         self.logger.info('Found %i %s loops', count, loop_type)
 
