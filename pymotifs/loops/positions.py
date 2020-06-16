@@ -82,11 +82,8 @@ class Loader(core.Loader):
         mapping = {}
         with self.session() as session:
             query = session.query(mod.LoopPositions).\
-                join(mod.PdbInfo,
-                     mod.PdbInfo.pdb_id == mod.LoopInfo.pdb_id).\
                 join(mod.LoopInfo,
                      mod.LoopInfo.loop_id == mod.LoopPositions.loop_id).\
-                filter(mod.PdbInfo.loops_checked==0).\
                 filter(mod.LoopInfo.pdb_id == pdb)
 
             for result in query:
