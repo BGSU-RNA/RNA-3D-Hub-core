@@ -17,7 +17,7 @@ from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 
 class Loader(core.SimpleLoader):
-    loop_types = ['IL', 'HL', 'J3']
+    loop_types = ['IL', 'HL', 'J3', 'NA'] #Added loop_type "NA"
     merge_data = True
     allow_no_data = True
     dependencies = set([PdbLoader, MatLoader, InteractionLoader, UnitLoader])
