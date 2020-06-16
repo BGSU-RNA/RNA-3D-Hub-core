@@ -25,9 +25,18 @@ class Loader(core.Loader):
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
-                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
+                join(mod.LoopPositions, 
+                     mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
+                filter(or_(mod.LoopInfo.pdb_id.in_(pdbs), mod.LoopInfo.type=='NA')).\
                 distinct()
-            return [r.pdb_id for r in query]
+            dn_process = [r.pdb_id for r in query]
+        
+        to_use = sorted(set(pdbs).difference(dn_process))
+            
+        if not to_use
+         raise core.Skip("Nothing to process")
+        
+        return to_use
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:

@@ -103,8 +103,20 @@ class Loader(core.SimpleLoader):
 
         # removed from above; can't seem to leave comment lines in the middle of a query
         #  filter(mod.LoopInfo.pdb_id.in_(pdbs)).\ # Why do we need this line if we find the intersection anyway?
-
+        
+        #get list of pdbs with related entries in loop_qa
+        with self.session() as session:
+            query = session.query(mod.LoopInfo.pdb_id).\
+                join(mod.LoopQa,
+                     mod.LoopQa.loop_id == mod.LoopInfo.loop_id).\
+                distinct()
+           checked = {r.pdb_id for r in query}
+        
+        #Get list of pdbs with loops
         to_use = sorted(set(pdbs).intersection(known))
+        #Get list of pdbs with loops that have NOT been checked for quality yet
+        to_use = sorted(set(to_use).difference(checked))
+        
         if not to_use:
             raise core.Skip("Nothing to process")
         return to_use
