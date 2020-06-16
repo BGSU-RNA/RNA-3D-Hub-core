@@ -6,6 +6,7 @@ that have ever been obsoleted and a partially setup database will not have data
 on all PDB's.
 """
 
+import time
 from datetime import datetime
 from cStringIO import StringIO
 
@@ -14,6 +15,8 @@ from pymotifs import utils
 from pymotifs import models as mod
 
 from pymotifs.pdbs.info import Loader as InfoLoader
+
+import urllib2
 
 
 class Parser(object):
@@ -38,8 +41,10 @@ class Parser(object):
         """
 
         data = []
-        for line in StringIO(text).readlines():
+
+        for line in text.split("\n"):
             # OBSLTE    26-SEP-06 2H33     2JM5 2OWI
+
             if 'OBSLTE' in line.split():
                 parts = line.split()
                 obsolete_date = datetime.strptime(parts[1], '%d-%b-%y')
@@ -83,7 +88,7 @@ class Loader(core.MassLoader):
         return False
 
     def data(self, *args, **kwargs):
-        """Download the file with all obsolete structures over ftp and parse
+        """Download the file with all obsolete structures and parse
         them into a storable format.
 
         Returns
@@ -91,11 +96,36 @@ class Loader(core.MassLoader):
         data : list
             A list of dictonaries as from `Parser`.
         """
+        parser = Parser()
 
-        try:
-            ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
-            return ftp('/pub/pdb/data/status/obsolete.dat')
-        except Exception as err:
-            self.logger.critical("Could not get obsolete ids")
-            self.logger.exception(err)
-            raise core.StageFailed("Could not get obsolete ids")
+        attempts = 0
+
+        while attempts < 100:
+            try:
+                response = urllib2.urlopen('https://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat')
+                print('obsolete.py opened URL')
+                html = response.read()
+                return parser(html)
+            except Exception as err:
+                attempts += 1
+                print("Failed %d times to get obsolete ids via URL" % attempts)
+                time.sleep(5)
+
+        # old code.  Replaced because PDB's FTP site was less and less responsive
+        # FTPFetchHelper is in utils/__init__.py
+        # Passes an instance of Parser from above to FTPFetchHelper, which applies Parser
+
+        attempts = 0
+
+        while attempts < 100:
+            try:
+                ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
+                return ftp('/pub/pdb/data/status/obsolete.dat')
+            except Exception as err:
+                attempts += 1
+                print("Failed %d times to get obsolete ids via FTP" % attempts)
+                time.sleep(5)
+                self.logger.critical("Could not get obsolete ids")
+                self.logger.exception(err)
+
+        raise core.StageFailed("Could not get obsolete ids")
