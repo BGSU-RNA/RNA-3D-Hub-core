@@ -24,12 +24,13 @@ class Loader(core.SimpleLoader):
     save_loops = True
 
     def to_process(self, pdbs, **kwargs):
-        #Filter pdbs by loops_checked
+       
         with self.session as session():
-            query = session.query(mod.PdbInfo.pdb_id).\
-                filter(mod.PdbInfo.pdb_id.in_(pdbs)).\
+            query = session.query(mod.LoopInfo.pdb_id).\
+                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
                 distinct()
-            return [r.pdb_id for r in query]
+            known = [r.pdb_id for r in query]
+            return sorted(set(pdbs).difference(known)) #We want to process ONLY the pdbs that are NOT in loop_info
 
 # removed from above:                filter(mod.PdbInfo.loops_checked==0).\
 
