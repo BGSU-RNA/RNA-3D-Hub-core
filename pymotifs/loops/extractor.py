@@ -135,7 +135,7 @@ class Loader(core.SimpleLoader):
         if loops == 0:
             self.logger.warning('No %s in %s', loop_type, pdb)
             loop_id = self._get_fake_loop_id(pdb)
-            return [mod.LoopInfo(loop_id=loop_id, pdb_id=pdb)]
+            return [mod.LoopInfo(loop_id=loop_id, type = 'NA', pdb_id=pdb)]
 
         self.logger.info('Found %i %s loops', count, loop_type)
 
