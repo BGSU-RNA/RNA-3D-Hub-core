@@ -96,11 +96,8 @@ class Loader(core.SimpleLoader):
 
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
-                join(mod.PdbInfo,
-                     mod.PdbInfo.pdb_id == mod.LoopInfo.pdb_id).\
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
-                filter(mod.PdbInfo.loops_checked==0).\
                 distinct()
             known = {r.pdb_id for r in query}
 
