@@ -29,15 +29,18 @@ class Loader(core.SimpleLoader):
             query = session.query(mod.LoopInfo.pdb_id).\
                 distinct()
             known = [r.pdb_id for r in query]
-            print(sorted(set(pdbs).difference(known)))
-        return sorted(set(pdbs).difference(known)) #We want to process ONLY the pdbs that are NOT in loop_info
-#                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
 
-# removed from above:                filter(mod.PdbInfo.loops_checked==0).\
+        to_use = sorted(set(pdbs).difference(known))  #We want to process ONLY the pdbs that are NOT in loop_info
 
+        print("extractor.py wants to process")
+        print(to_use)
+
+        if not to_use:
+            raise core.Skip("Nothing to process")
+        return to_use
 
     def query(self, session, pdb):
-        return session.query(mod.LoopInfo).filter_by(pdb_id==pdb) #Changed from pdb_id=pdb
+        return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
     def remove(self, *args, **kwargs):
         """Does not actually remove from the DB. We always want the loop ids to

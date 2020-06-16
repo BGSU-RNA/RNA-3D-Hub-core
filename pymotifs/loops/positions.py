@@ -12,6 +12,7 @@ from pymotifs.utils import matlab
 from pymotifs.utils.correct_units import Correcter
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
+from sqlalchemy import or_
 
 class Loader(core.Loader):
     merge_data = True
@@ -86,7 +87,6 @@ class Loader(core.Loader):
                      mod.PdbInfo.pdb_id == mod.LoopInfo.pdb_id).\
                 join(mod.LoopInfo,
                      mod.LoopInfo.loop_id == mod.LoopPositions.loop_id).\
-                filter(mod.PdbInfo.loops_checked==0).\
                 filter(mod.LoopInfo.pdb_id == pdb)
 
             for result in query:
