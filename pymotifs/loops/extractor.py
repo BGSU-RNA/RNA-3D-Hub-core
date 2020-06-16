@@ -24,7 +24,7 @@ class Loader(core.SimpleLoader):
     save_loops = True
 
     def to_process(self, pdbs, **kwargs):
-       
+
         with self.session as session():
             query = session.query(mod.LoopInfo.pdb_id).\
                 filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
