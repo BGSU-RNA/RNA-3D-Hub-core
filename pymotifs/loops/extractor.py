@@ -32,11 +32,10 @@ class Loader(core.SimpleLoader):
 
         to_use = sorted(set(pdbs).difference(known))  #We want to process ONLY the pdbs that are NOT in loop_info
 
-        print("extractor.py wants to process")
-        print(to_use)
+        self.logger.info("Extracting loops from %s" % to_use)
 
         if not to_use:
-            raise core.Skip("Nothing to process")
+            raise core.Skip("no new PDB ids that need loops extracted")
         return to_use
 
     def query(self, session, pdb):
@@ -110,8 +109,8 @@ class Loader(core.SimpleLoader):
 
     def _get_fake_loop_id(self, pdb_id):
 
-        loop_id = '%s_%s_%s' % ('NA', pdb_id, 001)
-        self.logger.info('Created new fake loop id for %s, for pdb_id %s', loop_id, pdb_id)
+        loop_id = '%s_%s_%s' % ('NA', pdb_id, '001')
+        self.logger.info('Created new fake loop id %s for pdb_id %s', loop_id, pdb_id)
 
         return loop_id
 
