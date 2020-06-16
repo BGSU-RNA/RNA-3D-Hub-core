@@ -12,6 +12,7 @@ from pymotifs.utils import matlab
 from pymotifs.utils.correct_units import Correcter
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
+from sqlalchemy import or_
 
 class Loader(core.Loader):
     merge_data = True
