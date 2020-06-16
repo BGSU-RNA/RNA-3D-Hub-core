@@ -25,12 +25,13 @@ class Loader(core.SimpleLoader):
 
     def to_process(self, pdbs, **kwargs):
 
-        with self.session as session():
+        with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
-                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
                 distinct()
             known = [r.pdb_id for r in query]
-            return sorted(set(pdbs).difference(known)) #We want to process ONLY the pdbs that are NOT in loop_info
+            print(sorted(set(pdbs).difference(known)))
+        return sorted(set(pdbs).difference(known)) #We want to process ONLY the pdbs that are NOT in loop_info
+#                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
 
 # removed from above:                filter(mod.PdbInfo.loops_checked==0).\
 
@@ -40,7 +41,7 @@ class Loader(core.SimpleLoader):
 
     def remove(self, *args, **kwargs):
         """Does not actually remove from the DB. We always want the loop ids to
-        be consitent so we do not automatically remove loops.
+        be consistent so we do not automatically remove loops.
         """
 
         self.logger.info("We don't actually remove data for loop extractor")
@@ -103,12 +104,12 @@ class Loader(core.SimpleLoader):
             mapping[units] = str(loop_id)
 
         return mapping[units]
-    
+
     def _get_fake_loop_id(self, pdb_id):
-        
+
         loop_id = '%s_%s_%s' % ('NA', pdb_id, 001)
         self.logger.info('Created new fake loop id for %s, for pdb_id %s', loop_id, pdb_id)
-        
+
         return loop_id
 
     def _extract_loops(self, pdb, loop_type, mapping, normalize):
