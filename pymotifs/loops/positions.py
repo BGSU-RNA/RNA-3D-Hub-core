@@ -28,12 +28,19 @@ class Loader(core.Loader):
             query = session.query(mod.LoopInfo.pdb_id).\
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
-                filter(or_(mod.LoopInfo.pdb_id.in_(pdbs), mod.LoopInfo.type=='NA')).\
                 distinct()
-            dn_process = [r.pdb_id for r in query]
-
-        to_use = sorted(set(pdbs).difference(dn_process))
-
+            dn_process = [r.pdb_id for r in query] #List of pdbs with corresponding entries in loop_positions
+            
+        to_use = sorted(set(pdbs).difference(dn_process)) #Remove pdbs with entries in loop_positions
+        
+        with self.session() as session:
+            query = session.query(mod.LoopInfo.pdb_id).\
+                filter(LoopInfo.type == 'NA').\
+                distinct()
+            dn_process = [r.pdb_id for r in query] #list of pdbs with corresponding entries in loop_info and type='NA'
+            
+        to_use = sorted(set(to_use).difference(dn_process)) #Remove pdbs with no loops
+            
         if not to_use:
             raise core.Skip("Nothing to process")
 
@@ -83,8 +90,6 @@ class Loader(core.Loader):
         mapping = {}
         with self.session() as session:
             query = session.query(mod.LoopPositions).\
-                join(mod.PdbInfo,
-                     mod.PdbInfo.pdb_id == mod.LoopInfo.pdb_id).\
                 join(mod.LoopInfo,
                      mod.LoopInfo.loop_id == mod.LoopPositions.loop_id).\
                 filter(mod.LoopInfo.pdb_id == pdb)
