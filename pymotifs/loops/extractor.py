@@ -24,7 +24,7 @@ class Loader(core.SimpleLoader):
     save_loops = True
 
     def query(self, session, pdb):
-        return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
+        return session.query(mod.LoopInfo).filter_by(pdb_id==pdb)
 
     def remove(self, *args, **kwargs):
         """Does not actually remove from the DB. We always want the loop ids to
