@@ -17,7 +17,7 @@ from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 
 class Loader(core.SimpleLoader):
-    loop_types = ['IL', 'HL', 'J3']
+    loop_types = ['IL', 'HL', 'J3', 'NA'] #Added loop_type "NA"
     merge_data = True
     allow_no_data = True
     dependencies = set([PdbLoader, MatLoader, InteractionLoader, UnitLoader])
@@ -36,7 +36,7 @@ class Loader(core.SimpleLoader):
 
 
     def query(self, session, pdb):
-        return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
+        return session.query(mod.LoopInfo).filter_by(pdb_id=pdb) #Does this need to be pdb_id==pdb?
 
     def remove(self, *args, **kwargs):
         """Does not actually remove from the DB. We always want the loop ids to
