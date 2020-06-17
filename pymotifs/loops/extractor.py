@@ -107,9 +107,9 @@ class Loader(core.SimpleLoader):
 
         return mapping[units]
 
-    def _get_fake_loop_id(self, pdb_id):
+    def _get_fake_loop_id(self, pdb_id, loop_type):
 
-        loop_id = '%s_%s_%s' % ('NA', pdb_id, '001')
+        loop_id = '%s_%s_%s' % (loop_type, pdb_id, '000')
         self.logger.info('Created new fake loop id %s for pdb_id %s', loop_id, pdb_id)
 
         return loop_id
@@ -124,7 +124,6 @@ class Loader(core.SimpleLoader):
         :param dict mapping: A mapping of unit ids to known loop names.
         :returns: The extracted loops.
         """
-
         try:
             mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
             [loops, count, err_msg] = mlab.extractLoops(pdb, loop_type, nout=3)
@@ -137,8 +136,18 @@ class Loader(core.SimpleLoader):
 
         if loops == 0:
             self.logger.warning('No %s in %s', loop_type, pdb)
-            loop_id = self._get_fake_loop_id(pdb)
-            return [mod.LoopInfo(loop_id=loop_id, type = 'NA', pdb_id=pdb)]
+            loop_id = self._get_fake_loop_id(pdb, loop_type)
+            return [mod.LoopInfo(loop_id=loop_id,
+                type = 'NA',
+                pdb_id=pdb,
+                sequential_id='000',
+                length=0,
+                seq='',
+                r_seq='',
+                nwc_seq='',
+                r_nwc_seq='',
+                unit_ids='',
+                loop_name='')]
 
         self.logger.info('Found %i %s loops', count, loop_type)
 
