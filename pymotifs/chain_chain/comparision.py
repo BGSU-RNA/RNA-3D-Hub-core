@@ -212,8 +212,8 @@ class Loader(core.SimpleLoader):
         """
 
         # set direction to work through data, for weeks with many discrepancy calculations to do
+        direction = -1       # work through in reverse order
         direction = 1        # work through in given order, default
-        direction = -1       # work through in reverse order, for extra computations
 
         self.logger.debug("Entering to_process...")
 
@@ -252,9 +252,9 @@ class Loader(core.SimpleLoader):
         #calc_limit = 1
 
         if 'comp_limit' in kwargs and kwargs.get('comp_limit') is not None:
-            comp_limit = kwargs.get('comp_limit', 100)
+            comp_limit = kwargs.get('comp_limit', 9999)
         else:
-            comp_limit = 100
+            comp_limit = 9999
 
         self.logger.info("comp_limit: %s" % comp_limit)
 
@@ -398,7 +398,7 @@ class Loader(core.SimpleLoader):
                 self.logger.warning("No geometric data for %s %s", info1, info2)
                 #raise core.Skip("Missing geometric data")
 
-            self.logger.info("pickledata (3): obtained correspondence units")
+            self.logger.debug("pickledata (3): obtained correspondence units")
 
             for key in ( ife_chain_1, ife_chain_2 ):
                 splitchain = key.split("+")
@@ -417,7 +417,7 @@ class Loader(core.SimpleLoader):
                             unitid = line[0]
                             allunitdictionary[unitid] = line
 
-            self.logger.info("pickledata (4): pickle data import complete")
+            self.logger.debug("pickledata (4): pickle data import complete")
 
             c1 = []
             c2 = []
@@ -972,7 +972,7 @@ class Loader(core.SimpleLoader):
         seconds = []
 
         for r in query:
-            self.logger.info("data: known: (%s, %s)" % (r.chain_id_1,r.chain_id_2))
+#            self.logger.info("data: known: (%s, %s)" % (r.chain_id_1,r.chain_id_2))
             knowns.append((r.chain_id_1,r.chain_id_2))
 
         for chain in candidates:
@@ -980,18 +980,18 @@ class Loader(core.SimpleLoader):
                 continue
 
             if ((chain1, chain)) in knowns:
-                self.logger.info("data: already have discrepancy for (%s, %s)" % (chain1, chain))
+#                self.logger.info("data: already have discrepancy for (%s, %s)" % (chain1, chain))
                 continue
 
-            self.logger.info("data: adding %s to list of pending calculations" % chain)
+#            self.logger.info("data: adding %s to list of pending calculations" % chain)
             seconds.append(chain)
 
         data_count = 0
 
         if 'data_limit' in kwargs and kwargs.get('data_limit') is not None:
-            data_limit = kwargs.get('data_limit', 20)
+            data_limit = kwargs.get('data_limit', 9999)
         else:
-            data_limit = 20
+            data_limit = 9999
 
         self.logger.info("data_limit: %s" % data_limit)
 
