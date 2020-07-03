@@ -17,6 +17,7 @@ from pymotifs import models as mod
 from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.units.info import Loader as UnitLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
+from pymotifs.export.cifatom import Exporter as CifAtom
 
 IGNORE = set(['perp', 'nbif', 'bif', 'rib', 'nRib', 'rIB'])
 
@@ -28,7 +29,7 @@ class Loader(core.SimpleLoader):
 
     allow_no_data = True
 
-    dependencies = set([MatLoader, UnitLoader, PdbLoader])
+    dependencies = set([MatLoader, UnitLoader, PdbLoader, CifAtom])
     @property
     def table(self):
         return mod.UnitPairsInteractions

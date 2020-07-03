@@ -11,24 +11,39 @@ from pymotifs.utils import matlab
 from pymotifs import models as mod
 from pymotifs.utils.correct_units import Correcter
 
-from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
 from pymotifs.units.info import Loader as UnitLoader
-
+from pymotifs.mat_files import Loader as MatLoader
+from pymotifs.interactions.loader import Loader as InteractionLoader
 
 class Loader(core.SimpleLoader):
     loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
-    dependencies = set([ReleaseLoader, PdbLoader, UnitLoader])
+    dependencies = set([PdbLoader, MatLoader, InteractionLoader, UnitLoader])
     save_loops = True
+
+    def to_process(self, pdbs, **kwargs):
+
+        with self.session() as session:
+            query = session.query(mod.LoopInfo.pdb_id).\
+                distinct()
+            known = [r.pdb_id for r in query]
+
+        to_use = sorted(set(pdbs).difference(known))  #We want to process ONLY the pdbs that are NOT in loop_info
+
+        self.logger.info("Extracting loops from %s" % to_use)
+
+        if not to_use:
+            raise core.Skip("no new PDB ids that need loops extracted")
+        return to_use
 
     def query(self, session, pdb):
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
     def remove(self, *args, **kwargs):
         """Does not actually remove from the DB. We always want the loop ids to
-        be consitent so we do not automatically remove loops.
+        be consistent so we do not automatically remove loops.
         """
 
         self.logger.info("We don't actually remove data for loop extractor")
@@ -92,6 +107,13 @@ class Loader(core.SimpleLoader):
 
         return mapping[units]
 
+    def _get_fake_loop_id(self, pdb_id, loop_type):
+
+        loop_id = '%s_%s_%s' % (loop_type, pdb_id, '000')
+        self.logger.info('Created new fake loop id %s for pdb_id %s', loop_id, pdb_id)
+
+        return loop_id
+
     def _extract_loops(self, pdb, loop_type, mapping, normalize):
         """Uses matlab to extract the loops for a given structure of a specific
         type. This will also save the loop files into the correct place.
@@ -102,7 +124,6 @@ class Loader(core.SimpleLoader):
         :param dict mapping: A mapping of unit ids to known loop names.
         :returns: The extracted loops.
         """
-
         try:
             mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
             [loops, count, err_msg] = mlab.extractLoops(pdb, loop_type, nout=3)
@@ -115,7 +136,18 @@ class Loader(core.SimpleLoader):
 
         if loops == 0:
             self.logger.warning('No %s in %s', loop_type, pdb)
-            return []
+            loop_id = self._get_fake_loop_id(pdb, loop_type)
+            return [mod.LoopInfo(loop_id=loop_id,
+                type = 'NA',
+                pdb_id=pdb,
+                sequential_id='000',
+                length=0,
+                seq='',
+                r_seq='',
+                nwc_seq='',
+                r_nwc_seq='',
+                unit_ids='',
+                loop_name='')]
 
         self.logger.info('Found %i %s loops', count, loop_type)
 

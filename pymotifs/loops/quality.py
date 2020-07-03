@@ -37,7 +37,7 @@ from pymotifs.units.incomplete import Entry
 from pymotifs.constants import RSRZ_PAIRED_OUTLIERS as PAIR
 from pymotifs.constants import RSRZ_FICTIONAL_CUTOFF as FICTIONAL_CUTOFF
 
-from pymotifs.loops.release import Loader as ReleaseLoader
+#from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
 from pymotifs.loops.positions import Loader as PositionLoader
 from pymotifs.units.incomplete import Loader as IncompleteLoader
@@ -69,7 +69,7 @@ class AssessmentData(nt('AssessmentData', ['incomplete', 'pairs', 'rsrz'])):
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([ReleaseLoader, InfoLoader, PositionLoader,
+    dependencies = set([InfoLoader, PositionLoader,
                         ExpSeqPositionLoader, ExpSeqMappingLoader,
                         IncompleteLoader])
 
@@ -80,8 +80,8 @@ class Loader(core.SimpleLoader):
         return mod.LoopQa
 
     def to_process(self, pdbs, **kwargs):
-        """Convert the list of pdbs to only those PDB's that have a loop. By
-        doing this this stage is able assert that this always data produced.
+        """Convert the list of pdbs to only those PDB's with loops that have not been checked by quality yet. By
+        doing this this stage is able assert that data is always produced.
 
         Parameters
         ----------
@@ -91,36 +91,33 @@ class Loader(core.SimpleLoader):
         Returns
         -------
         pdbs : list
-            A list of PDBs from the original list that contain loops.
+            A list of PDBs from the original list that contain loops and have not been checked for quality yet.
         """
 
+        # accumulate PDB ids for which loops already appear in the loop info table
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
-                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
                 distinct()
-            known = {r.pdb_id for r in query}
+            have_loops = {r.pdb_id for r in query}
 
-        to_use = sorted(set(pdbs).intersection(known))
-        if not to_use:
-            raise core.Skip("Nothing to process")
-        return to_use
-
-    def current_id(self):
-        """Compute the current loop release id.
-
-        :returns: The current loop release id string, eg 1.2.
-        """
+        # get list of pdbs with related entries in loop_qa
         with self.session() as session:
-            query = session.query(mod.LoopReleases.loop_release_id).\
-                order_by(desc(mod.LoopReleases.date)).\
-                limit(1)
+            query = session.query(mod.LoopInfo.pdb_id).\
+                join(mod.LoopQa,
+                     mod.LoopQa.loop_id == mod.LoopInfo.loop_id).\
+                distinct()
+            checked = {r.pdb_id for r in query}
 
-            if not query.count():
-                return '0.0'
+        #Get list of pdbs with loops
+        to_use = sorted(set(pdbs).intersection(have_loops))
+        #Get list of pdbs with loops that have NOT been checked for quality yet
+        to_use = sorted(set(to_use).difference(checked))
 
-            return query.one().loop_release_id
+        if not to_use:
+            raise core.Skip("All loops in the current PDB list have gone through QA")
+        return to_use
 
     def query(self, session, pdb):
         """Create a query to find all loop qa entries for the given pdb.
@@ -130,11 +127,9 @@ class Loader(core.SimpleLoader):
         :returns: The query to use.
         """
 
-        release_id = self.current_id()
         return session.query(mod.LoopQa).\
             join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
-            filter(mod.LoopInfo.pdb_id == pdb).\
-            filter(mod.LoopQa.loop_release_id == release_id)
+            filter(mod.LoopInfo.pdb_id == pdb)
 
     def paired(self, pdb):
         """Load all within loop basepairs.
@@ -574,15 +569,13 @@ class Loader(core.SimpleLoader):
 #            return 9
         return 1
 
-    def quality(self, assess, release_id, loop):
+    def quality(self, assess, loop):
         """Compute the quality information for the given loop.
 
         Parameters
         ----------
         assess : AssessmentData
             The assessment data to use.
-        release_id : str
-            The loop release id to use
         loop : dict
             A loop dictionary to use.
 
@@ -606,8 +599,7 @@ class Loader(core.SimpleLoader):
             'status': self.status(assess, loop),
             'modifications': mods,
             'nt_signature': ', '.join(str(s) for s in loop['signature']),
-            'complementary': seq,
-            'loop_release_id': release_id,
+            'complementary': seq
         }
 
     def assessment_data(self, pdb):
@@ -622,6 +614,5 @@ class Loader(core.SimpleLoader):
         :returns: A list of the status entries for all loops in the structure.
         """
 
-        release_id = self.current_id()
         assess = self.assessment_data(pdb)
-        return [self.quality(assess, release_id, l) for l in self.loops(pdb)]
+        return [self.quality(assess, l) for l in self.loops(pdb)]
