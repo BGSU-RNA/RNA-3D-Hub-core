@@ -103,26 +103,22 @@ class Loader(core.MassLoader):
         while attempts < 100:
             try:
                 response = urllib2.urlopen('https://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat')
-                print('obsolete.py opened URL')
+
                 html = response.read()
                 return parser(html)
             except Exception as err:
                 attempts += 1
-                print("Failed %d times to get obsolete ids via URL" % attempts)
+                print("Failed %d times to get obsolete ids via HTTPS" % attempts)
                 time.sleep(5)
 
-        # old code.  Replaced because PDB's FTP site was less and less responsive
-        # FTPFetchHelper is in utils/__init__.py
-        # Passes an instance of Parser from above to FTPFetchHelper, which applies Parser
+            # old code below.  Replaced because PDB's FTP site was less and less responsive
+            # FTPFetchHelper is in utils/__init__.py
+            # Passes an instance of Parser from above to FTPFetchHelper, which applies Parser
 
-        attempts = 0
-
-        while attempts < 100:
             try:
                 ftp = utils.FTPFetchHelper('ftp.wwpdb.org', parser=Parser())
                 return ftp('/pub/pdb/data/status/obsolete.dat')
             except Exception as err:
-                attempts += 1
                 print("Failed %d times to get obsolete ids via FTP" % attempts)
                 time.sleep(5)
                 self.logger.critical("Could not get obsolete ids")

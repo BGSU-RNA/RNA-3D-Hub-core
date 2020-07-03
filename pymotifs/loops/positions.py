@@ -12,12 +12,11 @@ from pymotifs.utils import matlab
 from pymotifs.utils.correct_units import Correcter
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
-from pymotifs.loops.release import Loader as ReleaseLoader
-
+from sqlalchemy import or_
 
 class Loader(core.Loader):
     merge_data = True
-    dependencies = set([UnitInfoLoader, InfoLoader, ReleaseLoader])
+    dependencies = set([UnitInfoLoader, InfoLoader])
     allow_no_data = True
 
     def __init__(self, *args, **kwargs):
@@ -27,9 +26,25 @@ class Loader(core.Loader):
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
-                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
+                join(mod.LoopPositions,
+                     mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
                 distinct()
-            return [r.pdb_id for r in query]
+            dn_process = [r.pdb_id for r in query] #List of pdbs with corresponding entries in loop_positions
+
+        to_use = sorted(set(pdbs).difference(dn_process)) #Remove pdbs with entries in loop_positions
+
+        with self.session() as session:
+            query = session.query(mod.LoopInfo.pdb_id).\
+                filter(mod.LoopInfo.type == 'NA').\
+                distinct()
+            dn_process = [r.pdb_id for r in query] #list of pdbs with corresponding entries in loop_info and type='NA'
+
+        to_use = sorted(set(to_use).difference(dn_process)) #Remove pdbs with no loops
+
+        if not to_use:
+            raise core.Skip("Nothing to process")
+
+        return to_use
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
@@ -155,8 +170,20 @@ class Loader(core.Loader):
 
         data = []
         known = self.known(pdb)
+
+        print("loops/positions.py known")
+        print(known)
+
         mapping = self.loop_units_mapping(pdb)
+
+        print("loops/positions.py mapping")
+        print(mapping)
+
         normalizer = self.normalizer(pdb)
+
+        print("loops/positions.py mapping")
+        print(normalizer)
+
         for row in self.annotations(pdb):
             entry = known.get((row['loop_id'], row['position']), {})
             if not entry:
