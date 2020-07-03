@@ -103,6 +103,7 @@ class Loader(core.MassLoader):
         while attempts < 100:
             try:
                 response = urllib2.urlopen('https://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat')
+
                 html = response.read()
                 return parser(html)
             except Exception as err:
