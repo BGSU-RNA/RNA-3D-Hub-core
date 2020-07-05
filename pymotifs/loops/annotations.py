@@ -2,26 +2,31 @@ import csv
 
 from pymotifs import core
 from pymotifs import models as mod
+from sqlalchemy import desc
 
 class Loader(core.SimpleLoader):
 
     merge_data = True
     allow_no_data = True
 
+    """
+    @property
+    def table(self):
+        return mod.LoopAnnotations
+    """
+
     def to_process(self, pdbs, **kwrags):
         """ return the different loop types to process, see if that works
         """
         return ["IL"]
 
+    """
     def remove(self, *args, **kwargs):
-        """Does not actually remove from the DB. We always want the loop ids to
+        Does not actually remove from the DB. We always want the loop ids to
         be consistent so we do not automatically remove loops.
         """
 
     def query(self, session, pdb):
-        """ Return a database query that will be used to write data?
-        """
-
         return session.query(mod.LoopAnnotations)
 
     def _get_loop_annotations(self):
@@ -41,13 +46,12 @@ class Loader(core.SimpleLoader):
             for row in entries:
                 if row[1] != "":
                     loop_annotations[row[1]] = [row[2], row[3], row[4]]
-
                 else:
                     motif_annotations[row[0]] = [row[2], row[3], row[4]]
 
         #Save each loop annnotation to loop_data in DB-friendly format
         if not loop_annotations:
-                self.logger.error("No loop annotations found.")
+            self.logger.error("No loop annotations found.")
         else:
             loop_data = []
             for loop in loop_annotations.keys():
@@ -60,15 +64,16 @@ class Loader(core.SimpleLoader):
         if not motif_annotations:
             self.logger.error("No motif annotations found.")
         else:
-            with self.session as session:
+            with self.session() as session:
                 current_ml_release = session.query(mod.MlReleases.ml_release_id).\
                     order_by(desc(mod.MlReleases.date)).\
                     limit(1)
-                print("annotations.py" + current_ml_release)
+
+            print(current_ml_release)
 
             #For each motif_annotation, get the associated loop_ids. Exclude loop_ids with their own annotations. Create motif_annotation in DB-friendly format for the remaining loop_ids.
             for motif in motif_annotations.keys():
-                with self.session as session:
+                with self.session() as session:
                     query = session.query(mod.MlLoops.loop_id).\
                          filter(mod.MlLoops.motif_id == motif).\
                          filter(mod.MlLoops.ml_release_id == current_ml_release)
@@ -93,7 +98,7 @@ class Loader(core.SimpleLoader):
         data = []
         data = self._get_loop_annotations()
 #Return data to be written to the database.
-        if not values:
+        if not data:
             self.logger.error("No loop annotations found.")
         else:
             return data
