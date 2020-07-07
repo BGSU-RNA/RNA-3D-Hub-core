@@ -8,6 +8,7 @@ class Loader(core.SimpleLoader):
 
     merge_data = True
     allow_no_data = True
+    mark = False #Add this line so that each time this stage is run, it will re-process items in to_process()
 
     """
     @property
