@@ -51,19 +51,18 @@ class Loader(core.SimpleLoader):
             entries = csv.reader(annotations, delimiter = ',')
             for row in entries:
                 #If a loop_id is indicated, then check for and save loop annotation 1 and/or loop annotation 2
-                if row[1] != "":
-                    if row[2] != "":
+                if isinstance(row[1], str) and row[1]:
+                    if isinstance(row[2], str) and row[2]:
                         loop_annotation1[row[1]]= [row[2], row[4]]
-                    
-                    if row[3] != "":
+                    if isinstance(row[3], str) and row[3]:
                         loop_annotation2[row[1]]= [row[3], row[4]]
                         
                 #Otherwise save motif annotation 1 and/or motif annotation 2       
                 else:
-                    if row[2] != "":
+                    if isinstance(row[2], str) and row[2]:
                         motif_annotation1[row[0]] = [row[2], row[4]]
                         
-                    if row[3] != "":
+                    if isinstance(row[3], str) and row[3]:
                         motif_ananotation2[row[0]] = [row[3], row[4]]
 
         #Save each loop annnotation to loop_data in DB-friendly format
