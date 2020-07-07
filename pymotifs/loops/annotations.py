@@ -8,7 +8,6 @@ class Loader(core.SimpleLoader):
 
     merge_data = True
     allow_no_data = True
-    mark = False #Add this line so that each time this stage is run, it will re-process items in to_process()
 
     """
     @property
@@ -27,6 +26,11 @@ class Loader(core.SimpleLoader):
         be consistent so we do not automatically remove loops.
         """
 
+    """Added has_data because it should force the stage to recompute "IL". This is not a permenant solution."""
+    
+    def has_data(self, args, **kwargs):
+        return False
+    
     def query(self, session, pdb):
         return session.query(mod.LoopAnnotations)
 
