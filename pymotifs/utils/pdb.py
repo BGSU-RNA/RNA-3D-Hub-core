@@ -137,6 +137,7 @@ class CustomReportHelper(object):
             if entry not in seen:
                 unique.append(report)
                 seen.add(entry)
+        logger.info('Found %d unique structures', len(unique))
         return unique
 
     def __call__(self, pdb_id):
