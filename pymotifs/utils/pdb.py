@@ -2,6 +2,7 @@ import re
 import csv
 import logging
 import datetime
+import requests
 
 from pymotifs import utils
 
@@ -46,12 +47,46 @@ class RnaPdbsHelper(object):
         :returns: The response body if this succeeds.
         """
 
+        # new code in November 2020 because the REST service is going away
+        if dates[0]:
+            earliest_date = dates[0]
+        else:
+            earliest_date = "1000-01-01"   # before PDB
+
+        if dates[1]:
+            latest_date = dates[1]
+        else:
+            latest_date = "3000-01-01"   # far in the future
+
+        polytypes = ["RNA","NA-hybrid"]
+        resultIDs = []
+
+        url = "https://search.rcsb.org/rcsbsearch/v1/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22entity_poly.rcsb_entity_polymer_type%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22RNA%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22greater_or_equal%22%2C%22value%22%3A%22earliest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22less_or_equal%22%2C%22value%22%3A%22latest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%5D%7D%2C%22request_options%22%3A%7B%22pager%22%3A%7B%22start%22%3A0%2C%22rows%22%3A200000%7D%7D%2C%22return_type%22%3A%22entry%22%7D"
+        url = url.replace("earliest-date",earliest_date)
+        url = url.replace("latest-date",latest_date)
+
+        for polytype in polytypes:
+            currenturl = url.replace("RNA",polytype)
+            response = requests.get(currenturl)
+            jsonR = response.json()
+
+            for item in jsonR["result_set"]:
+                resultIDs.append(item["identifier"])
+
+        print("Found %d non-obsolete PDB ids of RNA and NA-hybrid" % len(resultIDs))
+        logger.info("Found %d non-obsolete PDB ids of RNA and NA-hybrid" % len(resultIDs))
+        return(sorted(resultIDs))
+
+        # code from before November 2020
+"""
         try:
             fields = ['structureId', 'entityMacromoleculeType', 'releaseDate']
             helper = CustomReportHelper(fields=fields)
         except Exception as err:
             logger.exception(err)
             raise GetAllRnaPdbsError("Failed getting all PDBs")
+
+        latestDate = '1000-01-01'
 
         data = helper('*')
         ids = set()
@@ -60,8 +95,23 @@ class RnaPdbsHelper(object):
             if entity_type and 'RNA' in entity_type and \
                     self.within_date(dates, entry['releaseDate']):
                 ids.add(entry['structureId'])
-        return sorted(ids)
+                if entry['releaseDate'] > latestDate:
+                	latestDate = entry['releaseDate']
 
+        logger.info('Found %d unique PDB IDs', len(ids))
+        logger.info('Most recent release date is %s', latestDate)
+
+        print("IDs found by existing pipeline but not new search")
+        print(sorted(ids.difference(set(resultIDs))))
+
+        print("IDs found by new search but not existing pipeline")
+        print(set(resultIDs).difference(ids))
+
+        print("Old query found %d PDB ids" % len(ids))
+        print("New query found %d PDB ids" % len(resultIDs))
+
+        return sorted(ids)
+"""
 
 class CustomReportHelper(object):
     """A helper class to get a custom report from PDB.
@@ -137,7 +187,6 @@ class CustomReportHelper(object):
             if entry not in seen:
                 unique.append(report)
                 seen.add(entry)
-        logger.info('Found %d unique structures', len(unique))
         return unique
 
     def __call__(self, pdb_id):
@@ -153,6 +202,9 @@ class CustomReportHelper(object):
             'format': 'csv',
             'pdbids': ids
         }
+
+        print("setup.py getting custom report")
+
         logger.info('Getting custom report for %s', pdb_id)
         result = self.helper(self.url, data=data)
         return self.__unique__(result)
