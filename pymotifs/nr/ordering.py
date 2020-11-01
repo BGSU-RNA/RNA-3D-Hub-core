@@ -94,7 +94,9 @@ class Loader(core.SimpleLoader):
             # sort by equivalence class name and then by release number
             all_triples = sorted(all_triples, key = lambda r: (r[2], r[1]))
 
+            print("Possible error on next line")
             self.logger.info("to_process: sorted triples", all_triples)
+            print("Possible error on previous line")
 
             # get all pairs of nr_class_id and ife_id
             query = session.query(mod.NrOrderingTest.nr_class_name)
