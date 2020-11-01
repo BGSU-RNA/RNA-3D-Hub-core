@@ -171,18 +171,18 @@ class Loader(core.Loader):
         data = []
         known = self.known(pdb)
 
-        print("loops/positions.py known")
-        print(known)
+#        print("loops/positions.py known")
+#        print(known)
 
         mapping = self.loop_units_mapping(pdb)
 
-        print("loops/positions.py mapping")
-        print(mapping)
+#        print("loops/positions.py mapping")
+#        print(mapping)
 
         normalizer = self.normalizer(pdb)
 
-        print("loops/positions.py mapping")
-        print(normalizer)
+#        print("loops/positions.py mapping")
+#        print(normalizer)
 
         for row in self.annotations(pdb):
             entry = known.get((row['loop_id'], row['position']), {})
