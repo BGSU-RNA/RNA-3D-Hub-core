@@ -3,14 +3,18 @@ reports. This will fetch the data for all the given PDBs if any one does not
 have data. The old data will be overwritten as needed.
 """
 
+import requests
 from pymotifs import core
 from pymotifs.utils.pdb import CustomReportHelper
 
 from pymotifs import models as mod
 
 
-class Loader(core.MassLoader):
+class Loader(core.SimpleLoader):
     """This loads information about entire files into our database.
+    SimpleLoader does not insist on re-loading all PDB Info if one
+    file is missing data, which is good after November 2020 when
+    each file has to be queried separately from graphQL.
     """
 
     merge_data = True
@@ -86,6 +90,24 @@ class Loader(core.MassLoader):
                 limit(1)
             return bool(query.count())
 
+    def query(self, session, pdb):
+        """Generate a query to find all entries in PDBInfo for the given
+        PDB id.  Added in November 2020 so this can be a SimpleLoader.
+        Attributes
+        ----------
+        session : Session
+            The `Session` to use.
+        pdb : str
+            The PDB id to use.
+        Returns
+        -------
+        query : Query
+            Returns an SqlAlchemy query for all entires in units_quality with
+            the given PDB id.
+        """
+        return session.query(mod.PdbInfo).\
+            filter_by(pdb_id=pdb)
+
     def olddata(self, pdbs, **kwargs):
         """Compute a report of the given PDBs. This will use PDB's custom REST
         service to compute a report for the given PDBs. This will then be
@@ -158,19 +180,25 @@ class Loader(core.MassLoader):
               initial_release_date
               revision_date
             }
+            audit_author {
+              name
+            }
           }
         }
         """
+
+        if isinstance(pdbs, str):
+            pdbs = [pdbs]
 
         data = []
 
         for pdb in pdbs:
 
-            self.logger.info("Using PDB graphQL to get data for " % pdb)
+            self.logger.info("Using PDB graphQL to get data for %s file" % pdb)
 
             currentquery = query.replace("XXXX",pdb)
 
-            request = requests.post('https://data.rcsb.org/graphql', json={'query': currentquery})
+            request = requests.post('http://data.rcsb.org/graphql', json={'query': currentquery})
             if request.status_code == 200:
                 result = request.json()
             else:
@@ -178,14 +206,15 @@ class Loader(core.MassLoader):
                 raise core.StageFailed("Could not load data for all pdbs")
 
             renamed = {}
-            renamed["pdb_id"] = result["data"]["entry"]["entry"]["id"]
+            renamed["pdb_id"] = pdb
             renamed["title"] = result["data"]["entry"]["struct"]["title"]
             renamed["experimental_technique"] = result["data"]["entry"]["exptl"][0]["method"]
             renamed["deposition_date"] = result["data"]["entry"]["rcsb_accession_info"]["deposit_date"][0:10]
             renamed["release_date"] = result["data"]["entry"]["rcsb_accession_info"]["initial_release_date"][0:10]
             renamed["revision_date"] = result["data"]["entry"]["rcsb_accession_info"]["revision_date"][0:10]
-            renamed["ndb_id"] = result["data"]["entry"]["entry"]["id"]
+            renamed["ndb_id"] = pdb
             renamed["resolution"] = result["data"]["entry"]["rcsb_entry_info"]["resolution_combined"]
+            renamed["authors"] = ", ".join([x["name"] for x in result["data"]["entry"]["audit_author"]])
 
             if renamed['resolution']:
                 try:
@@ -196,4 +225,4 @@ class Loader(core.MassLoader):
 
             data.append(renamed)
 
-        return [mod.PdbInfo(report) for report in data]
+        return [mod.PdbInfo(**report) for report in data]
