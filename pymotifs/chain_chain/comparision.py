@@ -212,7 +212,7 @@ class Loader(core.SimpleLoader):
         """
 
         # set direction to work through data, for weeks with many discrepancy calculations to do
-        direction = 1        # work through in given order, default, goes quickly at the beginning
+        direction = 1        # work through in given order, goes quickly at the beginning
         direction = -1       # work through in reverse order, goes slowly, then faster
 
         self.logger.debug("Entering to_process...")
