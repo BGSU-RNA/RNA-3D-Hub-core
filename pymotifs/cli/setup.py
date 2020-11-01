@@ -38,7 +38,7 @@ def pdbs(config, options):
     if 'before_date' in options or 'after_date' in options:
         dates = (options.get('after_date', None),
                  options.get('before_date', None))
-        logger.info("Getting PDBs within dates %s, %s", dates)
+        logger.info("Getting PDBs within dates %s, %s" % dates)
         return helper(dates=dates)
 
     return []
