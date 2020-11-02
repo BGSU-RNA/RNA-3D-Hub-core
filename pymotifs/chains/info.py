@@ -5,6 +5,7 @@ the database. This works across several structures at once. This will merge the
 data into the database if run several times the same data.
 """
 
+import requests
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils.pdb import CustomReportHelper
@@ -12,7 +13,7 @@ from pymotifs.utils.pdb import CustomReportHelper
 from pymotifs.pdbs.loader import Loader as PdbLoader
 
 
-class Loader(core.MassLoader):
+class Loader(core.SimpleLoader):
     merge_data = True
     dependencies = set([PdbLoader])
     @property
@@ -76,7 +77,29 @@ class Loader(core.MassLoader):
 
             return bool(query.count())
 
-    def data(self, pdbs, **kwargs):
+    def query(self, session, pdb):
+        """Generate a query to find all entries in chain_info for the given
+        PDB id.  Added in November 2020 so this can be a SimpleLoader.
+        Attributes
+        ----------
+        session : Session
+            The `Session` to use.
+        pdb : str
+            The PDB id to use.
+        Returns
+        -------
+        query : Query
+            Returns an SqlAlchemy query for all entires in chain_info with
+            the given PDB id.
+        """
+        return session.query(mod.ChainInfo).\
+            filter_by(pdb_id=pdb)
+
+    def olddata(self, pdbs, **kwargs):
+        """ before November 2020, use PDB REST service
+        Retrieve the data for each PDB file
+        """
+
         helper = CustomReportHelper(fields=self.names)
         reports = helper(pdbs)
         data = []
@@ -91,5 +114,82 @@ class Loader(core.MassLoader):
             missing = known - seen
             self.logger.error("Could not get info on all pdbs: %s",
                               ','.join(missing))
+
+        return data
+
+    def data(self, pdbs, **kwargs):
+        """ after November 2020, use PDB graphQL to get data
+        about each chain in the PDB file
+        """
+
+        # The GraphQL query is defined as a multi-line string.
+        query = """
+        {
+          entry(entry_id:"XXXX") {
+            entry {
+              id
+            }
+            struct_keywords {
+              pdbx_keywords
+            }
+            polymer_entities {
+              rcsb_polymer_entity_container_identifiers {
+                entry_id
+                auth_asym_ids
+                entity_id
+              }
+              entity_poly {
+                rcsb_entity_polymer_type
+                rcsb_sample_sequence_length
+                pdbx_seq_one_letter_code_can
+                type
+              }
+              rcsb_polymer_entity {
+                pdbx_description
+              }
+              rcsb_entity_source_organism {
+                ncbi_scientific_name
+                ncbi_taxonomy_id
+              }
+            }
+          }
+        }
+        """
+
+        if isinstance(pdbs, str):
+            pdbs = [pdbs]
+
+        data = []    # will be a list over each pdb in pdbs and each chain in pdb
+
+        for pdb in pdbs:
+
+          currentquery = query.replace("XXXX",pdb)
+
+          request = requests.post('http://data.rcsb.org/graphql', json={'query': currentquery})
+          if request.status_code == 200:
+              result = request.json()
+          else:
+              self.logger.error("Could not get chain info for %s" % pdb)
+              raise core.StageFailed("Could not load chain info for all pdbs")
+
+          for chain_data in result["data"]["entry"]["polymer_entities"]:
+
+            # some polymer_entities have more than one auth_asym_ids, which have different coords, see 7C7A
+            for chain_id in chain_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"]:
+
+              renamed = {}
+              renamed["pdb_id"]             = pdb
+              renamed["chain_name"]         = chain_id
+              renamed["entity_name"]        = chain_data["rcsb_polymer_entity_container_identifiers"]["entity_id"]
+              renamed["classification"]     = result["data"]["entry"]["struct_keywords"]["pdbx_keywords"]
+              renamed["macromolecule_type"] = chain_data["entity_poly"]["rcsb_entity_polymer_type"]
+              renamed["sequence"]           = chain_data["entity_poly"]["pdbx_seq_one_letter_code_can"]
+              renamed["chain_length"]       = chain_data["entity_poly"]["rcsb_sample_sequence_length"]
+              renamed["entity_macromolecule_type"] = chain_data["entity_poly"]["type"]
+              renamed["taxonomy_id"]        = chain_data["rcsb_entity_source_organism"][0]["ncbi_taxonomy_id"]
+              renamed["source"]             = chain_data["rcsb_entity_source_organism"][0]["ncbi_scientific_name"]
+              renamed["compound"]           = chain_data["rcsb_polymer_entity"]["pdbx_description"]
+
+              data.append(renamed)
 
         return data
