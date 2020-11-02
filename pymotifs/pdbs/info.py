@@ -102,7 +102,7 @@ class Loader(core.SimpleLoader):
         Returns
         -------
         query : Query
-            Returns an SqlAlchemy query for all entires in units_quality with
+            Returns an SqlAlchemy query for all entires in pdb_info with
             the given PDB id.
         """
         return session.query(mod.PdbInfo).\
@@ -202,8 +202,8 @@ class Loader(core.SimpleLoader):
             if request.status_code == 200:
                 result = request.json()
             else:
-                self.logger.error("Could not get data for %s" % pdb)
-                raise core.StageFailed("Could not load data for all pdbs")
+                self.logger.error("Could not get PDB info for %s" % pdb)
+                raise core.StageFailed("Could not load PDB info for all pdbs")
 
             renamed = {}
             renamed["pdb_id"] = pdb
