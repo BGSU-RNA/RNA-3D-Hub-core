@@ -66,7 +66,7 @@ class NR(Base):
 class Structure(Base):
     def rna_chains(self, pdb, return_id=False, strict=False, extended=True):
         """This will get all chains labeled as RNA for a given structure or
-        structures. This has a strict mode which can fitler out chains which
+        structures. This has a strict mode which can filter out chains which
         are not standard RNA, however, this may also filter out chains where
         are RNA incorrectly. For example, things with modified bases listed in
         their sequence. The strict mode is needed when dealing with things like
@@ -78,14 +78,17 @@ class Structure(Base):
         :strict: A flag that will exclude any chains that are not composed of
         only ACGUN.
 	:extended: A flag that sets the allowed macromolecule types for
-	processing.  False = "Polyribonucleotide (RNA)" only; True allows 
+	processing.  False = "Polyribonucleotide (RNA)" only; True allows
 	additional values.
         :returns: A list of the names or a tuple of the ids and names.
         """
 
-        macromolecule_types = set(['Polyribonucleotide (RNA)'])
+        # in November 2020, the type for RNA comes back as polyribonucleotide
+        # note:  this is for entity_macromolecule_type, see below
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
         if extended:
             macromolecule_types.add('DNA/RNA Hybrid')
+
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name,

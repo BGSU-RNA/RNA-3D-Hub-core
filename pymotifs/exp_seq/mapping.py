@@ -146,7 +146,7 @@ class Loader(core.SimpleLoader):
         pdb : str
             The pdb id
         extended : bool
-            Work with only "Polyribonucleotide (RNA)" chains (False) or 
+            Work with only "Polyribonucleotide (RNA)" chains (False) or
             allow additional chains to be considered (True; default).
 
         Returns
@@ -155,7 +155,9 @@ class Loader(core.SimpleLoader):
             A list of mapped chain names.
         """
 
-        macromolecule_types = set(['Polyribonucleotide (RNA)'])
+        # in November 2020, the type for RNA comes back as polyribonucleotide
+        # note:  this is for entity_macromolecule_type, see below
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
         if extended:
             macromolecule_types.add('DNA/RNA Hybrid')
 
