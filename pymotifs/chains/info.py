@@ -165,9 +165,15 @@ class Loader(core.SimpleLoader):
 
           currentquery = query.replace("XXXX",pdb)
 
-          request = requests.post('http://data.rcsb.org/graphql', json={'query': currentquery})
-          if request.status_code == 200:
-              result = request.json()
+          # the following line worked on rnatest but not on production
+          #response = requests.post('http://data.rcsb.org/graphql', json={'query': currentquery})
+
+          # here is a different way to do it
+          currenturl = 'http://data.rcsb.org/graphql?query=' + currentquery
+          response = requests.get(currenturl)
+
+          if response.status_code == 200:
+              result = response.json()
           else:
               self.logger.error("Could not get chain info for %s" % pdb)
               raise core.StageFailed("Could not load chain info for all pdbs")
