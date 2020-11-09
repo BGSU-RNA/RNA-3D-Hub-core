@@ -29,6 +29,8 @@ from pymotifs import transfer as _transfer
 from pymotifs.version import __VERSION__
 from pymotifs.dispatcher import Dispatcher
 
+from pymotifs.skip_files import SKIP
+
 
 def run(ctx, name, ids, config=None, engine=None, **kwargs):
     """Actually run the pipeline. This is the main function which will load and
@@ -65,12 +67,24 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
         click.secho("Unknown stage %s" % err.args, err=True, fg='red')
         ctx.exit(1)
 
+    # get desired PDB IDs
     if not ids:
         ids = setup.pdbs(config, kwargs)
 
+    logging.info("There are %d files listed to skip in skip_files.py" % len(SKIP))
+    logging.info("There are %d files from skip_files.py that are also current PDB ids" % len(SKIP & set(ids)))
+
+    logging.info("The following files in skip_files.py are not current PDB files")
+    logging.info(SKIP - set(ids))
+
+    # remove files from skip_files.py from the list of PDB IDs to process
+    ids = sorted(set(ids) - SKIP)
+
+    logging.info("Found %d files to process" % len(ids))
+
     kwargs['exclude'] = kwargs.get('skip_stage')
 
-    logging.info("Running from commadn %s", ' '.join(sys.argv))
+    logging.info("Running from command %s", ' '.join(sys.argv))
     error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
     mailer = Emailer(config, engine)
