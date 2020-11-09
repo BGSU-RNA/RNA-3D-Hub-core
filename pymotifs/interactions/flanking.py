@@ -53,8 +53,8 @@ class Loader(core.SimpleLoader):
             reader = csv.reader(raw, delimiter=',', quotechar='"')
             for index, row in enumerate(reader):
                 if not row[0] or not row[1]:
-                    msg = "Line %s did not include both units"
-                    raise core.InvalidState(msg % index)
+                    msg = "Line %s of %s did not include both units"
+                    raise core.InvalidState(msg % (index,filename))
                 data.append({'unit_id_1':row[0], 'unit_id_2':row[1], 'flanking' : int(row[2]), 'pdb_id' : pdb})
 
         return data
