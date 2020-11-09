@@ -73,8 +73,9 @@ class RnaPdbsHelper(object):
             for item in jsonR["result_set"]:
                 resultIDs.append(item["identifier"])
 
-        print("Found %d non-obsolete PDB ids of RNA and NA-hybrid" % len(resultIDs))
-        logger.info("Found %d non-obsolete PDB ids of RNA and NA-hybrid" % len(resultIDs))
+        print("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
+        logger.info("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
+
         return(sorted(resultIDs))
 
         # code from before November 2020
