@@ -19,6 +19,9 @@ class Loader(core.SimpleLoader):
     """The actual loader for loading distances.
     """
 
+    # some structures don't have complete nucleotides, otherwise fail to have distances < cutoff
+    allow_no_data = True
+
     max_insert = 5000
     """Number of distances to write at once"""
 
@@ -32,6 +35,7 @@ class Loader(core.SimpleLoader):
     """Set of components to ignore for distances"""
 
     def known(self):
+        self.logger.info("Querying to find PDBs with distances calculated already")
         with self.session() as session:
             query = session.query(mod.UnitInfo.pdb_id).\
                 join(mod.UnitPairsDistances,
@@ -93,14 +97,25 @@ class Loader(core.SimpleLoader):
         -------
         center : numpy.array
             A numpy array of the center coordinates.
+
+        Note
+        ----
+
+        residue.type apparently comes from the chem_comp.type in the .cif file
+        A better way to check is in fr3d-python/fr3d/structures.py
+
         """
+
+        self.logger.info('Looking up the center for %s, residue type %s' % (residue.unit_id(),residue.type))
 
         if residue.sequence == 'HOH':
             return None
-        if residue.type == 'rna':
+        if residue.type == 'rna' or residue.type == 'RNA' or residue.type = "RNA linking":
             return residue.centers['base']
-        if residue.type == 'aa':
+        if residue.type == 'aa' or residue.type == 'L-peptide linking' or residue.type == 'peptide linking':
             return residue.centers['backbone']
+
+        self.logger.info('No center found for %s, using average coordinates' % residue.unit_id())
         return np.mean(residue.coordinates(), axis=0)
 
     def distance(self, residue1, residue2):
@@ -164,6 +179,10 @@ class Loader(core.SimpleLoader):
 
         structure = self.structure(pdb)
 
+        # this list of pairs *might* come from fr3d-python/fr3d/structures.py
+        #
+
+
         pairs = structure.pairs(distance={'cutoff': self.max_distance})
         pairs = it.ifilter(self.is_allowed, pairs)
 
@@ -172,3 +191,4 @@ class Loader(core.SimpleLoader):
             yield mod.UnitPairsDistances(unit_id_1=residue1.unit_id(),
                                          unit_id_2=residue2.unit_id(),
                                          distance=float(distance))
+
