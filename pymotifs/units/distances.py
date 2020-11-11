@@ -101,22 +101,29 @@ class Loader(core.SimpleLoader):
         Note
         ----
 
+        Before November 10, 2020, this program used residue.type to determine
+        which kind of center to use, by checking if it equalled 'rna' or 'aa'.
+        But those were not actual values of residue.type!
         residue.type apparently comes from the chem_comp.type in the .cif file
-        A better way to check is in fr3d-python/fr3d/structures.py
+
+        A good way to check is in fr3d-python/fr3d/structures.py, using that
 
         """
 
-        self.logger.info('Looking up the center for %s, residue type %s' % (residue.unit_id(),residue.type))
+#        self.logger.info('Looking up the center for %s' % residue.unit_id())
 
         if residue.sequence == 'HOH':
             return None
-        if residue.type == 'rna' or residue.type == 'RNA' or residue.type = "RNA linking":
+        if 'base' in residue.centers and len(residue.centers['base']) == 3:      # cover RNA, DNA, and modified nucleotides
             return residue.centers['base']
-        if residue.type == 'aa' or residue.type == 'L-peptide linking' or residue.type == 'peptide linking':
-            return residue.centers['backbone']
+        if 'aa_fg' in residue.centers and len(residue.centers['aa_fg']) == 3:     # cover amino acids
+            return residue.centers['aa_fg']
 
         self.logger.info('No center found for %s, using average coordinates' % residue.unit_id())
-        return np.mean(residue.coordinates(), axis=0)
+#        self.logger.info(np.mean(residue.coordinates(), axis=0))
+        self.logger.info(residue.centers['*'])
+
+        return residue.centers['*']  # same as in fr3d-python\fr3d\data\structures.py
 
     def distance(self, residue1, residue2):
         """Compute the distance between two Components. This will compute the
@@ -139,6 +146,10 @@ class Loader(core.SimpleLoader):
 
         center1 = self.center(residue1)
         center2 = self.center(residue2)
+
+#        print("distances.py centers of %s and %s" % (residue1.unit_id(),residue2.unit_id()))
+#        print(center1)
+#        print(center2)
 
         if center1.size and center2.size:
             return np.linalg.norm(center1 - center2)
@@ -180,15 +191,18 @@ class Loader(core.SimpleLoader):
         structure = self.structure(pdb)
 
         # this list of pairs *might* come from fr3d-python/fr3d/structures.py
-        #
-
+        # or more likely from fr3d-python/fr3d/data/pairs.py
+        # scipy kdtree is used in fr3d-python/fr3d/data/base.py to speed up lookups within a cutoff
 
         pairs = structure.pairs(distance={'cutoff': self.max_distance})
         pairs = it.ifilter(self.is_allowed, pairs)
 
         for residue1, residue2 in pairs:
             distance = self.distance(residue1, residue2)
-            yield mod.UnitPairsDistances(unit_id_1=residue1.unit_id(),
-                                         unit_id_2=residue2.unit_id(),
-                                         distance=float(distance))
+            if distance:
+#                self.logger.info("Distance %s %s" % (residue1.unit_id(),residue2.unit_id()))
+#                self.logger.info(distance)
+                yield mod.UnitPairsDistances(unit_id_1=residue1.unit_id(),
+                                             unit_id_2=residue2.unit_id(),
+                                             distance=float(distance))
 
