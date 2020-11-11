@@ -33,7 +33,10 @@ class Loader(core.SimpleLoader):
         """
 
         structure = self.structure(pdb)
+
+        # running infer_hydrogens, but soon that will be done automatically
         structure.infer_hydrogens()
+
         for residue in structure.residues():
             if hasattr(residue, 'rotation_matrix'):
                 matrix = residue.rotation_matrix
