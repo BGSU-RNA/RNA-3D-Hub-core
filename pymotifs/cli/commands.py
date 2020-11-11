@@ -102,7 +102,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 @click.group(short_help="Interface to update pipeline",
              context_settings={'help_option_names': ['-h', '--help']})
 @click.option('--config', default='conf/motifatlas.json', type=FILE,
-              help="JOSN configuration file")
+              help="JSON configuration file")
 @click.option('--log-file', type=click.Path(dir_okay=False, resolve_path=True),
               help="Logging filename")
 @click.option('--log-level', default='info',
