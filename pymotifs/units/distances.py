@@ -101,9 +101,6 @@ class Loader(core.SimpleLoader):
         Note
         ----
 
-        Note
-        ----
-
         Before November 10, 2020, this program used residue.type to determine
         which kind of center to use, by checking if it equalled 'rna' or 'aa'.
         But those were not actual values of residue.type!
@@ -152,6 +149,10 @@ class Loader(core.SimpleLoader):
         center1 = self.center(residue1)
         center2 = self.center(residue2)
 
+#        print("distances.py centers of %s and %s" % (residue1.unit_id(),residue2.unit_id()))
+#        print(center1)
+#        print(center2)
+
         if center1.size and center2.size:
             return np.linalg.norm(center1 - center2)
         return None
@@ -192,15 +193,18 @@ class Loader(core.SimpleLoader):
         structure = self.structure(pdb)
 
         # this list of pairs *might* come from fr3d-python/fr3d/structures.py
-        #
-
+        # or more likely from fr3d-python/fr3d/data/pairs.py
+        # scipy kdtree is used in fr3d-python/fr3d/data/base.py to speed up lookups within a cutoff
 
         pairs = structure.pairs(distance={'cutoff': self.max_distance})
         pairs = it.ifilter(self.is_allowed, pairs)
 
         for residue1, residue2 in pairs:
             distance = self.distance(residue1, residue2)
-            yield mod.UnitPairsDistances(unit_id_1=residue1.unit_id(),
-                                         unit_id_2=residue2.unit_id(),
-                                         distance=float(distance))
+            if distance:
+#                self.logger.info("Distance %s %s" % (residue1.unit_id(),residue2.unit_id()))
+#                self.logger.info(distance)
+                yield mod.UnitPairsDistances(unit_id_1=residue1.unit_id(),
+                                             unit_id_2=residue2.unit_id(),
+                                             distance=float(distance))
 
