@@ -118,8 +118,10 @@ class Loader(core.SimpleLoader):
             return residue.centers['base']
         if 'aa_fg' in residue.centers and len(residue.centers['aa_fg']) == 3:     # cover amino acids
             return residue.centers['aa_fg']
+        if residue.sequence == 'GLY':
+            return residue.centers['*']  # same as in fr3d-python\fr3d\data\structures.py
 
-        self.logger.info('No center found for %s, using average coordinates' % residue.unit_id())
+        self.logger.info('No center found for %s, using default coordinates' % residue.unit_id())
 #        self.logger.info(np.mean(residue.coordinates(), axis=0))
         self.logger.info(residue.centers['*'])
 
