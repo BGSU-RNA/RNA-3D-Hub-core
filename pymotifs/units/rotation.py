@@ -34,20 +34,23 @@ class Loader(core.SimpleLoader):
 
         structure = self.structure(pdb)
 
-        # running infer_hydrogens, but soon that will be done automatically
-        structure.infer_hydrogens()
+        # running infer_hydrogens, but now that is done automatically
+#        structure.infer_hydrogens()
 
         for residue in structure.residues():
+
             if hasattr(residue, 'rotation_matrix'):
                 matrix = residue.rotation_matrix
-                yield mod.UnitRotations(unit_id=residue.unit_id(),
-                                        pdb_id=pdb,
-                                        cell_0_0=float(matrix[0, 0]),
-                                        cell_0_1=float(matrix[0, 1]),
-                                        cell_0_2=float(matrix[0, 2]),
-                                        cell_1_0=float(matrix[1, 0]),
-                                        cell_1_1=float(matrix[1, 1]),
-                                        cell_1_2=float(matrix[1, 2]),
-                                        cell_2_0=float(matrix[2, 0]),
-                                        cell_2_1=float(matrix[2, 1]),
-                                        cell_2_2=float(matrix[2, 2]))
+                # if there are not enough atoms for the rotation matrix, it will be None
+                if matrix is not None:
+                    yield mod.UnitRotations(unit_id=residue.unit_id(),
+                                            pdb_id=pdb,
+                                            cell_0_0=float(matrix[0, 0]),
+                                            cell_0_1=float(matrix[0, 1]),
+                                            cell_0_2=float(matrix[0, 2]),
+                                            cell_1_0=float(matrix[1, 0]),
+                                            cell_1_1=float(matrix[1, 1]),
+                                            cell_1_2=float(matrix[1, 2]),
+                                            cell_2_0=float(matrix[2, 0]),
+                                            cell_2_1=float(matrix[2, 1]),
+                                            cell_2_2=float(matrix[2, 2]))
