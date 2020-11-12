@@ -86,6 +86,7 @@ class Structure(Base):
         # in November 2020, the type for RNA comes back as polyribonucleotide
         # note:  this is for entity_macromolecule_type, see below
         # note:  it would be really helpful to find a less fragile way to do this!
+        # also set in mapping.py
         macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
 #        if extended:
         macromolecule_types.add('DNA/RNA Hybrid')
