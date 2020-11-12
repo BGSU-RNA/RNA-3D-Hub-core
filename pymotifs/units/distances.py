@@ -14,7 +14,6 @@ from pymotifs import models as mod
 
 from pymotifs.units.info import Loader as InfoLoader
 
-
 class Loader(core.SimpleLoader):
     """The actual loader for loading distances.
     """
@@ -58,7 +57,12 @@ class Loader(core.SimpleLoader):
         if bool(self.config[self.name].get('recompute')):
             return True
 
-        return sorted(set(pdbs) - self.known())
+        PDBs_to_process = sorted(set(pdbs) - self.known())
+
+        if len(PDBs_to_process) > 0:
+            return PDBs_to_process
+        else:
+            raise core.Skip("No new distances to compute")
 
     def query(self, session, pdb):
         """Create a query to select all entries in unit_pairs_distances for the
