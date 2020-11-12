@@ -85,9 +85,13 @@ class Structure(Base):
 
         # in November 2020, the type for RNA comes back as polyribonucleotide
         # note:  this is for entity_macromolecule_type, see below
+        # note:  it would be really helpful to find a less fragile way to do this!
         macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
-        if extended:
-            macromolecule_types.add('DNA/RNA Hybrid')
+#        if extended:
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+
 
 
         with self.session() as session:
@@ -100,6 +104,7 @@ class Structure(Base):
             else:
                 query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
 
+            # look specifically for A, C, G, U, N but not modified nts
             if strict:
                 func = mod.ChainInfo.sequence.op('regexp')
                 query = query.filter(func('^[ACGUN]$'))
