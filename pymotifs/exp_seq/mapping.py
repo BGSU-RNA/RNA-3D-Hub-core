@@ -83,7 +83,7 @@ class Loader(core.SimpleLoader):
             key = (chain, index)
 
             if key not in exp_mapping:
-                raise core.InvalidState("No pos id for %s" % str(key))
+                raise core.InvalidState("No position id for %s" % str(key))
 
             pos_id = exp_mapping[key]
             mapped = trans[chain]
@@ -157,9 +157,13 @@ class Loader(core.SimpleLoader):
 
         # in November 2020, the type for RNA comes back as polyribonucleotide
         # note:  this is for entity_macromolecule_type, see below
+        # note:  it would be really helpful to find a less fragile way to do this!
+        # also set in structures.py
         macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
-        if extended:
-            macromolecule_types.add('DNA/RNA Hybrid')
+#        if extended:
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name.label('name'),
@@ -185,7 +189,7 @@ class Loader(core.SimpleLoader):
         cif = self.cif(pdb)
         chains = self.mapped_chains(cif.pdb)
         if not chains:
-            raise core.InvalidState("Found no chains in %s", pdb)
+            raise core.InvalidState("Found no chains in %s" % pdb)
         exp_mapping = self.exp_mapping(cif.pdb, chains)
         for entry in self.chain_mapping(cif, chains, exp_mapping):
             yield entry
