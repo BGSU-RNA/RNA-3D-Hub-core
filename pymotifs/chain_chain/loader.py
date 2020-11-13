@@ -1,10 +1,10 @@
 """Run all chain chain level stages:
 
-- comparision
+- comparison
 """
 
 from pymotifs import core
-from pymotifs.chain_chain.comparision import Loader as CompareLoader
+from pymotifs.chain_chain.comparison import Loader as CompareLoader
 
 
 class Loader(core.StageContainer):

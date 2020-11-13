@@ -2,7 +2,7 @@ from sqlalchemy.orm import aliased
 from pymotifs import core
 from pymotifs import models as mod
 
-from pymotifs.chain_chain.comparision import Loader as ChainComparisons
+from pymotifs.chain_chain.comparison import Loader as ChainComparisons
 
 class Exporter(core.Exporter):
     '''Export discrepancy values of every possible ife id combination.

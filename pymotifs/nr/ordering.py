@@ -31,7 +31,7 @@ from pymotifs.constants import NR_CACHE_NAME
 from pymotifs.nr.chains import Loader as NrChainLoader
 from pymotifs.nr.classes import Loader as NrClassLoader
 from pymotifs.nr.cqs import NrQualityLoader
-from pymotifs.chain_chain.comparision import Loader as SimilarityLoader
+from pymotifs.chain_chain.comparison import Loader as SimilarityLoader
 
 
 class Loader(core.SimpleLoader):

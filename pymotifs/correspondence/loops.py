@@ -99,19 +99,19 @@ class Loader(core.Loader):
             return 'partial'
         raise core.InvalidState("This should never occur")
 
-    def loop_comparision_id(self, loop1, loop2, discrepancy):
+    def loop_comparison_id(self, loop1, loop2, discrepancy):
         with self.session() as session:
-            query = session.query(mod.LoopLoopComparisions).\
+            query = session.query(mod.LoopLoopComparisons).\
                 filter_by(loop1_id=loop1, loop2_id=loop2)
 
             if query.count() == 0:
-                session.add(mod.LoopLoopComparisions(loop1_id=loop1,
+                session.add(mod.LoopLoopComparisons(loop1_id=loop1,
                                                      loop2_id=loop2,
                                                      discrepancy=discrepancy))
                 session.commit()
 
         with self.session() as session:
-            return session.query(mod.LoopLoopComparisions).\
+            return session.query(mod.LoopLoopComparisons).\
                 filter_by(loop1_id=loop1, loop2_id=loop2).\
                 one().\
                 id
@@ -134,12 +134,12 @@ class Loader(core.Loader):
             if cover == 'exact':
                 disc = self.discrepancy(ref_loop, loop)
 
-            compare_id = self.loop_comparision_id(ref_loop['id'], loop['id'],
+            compare_id = self.loop_comparison_id(ref_loop['id'], loop['id'],
                                                   disc)
 
             overlapping.append((loop['id'],
                                 mod.CorrespondenceLoops(
-                                    loop_loop_comparisions_id=compare_id,
+                                    loop_loop_comparisons_id=compare_id,
                                     correspondence_id=corr_id,
                                     loop_overlap_info_id=self.overlap(cover))))
 
@@ -156,17 +156,17 @@ class Loader(core.Loader):
                     yield compare[1]
 
             else:
-                compare_id = self.loop_comparision_id(ref['id'], None, None)
+                compare_id = self.loop_comparison_id(ref['id'], None, None)
                 yield mod.CorrespondenceLoops(
-                    loop_loop_comparisions_id=compare_id,
+                    loop_loop_comparisons_id=compare_id,
                     correspondence_id=corr_id,
                     loop_overlap_info_id=self.overlap('unique'))
 
         for loop in unseen_loops:
-            compare_id = self.loop_comparision_id(None, loop, None)
+            compare_id = self.loop_comparison_id(None, loop, None)
 
             yield mod.CorrespondenceLoops(
-                loop_loop_comparisions_id=compare_id,
+                loop_loop_comparisons_id=compare_id,
                 correspondence_id=corr_id,
                 loop_overlap_info_id=self.overlap('unique'))
 
