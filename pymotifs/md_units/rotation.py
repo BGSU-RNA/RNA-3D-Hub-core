@@ -1,6 +1,7 @@
 """A module to load unit rotation matrices for modified RNA into the database.
 """
 
+from itertools import groupby
 from pymotifs import core
 from pymotifs import models as mod
 
@@ -15,6 +16,11 @@ class Loader(core.SimpleLoader):
     #dependencies = set([InfoLoader])
     #allow_no_data = True
     # has_data = False
+
+    def group_units(self, units_list):
+        
+        return [list(i) for j, i in groupby(units_list, lambda a: a.split('|')[0])] 
+
 
     def get_modified_nts(self):
         
@@ -62,11 +68,37 @@ class Loader(core.SimpleLoader):
         :yields: Yields a series of rotation matrices.
         """
 
-        test_data = ['5JTE|1|AW|7MG|46', '5JTE|1|AW|3AU|47', '5JTE|1|AW|5MU|54']
+        test_data = ['6N9E|1|1A|5MC|1964', '6N9E|1|1A|5MC|1984', '6N9E|1|1a|5MC|1400', '2L9E|8|A|70U|34', '2L9E|9|A|70U|34', '3T1H|1|X|70U|34', '1FCW|1|D|7MG|46', '1FCW|1|E|7MG|46', '1FIR|1|A|7MG|46', '1GIX|1|B|7MG|46']
 
         # The get_modified_nts method will get all modified RNA unit_id without rotation
         # based on the list of modified units given in the mod_ref tuple.
-        test_mod = self.get_modified_nts()
-        print test_mod
-        print len(test_mod)
+        #test_mod = self.get_modified_nts()
+        grouped_units = self.group_units(test_data)
+        
+        for sublist in grouped_units:
+            struc_id = sublist[0].split('|')[0]
+
+            structure = self.structure(struc_id)
+
+            print 'Reading structure: {}'.format(struc_id)
+
+            for residue in structure.residues():
+                if residue.unit_id() in sublist:
+                    print 'Adding rotation for unit: {}'.format(residue.unit_id())
+                    if hasattr(residue, 'rotation_matrix'):
+                        matrix = residue.rotation_matrix
+
+                        if matrix is not None:
+                            # Remember to make pdb_id equal to struc_id and not pdb
+                            yield mod.UnitRotations(unit_id=residue.unit_id(),
+                                            pdb_id=struc_id,
+                                            cell_0_0=float(matrix[0, 0]),
+                                            cell_0_1=float(matrix[0, 1]),
+                                            cell_0_2=float(matrix[0, 2]),
+                                            cell_1_0=float(matrix[1, 0]),
+                                            cell_1_1=float(matrix[1, 1]),
+                                            cell_1_2=float(matrix[1, 2]),
+                                            cell_2_0=float(matrix[2, 0]),
+                                            cell_2_1=float(matrix[2, 1]),
+                                            cell_2_2=float(matrix[2, 2]))
 
