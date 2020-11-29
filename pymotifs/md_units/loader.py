@@ -11,7 +11,9 @@
 from pymotifs import core
 
 
-from pymotifs.md_units.rotation import Loader as MdRotationLoader
+# from pymotifs.md_units.rotation import Loader as MdRotationLoader
+
+from pymotifs.md_units.centers import Loader as MdCentersLoader
 
 
 class Loader(core.StageContainer):
@@ -19,4 +21,4 @@ class Loader(core.StageContainer):
     """
 
     """The `Stages` this will run"""
-    stages = set([MdRotationLoader])
+    stages = set([MdCentersLoader])
