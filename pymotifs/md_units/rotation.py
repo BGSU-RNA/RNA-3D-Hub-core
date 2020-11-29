@@ -4,7 +4,6 @@
 from itertools import groupby
 from pymotifs import core
 from pymotifs import models as mod
-from pymotifs.units.rotation import Loader as RotationLoader
 from fr3d.modified_parent_mapping import modified_nucleotides
 
 
