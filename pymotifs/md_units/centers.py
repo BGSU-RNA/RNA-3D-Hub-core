@@ -109,6 +109,8 @@ class Loader(core.SimpleLoader):
         desired_pdb = 'given'    # only update from the list of PDB IDs passed in
         desired_pdb = 'all'      # update from every single PDB ID already in the database
 
+        self.logger.info("Processing %s 3D structure file(s)" % desired_pdb)
+
         for unit_id_list in grouped_units:          # unit_id_list is from one structure at a time
             pdb_id = unit_id_list[0].split('|')[0]  # extract PDB id from 0th element of unit_id_list
 
@@ -123,16 +125,18 @@ class Loader(core.SimpleLoader):
                 for residue in structure.residues():
                     if residue.unit_id() in unit_id_list:
                         foundone = True
+                        print('Adding centers for %s' % residue.unit_id())
+                        self.logger.info('Adding centers for %s' % residue.unit_id())
                         for name in residue.centers.definitions():
                             center = residue.centers[name]
                             if len(center) == 3:
                                 yield mod.UnitCenters(unit_id=residue.unit_id(),
                                                       name=name,
-                                                      pdb_id=pdb,
+                                                      pdb_id=pdb_id,      # use current pdb_id, not pdb the list
                                                       x=float(center[0]),
                                                       y=float(center[1]),
                                                       z=float(center[2]))
 
                 if not foundone:
                     print("No matches to %s" % unit_id_list)
-                    self.logger.info("No matches to %s" % unit_id_list)   
+                    self.logger.info("No matches to %s" % unit_id_list)
