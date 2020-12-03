@@ -113,41 +113,45 @@ class Loader(core.SimpleLoader):
 
                 self.logger.info('Loading 3D structure file %s' % pdb_id)
                 print('Loading 3D structure file %s' % pdb_id)
-                structure = self.structure(pdb_id)      # read .cif file
+                try:
+                    structure = self.structure(pdb_id)      # read .cif file
 
-                foundone = False
+                    foundone = False
 
-                for residue in structure.residues():
-                    if residue.unit_id() in unit_id_list:
-                        foundone = True
-                        if hasattr(residue, 'rotation_matrix'):
-                            matrix = residue.rotation_matrix
+                    for residue in structure.residues():
+                        if residue.unit_id() in unit_id_list:
+                            foundone = True
+                            if hasattr(residue, 'rotation_matrix'):
+                                matrix = residue.rotation_matrix
 
-                            if matrix is not None:
-                                print('Adding rotation matrix for %s' % residue.unit_id())
-                                self.logger.info('Adding rotation matrix for %s' % residue.unit_id())
-                                # Remember to make pdb_id equal to pdb_id and not pdb
-                                yield mod.UnitRotations(unit_id=residue.unit_id(),
-                                                pdb_id=pdb_id,
-                                                cell_0_0=float(matrix[0, 0]),
-                                                cell_0_1=float(matrix[0, 1]),
-                                                cell_0_2=float(matrix[0, 2]),
-                                                cell_1_0=float(matrix[1, 0]),
-                                                cell_1_1=float(matrix[1, 1]),
-                                                cell_1_2=float(matrix[1, 2]),
-                                                cell_2_0=float(matrix[2, 0]),
-                                                cell_2_1=float(matrix[2, 1]),
-                                                cell_2_2=float(matrix[2, 2]))
+                                if matrix is not None:
+                                    print('Adding rotation matrix for %s' % residue.unit_id())
+                                    self.logger.info('Adding rotation matrix for %s' % residue.unit_id())
+                                    # Remember to make pdb_id equal to pdb_id and not pdb
+                                    yield mod.UnitRotations(unit_id=residue.unit_id(),
+                                                    pdb_id=pdb_id,
+                                                    cell_0_0=float(matrix[0, 0]),
+                                                    cell_0_1=float(matrix[0, 1]),
+                                                    cell_0_2=float(matrix[0, 2]),
+                                                    cell_1_0=float(matrix[1, 0]),
+                                                    cell_1_1=float(matrix[1, 1]),
+                                                    cell_1_2=float(matrix[1, 2]),
+                                                    cell_2_0=float(matrix[2, 0]),
+                                                    cell_2_1=float(matrix[2, 1]),
+                                                    cell_2_2=float(matrix[2, 2]))
+
+                                else:
+                                    self.logger.info('%s rotation matrix is None' % residue.unit_id())
+                                    print('%s rotation matrix is None' % residue.unit_id())
 
                             else:
-                                self.logger.info('%s rotation matrix is None' % residue.unit_id())
+                                self.logger.info('%s has no rotation matrix' % residue.unit_id())
                                 print('%s rotation matrix is None' % residue.unit_id())
 
-                        else:
-                            self.logger.info('%s has no rotation matrix' % residue.unit_id())
-                            print('%s rotation matrix is None' % residue.unit_id())
+                    if not foundone:
+                        print("No matches to %s" % unit_id_list)
+                        self.logger.info("No matches to %s" % unit_id_list)
 
-
-                if not foundone:
-                    print("No matches to %s" % unit_id_list)
-                    self.logger.info("No matches to %s" % unit_id_list)
+                except:
+                    print("Could not load %s" % pdb_id)
+                    self.logger.info("Could not load %s" % pdb_id)

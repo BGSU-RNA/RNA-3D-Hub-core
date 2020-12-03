@@ -118,25 +118,32 @@ class Loader(core.SimpleLoader):
 
                 self.logger.info('Loading 3D structure file %s' % pdb_id)
                 print('Loading 3D structure file %s' % pdb_id)
-                structure = self.structure(pdb_id)      # read .cif file
 
-                foundone = False
+                try:
+                    structure = self.structure(pdb_id)      # read .cif file
 
-                for residue in structure.residues():
-                    if residue.unit_id() in unit_id_list:
-                        foundone = True
-                        print('Adding centers for %s' % residue.unit_id())
-                        self.logger.info('Adding centers for %s' % residue.unit_id())
-                        for name in residue.centers.definitions():
-                            center = residue.centers[name]
-                            if len(center) == 3:
-                                yield mod.UnitCenters(unit_id=residue.unit_id(),
-                                                      name=name,
-                                                      pdb_id=pdb_id,      # use current pdb_id, not pdb the list
-                                                      x=float(center[0]),
-                                                      y=float(center[1]),
-                                                      z=float(center[2]))
+                    foundone = False
 
-                if not foundone:
-                    print("No matches to %s" % unit_id_list)
-                    self.logger.info("No matches to %s" % unit_id_list)
+                    for residue in structure.residues():
+                        if residue.unit_id() in unit_id_list:
+                            foundone = True
+                            print('Adding centers for %s' % residue.unit_id())
+                            self.logger.info('Adding centers for %s' % residue.unit_id())
+                            for name in residue.centers.definitions():
+                                center = residue.centers[name]
+                                if len(center) == 3:
+                                    yield mod.UnitCenters(unit_id=residue.unit_id(),
+                                                          name=name,
+                                                          pdb_id=pdb_id,      # use current pdb_id, not pdb the list
+                                                          x=float(center[0]),
+                                                          y=float(center[1]),
+                                                          z=float(center[2]))
+
+                    if not foundone:
+                        print("No matches to %s" % unit_id_list)
+                        self.logger.info("No matches to %s" % unit_id_list)
+
+                except:
+                    print("Could not load %s" % pdb_id)
+                    self.logger.info("Could not load %s" % pdb_id)
+
