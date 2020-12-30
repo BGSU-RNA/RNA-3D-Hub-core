@@ -1,11 +1,12 @@
-"""Load the chain to chain discrepancies. This will 1) look at good
+"""
+Compute chain to chain discrepancies within equivalence classes.
+This will 1) look at good
 correspondences, 2) extract all the aligned chains, 3) compute the
 geometric discrepancy between them, and 4) place the discrepanices
 in the database.
 
 This will only compare the first chain in each IFE.
 """
-
 
 import functools as ft
 import itertools as it
@@ -35,7 +36,6 @@ from pymotifs.units.centers import Loader as CenterLoader
 from pymotifs.units.rotation import Loader as RotationLoader
 
 from pymotifs.nr.groups.simplified import Grouper
-
 
 def pick(preferences, key, iterable):
     """Pick the most preferred value from a list of possibilities.
@@ -91,34 +91,6 @@ def label_center(table, number):
     ]
 
 
-def label_rotation(table, number):
-    """Select the tables
-
-    Parameters
-    ----------
-    table : Table
-        The table to select columns from
-    number : int
-        The number to postfix
-
-    Returns
-    -------
-    columns : list
-        The list of columns to select.
-    """
-
-    return [
-        getattr(table, 'cell_0_0').label('cell_00_%s' % number),
-        getattr(table, 'cell_0_1').label('cell_01_%s' % number),
-        getattr(table, 'cell_0_2').label('cell_02_%s' % number),
-        getattr(table, 'cell_1_0').label('cell_10_%s' % number),
-        getattr(table, 'cell_1_1').label('cell_11_%s' % number),
-        getattr(table, 'cell_1_2').label('cell_12_%s' % number),
-        getattr(table, 'cell_2_0').label('cell_20_%s' % number),
-        getattr(table, 'cell_2_1').label('cell_21_%s' % number),
-        getattr(table, 'cell_2_2').label('cell_22_%s' % number),
-    ]
-
 
 def make_unique_list(input_list):
     unique_list = []
@@ -142,6 +114,7 @@ class Loader(core.SimpleLoader):
     """The dependencies for this stage"""
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         IfeLoader, CenterLoader, RotationLoader])
+
 
     def known_unit_entries(self, table):
         """Create a set of (pdb, chain) tuples for all chains that have entries
@@ -192,13 +165,13 @@ class Loader(core.SimpleLoader):
         using only sequence and species and then produce a list of chains that
         are only the chains in the same group. It will also filter out all
         pairs that have a chain with a poor resolution or is too small. This
-        will produce all comparisions that are needed for the NR set and no
+        will produce all comparisons that are needed for the NR set and no
         more. If no groups are produced we raise an exception.
 
         Parameters
         ----------
         pdbs : list
-            List of pdb ids to transform.
+            List of pdb ids to group by species and sequence
 
         Raises
         ------
@@ -208,20 +181,71 @@ class Loader(core.SimpleLoader):
         Returns
         -------
         pairs : list
-            A list of pairs of chain ids to compare.
+            A list of (first, seconds) pairs of chain ids to compare.
         """
 
-        # set direction to work through data, for weeks with many discrepancy calculations to do
-        direction = 1        # work through in given order, goes quickly at the beginning
-        direction = -1       # work through in reverse order, goes slowly, then faster
 
-        self.logger.debug("Entering to_process...")
+        GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
+        GeneratePickleFiles = True    # must be used in production, to update the files each week
 
-        self.logger.info("kwargs: %s" % kwargs)
-        self.logger.info("kwargs: comp_limit: %s" % kwargs['comp_limit'])
-        self.logger.info("kwargs: data_limit: %s" % kwargs['data_limit'])
-        self.logger.info("input config: %s" % self.config['db'])
+        if GeneratePickleFiles:
+            # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
+            # takes about 10 minutes total
+            self.logger.info('Getting the unit_id to experimental sequence position table')
+            with self.session() as session:
+                EM = mod.ExpSeqUnitMapping
+                query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)
 
+                unit_to_position = {}      # will be a dictionary of dictionaries
+                count = 0
+                for r in query:
+                    if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
+                        fields = r.unit_id.split("|")
+                        if len(fields) > 3:
+                            key = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
+                            if not key in unit_to_position:
+                                unit_to_position[key] = {}
+                            unit_to_position[key][r.unit_id] = r.exp_seq_position_id
+                            count += 1
+                self.logger.info('Got %d unit to position mappings' % count)
+                pickle.dump(unit_to_position, open("unit_to_position.pickle", "wb" ), 2)
+                self.logger.info('Wrote pickle file unit_to_position.pickle')
+
+            self.logger.info('Getting the position to position mappings')
+            with self.session() as session:
+                CP = mod.CorrespondencePositions
+                query = session.query(CP.exp_seq_position_id_1,CP.exp_seq_position_id_2).select_from(CP)
+
+                count = 0
+                position_to_position = defaultdict(list)
+                for r in query:
+                    position_to_position[r.exp_seq_position_id_1].append(r.exp_seq_position_id_2)
+                    count += 1
+                self.logger.info('Got %d position to position correspondences' % count)
+                pickle.dump(position_to_position, open("position_to_position.pickle", "wb" ), 2)
+                self.logger.info('Wrote pickle file position_to_position.pickle')
+
+
+
+
+        # to speed things up when debugging, return this (first,seconds) list for T.th. LSU
+        # self.logger.info("Skipping grouping, just using a small T.th. LSU group")
+        # return [(92730, [91729, 91730, 91837, 91838, 67402, 43569, 67346, 43811, 43755, 43866, 61884, 61829, 87224, 44080, 44023, 44136, 91676, 45731, 45790, 53900, 43432, 50768, 43486, 45098, 45042, 57600, 83493, 46559, 57539, 60287, 46795, 46500, 59606, 46736, 56239, 50710, 60548, 46139, 56178, 60495, 59498, 46196, 60296, 90105, 37220, 64813, 84743, 58749, 37783, 84235, 64239, 86194, 46677, 84684, 84257, 46618, 59323, 59215, 37275, 54309, 92562, 46253, 54117, 56300, 45668, 37838, 45606, 46382, 62569, 59107, 59388, 54252, 62553, 55547, 92618, 64921, 46441, 87643, 64705, 56483, 87616, 47757, 56603, 90212, 55655, 59866, 65030, 51907, 92674, 51958, 56422, 59507, 64822, 56361, 56543, 53211, 65039, 90222, 59875, 37108, 55494, 59615, 47586])]
+
+#        self.logger.info("Skipping grouping on rnatest, just using 20 chains from the largest T.th. SSU group")
+#        return [[60295, 53866, 50732, 50674, 43488, 43721, 45008, 43833, 46045, 45064, 64821, 43777, 45754, 43434, 43992, 45695, 1766, 44105, 43594, 44048, 1791, 61917, 61862, 83490, 87209, 67344, 876, 91677, 67400, 429, 91839, 91840, 91731, 91732]]
+
+#        self.logger.info("Skipping grouping on rnatest, just using the largest T.th. SSU group")
+#        return [[27075, 1002, 68491, 928, 70901, 1720, 724, 24733, 70846, 656, 27602, 27581, 63337, 68342, 58018, 24756, 65833, 70985, 678, 58074, 67255, 27560, 63360, 25324, 55970, 60698, 71095, 70736, 61541, 24802, 60751, 65725, 34161, 27623, 57796, 65779, 27518, 67143, 906, 27665, 57684, 8284, 18221, 25450, 34273, 57659, 85003, 71040, 69477, 63314, 57740, 58494, 24779, 65887, 70791, 71150, 63120, 65251, 61408, 63868, 34329, 84950, 64128, 700, 952, 57852, 20158, 58435, 85056, 77040, 60804, 85109, 64184, 67091, 83763, 87947, 22048, 63602, 23041, 22991, 20893, 4152, 63383, 88031, 83935, 83823, 88003, 4175, 4198, 20805, 66481, 61714, 61660, 53444, 38009, 67199, 61596, 36850, 38345, 83711, 66651, 38400, 23014, 85479, 27686, 63487, 66706, 66423, 23199, 37298, 38457, 37522, 77096, 84016, 66926, 47437, 20870, 37635, 38512, 61464, 57963, 46582, 65306, 66596, 57908, 52958, 83879, 47493, 67311, 5537, 47107, 85425, 53497, 84102, 46641, 11002, 51979, 66816, 47163, 84838, 59023, 21880, 37353, 66761, 83991, 20826, 88100, 52032, 25366, 88077, 84894, 27644, 57340, 46405, 23222, 86054, 38233, 60860, 23176, 84148, 6135, 34217, 59734, 38064, 34385, 82270, 58663, 37577, 38288, 36905, 37691, 66541, 66871, 48157, 52738, 52878, 25429, 57395, 46346, 57450, 52306, 25408, 4129, 25471, 38121, 58531, 22069, 8307, 85943, 18198, 59756, 34495, 54759, 63064, 56028, 48132, 38176, 37465, 50848, 46759, 88123, 69422, 46464, 50906, 46700, 50992, 58905, 63547, 90006, 52903, 71773, 37074, 1743, 54814, 57261, 88054, 86108, 57207, 54274, 57285, 34440, 68210, 52281, 92473, 46103, 45225, 87725, 50790, 87742, 8261, 37410, 36962, 52853, 67984, 56144, 56086, 45282, 53098, 54217, 89997, 37017, 84125, 52661, 34551, 52683, 45571, 45633, 854, 58522, 92419, 56449, 71845, 68201, 59080, 63431, 59874, 71821, 22006, 52640, 56205, 53178, 58721, 27193, 20784, 53043, 54621, 34051, 20847, 53607, 27539, 53550, 84039, 92365, 48216, 48270, 64347, 55623, 56570, 50475, 82261, 56388, 46162, 46219, 44324, 45396, 37129, 58964, 55463, 50533, 84081, 84060, 85934, 34105, 56510, 47723, 45869, 45339, 812, 68093, 92695, 64356, 54868, 44268, 62549, 62565, 55569, 56266, 47550, 45928, 37186, 64024, 83645, 65038, 20918, 56327, 59223, 21922, 27172, 83589, 55516, 56685, 25345, 37749, 59387, 56630, 71969, 46523, 25303, 71797, 92311, 54331, 54925, 71920, 65029, 64076, 64929, 92639, 71870, 59396, 59506, 64920, 60494, 54141, 54390, 90211, 59115, 59214, 64704, 53285, 58757, 27250, 51571, 92527, 37804, 21985, 50591, 68102, 71945, 50649, 71895, 59106, 22027, 64238, 59865, 51622, 59327, 92583, 67993, 58748, 59322, 90221, 51673, 45453, 59497, 64713, 90113, 21901, 45512, 51724, 53153, 53338, 51826, 5610, 90104, 21943, 52138, 833, 57505, 51775, 52085, 60547, 53391, 64247, 37241, 86162, 86215, 47667, 53750, 25387, 59605, 53808, 64812, 45987, 60286, 87611, 87638, 57566, 84649, 51877, 84708, 59614, 84230, 84252, 17109, 51928, 21964, 53232, 60295, 53866, 50732, 50674, 43488, 43721, 45008, 43833, 46045, 45064, 64821, 43777, 45754, 43434, 43992, 45695, 1766, 44105, 43594, 44048, 1791, 61917, 61862, 83490, 87209, 67344, 876, 91677, 67400, 429, 91839, 91840, 91731, 91732]]
+
+#        self.logger.info("Skipping grouping on rnatest, just using a group of 350 chains")
+#        return [[57418L, 57308L, 71006L, 38366L, 71116L, 38030L, 80391L, 76219L, 37825L, 73358L, 36300L, 50042L, 45592L, 57473L, 57363L, 62808L, 50813L, 47130L, 47460L, 52283L, 53180L, 56107L, 47745L, 47186L, 47516L, 52880L, 92548L, 63568L, 92440L, 38142L, 92660L, 80271L, 38197L, 92604L, 92386L, 38421L, 71061L, 92494L, 71171L, 92716L, 73483L, 74619L, 74735L, 74793L, 72414L, 45654L, 61431L, 64207L, 70520L, 70637L, 70579L, 70521L, 52685L, 47131L, 47461L, 53045L, 54162L, 48272L, 52740L, 52855L, 53628L, 47517L, 47187L, 88513L, 53100L, 62482L, 62487L, 88535L, 92332L, 38254L, 69443L, 37770L, 37543L, 76159L, 80511L, 80332L, 84529L, 70812L, 37374L, 63141L, 37712L, 37598L, 70922L, 63623L, 90791L, 90682L, 90792L, 90500L, 66783L, 66563L, 66673L, 60827L, 59337L, 83902L, 77119L, 60883L, 88026L, 61618L, 12022L, 57819L, 57930L, 57707L, 34296L, 58041L, 58097L, 34352L, 57875L, 57763L, 90126L, 74677L, 72356L, 72298L, 44106L, 45246L, 64151L, 68224L, 61487L, 73592L, 34408L, 34184L, 34518L, 34463L, 58517L, 70696L, 52905L, 56049L, 47689L, 52308L, 50871L, 26577L, 34974L, 34902L, 63452L, 37319L, 70867L, 37656L, 84528L, 80331L, 80272L, 80512L, 80572L, 80452L, 38309L, 69498L, 38085L, 63508L, 90442L, 84647L, 83611L, 76091L, 36378L, 66444L, 87970L, 61563L, 67166L, 61681L, 66893L, 77063L, 68006L, 90235L, 64726L, 58770L, 59627L, 59409L, 68223L, 64942L, 65051L, 66502L, 61735L, 67334L, 66948L, 66618L, 66838L, 67222L, 66728L, 12023L, 49296L, 49576L, 48821L, 59045L, 73519L, 72529L, 82922L, 70578L, 70697L, 52960L, 54946L, 34986L, 36983L, 70757L, 37431L, 37095L, 34072L, 63085L, 37207L, 80571L, 80451L, 37262L, 37150L, 37486L, 37038L, 34126L, 84646L, 76090L, 90382L, 59128L, 58458L, 48271L, 83958L, 83846L, 65273L, 67278L, 64834L, 58544L, 64260L, 68115L, 90019L, 58545L, 59410L, 64943L, 65328L, 84014L, 49352L, 48647L, 48705L, 57985L, 59102L, 71993L, 47630L, 44289L, 12197L, 44345L, 45655L, 59237L, 60308L, 72243L, 86652L, 86534L, 86475L, 86357L, 48217L, 46008L, 54889L, 50928L, 50697L, 62469L, 51014L, 76220L, 62561L, 83667L, 34240L, 34574L, 60299L, 90127L, 60307L, 68007L, 64261L, 68116L, 90020L, 49063L, 49520L, 49632L, 49464L, 49408L, 48763L, 48912L, 5665L, 5666L, 71919L, 71968L, 45303L, 59236L, 86416L, 35563L, 86593L, 62030L, 70638L, 53155L, 48273L, 76160L, 80392L, 87080L, 87194L, 64727L, 90236L, 59338L, 67036L, 49856L, 49800L, 49912L, 71869L, 43993L, 69408L, 53571L, 46066L, 19153L, 64835L, 58771L, 59628L, 65052L, 49688L, 92605L, 87652L, 87676L, 74868L, 74894L, 87196L, 63453L, 63086L, 63142L, 63509L, 92717L, 59129L, 49744L, 92549L, 62999L, 62909L, 48218L, 50755L, 92661L, 90558L, 48623L, 45593L, 54163L, 84271L, 84289L, 53887L, 48956L, 76101L, 86594L, 86358L, 86417L, 86535L, 86476L, 52856L, 52686L, 52309L, 52881L, 87626L, 87653L, 52284L, 52741L, 84245L, 84267L, 86653L, 62031L, 87135L, 17719L, 46009L, 46067L]]
+#        return [[52741L, 84245L, 84267L, 86653L, 62031L, 87135L, 17719L, 46009L, 46067L]]
+
+
+        # Group PDB ids by species and sequence
+        # groups is a list of lists of integer chain identifiers
+        self.logger.info("Grouping PDB ids by sequence and species")
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False
         #grouper.must_enforce_single_species = False
@@ -229,61 +253,44 @@ class Loader(core.SimpleLoader):
         groups = grouper(pdbs)
         if not groups:
             raise core.InvalidState("No groups produced")
+        self.logger.info("Grouped PDB ids by sequence and species")
 
+
+        # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
+        # that's a bit silly, we could just wait and look that up later
         has_rotations = ft.partial(self.is_member,
                                    self.known_unit_entries(mod.UnitCenters))
         has_centers = ft.partial(self.is_member,
                                  self.known_unit_entries(mod.UnitRotations))
-        possible = []
+
+        # create lists of chain ids from each group, then data method will loop over all pairs
+        groups_of_chain_ids = []
+
         for group in groups:
             chains = it.ifilter(disc.valid_chain, group['members'])
             chains = it.ifilter(has_rotations, chains)
             chains = it.ifilter(has_centers, chains)
             chains = it.imap(op.itemgetter('db_id'), chains)
-            possible.extend(it.combinations(chains, 2))
+            # convert chains from iterator to list of chain ids and append to list
+            chain_list = sorted(list(chains))
+            if len(chain_list) > 1:
+                groups_of_chain_ids.append(chain_list)
 
-        self.logger.debug("Possibles collected...")
+        # Note how many groups are left now that we filtered as above
+        self.logger.info("Found %d groups with at least two chains" % len(groups_of_chain_ids))
 
-        key = op.itemgetter(0)
-        ordered_chains = sorted(possible, key = key)
-        result = []
+        # start with the smallest group
+        groups_of_chain_ids.sort(key=len)
 
-        #calc = 0
-        #calc_limit = 1
+        # start with the largest group
+        groups_of_chain_ids.sort(key=len,reverse=True)
 
-        if 'comp_limit' in kwargs and kwargs.get('comp_limit') is not None:
-            comp_limit = kwargs.get('comp_limit', 9999)
-        else:
-            comp_limit = 9999
-
-        self.logger.info("comp_limit: %s" % comp_limit)
-
-        for (first, rest) in it.groupby(ordered_chains, key):
-            #if calc >= calc_limit:
-            #    continue
-            temp = [r[1] for r in rest]
-            seconds = make_unique_list(temp)
-
-            if direction < 0:
-                seconds = seconds[::-1]
-
-            self.logger.debug("to_process: first / seconds: %s / %s" % (first, seconds))
-            if len(seconds) < comp_limit:
-                if direction > 0:
-                    result.append((first, seconds))        # add to end of list
-                else:
-                    result = [(first,seconds)] + result    # add to beginning of list
-            else:
-                self.logger.warning("length skip (%s < %s) for %s, %s" % (1+len(seconds), comp_limit, first, seconds))
-            #calc = 1 + calc
-        #return sorted(possible)
-        self.logger.debug("to_process: result: %s" % result)
-        return result
+        return groups_of_chain_ids
 
 
     def is_missing(self, entry, **kwargs):
         """Determine if we do not have any data. If we have no data then we
-        will recompute. This method must be implemented by inhering classes
+        will recompute. This method must be implemented by inheriting classes
         and is how we determine if we have data or not.
 
         Parameters
@@ -302,7 +309,7 @@ class Loader(core.SimpleLoader):
 
 
     def query(self, session, pair):
-        """Create a query to find the comparisions using the given pair of
+        """Create a query to find the comparisons using the given pair of
         chains. This will find a pair in either direction. Also, this ignores
         the model and other information and uses only chain ids.
 
@@ -328,13 +335,65 @@ class Loader(core.SimpleLoader):
             filter(or_(and_(sim.chain_id_1==pair[0],sim.chain_id_2.in_(pair[1])),
                        and_(sim.chain_id_2==pair[0],sim.chain_id_1.in_(pair[1]))))
 
+    def get_unit_correspondences_intersect(self,info1,info2,unit_to_position,position_to_position):
+        """
+        Given two chains, use unit_to_position and position_to_position
+        mappings to find unit to unit correspondences.
+        Return a list of pairs of units
+        """
+
+        matching_pairs = []
+
+        # for now, concentrate on the first chain in any multi-chain IFEs
+        chain1 = info1['ife_id'].split('+')[0]
+        chain2 = info2['ife_id'].split('+')[0]
 
 
-    def pickledata(self, corr_id, info1, info2, name='base'):
-        """Load the matrices used to compute discrepancies. This will look up
-        all the centers and rotation matrices in one query. If any centers or
-        rotation matrices are missing it will log an error. If there are alt
-        ids the 'A' one will be used.
+        length1 = len(unit_to_position[chain1])
+        length2 = len(unit_to_position[chain2])
+
+        if abs(length1-length2) > 1000 or length1/length2 > 10 or length2/length1 > 10:
+            self.logger.warning("Dramatically different number of resolved nucleotides, using discrepancy -1")
+            self.logger.info("Chain %s length %d, chain %s length %d" % (chain1,length1,chain2,length2))
+        else:
+
+            # Map units in chain2 to their experimental sequence position ids.
+            # These are not experimental sequence positions; different sequences
+            # have different ids for the same position
+            positions2 = []              # list of all positions in chain2
+            positions2_to_unit2 = {}     # map those positions back to units
+            for unit,position in unit_to_position[chain2].items():
+                positions2.append(position)
+                positions2_to_unit2[position] = unit
+            positions2 = set(positions2) # for faster intersections, I think
+
+            # Loop over units in chain1, map to positions, and intersect with
+            # the positions that go with units in chain2
+            for unit1,position1 in unit_to_position[chain1].items():
+                positions1 = set(position_to_position[position1])
+                intersection = positions1 & positions2
+                positions2 = positions2 - intersection
+                if len(intersection) > 1:
+                    self.logger.info("Trouble: Found multiple matches:")
+                    for c in intersection:
+                        self.logger.info("Matched %s and %s" % (unit1,positions2_to_unit2[c]))
+                elif len(intersection) == 1:
+                    for c in intersection:
+                        unit2 = positions2_to_unit2[c]
+                        matching_pairs.append((unit1,unit2))
+                else:
+                    self.logger.info("No match for %s" % unit1)
+
+            self.logger.info("get_unit_correspondences_intersect: query found %d matching pairs" % len(matching_pairs))
+
+        return matching_pairs
+
+
+    def get_unit_correspondences(self, corr_id, info1, info2):
+        """
+        Query the database to find all pairs of unit ids with a given
+        correspondence id, matching two given chains and matching PDB ids,
+        because that is the fastest query.
 
         Parameters
         ----------
@@ -344,269 +403,204 @@ class Loader(core.SimpleLoader):
             The result of `info` for the first chain to compare.
         info2 : dict
             The result of `info` for the second chain to compare.
-        name : str, optional
-            The type of base center to use.
 
         Returns
         -------
-        data : (list, list, list, list)
-            This returns 4 lists, which are in order, centers1, centers2,
-            rotation1, rotation2.
+        matching_pairs : list of pairs of unit ids
+
         """
 
-        allunitdictionary = defaultdict()
-
-        ife_chain_1 = info1['ife_id'].replace('|','-')
-        ife_chain_2 = info2['ife_id'].replace('|','-')
-
-        self.logger.info("pickledata (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
-        self.logger.debug("pickledata (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
-        self.logger.debug("pickledata (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
-
         with self.session() as session:
-            units1 = aliased(mod.UnitInfo)
-            units2 = aliased(mod.UnitInfo)
-            corr_units = mod.CorrespondenceUnits
-            corr_pdb = mod.CorrespondencePdbs
+            corr_pos = mod.CorrespondencePositions     # C
+            exp_map1 = aliased(mod.ExpSeqUnitMapping)           # M1
+            exp_map2 = aliased(mod.ExpSeqUnitMapping)           # M2
 
-            columns = [corr_pdb.correspondence_id, corr_units.unit_id_1.label('unit1'), corr_units.unit_id_2.label('unit2')]
+            mycolumns = [corr_pos.correspondence_id, exp_map1.unit_id.label('unit1'), exp_map2.unit_id.label('unit2')]
 
-            query = session.query(*columns).\
-                join(corr_units,
-                     corr_pdb.correspondence_id == corr_units.correspondence_id).\
-                join(units1, units1.unit_id == corr_units.unit_id_1).\
-                join(units2, units2.unit_id == corr_units.unit_id_2).\
-                filter(corr_pdb.pdb_id_1 == corr_units.pdb_id_1).\
-                filter(corr_pdb.pdb_id_2 == corr_units.pdb_id_2).\
-                filter(corr_pdb.chain_name_1 == corr_units.chain_name_1).\
-                filter(corr_pdb.chain_name_2 == corr_units.chain_name_2).\
-                filter(corr_pdb.correspondence_id == corr_id).\
-                filter(corr_pdb.chain_id_1 == info1['chain_id']).\
-                filter(corr_pdb.chain_id_2 == info2['chain_id']).\
-                filter(units1.sym_op == info1['sym_op']).\
-                filter(units2.sym_op == info2['sym_op']).\
-                filter(units1.alt_id == info1['alt_id']).\
-                filter(units2.alt_id == info2['alt_id']).\
-                filter(units1.model == info1['model']).\
-                filter(units2.model == info2['model']).\
-                order_by(corr_units.correspondence_index).\
-                distinct()
+            # if mycolumns does not reference the first table to be used in the join, use select_from
+            # select_from(corr_pos).\
+            # The query without joining units1, units2 takes about 41 seconds on rnatest, for T.th. LSU
+            # Joining on units1, units2 to get the pdb id takes about 58 seconds
+            # Not filtering for chain takes many, many minutes, so don't do that
+            # filtering exp_map1.unit_id.contains(info1['pdb']) takes 46 seconds
+            # filtering also on info2['pdb'] takes 27 to 39 seconds, so that seems to be the fastest
+            # filtering with like(info1['pdb']+"%") on both 1 and 2 takes 79 seconds
 
-            self.logger.info("pickledata (3.0):  result set length: %s" % query.count())
+            query = session.query(*mycolumns).\
+                join(exp_map1, exp_map1.exp_seq_position_id == corr_pos.exp_seq_position_id_1).\
+                join(exp_map2, exp_map2.exp_seq_position_id == corr_pos.exp_seq_position_id_2).\
+                filter(corr_pos.correspondence_id == corr_id).\
+                filter(exp_map1.chain == info1['chain_name']).\
+                filter(exp_map2.chain == info2['chain_name']).\
+                filter(exp_map1.unit_id.contains(info1['pdb'])).\
+                filter(exp_map2.unit_id.contains(info2['pdb']))
 
-            if not query.count():
-                self.logger.warning("No geometric data for %s %s", info1, info2)
-                #raise core.Skip("Missing geometric data")
+            """
+                filter(exp_map1.unit_id.like(info1['pdb']+"%")).\
+                filter(exp_map2.unit_id.like(info2['pdb']+"%"))
 
-            self.logger.debug("pickledata (3): obtained correspondence units")
+                limit(10)
+                join(units1, units1.unit_id == exp_map1.unit_id).\
+                join(units2, units2.unit_id == exp_map2.unit_id).\
+                filter(units1.pdb_id == info1['pdb']).\
+                filter(units2.pdb_id == info2['pdb'])
+                filter(units1.unit_id <> units2.unit_id)
+                filter(units1.chain == info1['chain_name']).\
+                filter(units2.chain == info2['chain_name'])
+            """
 
-            for key in ( ife_chain_1, ife_chain_2 ):
-                splitchain = key.split("+")
+            # the query does not seem to actually run until you ask for data from it;
+            # setting up is instantaneous, evaluating or counting takes time
+            self.logger.info("get_unit_correspondences: query set up for %s" % corr_id)
 
-                for chunk in splitchain:
-                    outfile = 'pickle-FR3D/' + chunk + '_RNA.pickle'
-
-                    self.logger.debug("Pickle file: %s" % str(outfile))
-
-                    with open(outfile, 'rb') as fh:
-                        data = map(list,map(None,*pickle.load(fh)))
-
-                        self.logger.debug("Data for %s: %s" % (key, str(data)))
-
-                        for line in data:
-                            unitid = line[0]
-                            allunitdictionary[unitid] = line
-
-            self.logger.debug("pickledata (4): pickle data import complete")
-
-            c1 = []
-            c2 = []
-            r1 = []
-            r2 = []
-            seen = set()
-
+            matching_pairs = []
             for r in query:
-                self.logger.debug("pickledata (5): row: %s" % str(r))
+                if r.unit1 and r.unit2 and "|" in r.unit1 and "|" in r.unit2:
+                    matching_pairs.append((r.unit1,r.unit2))
 
-                if r.unit1 in seen:
-                    raise core.InvalidState("pickledata: Got duplicate unit (unit1) %s" % r.unit1)
-                seen.add(r.unit1)
+            self.logger.info("get_unit_correspondences: query found %d matching pairs" % len(matching_pairs))
 
-                if r.unit2 in seen:
-                    raise core.InvalidState("pickledata: Got duplicate unit (unit2) %s" % r.unit2)
-                seen.add(r.unit2)
+            return matching_pairs
 
-                if allunitdictionary.get(r.unit1) is not None and allunitdictionary.get(r.unit2) is not None:
-                    c1.append(allunitdictionary[r.unit1][2])
-                    c2.append(allunitdictionary[r.unit2][2])
-                    r1.append(allunitdictionary[r.unit1][3])
-                    r2.append(allunitdictionary[r.unit2][3])
-
-        self.logger.info("pickledata (6): end query for %s // %s" % (ife_chain_1, ife_chain_2))
-
-        return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
-
-
-    #def pd2(self, corr_id, info1, info2, name='base'):
-    #    """Load the matrices used to compute discrepancies. This will look up
-    #    all the centers and rotation matrices in one query. If any centers or
-    #    rotation matrices are missing it will log an error. If there are alt
-    #    ids the 'A' one will be used.
-
-    #    Parameters
-    #    ----------
-    #    corr_id : int
-    #        The correspondence id.
-    #    info1 : dict
-    #        The result of `info` for the first chain to compare.
-    #    info2 : dict
-    #        The result of `info` for the second chain to compare.
-    #    name : str, optional
-    #        The type of base center to use.
-
-    #    Returns
-    #    -------
-    #    data : (list, list, list, list)
-    #        This returns 4 lists, which are in order, centers1, centers2,
-    #        rotation1, rotation2.
-    #    """
-
-    #    allunitdictionary = defaultdict()
-    #    unit_dict_1 = defaultdict()
-    #    unit_dict_2 = defaultdict()
-
-    #    ife_chain_1 = info1['ife_id'].replace('|','-')
-    #    ife_chain_2 = info2['ife_id'].replace('|','-')
-
-    #    self.logger.info("pd2 (1): start query for ic1: %s // ic2: %s" % (ife_chain_1, ife_chain_2))
-    #    self.logger.debug("pd2 (2.1): info for %s: %s" % (ife_chain_1, str(info1)))
-    #    self.logger.debug("pd2 (2.2): info for %s: %s" % (ife_chain_2, str(info2)))
-
-    #    with self.session() as session:
-    #        corr_units = mod.CorrespondenceUnits
-
-    #        columns = [corr_units.correspondence_id, corr_units.unit_id_1.label('unit1'), corr_units.unit_id_2.label('unit2')]
-
-    #        query = session.query(*columns).\
-    #            filter(corr_units.correspondence_id == corr_id).\
-    #            filter(corr_units.pdb_id_1 == info1['pdb']).\
-    #            filter(corr_units.pdb_id_2 == info2['pdb']).\
-    #            filter(corr_units.chain_name_1 == info1['chain_name']).\
-    #            filter(corr_units.chain_name_2 == info2['chain_name']).\
-    #            order_by(corr_units.correspondence_index).\
-    #            distinct()
-
-    #        self.logger.info("pd2 (3.0):  result set length: %s" % query.count())
-
-    #        if not query.count():
-    #            self.logger.warning("No geometric data for %s %s", info1, info2)
-    #            #raise core.Skip("Missing geometric data")
-
-    #        self.logger.info("pd2 (3): obtained correspondence units")
-
-    #        for key in ( ife_chain_1, ife_chain_2 ):
-    #            splitchain = key.split("+")
-
-    #            if key == ife_chain_1:
-    #                info_d = info1
-    #            else:
-    #                info_d = info2
-
-    #            self.logger.info("pd2: debug: ife_chain %s (root %s): alt_id/sym_op/model: [%s/%s/%s]" %
-    #                             (key,info_d['ife_id'],info_d['alt_id'],info_d['sym_op'],info_d['model']))
-
-    #            for chunk in splitchain:
-    #                outfile = 'pickle-FR3D/' + chunk + '_RNA.pickle'
-
-    #                self.logger.debug("Pickle file: %s" % str(outfile))
-
-    #                with open(outfile, 'rb') as fh:
-    #                    data = map(list,map(None,*pickle.load(fh)))
-
-    #                    self.logger.debug("Data for %s: %s" % (key, str(data)))
-
-    #                    for line in data:
-    #                        unitid = line[0]
-    #                        split_unit = unitid.split('|')
-
-    #                        if len(split_unit) > 6:
-    #                            #if split_unit[6] is not None and split_unit[6] <> info_d['alt_id']:
-    #                            #if (split_unit[6] == "" and info_d['alt_id'] is not None) or split_unit[6] <> info_d['alt_id']:
-    #                            if split_unit[6] in ("B", "C"):
-    #                                self.logger.info("pd2: Extended unit %s, alt_id (desired/actual):  [%s/%s]" % (unitid, info_d['alt_id'], split_unit[6]))
-    #                                continue
-
-    #                            if len(split_unit) > 8:
-    #                                #if split_unit[8] != info_d['sym_op']:
-    #                                if split_unit[8] is not None:
-    #                                    self.logger.info("pd2: Extended unit %s, sym_op (desired/actual):  %s/%s" % (unitid, info_d['sym_op'], split_unit[8]))
-    #                                    continue
-
-    #                            self.logger.info("pd2: Extended unit %s to be used" % unitid)
-
-    #                        if split_unit[1] != str(info_d['model']):
-    #                            self.logger.info("pd2: skipped %s for model number %s" % (unitid, split_unit[1]))
-    #                            continue
-
-    #                        if key == ife_chain_1:
-    #                            unit_dict_1[unitid] = line
-    #                            self.logger.debug("pd2: unit_dict_1 for unitid %s: %s" % (unitid, line))
-    #                        else:
-    #                            unit_dict_2[unitid] = line
-    #                            self.logger.debug("pd2: unit_dict_2 for unitid %s: %s" % (unitid, line))
-
-    #        self.logger.info("pd2: unit_dict lengths:  %s / %s" % (len(unit_dict_1), len(unit_dict_2)))
-
-    #        c1 = []
-    #        c2 = []
-    #        r1 = []
-    #        r2 = []
-    #        pd2seen = set()
-
-    #        for r in query:
-    #            self.logger.debug("pd2 (5): row: %s" % str(r))
-
-    #            uspl1 = r.unit1.split('|')
-    #            uspl2 = r.unit2.split('|')
-
-    #            if str(uspl1[1]) != '1' or str(uspl2[1]) != '1':
-    #                continue
-
-    #            #if r.unit1 in pd2seen:
-    #            #    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
-    #            #pd2seen.add(r.unit1)
-
-    #            #if r.unit2 in pd2seen:
-    #            #    raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
-    #            #pd2seen.add(r.unit2)
-
-    #            if unit_dict_1.get(r.unit1) is not None and unit_dict_2.get(r.unit2) is not None:
-    #                if r.unit1 in pd2seen:
-    #                    raise core.InvalidState("pd2: Got duplicate unit (unit1) %s" % r.unit1)
-    #                pd2seen.add(r.unit1)
-
-    #                if r.unit2 in pd2seen:
-    #                    raise core.InvalidState("pd2: Got duplicate unit (unit2) %s" % r.unit2)
-    #                pd2seen.add(r.unit2)
-
-    #                c1.append(unit_dict_1[r.unit1][2])
-    #                c2.append(unit_dict_2[r.unit2][2])
-    #                r1.append(unit_dict_1[r.unit1][3])
-    #                r2.append(unit_dict_2[r.unit2][3])
-
-    #    self.logger.info("pd2 (6): end query for %s // %s" % (ife_chain_1, ife_chain_2))
-
-    #    return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
-
-
-    def discrepancy(self, corr_id, name1, name2, centers1, centers2, rot1, rot2):
-        """Compare the chains. This will filter out all residues in the chain
-        that do not have a base center computed.
+    def get_unit_correspondences_id_chain(self, corr_id, chain1_name, chain2_name):
+        """
+        Query the database to find all pairs of unit ids with a given
+        correspondence id and matching two given chains, hoping to reduce
+        the overall query time across many discrepancy calculations
+        This gives more PDB ids than you want at any one time.
 
         Parameters
         ----------
         corr_id : int
-            The correspondence id to use.
+            The correspondence id.
+        info1 : dict
+            The result of `info` for the first chain to compare.
+        info2 : dict
+            The result of `info` for the second chain to compare.
+
+        Returns
+        -------
+        matching_pairs : list of pairs of unit ids
+
+        """
+
+        with self.session() as session:
+            corr_pos = mod.CorrespondencePositions     # C
+            exp_map1 = aliased(mod.ExpSeqUnitMapping)  # M1
+            exp_map2 = aliased(mod.ExpSeqUnitMapping)  # M2
+
+            mycolumns = [corr_pos.correspondence_id, exp_map1.unit_id.label('unit1'), exp_map2.unit_id.label('unit2')]
+
+            # if mycolumns does not reference the first table to be used in the join, use select_from
+            # select_from(corr_pos).\
+            # The query without joining units1, units2 takes about 41 seconds on rnatest, for T.th. LSU
+            # Joining on units1, units2 to get the pdb id takes about 58 seconds
+            # Not filtering for chain takes many, many minutes, so don't do that
+
+            query = session.query(*mycolumns).\
+                join(exp_map1, exp_map1.exp_seq_position_id == corr_pos.exp_seq_position_id_1).\
+                join(exp_map2, exp_map2.exp_seq_position_id == corr_pos.exp_seq_position_id_2).\
+                filter(corr_pos.correspondence_id == corr_id).\
+                filter(exp_map1.chain == chain1_name).\
+                filter(exp_map2.chain == chain2_name)
+
+            # the query does not seem to actually run until you ask for data from it;
+            # setting up is instantaneous, evaluating or counting takes time
+
+            matching_pairs = []
+            for r in query:
+                if r.unit1 and r.unit2 and "|" in r.unit1 and "|" in r.unit2:
+                    matching_pairs.append((r.unit1,r.unit2))
+
+            self.logger.info("get_unit_correspondences_id_chain: query found %d matching pairs" % len(matching_pairs))
+
+            return matching_pairs
+
+    def filter_unit_correspondences(self, matching_pairs, info1, info2):
+        """
+        Filter matching pairs to check that they have the desired
+        model and symmetry operator and alt_id.
+        Not sure how often the symmetry and alt_id are used.
+        """
+        OK_pairs = []
+        for (unit1,unit2) in matching_pairs:
+            fields1 = unit1.split("|")
+            fields2 = unit2.split("|")
+
+            if fields1[1] == str(info1['model']) and fields2[1] == str(info2['model']):
+                if len(fields1) < 7 or fields1[6] == info1['alt_id'] or (fields1[6] == "" and info1['alt_id'] is None):
+                    if len(fields2) < 7 or fields2[6] == info2['alt_id'] or (fields2[6] == "" and info2['alt_id'] is None):
+                        if len(fields1) < 9 or fields1[8] == info1['sym_op']:
+                            if len(fields2) < 9 or fields2[8] == info2['sym_op']:
+                                OK_pairs.append((unit1,unit2))
+
+        return OK_pairs
+
+
+    def load_centers_rotations_pickle(self,info,allunitdictionary):
+
+        for chain_string in info['ife_id'].split('+'):
+            picklefile = 'pickle-FR3D/' + chain_string.replace('|','-') + '_RNA.pickle'
+
+            if not chain_string in allunitdictionary:
+
+                try:
+                    unit_ids, chainIndices, centers, rotations = pickle.load(open(picklefile,"rb"))
+
+                    allunitdictionary[chain_string] = True    # note that this chain was read
+
+                    # add center, rotation pairs to the dictionary according to unit id
+                    for i in range(0,len(unit_ids)):
+                        if len(centers[i]) == 3 and len(rotations[i]) == 3:
+                            allunitdictionary[unit_ids[i]] = (centers[i],rotations[i])
+                        else:
+                            self.logger.info("Trouble with center/rotation for %s" % unit_ids[i])
+                            self.logger.info(str(centers[i]))
+                            self.logger.info(str(rotations[i]))
+
+                    self.logger.info('load_centers_rotations_pickle: Loaded %s' % chain_string)
+
+                except:
+                    self.logger.info("Could not read pickle file %s " % picklefile)
+
+        return allunitdictionary
+
+    def compare_list_of_pairs(self,old_list,new_list):
+        """
+        Compare lists of pairs of unit ids from different methods,
+        which may put the lists in different orders.
+        """
+
+        new_missing = set(old_list) - set(new_list)
+
+        old_missing = set(new_list) - set(old_list)
+
+        if len(old_missing) > 0:
+            self.logger.warning('Problem: New list found %s that is not in old list' % str(old_missing))
+
+            for om in old_missing:
+                for pp in old_list:
+                    if om[0] == pp[0] or om[1] == pp[1]:
+                        self.logger.info("This match is in the old list: %s with %s" % pp)
+
+        if len(new_missing) > 0:
+            self.logger.warning('Problem: Old list found %s that is not in new list' % str(new_missing))
+
+            for nm in new_missing:
+                for pp in new_list:
+                    if nm[0] == pp[0] or nm[1] == pp[1]:
+                        self.logger.info("This match is in the new list: %s with %s" % pp)
+
+        if len(new_missing) == 0 and len(old_missing) == 0:
+            self.logger.info('The old and new methods give identical lists!')
+
+
+    def discrepancy(self, centers1, centers2, rot1, rot2):
+        """
+        Compute the discrepancy using centers and rotation matrices.
+
+        Parameters
+        ----------
         centers1 : list
             List of numpy.array of the centers for first chain.
         centers2 : list
@@ -618,18 +612,16 @@ class Loader(core.SimpleLoader):
 
         Returns
         -------
-        data : (float, int)
-            A tuple of the discrepancy and then number of nucleotides used in
-            the discrepancy.
+        data : float
+            The computed discrepancy.
         """
 
-        self.logger.info("Comparing %i pairs of residues for %s, %s" % (len(centers1), name1, name2))
         disc = matrix_discrepancy(centers1, rot1, centers2, rot2)
 
         if np.isnan(disc):
             raise core.InvalidState("NaN for discrepancy")
 
-        return disc, len(centers1)
+        return disc
 
 
     def info(self, chain_id):
@@ -758,11 +750,6 @@ class Loader(core.SimpleLoader):
         if corr_id is None:
             corr_id = self.__correspondence_query__(chain_id2, chain_id1)
 
-        if corr_id is None:
-            #raise core.Skip("No good correspondence between %s, %s" %
-            #                (chain_id1, chain_id2))
-            self.logger.warning("No good correspondence between %s, %s" %
-                                (chain_id1, chain_id2))
         return corr_id
 
 
@@ -815,12 +802,42 @@ class Loader(core.SimpleLoader):
         return self.__check_matrices__(mod.UnitCenters, info) and \
             self.__check_matrices__(mod.UnitRotations, info)
 
+    def gather_matching_centers_rotations(self,unit_pairs,allunitdictionary):
 
-    def entry(self, info1, info2, corr_id):
-        """Compute the discrepancy between two given chains. The info
-        dictonaries should be from the `Loader.info` method. This will produce
-        the discrepancy in both orderings, first to second and then second to
-        first. The resulting list will always have those two elements.
+        """
+        loop over pairs of unit ids, pull out corresponding center and
+        rotation matrices for the pairs of unit ids.
+        """
+
+        c1 = []
+        c2 = []
+        r1 = []
+        r2 = []
+        seen = set()
+
+        for (unit1,unit2) in unit_pairs:
+            if unit1 in seen:
+                raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit1 %s" % unit1)
+            seen.add(unit1)
+
+            if unit2 in seen:
+                raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit2 %s" % unit2)
+            seen.add(unit2)
+
+            if allunitdictionary.get(unit1) is not None and allunitdictionary.get(unit2) is not None:
+                c1.append(allunitdictionary[unit1][0])
+                c2.append(allunitdictionary[unit2][0])
+                r1.append(allunitdictionary[unit1][1])
+                r2.append(allunitdictionary[unit2][1])
+
+        return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
+
+
+    def calculate_discrepancy(self, info1, info2, corr_id, c1, c2, r1, r2):
+        """
+        Compute the discrepancy between two given chains.
+        This will produce a list of two dictionaries containing data for
+        the database, in both orders.
 
         Parameters
         ----------
@@ -830,6 +847,10 @@ class Loader(core.SimpleLoader):
             The second chain to use
         corr_id : dict
             The correspondence id.
+        c1, c2: list of 3-dimensional vectors
+            Centers of matching nucleotides
+        r1, r2: list of 3x3 rotation matrices
+            Rotation matrices of matching nucleotides
 
         Returns
         -------
@@ -840,177 +861,265 @@ class Loader(core.SimpleLoader):
             `num_nucleotides`.
         """
 
-        self.logger.debug("entry: info1: %s" % info1)
-        self.logger.debug("entry: info2: %s" % info2)
-        self.logger.debug("entry: corr_id: %s" % corr_id)
+        if len(c1) < 3:
+            self.logger.warning("Too few matched nucleotides to compute discrepancy for %s %s, using magic values instead" %
+                                  (info1['name'], info2['name']))
+            disc = -1
+        else:
 
-        if not self.has_matrices(info1):
-            self.logger.warning("Missing matrix data for %s", info1['name'])
-            return []
+            try:
+                disc = matrix_discrepancy(c1, r1, c2, r2)
 
-        if not self.has_matrices(info2):
-            self.logger.warning("Missing matrix data for %s", info2['name'])
-            return []
+            except Exception as err:
+                self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
+                                  (info1['name'], info2['name']))
+                disc = -1
 
-        pickledata = self.pickledata(corr_id, info1, info2)
-        if len(filter(lambda m: len(m), pickledata)) != len(pickledata):
-            self.logger.warning("Did not load all data for %s, %s",
-                                info1['name'], info2['name'])
-            #return []
+            if np.isnan(disc):
+                self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
+                                  (info1['name'], info2['name']))
+                disc = -1
 
-        if len(pickledata[0]) < 3:
-            self.logger.warning("Not enough centers for pair: %s, %s" %
-            #raise core.Skip("Not enough centers for pair: %s, %s" %
-                            (info1['chain_id'], info2['chain_id']))
 
-        try:
-            pdisc, plength = self.discrepancy(corr_id, info1['name'], info2['name'], *pickledata)
-        except Exception as err:
-            self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
-                              (info1['name'], info2['name']))
-            pdisc = -1
-            plength = 0
-
-        pcompare = {
+        entry1 = {
             'chain_id_1': info1['chain_id'],
             'chain_id_2': info2['chain_id'],
             'model_1': info1['model'],
             'model_2': info2['model'],
             'correspondence_id': corr_id,
-            'discrepancy': float(pdisc),
-            'num_nucleotides': plength,
+            'discrepancy': float(disc),
+            'num_nucleotides': len(c1)
         }
 
-        preversed = dict(pcompare)
-        preversed['chain_id_1'] = pcompare['chain_id_2']
-        preversed['chain_id_2'] = pcompare['chain_id_1']
-        preversed['model_1'] = pcompare['model_2']
-        preversed['model_2'] = pcompare['model_1']
+        entry2 = {
+            'chain_id_1': info2['chain_id'],
+            'chain_id_2': info1['chain_id'],
+            'model_1': info2['model'],
+            'model_2': info1['model'],
+            'correspondence_id': corr_id,
+            'discrepancy': float(disc),
+            'num_nucleotides': len(c1)
+        }
 
-        #p2data = self.pd2(corr_id, info1, info2)
-        #if len(filter(lambda m: len(m), p2data)) != len(p2data):
-        #    self.logger.warning("Did not load all data for %s, %s",
-        #                        info1['name'], info2['name'])
-        #    #return []
+        return [entry1, entry2]
 
-        #if len(p2data[0]) < 3:
-        #    self.logger.warning("pd2: p2data[0] = %s" % p2data[0])
-        #    self.logger.warning("Not enough centers for pair: %s, %s" %
-        #                        (info1['chain_id'], info2['chain_id']))
+    def data(self, chain_ids, **kwargs):
+        """
+        New in December 2020.
+        Compute all chain to chain discrepancies in the given group.
+        Loop over all pairs of chain ids in this group.
 
-        #try:
-        #    p2disc, p2length = self.discrepancy(corr_id, info1['name'], info2['name'], *p2data)
-        #except Exception as err:
-        #    self.logger.warning("Could not compute discrepancy for %s %s, using magic values instead" %
-        #                      (info1['name'], info2['name']))
-        #    p2disc = -1
-        #    p2length = 0
-
-        #pd2c = {
-        #    'chain_id_1': info1['chain_id'],
-        #    'chain_id_2': info2['chain_id'],
-        #    'model_1': info1['model'],
-        #    'model_2': info2['model'],
-        #    'correspondence_id': corr_id,
-        #    'discrepancy': float(p2disc),
-        #    'num_nucleotides': p2length,
-        #}
-
-        #pd2r = dict(pcompare)
-        #pd2r['chain_id_1'] = pd2c['chain_id_2']
-        #pd2r['chain_id_2'] = pd2c['chain_id_1']
-        #pd2r['model_1'] = pd2c['model_2']
-        #pd2r['model_2'] = pd2c['model_1']
-
-        #self.logger.info("IFE1/IFE2: %s / %s : Discrepancies/Length (pickle/revised): %s / %s : %s / %s" % (info1['name'], info2['name'], pcompare['discrepancy'], pcompare['num_nucleotides'], pd2c['discrepancy'], pd2c['num_nucleotides']))
-
-        #time.sleep(1)
-
-        return [
-            #compare,
-            #reversed,
-            pcompare,
-            preversed
-            #pd2c,
-            #pd2r
-        ]
-
-
-    def data(self, entry, **kwargs):
-        """Compute all chain to chain similarity data. This will get all
+        This will get all
         corresponding chains to chain alignment for all chains in this pdb and
         determine the geometric similarity for the chains, if the alignment is
         a good one.
 
         Parameters
         ----------
-        pair : (int, int)
-            The pair of chain ids to compute data for
+        chain_ids : list of integer chain ids
+            The list of chain ids to compute data for
 
         Returns
         -------
         data : list
-            The discrepancies of comparing the first to second as well as the
-            second to the first chains.
+            The discrepancies of each pair of chains.
         """
 
-        self.logger.info("data: entry: %s" % str(entry))
+        L = len(chain_ids)
+        self.logger.info("data: Computing discrepancies for a group of %d chains" % L)
+        self.logger.info("data: %d discrepancies needed in this group" % (L*(L-1)/2))
 
-        chain1, candidates = entry
-        #chain1, seconds = entry
-
-        info1 = self.info(chain1)
-
+        # from the list of chain_ids, find all pairs that already have a discrepancy computed
+        self.logger.info("data: Finding existing discrepancy data")
         sim = mod.ChainChainSimilarity
-
         with self.session() as session:
             query = session.query(sim).\
-                filter(or_(and_(sim.chain_id_1==entry[0],sim.chain_id_2.in_(entry[1])),
-                           and_(sim.chain_id_2==entry[0],sim.chain_id_1.in_(entry[1]))))
+                filter(or_(and_(sim.chain_id_1.in_(chain_ids),sim.chain_id_2.in_(chain_ids))))
 
-        knowns = []
-        seconds = []
+            already_computed = []
+            already_computed_discrepancy = []
+            for r in query:
+                already_computed.append((r.chain_id_1,r.chain_id_2))
+                already_computed_discrepancy.append((r.chain_id_1,r.chain_id_2,r.discrepancy))
+        self.logger.info("data: Found %d discrepancy values already calculated" % (len(already_computed)/2))
 
-        for r in query:
-#            self.logger.info("data: known: (%s, %s)" % (r.chain_id_1,r.chain_id_2))
-            knowns.append((r.chain_id_1,r.chain_id_2))
+        # retrieve chain information for all chains once and store the data
+        # 50 seconds for T.th. SSU on rnatest in December 2020
+        self.logger.info("data: Retrieving chain information once for each chain")
+        chain_info = {}
+        for chain_id in chain_ids:
+            chain_info[chain_id] = self.info(chain_id)
 
-        for chain in candidates:
-            if chain == chain1:
-                continue
+        # loop over pairs of chain ids in this group, skipping those that already have discrepancy calculated, look up corr_id
+        # This took about 10 minutes on the T.th. SSU group of 451 chains on rnatest in December 2020,
+        # possibly the slowest part of this whole procedure.  That is partly because there were 44,000
+        # discrepancies to be calculated.  It is certainly because of the database query here.
+        self.logger.info("data: Organizing pairs of chains that need to be computed")
+        required_pairs = []
+        for chain1_id in chain_ids:
+            info1 = chain_info[chain1_id]
+            for chain2_id in chain_ids:
+                info2 = chain_info[chain2_id]
+                if chain1_id < chain2_id and not (chain1_id, chain2_id) in already_computed:
+                    corr_id = self.corr_id(chain1_id, chain2_id)
+                    if corr_id is None:
+                        self.logger.info("data: No correspondence id between %s and %s" % (info1['ife_id'],info2['ife_id']))
+                        # Note: cannot store a discrepancy with a null correspondence id
+                    else:
+                        required_pairs.append((corr_id,chain1_id,chain2_id))
+        self.logger.info("data: Found %d discrepancy values needing to be calculated" % len(required_pairs))
 
-            if ((chain1, chain)) in knowns:
-#                self.logger.info("data: already have discrepancy for (%s, %s)" % (chain1, chain))
-                continue
 
-#            self.logger.info("data: adding %s to list of pending calculations" % chain)
-            seconds.append(chain)
 
-        data_count = 0
+        Recompute = True
+        Recompute = False
 
-        if 'data_limit' in kwargs and kwargs.get('data_limit') is not None:
-            data_limit = kwargs.get('data_limit', 9999)
-        else:
-            data_limit = 9999
 
-        self.logger.info("data_limit: %s" % data_limit)
+        # check to see that we get the same discrepancy as before for some cases
+        # this is for debugging; generally the program will be run with Recompute = False
+        if Recompute and len(already_computed_discrepancy) > 0:
+            # takes about 44 seconds on rnatest in December 2020
+            self.logger.info("Loading unit to position correspondences")
+            unit_to_position = pickle.load(open("unit_to_position.pickle","rb"))
 
-        for chain2 in seconds:
-            data_count = 1 + data_count
-            if data_count > data_limit:
-                self.logger.info("data: data_limit (%s) exceeded: %s" % (data_limit, data_count))
-                continue
-            entries = []
-            info2 = self.info(chain2)
-            corr_id = self.corr_id(chain1, chain2)
-            self.logger.info("data: count: %s // chain1: %s // chain2: %s // corr_id: %s" %
-                             (data_count, chain1, chain2, corr_id))
-            if corr_id is not None:
-                entries = self.entry(info1, info2, corr_id)
-                #entries.append(self.entry(info1, info2, corr_id))
+            # takes about 45 seconds on rnatest in December 2020
+            self.logger.info("Loading position to position correspondences")
+            position_to_position = pickle.load(open("position_to_position.pickle","rb"))
 
-            if entries is not None:
-                for e in entries:
-                    self.logger.info("data: Entry to load: %s" % e)
-                    yield mod.ChainChainSimilarity(**e)
+            # Loop over needed pairs of chains, query for unit correspondences, and calculate discrepancies
+            # The slowest part of the process is the query for unit correspondences.
+            # One hope was that querying by corr_id and the two chains and then narrowing down to the desired
+            # PDBs would be faster than doing them individually, but that is sometimes much slower.
 
+            allunitdictionary = defaultdict()            # store up centers and rotations
+
+            current = 1
+            chain1_seen = set()
+
+            LL = min(len(already_computed_discrepancy),50)
+
+            for (chain1_id,chain2_id,discrepancy) in already_computed_discrepancy[0:LL]:
+
+                # make sure not to repeat any pairings in different order
+                if chain1_id < chain2_id:
+
+                    self.logger.info("data: Re-computing discrepancy %d for this group" % (current))
+                    current += 1
+
+                    chain1_seen.add(chain1_id)
+                    if len(chain1_seen) > 20:
+                        chain1_seen = set()
+                        allunitdictionary = defaultdict()    # avoid accumulating data forever; reset sometimes
+
+                    info1 = chain_info[chain1_id]
+                    info2 = chain_info[chain2_id]
+
+                    # new method
+                    self.logger.info("data: Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
+                    new_unit_pairs = self.get_unit_correspondences_intersect(info1,info2,unit_to_position,position_to_position)
+
+                    # filter out units with wrong symmetry or alt id
+                    unit_pairs = self.filter_unit_correspondences(new_unit_pairs,info1,info2)
+
+                    # show some matched units to build confidence
+                    if len(unit_pairs) > 0:
+                        for i in range(0,min(5,len(unit_pairs))):
+                            self.logger.info("data: Matched %s and %s" % unit_pairs[i])
+
+                        # load center and rotation data for the current ifes, if not already loaded
+                        allunitdictionary = self.load_centers_rotations_pickle(info1,allunitdictionary)
+                        allunitdictionary = self.load_centers_rotations_pickle(info2,allunitdictionary)
+
+
+                    # gather matching centers and rotations for these chains
+                    [c1, c2, r1, r2] = self.gather_matching_centers_rotations(unit_pairs,allunitdictionary)
+                    self.logger.info("data: Gathered matching centers and rotations")
+
+                    # compute the discrepancy between these IFEs
+                    # if wrong numbers of matched nucleotides, discrepancy will be -1
+                    corr_id = 0
+                    discrepancies = self.calculate_discrepancy(info1, info2, corr_id, c1, c2, r1, r2)
+
+                    self.logger.info("Previous discrepancy %0.7f" % (discrepancy))
+                    self.logger.info("New      discrepancy %0.7f" % (discrepancies[0]["discrepancy"]))
+
+                    if abs(10000000*(discrepancy-discrepancies[0]["discrepancy"])) > 1:
+                        self.logger.info("Problem: old and new discrepancies don't agree")
+
+
+
+
+        if not Recompute and len(required_pairs) > 0:
+
+            # takes about 44 seconds on rnatest in December 2020
+            self.logger.info("Loading unit to position correspondences")
+            unit_to_position = pickle.load(open("unit_to_position.pickle","rb"))
+
+            # takes about 45 seconds on rnatest in December 2020
+            self.logger.info("Loading position to position correspondences")
+            position_to_position = pickle.load(open("position_to_position.pickle","rb"))
+
+            # Loop over needed pairs of chains, query for unit correspondences, and calculate discrepancies
+            # The slowest part of the process is the query for unit correspondences.
+            # One hope was that querying by corr_id and the two chains and then narrowing down to the desired
+            # PDBs would be faster than doing them individually, but that is sometimes much slower.
+
+            allunitdictionary = defaultdict()            # store up centers and rotations
+
+            current = 1
+            chain1_seen = set()                          # count how many times a specific chain1 is seen
+            for (corr_id,chain1_id,chain2_id) in required_pairs:
+
+                self.logger.info("data: Computing discrepancy %d of %d for this group" % (current,len(required_pairs)))
+                current += 1
+
+                chain1_seen.add(chain1_id)
+                if len(chain1_seen) > 20:
+                    chain1_seen = set()
+                    allunitdictionary = defaultdict()    # avoid accumulating data forever; reset sometimes
+
+                info1 = chain_info[chain1_id]
+                info2 = chain_info[chain2_id]
+
+                # will need to recognize multiple chains for IFEs made of more than one chain; currently only 1st chain is used
+
+                # new method
+                self.logger.info("data: Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
+                unit_pairs = self.get_unit_correspondences_intersect(info1,info2,unit_to_position,position_to_position)
+
+                # filter out units with wrong symmetry or alt id
+                unit_pairs = self.filter_unit_correspondences(unit_pairs,info1,info2)
+
+                """
+                # old method
+                self.logger.info("data: Query for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
+                old_unit_pairs = self.get_unit_correspondences(corr_id,info1,info2)
+
+                # filter out units with wrong symmetry or alt id
+                old_unit_pairs = self.filter_unit_correspondences(old_unit_pairs,info1,info2)
+                self.logger.info("data: Found %d unit id pairs for chain %s chain %s" % (len(unit_pairs),info1['ife_id'],info2['ife_id']))
+
+                self.compare_list_of_pairs(old_unit_pairs,unit_pairs)
+                """
+
+
+                # show some matched units to build confidence
+                if len(unit_pairs) > 0:
+                    for i in range(0,min(5,len(unit_pairs))):
+                        self.logger.info("data: Matched %s and %s" % unit_pairs[i])
+
+                    # load center and rotation data for the current ifes, if not already loaded
+                    allunitdictionary = self.load_centers_rotations_pickle(info1,allunitdictionary)
+                    allunitdictionary = self.load_centers_rotations_pickle(info2,allunitdictionary)
+
+                # gather matching centers and rotations for these chains
+                [c1, c2, r1, r2] = self.gather_matching_centers_rotations(unit_pairs,allunitdictionary)
+                self.logger.info("data: Gathered matching centers and rotations")
+
+                # compute the discrepancy between these IFEs
+                # if wrong numbers of matched nucleotides, discrepancy will be -1
+                discrepancies = self.calculate_discrepancy(info1, info2, corr_id, c1, c2, r1, r2)
+
+                self.logger.info("data: Discrepancy to load: %s" % discrepancies[0])
+                for d in discrepancies:
+                    yield mod.ChainChainSimilarity(**d)
