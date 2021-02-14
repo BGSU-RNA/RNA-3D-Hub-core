@@ -6,9 +6,8 @@ from pymotifs import core
 from pymotifs import models as mod
 from fr3d.modified_parent_mapping import modified_nucleotides
 
-
-# list the modified nucleotides that should be checked to see if they have a base center
-# if not, one will be computed
+# list the nucleotides that should be checked to see if they have centers nt_sugar and nt_phosphate
+# if not, they will be computed
 # there needs to be a mapping of atoms in each modified nucleotide to the parent atoms,
 # in fr3d-python.fr3d.modified_parent_mapping.py
 # Apparently this variable needs to be a tuple for the SQL query in get_units_without_rotation
@@ -16,7 +15,7 @@ mod_ref = ('DA','DC','DG','DT','A2M', 'CAR', '1MG', '5MC', '5MU', 'H2U', '4SU', 
 # removed from the list because they are not in modified_parent_mapping:  'TLN', 'ATL', 'N', '3DA', 'C5L', '6MZ', 'I', '5AA', 'F3N', '31H', 'CM0',
 
 # this list was produced directly from modified_parent_mapping, plus DNA nucleotides
-mod_ref = ('DA','DC','DG','DT','10C', '125', '126', '127', '12A', '1MA', '1MG', '1SC', '23G', '2AU', '2MA', '2MG', '2MU', '2OM', '3AU', '3MU', '3TD', '4OC', '4SU', '5BU', '5FA', '5FU', '5IC', '5MC', '5MU', '6IA', '70U', '7MG', '8AN', 'A23', 'A2L', 'A2M', 'A3P', 'A44', 'A5M', 'A5O', 'AET', 'AP7', 'AVC', 'C2L', 'C31', 'C43', 'CBV', 'CCC', 'CG1', 'CH', 'CNU', 'CSF', 'FHU', 'G25', 'G2L', 'G46', 'G48', 'G7M', 'GAO', 'GDP', 'GH3', 'GOM', 'GRB', 'GTP', 'H2U', 'IC', 'IG', 'IU', 'KAG', 'LCA', 'M2G', 'M4C', 'M5M', 'MA6', 'MAD', 'MGQ', 'MGV', 'MIA', 'MNU', 'MTU', 'N5M', 'N6G', 'O2G', 'OMC', 'OMG', 'OMU', 'ONE', 'P5P', 'PGP', 'PMT', 'PPU', 'PSU', 'PU', 'PYO', 'QUO', 'RIA', 'RSQ', 'RUS', 'S4C', 'SRA', 'SSU', 'SUR', 'T6A', 'TPG', 'U2L', 'U2P', 'U31', 'U34', 'U36', 'U37', 'U8U', 'UAR', 'UD5', 'UMP', 'UR3', 'URD', 'US5', 'XTS', 'YG', 'YYG', 'ZAD', 'ZBC', 'ZBU', 'ZCY', 'ZGU')
+mod_ref = ('A','C','G','U','DA','DC','DG','DT','10C', '125', '126', '127', '12A', '1MA', '1MG', '1SC', '23G', '2AU', '2MA', '2MG', '2MU', '2OM', '3AU', '3MU', '3TD', '4OC', '4SU', '5BU', '5FA', '5FU', '5IC', '5MC', '5MU', '6IA', '70U', '7MG', '8AN', 'A23', 'A2L', 'A2M', 'A3P', 'A44', 'A5M', 'A5O', 'AET', 'AP7', 'AVC', 'C2L', 'C31', 'C43', 'CBV', 'CCC', 'CG1', 'CH', 'CNU', 'CSF', 'FHU', 'G25', 'G2L', 'G46', 'G48', 'G7M', 'GAO', 'GDP', 'GH3', 'GOM', 'GRB', 'GTP', 'H2U', 'IC', 'IG', 'IU', 'KAG', 'LCA', 'M2G', 'M4C', 'M5M', 'MA6', 'MAD', 'MGQ', 'MGV', 'MIA', 'MNU', 'MTU', 'N5M', 'N6G', 'O2G', 'OMC', 'OMG', 'OMU', 'ONE', 'P5P', 'PGP', 'PMT', 'PPU', 'PSU', 'PU', 'PYO', 'QUO', 'RIA', 'RSQ', 'RUS', 'S4C', 'SRA', 'SSU', 'SUR', 'T6A', 'TPG', 'U2L', 'U2P', 'U31', 'U34', 'U36', 'U37', 'U8U', 'UAR', 'UD5', 'UMP', 'UR3', 'URD', 'US5', 'XTS', 'YG', 'YYG', 'ZAD', 'ZBC', 'ZBU', 'ZCY', 'ZGU')
 
 class Loader(core.SimpleLoader):
     """A class to load rotation matrices into the database.
@@ -26,7 +25,6 @@ class Loader(core.SimpleLoader):
     allow_no_data = True                    # pipeline won't crash when we pass back no data
     # has_data = False
 
-
     # Organize a list of unit ids into a list of lists, one PDB id at a time
     def group_units(self, units_list):
 
@@ -34,7 +32,7 @@ class Loader(core.SimpleLoader):
 
 
     def get_units_without_centers(self,pdb):
-        """ Query the database to find all units with no rotation matrix.
+        """ Query the database to find all units with no centers at all
         This will only return units from the tuple mod_ref
         """
 
@@ -44,11 +42,18 @@ class Loader(core.SimpleLoader):
             centers = mod.UnitCenters
 
             query = session.query(info.unit_id).\
-                            outerjoin(centers, centers.unit_id == info.unit_id).\
-                            filter(centers.unit_id == None).\
                             filter(info.unit.in_(mod_ref))
 
-        return [r.unit_id for r in query]
+            is_nt = [r.unit_id for r in query]
+
+            query = session.query(info.unit_id).\
+                            outerjoin(centers, centers.unit_id == info.unit_id).\
+                            filter(centers.name == 'nt_phosphate').\
+                            filter(info.unit.in_(mod_ref))
+
+            has_nt_phosphate = [r.unit_id for r in query]
+
+        return list(set(is_nt) - set(has_nt_phosphate))
 
 
     def query(self, session, pdb):
@@ -127,17 +132,18 @@ class Loader(core.SimpleLoader):
                     for residue in structure.residues():
                         if residue.unit_id() in unit_id_list:
                             foundone = True
-                            print('Adding centers for %s' % residue.unit_id())
-                            self.logger.info('Adding centers for %s' % residue.unit_id())
+                            print('Adding backbone centers for %s' % residue.unit_id())
+                            self.logger.info('Adding backbone centers for %s' % residue.unit_id())
                             for name in residue.centers.definitions():
-                                center = residue.centers[name]
-                                if len(center) == 3:
-                                    yield mod.UnitCenters(unit_id=residue.unit_id(),
-                                                          name=name,
-                                                          pdb_id=pdb_id,      # use current pdb_id, not pdb the list
-                                                          x=float(center[0]),
-                                                          y=float(center[1]),
-                                                          z=float(center[2]))
+                                if not name == "base":
+                                    center = residue.centers[name]
+                                    if len(center) == 3:
+                                        yield mod.UnitCenters(unit_id=residue.unit_id(),
+                                                              name=name,
+                                                              pdb_id=pdb_id,      # use current pdb_id, not pdb the list
+                                                              x=float(center[0]),
+                                                              y=float(center[1]),
+                                                              z=float(center[2]))
 
                     if not foundone:
                         print("No matches to %s" % unit_id_list)
