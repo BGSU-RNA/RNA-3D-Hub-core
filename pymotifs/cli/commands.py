@@ -149,7 +149,7 @@ def cli(ctx, **options):
 #@click.option('--before-date', default=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
 #              help='Get files posted before DATE (YYYY-MM-DD)')
 @click.option('--before-date', default=datetime.strftime(datetime.now(), '%Y-%m-%d'),
-              help='Get files posted before DATE (YYYY-MM-DD)')
+              help='Get files posted on or before DATE (YYYY-MM-DD)')
 #@click.option('--before-date', default=datetime.now(),
 #              help='Get files posted before DATE (YYYY-MM-DD)')
 @click.option('--exclude', multiple=True, type=PDB,

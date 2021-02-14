@@ -58,6 +58,9 @@ class RnaPdbsHelper(object):
         else:
             latest_date = "3000-01-01"   # far in the future
 
+        logger.info('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
+        print('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
+
         polytypes = ["RNA","NA-hybrid"]
         resultIDs = []
 
@@ -73,7 +76,7 @@ class RnaPdbsHelper(object):
             for item in jsonR["result_set"]:
                 resultIDs.append(item["identifier"])
 
-        print("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
+        print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
         logger.info("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
 
         return(sorted(resultIDs))

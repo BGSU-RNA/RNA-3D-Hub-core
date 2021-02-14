@@ -115,7 +115,7 @@ class QualityBase(Representative):
         return ordered + self.sort_by_quality(rest)
 
     def __call__(self, given):
-        self.logger.info("Selecting representative for %s", given)
+        self.logger.info("Selecting representative for %s", given['name']['full'])
         with_quailty = self.load_quality(given['members'])
         candidates = self.select_candidates(with_quailty)
         ordered_by_quality = self.sort_by_quality(candidates)

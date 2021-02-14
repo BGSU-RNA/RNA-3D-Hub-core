@@ -190,7 +190,7 @@ class Loader(core.SimpleLoader):
 
         if GeneratePickleFiles:
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
-            # takes about 10 minutes total
+            # takes about 2 1/3 minutes on production in December 2020
             self.logger.info('Getting the unit_id to experimental sequence position table')
             with self.session() as session:
                 EM = mod.ExpSeqUnitMapping
@@ -211,21 +211,47 @@ class Loader(core.SimpleLoader):
                 pickle.dump(unit_to_position, open("unit_to_position.pickle", "wb" ), 2)
                 self.logger.info('Wrote pickle file unit_to_position.pickle')
 
+            unit_to_position = {}     # hopefully clear this from memory
+
+        if GeneratePickleFiles:
+            # takes about 6.5 minutes on production in December 2020
             self.logger.info('Getting the position to position mappings')
-            with self.session() as session:
-                CP = mod.CorrespondencePositions
-                query = session.query(CP.exp_seq_position_id_1,CP.exp_seq_position_id_2).select_from(CP)
 
-                count = 0
-                position_to_position = defaultdict(list)
-                for r in query:
-                    position_to_position[r.exp_seq_position_id_1].append(r.exp_seq_position_id_2)
-                    count += 1
-                self.logger.info('Got %d position to position correspondences' % count)
-                pickle.dump(position_to_position, open("position_to_position.pickle", "wb" ), 2)
-                self.logger.info('Wrote pickle file position_to_position.pickle')
+            position_to_position = defaultdict(list)
+            count = 0
 
+            i = 0
+            j = 1
+            newcount = 1
 
+            while j < 9999:
+                if newcount == 0:
+                    j = 9999            # this will be the last query, check for very large numbers
+                else:
+                    j = i+1
+
+                with self.session() as session:
+                    CP = mod.CorrespondencePositions
+                    query = session.query(CP.exp_seq_position_id_1,CP.exp_seq_position_id_2).\
+                    select_from(CP).\
+                    filter(CP.exp_seq_position_id_1 < 100000*j).\
+                    filter(CP.exp_seq_position_id_1 >= 100000*i)
+
+                    newcount = 0
+                    for r in query:
+                        position_to_position[r.exp_seq_position_id_1].append(r.exp_seq_position_id_2)
+                        count += 1
+                        newcount += 1
+
+                    self.logger.info('Total of %10d position to position correspondences, id up to %d' % (count,100000*j))
+
+                i = i + 1
+
+            pickle.dump(position_to_position, open("position_to_position.pickle", "wb" ), 2)
+            self.logger.info('Wrote pickle file position_to_position.pickle')
+            self.logger.info('Maximum exp_seq_position_id_1 is %d' % max(position_to_position.keys()))
+
+            position_to_position = {}   # hopefully clear the memory
 
 
         # to speed things up when debugging, return this (first,seconds) list for T.th. LSU
@@ -241,6 +267,9 @@ class Loader(core.SimpleLoader):
 #        self.logger.info("Skipping grouping on rnatest, just using a group of 350 chains")
 #        return [[57418L, 57308L, 71006L, 38366L, 71116L, 38030L, 80391L, 76219L, 37825L, 73358L, 36300L, 50042L, 45592L, 57473L, 57363L, 62808L, 50813L, 47130L, 47460L, 52283L, 53180L, 56107L, 47745L, 47186L, 47516L, 52880L, 92548L, 63568L, 92440L, 38142L, 92660L, 80271L, 38197L, 92604L, 92386L, 38421L, 71061L, 92494L, 71171L, 92716L, 73483L, 74619L, 74735L, 74793L, 72414L, 45654L, 61431L, 64207L, 70520L, 70637L, 70579L, 70521L, 52685L, 47131L, 47461L, 53045L, 54162L, 48272L, 52740L, 52855L, 53628L, 47517L, 47187L, 88513L, 53100L, 62482L, 62487L, 88535L, 92332L, 38254L, 69443L, 37770L, 37543L, 76159L, 80511L, 80332L, 84529L, 70812L, 37374L, 63141L, 37712L, 37598L, 70922L, 63623L, 90791L, 90682L, 90792L, 90500L, 66783L, 66563L, 66673L, 60827L, 59337L, 83902L, 77119L, 60883L, 88026L, 61618L, 12022L, 57819L, 57930L, 57707L, 34296L, 58041L, 58097L, 34352L, 57875L, 57763L, 90126L, 74677L, 72356L, 72298L, 44106L, 45246L, 64151L, 68224L, 61487L, 73592L, 34408L, 34184L, 34518L, 34463L, 58517L, 70696L, 52905L, 56049L, 47689L, 52308L, 50871L, 26577L, 34974L, 34902L, 63452L, 37319L, 70867L, 37656L, 84528L, 80331L, 80272L, 80512L, 80572L, 80452L, 38309L, 69498L, 38085L, 63508L, 90442L, 84647L, 83611L, 76091L, 36378L, 66444L, 87970L, 61563L, 67166L, 61681L, 66893L, 77063L, 68006L, 90235L, 64726L, 58770L, 59627L, 59409L, 68223L, 64942L, 65051L, 66502L, 61735L, 67334L, 66948L, 66618L, 66838L, 67222L, 66728L, 12023L, 49296L, 49576L, 48821L, 59045L, 73519L, 72529L, 82922L, 70578L, 70697L, 52960L, 54946L, 34986L, 36983L, 70757L, 37431L, 37095L, 34072L, 63085L, 37207L, 80571L, 80451L, 37262L, 37150L, 37486L, 37038L, 34126L, 84646L, 76090L, 90382L, 59128L, 58458L, 48271L, 83958L, 83846L, 65273L, 67278L, 64834L, 58544L, 64260L, 68115L, 90019L, 58545L, 59410L, 64943L, 65328L, 84014L, 49352L, 48647L, 48705L, 57985L, 59102L, 71993L, 47630L, 44289L, 12197L, 44345L, 45655L, 59237L, 60308L, 72243L, 86652L, 86534L, 86475L, 86357L, 48217L, 46008L, 54889L, 50928L, 50697L, 62469L, 51014L, 76220L, 62561L, 83667L, 34240L, 34574L, 60299L, 90127L, 60307L, 68007L, 64261L, 68116L, 90020L, 49063L, 49520L, 49632L, 49464L, 49408L, 48763L, 48912L, 5665L, 5666L, 71919L, 71968L, 45303L, 59236L, 86416L, 35563L, 86593L, 62030L, 70638L, 53155L, 48273L, 76160L, 80392L, 87080L, 87194L, 64727L, 90236L, 59338L, 67036L, 49856L, 49800L, 49912L, 71869L, 43993L, 69408L, 53571L, 46066L, 19153L, 64835L, 58771L, 59628L, 65052L, 49688L, 92605L, 87652L, 87676L, 74868L, 74894L, 87196L, 63453L, 63086L, 63142L, 63509L, 92717L, 59129L, 49744L, 92549L, 62999L, 62909L, 48218L, 50755L, 92661L, 90558L, 48623L, 45593L, 54163L, 84271L, 84289L, 53887L, 48956L, 76101L, 86594L, 86358L, 86417L, 86535L, 86476L, 52856L, 52686L, 52309L, 52881L, 87626L, 87653L, 52284L, 52741L, 84245L, 84267L, 86653L, 62031L, 87135L, 17719L, 46009L, 46067L]]
 #        return [[52741L, 84245L, 84267L, 86653L, 62031L, 87135L, 17719L, 46009L, 46067L]]
+
+        # large set of chains on production
+#        return [[5665L, 5666L, 12022L, 12023L, 12197L, 17719L, 19153L, 26577L, 34176L, 34230L, 34288L, 34344L, 34400L, 34456L, 34512L, 34567L, 34622L, 34678L, 35030L, 35102L, 35114L, 35691L, 36434L, 36512L, 36837L, 36938L, 37028L, 37523L, 37578L, 37635L, 37690L, 37747L, 37802L, 37859L, 37914L, 37971L, 38026L, 38083L, 38138L, 38196L, 38252L, 38310L, 38365L, 38578L, 38633L, 38690L, 38745L, 38802L, 38857L, 38914L, 38969L, 44094L, 44207L, 44390L, 44446L, 45347L, 45404L, 45693L, 45694L, 45755L, 45756L, 46109L, 46110L, 46167L, 46168L, 47231L, 47232L, 47287L, 47288L, 47561L, 47562L, 47617L, 47618L, 47731L, 47790L, 47846L, 48318L, 48319L, 48372L, 48373L, 48374L, 48724L, 48748L, 48806L, 48864L, 48922L, 49013L, 49057L, 49164L, 49397L, 49453L, 49509L, 49565L, 49621L, 49677L, 49733L, 49789L, 49845L, 49901L, 49957L, 50013L, 50143L, 50798L, 50856L, 50914L, 50972L, 51029L, 51115L, 52384L, 52385L, 52409L, 52410L, 52786L, 52787L, 52841L, 52842L, 52956L, 52957L, 52981L, 52982L, 53006L, 53061L, 53146L, 53201L, 53256L, 53281L, 53672L, 53729L, 53988L, 54263L, 54264L, 54990L, 55047L, 56150L, 56208L, 57409L, 57464L, 57519L, 57574L, 57808L, 57864L, 57920L, 57976L, 58031L, 58086L, 58142L, 58198L, 58252L, 58253L, 58308L, 58309L, 58809L, 58868L, 58895L, 58896L, 59121L, 59122L, 59396L, 59453L, 59479L, 59480L, 59587L, 59588L, 59688L, 59689L, 59760L, 59761L, 59978L, 59979L, 60650L, 60658L, 60659L, 61278L, 61334L, 61628L, 61629L, 61684L, 61685L, 61753L, 61808L, 61908L, 61964L, 62040L, 62095L, 62162L, 62216L, 62523L, 62524L, 63177L, 63190L, 63195L, 63269L, 63538L, 63594L, 63649L, 63650L, 63875L, 63876L, 63983L, 63984L, 64091L, 64092L, 64200L, 64201L, 64410L, 64465L, 65260L, 65318L, 65379L, 65434L, 65489L, 65544L, 65599L, 65654L, 65709L, 65764L, 65852L, 65982L, 66038L, 66094L, 66150L, 67305L, 67306L, 67414L, 67415L, 67522L, 67523L, 68840L, 69682L, 69737L, 69952L, 69953L, 70010L, 70011L, 70069L, 70070L, 70128L, 70129L, 70681L, 70731L, 70780L, 70805L, 70861L, 70916L, 70971L, 71026L, 71081L, 71136L, 71191L, 71246L, 71721L, 71776L, 71834L, 71892L, 72007L, 72196L, 72943L, 73366L, 73424L, 73482L, 73697L, 73922L, 73948L, 74143L, 74144L, 74154L, 74827L, 75507L, 75687L, 75688L, 75747L, 75748L, 76952L, 76953L, 77012L, 77013L, 77072L, 77073L, 77132L, 77133L, 77192L, 77193L, 77444L, 77445L, 79102L, 79158L, 81759L, 83139L, 83140L, 83190L, 83212L, 83216L, 83234L, 83400L, 83456L, 83512L, 83568L, 83870L, 83871L, 84314L, 84370L, 84881L, 84882L, 84940L, 84941L, 84999L, 85000L, 85179L, 85235L, 86141L, 86142L, 86200L, 86201L, 86259L, 86260L, 86302L, 86328L, 86329L, 86352L, 87205L, 87227L, 87334L, 87335L, 87441L, 87442L, 87550L, 87551L, 88697L, 88755L, 88813L, 89098L, 89546L, 89655L, 89656L, 90115L, 90170L, 90229L, 90231L, 91747L, 91801L, 91855L, 91909L, 91963L, 91964L, 92019L, 92020L, 92075L, 92076L, 92131L, 92132L, 93322L, 93377L, 93432L, 93487L, 94416L, 94472L, 94661L, 94716L, 94834L, 95824L, 95880L, 96510L, 96566L, 96622L, 96678L, 97587L, 97697L, 98518L, 98573L, 98628L, 98683L, 98739L, 98814L, 98822L, 98823L, 98832L, 98833L, 99105L, 99161L, 101081L, 101082L, 101138L, 101139L, 101197L, 101198L, 101254L, 101255L, 101313L, 101369L, 102328L, 102382L, 102437L, 102492L, 102547L, 103503L, 103559L, 104976L, 105011L, 107367L, 107423L, 107479L, 107535L, 107591L, 107646L, 107701L, 107756L, 107894L, 108064L, 108065L, 108121L, 108177L, 108178L, 108235L, 108236L, 108293L, 108294L, 108351L, 108352L, 108409L, 108466L, 108523L, 108524L, 108581L, 108582L, 108639L, 108640L, 108697L, 108698L, 108755L, 108756L, 108878L, 109224L, 109225L, 109283L, 109284L, 109342L, 109343L, 109401L, 109402L, 109460L, 109461L, 109519L, 109520L, 109578L, 109579L, 109637L, 109638L, 109696L, 109697L, 109755L, 109756L, 110154L, 111773L, 111827L, 111881L, 111935L, 113121L, 113176L, 113231L, 113286L, 113305L, 113311L, 113371L, 113377L, 113437L, 113443L, 113503L, 113509L, 113568L, 113574L, 113632L, 113639L, 113697L, 113704L, 113762L, 113769L, 113827L, 113834L, 113892L, 113899L, 113957L, 113964L, 114022L, 114029L, 114087L, 114094L, 114152L, 114159L, 114219L, 114224L, 114349L, 114357L, 114417L, 114425L, 114485L, 114493L, 114553L, 114561L, 114622L, 114630L, 114690L, 114697L, 114757L, 114764L, 114824L, 114831L, 114891L, 114897L, 116021L, 116065L, 116077L, 116122L, 116509L, 116575L, 116637L, 116697L, 116760L, 116822L, 117665L, 117740L, 120115L, 120170L, 120350L, 120351L, 120810L, 120859L, 120922L, 120974L, 121032L, 121088L, 121961L, 121962L, 122073L, 122074L, 122291L, 122292L]]
 
 
         # Group PDB ids by species and sequence
@@ -930,54 +959,77 @@ class Loader(core.SimpleLoader):
         self.logger.info("data: %d discrepancies needed in this group" % (L*(L-1)/2))
 
         # from the list of chain_ids, find all pairs that already have a discrepancy computed
-        self.logger.info("data: Finding existing discrepancy data")
+        already_computed = []
+        already_computed_discrepancy = []
         sim = mod.ChainChainSimilarity
         with self.session() as session:
             query = session.query(sim).\
                 filter(or_(and_(sim.chain_id_1.in_(chain_ids),sim.chain_id_2.in_(chain_ids))))
 
-            already_computed = []
-            already_computed_discrepancy = []
             for r in query:
-                already_computed.append((r.chain_id_1,r.chain_id_2))
-                already_computed_discrepancy.append((r.chain_id_1,r.chain_id_2,r.discrepancy))
+                if r.chain_id_1 != r.chain_id_2:
+                    already_computed.append((r.chain_id_1,r.chain_id_2))
+                    already_computed_discrepancy.append((r.chain_id_1,r.chain_id_2,r.discrepancy))
         self.logger.info("data: Found %d discrepancy values already calculated" % (len(already_computed)/2))
 
-        # retrieve chain information for all chains once and store the data
-        # 50 seconds for T.th. SSU on rnatest in December 2020
-        self.logger.info("data: Retrieving chain information once for each chain")
-        chain_info = {}
-        for chain_id in chain_ids:
-            chain_info[chain_id] = self.info(chain_id)
+        # debugging
+        # figure out why more discrepancies are computed than are needed in some cases
+        if len(already_computed)/2 > L*(L-1)/2:
+            self.logger.info("Many groups on production have duplicate entries of discrepancies.  Not sure why.  Sometimes the discrepancy differs as well.")
+
+            # uncomment the code below to see many, many examples
+            if 0 > 1:
+                already_computed_discrepancy = sorted(already_computed_discrepancy)
+                for i in range(0,len(already_computed_discrepancy)-1):
+                    if already_computed_discrepancy[i][1] == already_computed_discrepancy[i+1][1] and already_computed_discrepancy[i][0] == already_computed_discrepancy[i+1][0]:
+                        self.logger.info("Duplicate entry of chains %d and %d with discrepancies %10.7f and %10.7f" % (already_computed_discrepancy[i][0], already_computed_discrepancy[i][1], already_computed_discrepancy[i][2], already_computed_discrepancy[i+1][2]))
 
         # loop over pairs of chain ids in this group, skipping those that already have discrepancy calculated, look up corr_id
-        # This took about 10 minutes on the T.th. SSU group of 451 chains on rnatest in December 2020,
-        # possibly the slowest part of this whole procedure.  That is partly because there were 44,000
-        # discrepancies to be calculated.  It is certainly because of the database query here.
-        self.logger.info("data: Organizing pairs of chains that need to be computed")
+        check_pairs = sorted(list(set(it.combinations(chain_ids, 2)) - set(already_computed)))
+        self.logger.info("data: Looking up correspondence ids for %d pairs of chains that need to be computed" % len(check_pairs))
+
         required_pairs = []
-        for chain1_id in chain_ids:
-            info1 = chain_info[chain1_id]
-            for chain2_id in chain_ids:
-                info2 = chain_info[chain2_id]
-                if chain1_id < chain2_id and not (chain1_id, chain2_id) in already_computed:
-                    corr_id = self.corr_id(chain1_id, chain2_id)
-                    if corr_id is None:
-                        self.logger.info("data: No correspondence id between %s and %s" % (info1['ife_id'],info2['ife_id']))
-                        # Note: cannot store a discrepancy with a null correspondence id
-                    else:
-                        required_pairs.append((corr_id,chain1_id,chain2_id))
+        log_count = 0
+        chain_info = {}
+
+        for (chain1_id,chain2_id) in check_pairs:
+            corr_id = self.corr_id(chain1_id, chain2_id)
+            if corr_id is None:
+                if log_count < 20:
+                    if not chain1_id in chain_info:
+                        chain_info[chain1_id] = self.info(chain1_id)
+                    if not chain2_id in chain_info:
+                        chain_info[chain2_id] = self.info(chain2_id)
+                    info1 = chain_info[chain1_id]
+                    info2 = chain_info[chain2_id]
+
+                    self.logger.info("data: No correspondence id between chains %s %s and %s %s" % (info1['ife_id'],chain1_id,info2['ife_id'],chain2_id))
+                    log_count = log_count + 1
+                else:
+                    self.logger.info("data: No correspondence id between chains %s and %s" % (chain1_id,chain2_id))
+                # Note: cannot store a discrepancy with a null correspondence id
+            else:
+                required_pairs.append((corr_id,chain1_id,chain2_id))
         self.logger.info("data: Found %d discrepancy values needing to be calculated" % len(required_pairs))
 
 
 
-        Recompute = True
+        # This block is for debugging, to check to see if we get the same discrepancies as before
+        Recompute = True   # run the debugging
         Recompute = False
-
 
         # check to see that we get the same discrepancy as before for some cases
         # this is for debugging; generally the program will be run with Recompute = False
         if Recompute and len(already_computed_discrepancy) > 0:
+
+            # retrieve chain information for all chains once and store the data
+            # 50 seconds for T.th. SSU on rnatest in December 2020
+
+            self.logger.info("data: Retrieving chain information once for each chain")
+            chain_info = {}
+            for chain_id in chain_ids:
+                chain_info[chain_id] = self.info(chain_id)
+
             # takes about 44 seconds on rnatest in December 2020
             self.logger.info("Loading unit to position correspondences")
             unit_to_position = pickle.load(open("unit_to_position.pickle","rb"))
@@ -1033,7 +1085,7 @@ class Loader(core.SimpleLoader):
 
                     # gather matching centers and rotations for these chains
                     [c1, c2, r1, r2] = self.gather_matching_centers_rotations(unit_pairs,allunitdictionary)
-                    self.logger.info("data: Gathered matching centers and rotations")
+                    self.logger.info("data: Got matching centers and rotations")
 
                     # compute the discrepancy between these IFEs
                     # if wrong numbers of matched nucleotides, discrepancy will be -1
@@ -1043,7 +1095,10 @@ class Loader(core.SimpleLoader):
                     self.logger.info("Previous discrepancy %0.7f" % (discrepancy))
                     self.logger.info("New      discrepancy %0.7f" % (discrepancies[0]["discrepancy"]))
 
-                    if abs(10000000*(discrepancy-discrepancies[0]["discrepancy"])) > 1:
+                    if abs(10000000*(discrepancy-discrepancies[0]["discrepancy"])) > 1000:
+                        self.logger.info("Problem: old and new discrepancies really don't agree")
+
+                    if abs(10000000*(discrepancy-discrepancies[0]["discrepancy"])) > 10:
                         self.logger.info("Problem: old and new discrepancies don't agree")
 
 
@@ -1066,22 +1121,33 @@ class Loader(core.SimpleLoader):
 
             allunitdictionary = defaultdict()            # store up centers and rotations
 
-            current = 1
+            current = 0
             chain1_seen = set()                          # count how many times a specific chain1 is seen
             for (corr_id,chain1_id,chain2_id) in required_pairs:
 
-                self.logger.info("data: Computing discrepancy %d of %d for this group" % (current,len(required_pairs)))
                 current += 1
+                self.logger.info("data: Computing discrepancy %d of %d for this group" % (current,len(required_pairs)))
 
                 chain1_seen.add(chain1_id)
                 if len(chain1_seen) > 20:
                     chain1_seen = set()
                     allunitdictionary = defaultdict()    # avoid accumulating data forever; reset sometimes
 
+                # Store chain info so that each one is only looked up once.
+                # It would seem to be better to just retrieve all of them at once,
+                # but that crashed the pipeline once with "QueuePool limit overflow"
+                # so it seems better to do them one by one.
+
+                if not chain1_id in chain_info:
+                    chain_info[chain1_id] = self.info(chain1_id)
+                if not chain2_id in chain_info:
+                    chain_info[chain2_id] = self.info(chain2_id)
+
                 info1 = chain_info[chain1_id]
                 info2 = chain_info[chain2_id]
 
-                # will need to recognize multiple chains for IFEs made of more than one chain; currently only 1st chain is used
+                # Future work:
+                # Recognize multiple chains for IFEs made of more than one chain; currently only 1st chain is used
 
                 # new method
                 self.logger.info("data: Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
@@ -1090,8 +1156,9 @@ class Loader(core.SimpleLoader):
                 # filter out units with wrong symmetry or alt id
                 unit_pairs = self.filter_unit_correspondences(unit_pairs,info1,info2)
 
+
                 """
-                # old method
+                # old method for getting correspondences
                 self.logger.info("data: Query for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
                 old_unit_pairs = self.get_unit_correspondences(corr_id,info1,info2)
 
@@ -1114,7 +1181,7 @@ class Loader(core.SimpleLoader):
 
                 # gather matching centers and rotations for these chains
                 [c1, c2, r1, r2] = self.gather_matching_centers_rotations(unit_pairs,allunitdictionary)
-                self.logger.info("data: Gathered matching centers and rotations")
+                self.logger.info("data: Gathered %d matching centers and rotations for %s and %s, %d of %d in this group" % (len(c1),info1['ife_id'],info2['ife_id'],current,len(required_pairs)))
 
                 # compute the discrepancy between these IFEs
                 # if wrong numbers of matched nucleotides, discrepancy will be -1

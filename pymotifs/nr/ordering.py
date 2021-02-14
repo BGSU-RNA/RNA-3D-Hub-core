@@ -111,8 +111,8 @@ class Loader(core.SimpleLoader):
                     if not nr_name in ordered_nr_class_name:
                         self.logger.info("to_process: need to order release %s class %s" % (nr_release,nr_name))
                         pairs_to_process.append((nr_release,nr_class))
-                    else:
-                        self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
+#                    else:
+#                        self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
 
             return pairs_to_process
 
@@ -158,7 +158,9 @@ class Loader(core.SimpleLoader):
 
             count = query.count()
 
-            self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
+            self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members)" %
+                             (count, class_name[0], class_id, len(results)))
+            self.logger.debug("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
                              (count, class_name[0], class_id, len(results), str(results)))
 
             if not count == len(results):
@@ -553,7 +555,7 @@ class Loader(core.SimpleLoader):
         # self.logger.info("data: members: %s (class_id %s)" % (str(members), class_id))
 
         members_revised = self.members_revised(orig_class_id, orig_release_id)
-        self.logger.info("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
+        self.logger.debug("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
 
         if len(members_revised) <= 2:
             # no need to try to find an ordering, all possible orderings are equivalent
