@@ -42,6 +42,16 @@ class Loader(core.SimpleLoader):
                 distinct()
             return set(r.pdb_id for r in query)
 
+    def known_restricted(self,pdbs):
+        self.logger.info("Querying to find PDBs with distances calculated already")
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.pdb_id).\
+                join(mod.UnitPairsDistances,
+                     mod.UnitPairsDistances.unit_id_1 == mod.UnitInfo.unit_id).\
+                filter(mod.UnitInfo.pdb_id.in_(pdbs)).\
+                distinct()
+            return set(r.pdb_id for r in query)
+
     def to_process(self, pdbs, **kwargs):
         recalculate = kwargs.get('recalculate', False)
         if recalculate is True:
@@ -57,7 +67,11 @@ class Loader(core.SimpleLoader):
         if bool(self.config[self.name].get('recompute')):
             return True
 
-        PDBs_to_process = sorted(set(pdbs) - self.known())
+        if len(pdbs) < 100:
+            PDBs_to_process = sorted(set(pdbs) - self.known_restricted(pdbs))
+        else:
+            PDBs_to_process = sorted(set(pdbs) - self.known())
+
 
         if len(PDBs_to_process) > 0:
             return PDBs_to_process
