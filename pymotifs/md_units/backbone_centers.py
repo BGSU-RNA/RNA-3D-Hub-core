@@ -53,7 +53,11 @@ class Loader(core.SimpleLoader):
 
             has_nt_phosphate = [r.unit_id for r in query]
 
-        return list(set(is_nt) - set(has_nt_phosphate))
+            unit_ids_to_do = list(set(is_nt) - set(has_nt_phosphate))
+
+            print("Found %d unit ids to add backbone centers" % len(unit_ids_to_do))
+
+        return unit_ids_to_do
 
 
     def query(self, session, pdb):
