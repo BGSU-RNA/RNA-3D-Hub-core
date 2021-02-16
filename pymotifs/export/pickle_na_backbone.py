@@ -72,7 +72,8 @@ class Exporter(core.Loader):
 
         self.logger.debug("filename: chain_string: %s" % chain_string)
 
-        return os.path.join("pickle-FR3D",chain_string + "_NA_backbone.pickle")
+        # write directly to web directory, don't keep two copies of the file
+        return os.path.join(self.config['locations']['fr3d_pickle_base'],"units",chain_string + "_NA_phosphate_sugar.pickle")
 
 
     def data(self, ichain, **kwargs):
@@ -164,7 +165,6 @@ class Exporter(core.Loader):
             The components of the IFE-chains to be processed.
         """
 
-        print("pickle_nr_backbone: Given %d pdbs to process" % len(pdbs))
         self.logger.info("Given %d pdbs to process" % len(pdbs))
 
         with self.session() as session:
@@ -182,7 +182,6 @@ class Exporter(core.Loader):
             else:
                 all_pdbs = [(r.pdb_id, r.model, r.chain) for r in query]
 
-            print("pickle_nr_backbone: Found %d pdbs to process" % len(all_pdbs))
             self.logger.info("Found %d pdbs to process" % len(all_pdbs))
 
             return all_pdbs
@@ -210,6 +209,6 @@ class Exporter(core.Loader):
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(uinfo, fh, 2)
 
-        os.system("rsync -u %s %s" % (filename, webroot))
-        self.logger.debug("rsync -u %s %s" % (filename, webroot))
+#        os.system("rsync -u %s %s" % (filename, webroot))
+#        self.logger.debug("rsync -u %s %s" % (filename, webroot))
 
