@@ -68,6 +68,8 @@ class RnaPdbsHelper(object):
         url = url.replace("earliest-date",earliest_date)
         url = url.replace("latest-date",latest_date)
 
+        print("Trying url %s" % url)
+
         for polytype in polytypes:
             currenturl = url.replace("RNA",polytype)
             response = requests.get(currenturl)
