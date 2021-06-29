@@ -145,13 +145,17 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
                         if length(iBulged) == 1 && length(jBulged) == 1 && F2.NT(jBulged).Base ~= Fi.NT(iBulged).Base
                             MM(i,j) = MISMATCHED_BULGE
                             MM(j,i) = MISMATCHED_BULGE
+                        end
                         if length(iBulged) == 1 && length(jBulged) > 1
                             MM(i,j) = MISMATCHED_BULGE
                             MM(j,i) = MISMATCHED_BULGE
+                        end
                         if length(iBulged) > 1 && length(jBulged) == 1
                             MM(i,j) = MISMATCHED_BULGE
                             MM(j,i) = MISMATCHED_BULGE
-
+                        end
+                    end
+                end
             end
         end
     end
