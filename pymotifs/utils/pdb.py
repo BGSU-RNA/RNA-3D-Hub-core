@@ -5,9 +5,9 @@ import datetime
 import requests
 
 from pymotifs import utils
+from pymotifs.tempPDBdata import tempyPDBdata
 
 logger = logging.getLogger(__name__)
-
 
 class GetAllRnaPdbsError(Exception):
     """Raised when when we cannot get a list of all pdbs."""
@@ -68,15 +68,27 @@ class RnaPdbsHelper(object):
         url = url.replace("earliest-date",earliest_date)
         url = url.replace("latest-date",latest_date)
 
-        print("Trying url %s" % url)
+        #print("Trying url %s" % url)
 
-        for polytype in polytypes:
-            currenturl = url.replace("RNA",polytype)
-            response = requests.get(currenturl)
-            jsonR = response.json()
+        try:
+            for polytype in polytypes:
+                currenturl = url.replace("RNA",polytype)
+                response = requests.get(currenturl)
+                jsonR = response.json()
 
-            for item in jsonR["result_set"]:
-                resultIDs.append(item["identifier"])
+                for item in jsonR["result_set"]:
+                    resultIDs.append(item["identifier"])
+        except:
+            if tempyPDBdata["date"] == datetime.strftime(datetime.now(), '%Y-%m-%d'):
+                for polytype in polytypes:
+                    response = tempyPDBdata[polytype]
+                    jsonR = response.json()
+
+                    for item in jsonR["result_set"]:
+                        resultIDs.append(item["identifier"])
+            else:
+                logger.exception(err)
+                raise GetAllRnaPdbsError("Failed getting all PDBs")
 
         print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
         logger.info("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
