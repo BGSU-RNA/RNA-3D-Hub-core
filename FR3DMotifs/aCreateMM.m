@@ -1,12 +1,18 @@
-function MM = aCreateMM(loop_ids,output_dir)
+function [MM] = aCreateMM(loop_ids,output_dir)
 
     tic;
 
+    FILENAME = fullfile(output_dir,'MM_initial.mat');
+
+    % if the file has already been created, use that
+    if exist(FILENAME,'file')
+        MM = load(FILENAME);
+        return
+
     N = length(loop_ids);
 
-    Location = getSearchFolder;
+    SavedSearchLocation = getSearchFolder;
 
-    FILENAME = fullfile(output_dir,'MM_initial.mat');
     NO_CANDIDATES_FILE = 'No_candidates.txt';
 
     NO_MATCH = 10;
@@ -19,11 +25,11 @@ function MM = aCreateMM(loop_ids,output_dir)
 
         fprintf('Loading search data for %s, loop %i out of %i\n', loop_ids{i}, i, N);
 
-        subdir = fullfile(Location, loop_ids{i});
+        subdir = fullfile(SavedSearchLocation, loop_ids{i});
 
         process_no_candidates_file;
         load_search_data;
-        save_intermediate_results;
+        % save_intermediate_results;
 
     end
 
@@ -32,6 +38,7 @@ function MM = aCreateMM(loop_ids,output_dir)
 
     check_never_updated;
 
+    % diagnostic information, printed but not acted on
     checkMatchingMatrix(MM);
 
     toc;
@@ -124,51 +131,3 @@ function MM = aCreateMM(loop_ids,output_dir)
     end
 
 end
-
-
-
-%         targets = cell(1, length(filelist));
-%         for j = 1:length(filelist)
-%             targets{j} = filelist(j).name(13:23);
-%         end
-
-%     to_delete = [];
-%     for i = 1:N;
-%         if all(MM(i,:)<0)
-%             to_delete = [to_delete i]; %#ok<AGROW>
-%         end
-%     end
-
-%     for i = 1:N
-%         for j = 1:N
-%             if MM(i,j) < 0
-%                 disc = aPairwiseSearch(loop_ids{i},loop_ids{j},Location);
-%                 if disc < Inf
-%                     MM(i,j) = disc;
-%                 end
-%             end
-%         end
-%     end
-
-
-%     if ~isempty(to_delete)
-%
-%         MM(to_delete,:) = [];
-%         MM(:,to_delete) = [];
-%
-%         fprintf('\tNo search data about %i files (probably skipped bulges):\n',length(to_delete));
-%         disp(loop_ids(to_delete));
-%         loop_ids(to_delete) = [];
-%
-%     end
-
-%     x = find(diag(MM)<0);
-%     MM(x,:)=[];
-%     MM(:,x)=[];
-%     loop_ids(x)=[];
-%     MM(MM<0) = NO_MATCH;
-
-%     save(FILENAME,'MM','loop_ids');
-
-%     [a,b] = size(MM);
-%     fprintf('\tMatrix dimensions: %i by %i\n',a,b);
