@@ -60,14 +60,17 @@ class ClusterMotifs(core.Base):
         self.fr3d_root = self.config['locations']['fr3d_root']
         self.mlab_input_filename = os.path.join(self.fr3d_root, 'loops.txt')
 
-    def make_release_directory(self, loop_type):
-        """Make a directory for the release files. The directory name will be
-        based off the current time. This should prevent duplicates.
+    def make_release_directory(self, loop_type, release_id):
+        """Make a directory for the release files.
+        The directory name will be based on the current time to avoid duplicatles.
+        Directory name includes loop type and release number.
 
         Parameters
         ----------
         loop_type : str
-            The loop type to create a director for.
+            The loop type to create a directory for.
+        release_id : str
+            The representative release we are working with.
 
         Returns
         -------
@@ -77,7 +80,7 @@ class ClusterMotifs(core.Base):
 
         release_dir = self.config['locations']['releases_dir']
         time_stamp = strftime("%Y-%m-%d_%H:%M", localtime())
-        output_dir = os.path.join(release_dir, loop_type + '_' + time_stamp)
+        output_dir = os.path.join(release_dir, loop_type + '_' + release_id + '_' + time_stamp)
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -202,7 +205,7 @@ class ClusterMotifs(core.Base):
         for filename in glob.glob(scripts):
             os.remove(filename)
 
-    def __call__(self, loop_type, loops):
+    def __call__(self, loop_type, loops, release_id):
         """Launch the main matlab motif clustering pipeline. This will cluster
         motifs of the given type for the given pdb files. This will get all
         valid loops from the best chains and models and then run a series of
@@ -218,7 +221,7 @@ class ClusterMotifs(core.Base):
 
         self._clean_up()
 
-        output_dir = self.make_release_directory(loop_type)
+        output_dir = self.make_release_directory(loop_type, release_id)
         self.make_input_file_for_matlab(loops)
         self.parallel_exec_commands(self.prepare_aAa_commands(loops))
 

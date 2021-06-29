@@ -312,7 +312,7 @@ class Builder(core.Base):
 
         if not directory:
             cluster = ClusterMotifs(self.config, self.session)
-            directory = cluster(loop_type, loops)
+            directory = cluster(loop_type, loops, release_id)
 
         motifs = self.motifs(loop_type, parent_id, release_id, directory)
         known = Known(self.config, self.session)
