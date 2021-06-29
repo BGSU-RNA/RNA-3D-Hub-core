@@ -1,5 +1,8 @@
 # read a postscript file, extract nucleotide sequence and x,y coordinates, with scale and translation applied
-# returns a list of dictionaries, each of which has x_coordinate, y_coordinate, and unit (base)
+# returns a dictionary with two keys:
+#    sequence is the nucleotide sequence as a string
+#    nts is a list of dictionaries, one for each base, each of which has x_coordinate, y_coordinate, and unit (base)
+
 import re
 import hashlib
 

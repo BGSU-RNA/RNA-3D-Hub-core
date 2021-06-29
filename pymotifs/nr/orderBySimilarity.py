@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import squareform
-from random import shuffle
+import random
 import math
 
 def treePenalty(distance,link="average"):
@@ -46,27 +46,11 @@ def treePenalty(distance,link="average"):
 
     return penalty
 
-def treePenalizedPathLength(distance,repetitions=100):
-    n = distance.shape[0]
-    if n > 2:
-        penalizedMatrix = distance + treePenalty(distance)
-        order = multipleGreedyInsertionPathLength(penalizedMatrix,repetitions)
-        order = orientPath(distance,order)
-    else:
-        order = range(0,n)
-    return order
-
-def optimalLeafOrder(distance):
-    Z = linkage(squareform(distance), "average", optimal_ordering = True)
-    dn = dendrogram(Z,no_plot=True)
-
-    return dn['leaves']
-
 def greedyInsertionPathLength(distance, order=[], verbose=False):
     # if no starting ordering
     if len(order) == 0:
         order = range(0,len(distance))
-        shuffle(order)          # random starting ordering
+        random.shuffle(order)          # random starting ordering
     path = order[:2]            # first two points of the current ordering
     score = distance[path[0], path[1]]
 
@@ -134,6 +118,19 @@ def orientPath(distance,path):
         else:
             return path
 
+def treePenalizedPathLength(distance,repetitions=100,seed=None):
+    if seed:
+        random.seed(seed)
+
+    n = distance.shape[0]
+    if n > 2:
+        penalizedMatrix = distance + treePenalty(distance)
+        order = multipleGreedyInsertionPathLength(penalizedMatrix,repetitions)
+        order = orientPath(distance,order)
+    else:
+        order = range(0,n)
+    return order
+
 def reorderSymmetricMatrix(distance, newOrder):
 
     newDistance = np.zeros(distance.shape)
@@ -173,6 +170,12 @@ def imputeNANValues(distance):
 
     return newDistance
 
+def optimalLeafOrder(distance):
+    Z = linkage(squareform(distance), "average", optimal_ordering = True)
+    dn = dendrogram(Z,no_plot=True)
+
+    return dn['leaves']
+
 def testPenaltyMatrix():
     data = [0,1,3,5,7,10]
     distance = np.zeros((len(data),len(data)))
@@ -188,7 +191,10 @@ def testPenaltyMatrix():
         tP = treePenalty(distance,linkage)
         print(tP)
 
-def generateUniformDataset(n,d):
+def generateUniformDataset(n,d,seed=None):
+    if seed:
+        np.random.seed(seed)
+
     points = np.random.uniform(0,1,(n,d))
 
     distance = np.zeros((n,n))
@@ -200,9 +206,13 @@ def generateUniformDataset(n,d):
     return points, distance
 
 def testOrdering():
-    size = 10
-    points, distance = generateUniformDataset(size,3)
-    order = treePenalizedPathLength(distance,size)
+    size = 50
+    points, distance = generateUniformDataset(size,3,2276393)
+    order = treePenalizedPathLength(distance,2*size,39873)
+    print("Points:")
+    print(points)
+    print("Ordering:")
+    print(order)
 
 testOrdering()
 #testPenaltyMatrix()
