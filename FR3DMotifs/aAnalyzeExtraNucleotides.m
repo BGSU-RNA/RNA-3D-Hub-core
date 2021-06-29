@@ -1,8 +1,8 @@
-function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, saveMatFile)
+function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
 
     disp('Analyzing extra nucleotides...');
 
-    if nargin < 3
+    if nargin < 4
         saveMatFile = 1;
     end
 
@@ -16,8 +16,8 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, saveMatFile)
     NEAR_BP_PENALTY = 5;
     STACK_PENALTY   = 6;
     MISMATCHED_BULGE = 6;           % these may need to be integers
-    FILENAME = 'MM_extraNTs.mat';
-    LOGFILE  = 'MM_extraNTs.txt';
+    FILENAME = fullfile(output_dir,'MM_extraNTs.mat');
+    LOGFILE  = fullfile(output_dir,'MM_extraNTs.txt');
 
     % only positive values
     BASEPAIRS  = 1:12;

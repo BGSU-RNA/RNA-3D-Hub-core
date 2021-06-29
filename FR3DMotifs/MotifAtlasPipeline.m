@@ -34,13 +34,13 @@ function [status, err_msg] = MotifAtlasPipeline(output_dir)
         end
 
         disp('Loading search data for all loops');
-        MM = aCreateMM(loop_ids,output_dir);
+        MM = aCreateMM(loop_ids, output_dir);
 
         disp('Analyzing non-matched nucleotides');
-        MM = aAnalyzeExtraNucleotides(MM, loop_ids);
+        MM = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir);
 
         disp('Use best matching direction')
-        MM = aSymmetrizeMatrix(MM, loop_ids);
+        MM = aSymmetrizeMatrix(MM, loop_ids, output_dir);
 
         disp('Identify maximal cliques to form motif groups')
         groups = aMaximumCliques(MM, loop_ids, 1);

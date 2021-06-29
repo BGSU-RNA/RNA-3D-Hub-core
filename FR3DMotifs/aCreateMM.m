@@ -6,7 +6,7 @@ function MM = aCreateMM(loop_ids,output_dir)
 
     Location = getSearchFolder;
 
-    FILENAME = 'MM_initial.mat';
+    FILENAME = fullfile(output_dir,'MM_initial.mat');
     NO_CANDIDATES_FILE = 'No_candidates.txt';
 
     NO_MATCH = 10;
@@ -17,7 +17,7 @@ function MM = aCreateMM(loop_ids,output_dir)
 
     for i = 1:N
 
-        fprintf('Loading search data for loop %i out of %i\n', i, N);
+        fprintf('Loading search data for %s, loop %i out of %i\n', loop_ids{i}, i, N);
 
         subdir = fullfile(Location, loop_ids{i});
 
@@ -28,7 +28,7 @@ function MM = aCreateMM(loop_ids,output_dir)
     end
 
 
-    save(fullfile(output_dir,FILENAME), 'MM', 'loop_ids');
+    save(FILENAME, 'MM', 'loop_ids');
 
     check_never_updated;
 
