@@ -7,8 +7,6 @@ Manual Options
 --------------
 nr_release : str
     The NR release to use, instead of the newest one.
-loop_release : str
-    The Loop release to use, instead of the newest one.
 loop_size_limit : int
     The maximum loop size to use
 loop_exclude_file : str
@@ -38,7 +36,6 @@ from pymotifs.nr.loader import Loader as NrLoader
 from pymotifs.loops.loader import Loader as LoopLoader
 
 Releases = coll.namedtuple('Releases', [
-    'loop',
     'nr',
     'parent',
     'parent_index',
@@ -64,9 +61,10 @@ class Loader(core.MassLoader):
     dependencies = set([NrLoader, LoopLoader])
 
     def nr_release_id(self, before_date=None, **kwargs):
-        """Get the nr release. If no before_date is given then we get the
-        latest, otherwise we get the release for the given date. If no release
-        exists for that date then we fail.
+        """Get the nr release, if not given manually.
+        If no before_date is given then we get the latest,
+        otherwise we get the release for the given date.
+        If no release exists for that date then we fail.
 
         :param date before_date: The date to use.
         :returns: The nr release id.
@@ -88,28 +86,20 @@ class Loader(core.MassLoader):
                 raise core.InvalidState("No nr release on %s", before_date)
             return query.one().nr_release_id
 
-    def loop_release_id(self, before_date=None, **kwargs):
-        """Get the loop release. If no before_date is given then we get the
-        latest, otherwise we get the release for the given date. If no release
-        exists for that date then we fail.
 
-        :param date before_date: The date to use.
-        :returns: The loop release id.
+    def get_nr_release_date(self, nr_release_id):
+        """ Get the date of the specified nr release
         """
 
-        if 'loop_release' in kwargs.get('manual', {}):
-            return kwargs['manual']['loop_release']
-
-        if before_date is None:
-            return LoopReleaseLoader(self.config, self.session).current_id()
-
         with self.session() as session:
-            query = session.query(mod.LoopReleases).\
-                filter_by(date=before_date)
+            query = session.query(mod.NrReleases).\
+                filter_by(nr_release_id=nr_release_id)
 
             if query.count() != 1:
-                raise core.InvalidState("No loop release on %s", before_date)
-            return query.one().loop_release_id
+                raise core.InvalidState("Unclear date for nr release %s", nr_release_id)
+
+            return query.one().date
+
 
     def current_id(self, **kwargs):
         """Get the current motif release id and the index. If there is no
@@ -130,9 +120,21 @@ class Loader(core.MassLoader):
             current = query.one()
             return (current.ml_release_id, current.index)
 
+
+    def next_motif_release_id(self, **kwargs):
+        """Get the next motif id.
+
+        :returns: The next motif id.
+        """
+
+        motif_release, index = self.current_id()
+        mode = self.config['release_mode']['motifs']
+        return rel.next_id(motif_release, mode=mode)
+
+
     def to_process(self, pdbs, **kwargs):
-        """Determine what to should process. This stage works on a set of loop
-        and nr releases.
+        """Determine what to process.
+        This stage works on a set of nr releases.
 
         Returns
         -------
@@ -146,12 +148,12 @@ class Loader(core.MassLoader):
             parent = next_release
 
         return [Releases(
-            self.loop_release_id(**kwargs),
             self.nr_release_id(**kwargs),
             parent,
             parent_index,
             next_release,
         )]
+
 
     def has_data(self, *args, **kwargs):
         """This will always return True because we only want to update if the time
@@ -159,11 +161,13 @@ class Loader(core.MassLoader):
         """
         return False
 
+
     def ifes(self, nr_release_id):
         """Get a listing of all IFE's to use in clustering. The IFE's must be
         from the given list of structures, the ife must be representative for
-        each class and the class should have the given resolution. Also, the
-        structure must be an x-ray structure.
+        each class and the class should have the given resolution.
+        The experimental method must be in MOTIF_ALLOWED_METHODS.
+        This gives a subset of a representative set.
 
         :pdbs: The pdbs to get the best chains and models for.
         :returns: A dictionary mapping from pdb id to a set of the best chains
@@ -191,6 +195,7 @@ class Loader(core.MassLoader):
 
             return [result.ife_id for result in query]
 
+
     def loops_to_exclude(self, **kwargs):
         """Load the loops to exclude. Sometimes for testing usages we want to
         exclude loops from analysis without updating the loop quality checks.
@@ -203,16 +208,16 @@ class Loader(core.MassLoader):
                 exclude.update(line.strip() for line in raw)
         return exclude
 
-    def loops(self, loop_release_id, loop_type, ifes, size_limit=None,
+
+    def loops(self, loop_type, ifes, size_limit=None,
               **kwargs):
         """Get the list of loop ids to use in clustering. These loops must be
         from IFE's in the given list and marked as valid in the loop quality
         step.
+        This is where RNA loops with modified nucleotides get excluded.
 
         Parameters
         ----------
-        loop_release_id : str
-            The loop release id to use.
         loop_type : str
             The type of loop to use, eg, IL, HL.
         ifes : list
@@ -244,7 +249,6 @@ class Loader(core.MassLoader):
                 join(ife_chains,
                      ife_chains.chain_id == chain_info.chain_id).\
                 filter(quality.status == 1).\
-                filter(quality.loop_release_id == loop_release_id).\
                 filter(loops.type == loop_type).\
                 filter(ife_chains.ife_id.in_(ifes)).\
                 filter(~loops.loop_id.in_(BLACKLIST)).\
@@ -260,6 +264,7 @@ class Loader(core.MassLoader):
                                     loop_release_id)
         return sorted(found)
 
+
     def load_and_cache(self, loop_type, releases, folder):
         """This will load the result of running the pipeline and cache the
         data.
@@ -274,15 +279,6 @@ class Loader(core.MassLoader):
         motifs = builder(releases.parent, releases.current, folder)
         self.cache(loop_type, motifs)
 
-    def next_motif_release_id(self, **kwargs):
-        """Get the next motif id.
-
-        :returns: The next motif id.
-        """
-
-        motif_release, index = self.current_id()
-        mode = self.config['release_mode']['motifs']
-        return rel.next_id(motif_release, mode=mode)
 
     def cluster(self, loop_type, releases, ifes, **kwargs):
         """This will cluster all motifs of the given loop type in the given
@@ -310,18 +306,17 @@ class Loader(core.MassLoader):
             try:
                 size_limit = int(size_limit)
             except:
-                self.logger.error("Give size limit %s was not an int",
+                self.logger.error("Given size limit %s was not an int",
                                   size_limit)
                 raise core.InvalidState("Bad size limit")
 
-        loops = self.loops(releases.loop, loop_type, ifes,
-                           size_limit=size_limit, **kwargs)
-        self.logger.info("Found %i loops", len(loops))
-        self.logger.info("Starting to cluster all %s", loop_type)
+        loops = self.loops(loop_type, ifes, size_limit=size_limit, **kwargs)
+        self.logger.info("Found %d %s loops" % (len(loops),loop_type))
+        self.logger.info("Starting to cluster all %s" % loop_type)
         builder = Builder(self.config, self.session)
         motifs = builder(loop_type, releases.parent, releases.current, loops)
         self.cache(loop_type, motifs)
-        self.logger.info("Done clustering %s", loop_type)
+        self.logger.info("Done clustering %s" % loop_type)
         return motifs
 
     def data(self, releases, **kwargs):
@@ -334,14 +329,18 @@ class Loader(core.MassLoader):
         """
 
         ifes = self.ifes(releases.nr)
-        self.logger.info("Found %i ifes", len(ifes))
+        nr_date = self.get_nr_release_date(releases.nr)
 
-        now = kwargs.get('before_date', dt.strftime(dt.now(), '%Y-%m-%d %H:%M:%S'))
+        self.logger.info("Found %d ifes in release %s" % (len(ifes),releases.nr))
+        self.logger.info("Using date %s for release %s" % (nr_date,releases.nr))
 
+
+        """
         if ":" in now:
             nowstring = dt.strftime(dt.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
         else:
             nowstring = now.replace("-","")
+        """
 
         data = []
         for loop_type in self.types:
@@ -350,10 +349,9 @@ class Loader(core.MassLoader):
                 graphml = raw.read().replace('\n', '')
             data.append(mod.MlReleases(ml_release_id=releases.current,
                                        parent_ml_release_id=releases.parent,
-                                       date=now,
+                                       date=nr_date,
                                        type=loop_type,
                                        index=releases.parent_index + 1,
-                                       loop_release_id=releases.loop,
                                        nr_release_id=releases.nr,
                                        graphml=graphml))
 
