@@ -68,9 +68,9 @@ class ClusterMotifs(core.Base):
         Parameters
         ----------
         loop_type : str
-            The loop type to create a directory for.
+            The loop type to create a directory for
         release_id : str
-            The representative release we are working with.
+            The motif release we are creating
 
         Returns
         -------
@@ -89,11 +89,18 @@ class ClusterMotifs(core.Base):
         self.logger.info('Files will be saved in %s' % output_dir)
         return output_dir
 
-    def make_input_file_for_matlab(self, loops):
+    def make_input_file_for_matlab(self, loops, output_dir):
+        # write for Matlab
         with open(self.mlab_input_filename, 'wb') as out:
             out.write(','.join(loops))
 
         self.logger.info('Saved loop_ids into %s' % self.mlab_input_filename)
+
+        # store with the motif release data as well
+        with open(os.path.join(output_dir, 'loops.txt'), 'wb') as out:
+            out.write(','.join(loops))
+
+        self.logger.info('Saved loop_ids into %s' % os.path.join(output_dir, 'loops.txt'))
 
     def parallel_exec_commands(self, cmds):
         """Execute commands in parallel in multiple process.
@@ -222,8 +229,10 @@ class ClusterMotifs(core.Base):
         self._clean_up()
 
         output_dir = self.make_release_directory(loop_type, release_id)
-        self.make_input_file_for_matlab(loops)
+        self.make_input_file_for_matlab(loops, output_dir)
         self.parallel_exec_commands(self.prepare_aAa_commands(loops))
+
+        self.logger.info('Starting Matlab to run MotifAtlasPipeline.m')
 
         mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         [status, err_msg] = \
