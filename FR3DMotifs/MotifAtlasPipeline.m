@@ -22,13 +22,13 @@ function [status, err_msg] = MotifAtlasPipeline(output_dir)
         startLogging(output_dir);
 
         % loops.txt is already written to the output directory
-        loop_ids = fullfile(output_dir,'loops.txt')
+        loop_id_file = fullfile(output_dir,'loops.txt')
 
-        if ischar(loop_ids)
-            loop_ids = parse_loop_id_file(loop_ids);
-        elseif ~iscell(loop_ids)
+        if ischar(loop_id_file)
+            loop_ids = parse_loop_id_file(loop_id_file);
+        elseif ~iscell(loop_id_file)
             status = 1;
-            err_msg = 'Wrong output';
+            err_msg = 'Wrong list of loop ids';
             disp(err_msg);
             return;
         end
