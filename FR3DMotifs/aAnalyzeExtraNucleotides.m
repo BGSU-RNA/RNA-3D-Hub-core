@@ -2,6 +2,8 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
 
     disp('Analyzing extra nucleotides...');
 
+    tic
+
     if nargin < 4
         saveMatFile = 1;
     end
@@ -10,16 +12,18 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
 
     % currently the penalty must be integer because of the database structure
     % penalties are also set in aSymmetrizeMatrix.m
+    % these numbers keep them distinct; helps to track down reasons
     HAIRPIN_STACK_PENALTY1 = 3;
     HAIRPIN_STACK_PENALTY2 = 3;
-    BP_PENALTY      = 4;
-    NEAR_BP_PENALTY = 5;
-    STACK_PENALTY   = 6;
-    MISMATCHED_BULGE = 6;           % these may need to be integers
-    FILENAME = fullfile(output_dir,'MM_extraNTs.mat');
-    LOGFILE  = fullfile(output_dir,'MM_extraNTs.txt');
+    BP_PENALTY             = 4;
+    NEAR_BP_PENALTY        = 5;
+    STACK_PENALTY          = 6;
+    MISMATCHED_BULGE       = 9;
 
-    % only positive values
+    FILENAME = fullfile(output_dir,'MM_extraNTs.mat');
+    LOGFILE  = fullfile(output_dir,'MM_extraNTs.log');
+
+    % internal codes for basepairs, stacking; only positive values
     BASEPAIRS  = 1:12;
     STACKS     = [21:23 121:123];
     NEAR_PAIRS = 101:112;
@@ -29,11 +33,13 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
 
     N = length(MM(1,:));
 
+    fprintf('MM is a %d by %d matrix\n', N, N)
+
     fid = fopen(LOGFILE, 'a');
 
     for i = 1:N
 
-        fprintf('%i out of %i\n',i,N);
+        fprintf('Checking loop %s, %i out of %i against all matched loops\n',loop_ids{i},i,N);
 
         ind = find( MM(i,:) > 0 & MM(i,:) < HAIRPIN_STACK_PENALTY1 );
 
@@ -129,7 +135,7 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
 
             % loop j is an IL with just two cWW pairs as the core
             elseif isInternal && length(coreNts) == 4
-                jBulged = aDetectBulgedBases(F2)
+                jBulged = aDetectBulgedBases(F2);
 
                 % if the other bases of j are all bulged
                 if 4+length(jBulged) == F2.NumNT
@@ -137,28 +143,33 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
                     % load loop i
                     load(getPrecomputedDataAddress(loop_ids{i}), 'File');
                     Fi = File; % original coordinates of loop i
-                    iBulged = aDetectBulgedBases(Fi)
+                    iBulged = aDetectBulgedBases(Fi);
 
                     % loop i has exactly 4 core nts and all others bulged
                     if 4+length(iBulged) == Fi.NumNT
 
                         if length(iBulged) == 1 && length(jBulged) == 1 && F2.NT(jBulged).Base ~= Fi.NT(iBulged).Base
-                            MM(i,j) = MISMATCHED_BULGE
-                            MM(j,i) = MISMATCHED_BULGE
+                            MM(i,j) = MISMATCHED_BULGE;
+                            MM(j,i) = MISMATCHED_BULGE;
+                            annotate_mismatched_single_bulge(MISMATCHED_BULGE);
                         end
                         if length(iBulged) == 1 && length(jBulged) > 1
-                            MM(i,j) = MISMATCHED_BULGE
-                            MM(j,i) = MISMATCHED_BULGE
+                            MM(i,j) = MISMATCHED_BULGE;
+                            MM(j,i) = MISMATCHED_BULGE;
+                            annotate_mismatched_bulges(MISMATCHED_BULGE);
                         end
                         if length(iBulged) > 1 && length(jBulged) == 1
-                            MM(i,j) = MISMATCHED_BULGE
-                            MM(j,i) = MISMATCHED_BULGE
+                            MM(i,j) = MISMATCHED_BULGE;
+                            MM(j,i) = MISMATCHED_BULGE;
+                            annotate_mismatched_bulges(MISMATCHED_BULGE);
                         end
                     end
                 end
             end
         end
     end
+
+    toc
 
     if saveMatFile
         save(FILENAME, 'MM', 'loop_ids');
@@ -202,4 +213,30 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
     end
 
 
+    function [] = annotate_mismatched_single_bulge(penalty)
+
+        comment = {};
+
+        comment{1} = [Fi.NT(iBulged).Base Fi.NT(iBulged).Number];
+        comment{2} = [F2.NT(jBulged).Base F2.NT(jBulged).Number];
+
+        fprintf(fid, '"%s","%s","%i","%s"\n', loop_ids{i}, loop_ids{j}, penalty, aImplode(comment));
+
+    end
+
+    function [] = annotate_mismatched_bulges(penalty)
+
+        comment = {};
+
+        for iB = iBulged
+            comment{end+1} = [Fi.NT(iB).Base Fi.NT(iB).Number];
+        end
+
+        for jB = jBulged
+            comment{end+1} = [F2.NT(jB).Base F2.NT(jB).Number];
+        end
+
+        fprintf(fid, '"%s","%s","%i","%s"\n', loop_ids{i}, loop_ids{j}, penalty, aImplode(comment));
+
+    end
 end
