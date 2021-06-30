@@ -9,36 +9,36 @@ function [groups] = aMaximumCliques(M, names, cutoff)
 
     N = length(M);
     loops = 1:N;
-    
+
     groups = cell(1,N);
     counter = 1;
-    
+
     tempGroups = cell(1,2);
 
     while ~isempty( find(M==0,1) )
 
         % clique = rGetMaximalClique(M); % greedy, fast, less accurate
         clique = rCliqueBB(M); % branch and bound, slower, more accurate
-        
+
         if ~all(M(clique,clique)<=cutoff);
             disp('Problem');
         else
-            fprintf('Valid clique,%i\n',length(clique));
+            fprintf('Valid clique of size %i\n',length(clique));
         end
-                
+
         aCompareAlternativeCliques;
 
         M(clique,:) = 10;
         M(:,clique) = 10;
-        
+
         groups{counter} = names(clique);
     %     groups{counter} = clique;
         counter = counter + 1;
     end
 
-    groups(cellfun(@isempty,groups)) = [];    
-    
-    
+    groups(cellfun(@isempty,groups)) = [];
+
+
     function aCompareAlternativeCliques
 
             C = length(clique);
@@ -58,7 +58,7 @@ function [groups] = aMaximumCliques(M, names, cutoff)
 
                 new_clique = rCliqueBB(tempM);
                 if length(new_clique) == MAX_SIZE
-                    alternative_cliques{end+1} = new_clique;                
+                    alternative_cliques{end+1} = new_clique;
                 end
 
             end
@@ -75,7 +75,7 @@ function [groups] = aMaximumCliques(M, names, cutoff)
 
                     fprintf('\tSwitching to an alternative clique (old disc %f vs new disc %f)\n',MIN_DISC,new_disc);
 
-                    MIN_DISC = new_disc;                
+                    MIN_DISC = new_disc;
 
                 end
 
