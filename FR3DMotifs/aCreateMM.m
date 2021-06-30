@@ -6,8 +6,10 @@ function [MM] = aCreateMM(loop_ids,output_dir)
 
     % if the file has already been created, use that
     if exist(FILENAME,'file')
-        MM = load(FILENAME);
+        disp('Loading MM matrix from MM_initial.mat')
+        load(FILENAME,'MM');
         return
+    end
 
     N = length(loop_ids);
 
