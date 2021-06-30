@@ -236,7 +236,7 @@ class ClusterMotifs(core.Base):
 
         mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         [status, err_msg] = \
-            mlab.MotifAtlasPipeline(self.mlab_input_filename, output_dir, nout=2)
+            mlab.MotifAtlasPipeline(output_dir, nout=2)
 
         if err_msg:
             raise matlab.MatlabFailed(err_msg)
