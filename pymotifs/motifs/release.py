@@ -13,6 +13,8 @@ loop_exclude_file : str
     Name of a file to that contains loops to exclude from clustering. This is
     meant for testing out different excluding procedures without update loop
     quality. The file should contain a single loop id per line, and only that.
+loop_type : str
+    The specific loop type to process
 """
 
 import datetime as dt
@@ -342,8 +344,13 @@ class Loader(core.MassLoader):
             nowstring = now.replace("-","")
         """
 
+        loop_types = self.types
+
+        if 'loop_type' in kwargs.get('manual', {}):
+            loop_types = [kwargs['manual']['loop_type']]
+
         data = []
-        for loop_type in self.types:
+        for loop_type in loop_types:
             motifs = self.cluster(loop_type, releases, ifes, **kwargs)
             with open(motifs['graph'], 'rb') as raw:
                 graphml = raw.read().replace('\n', '')
