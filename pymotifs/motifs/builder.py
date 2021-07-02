@@ -127,8 +127,15 @@ class Combiner(core.Base):
         """
 
         loader = MotifListLoader(self.config, self.session)
+        c = 0
+        name_dict = {}
         for name, loop in loader(directory):
             data[name]['members'].append(loop)
+            c += 1
+            name_dict[name] = 1
+        self.logger.info('Found %d loops in MotifListLoader' % c)
+        self.logger.info('Found %d names in MotifListLoader' % len(name_dict.keys()))
+
         return data
 
     def positions(self, directory, data):
@@ -136,14 +143,27 @@ class Combiner(core.Base):
         """
 
         loader = MotifPositionLoader(self.config, self.session)
+        c = 0
+        name_dict = {}
         for name, entry in loader(directory):
             data[name]['positions'].append(entry)
+            c += 1
+            name_dict[name] = 1
+        self.logger.info('Found %d positions in MotifPositionLoader' % c)
+        self.logger.info('Found %d names in MotifPositionLoader' % len(name_dict.keys()))
         return data
 
     def ordering(self, directory, data):
+
         loader = MotifLoopOrder(self.config, self.session)
+        c = 0
+        name_dict = {}
         for name, entry in loader(directory):
             data[name]['ordering'].append(entry)
+            c += 1
+            name_dict[name] = 1
+        self.logger.info('Found %d positions in MotifLoopOrder' % c)
+        self.logger.info('Found %d names in MotifLoopOrder' % len(name_dict.keys()))
         return data
 
     def signature(self, directory, data):
