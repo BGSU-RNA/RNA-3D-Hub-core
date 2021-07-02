@@ -25,7 +25,7 @@ function [] = aAaSearches(loop_ids, start, stop, exactSizeLimit)
 
     for i = start:stop
 
-        disp(i);
+        fprintf('aAaSearches.m working on loop %4d, start=%4d, stop=%4d\n', i, start, stop);
         destination = [getSearchFolder filesep loop_ids{i}];
         if ~exist(destination,'dir'), mkdir(destination); end
 

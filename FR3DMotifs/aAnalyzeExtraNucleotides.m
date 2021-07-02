@@ -1,6 +1,6 @@
 function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
 
-    disp('Analyzing extra nucleotides...');
+    disp('aAnalyzeExtraNucleotides: Analyzing extra nucleotides...');
 
     tic
 
@@ -39,7 +39,7 @@ function [MM] = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir, saveMatFile)
 
     for i = 1:N
 
-        fprintf('Checking loop %s, %i out of %i against all matched loops\n',loop_ids{i},i,N);
+        fprintf('aAnalyzeExtraNucleotides: Checking loop %s, %i out of %i against all matched loops\n',loop_ids{i},i,N);
 
         ind = find( MM(i,:) > 0 & MM(i,:) < HAIRPIN_STACK_PENALTY1 );
 

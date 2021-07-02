@@ -1,6 +1,8 @@
 function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
 
-    disp('Making the matrix symmetric...');
+    disp('aSymmetrizeMatrix: Making the matrix symmetric...');
+
+    tic
 
     if nargin < 4
         saveMatFile = 1;
@@ -8,7 +10,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
 
     N = length(MM);
     Location = getSearchFolder;
-    verbose = 1;
+    verbose = 0;
 
     BASEPAIR_MISMATCH  = 7;
     BASESTACK_MISMATCH = 8;
@@ -18,13 +20,13 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
     SYMMETRIC_PAIRS = [1 2 7 8 11 12]; % cWW, tWW, cHH, tHH, cSS, tSS
 
     FILENAME = fullfile(output_dir,'MM_symmetrize.mat');
-    LOGFILE  = fullfile(output_dir,'MM_symmetrize.txt');
+    LOGFILE  = fullfile(output_dir,'MM_symmetrize.log');
 
     fid = fopen(LOGFILE, 'a');
 
     for iLoop = 1:N
 
-        fprintf('%i out of %i\n', iLoop, N);
+        fprintf('aSymmetrizeMatrix on loop %s, %i out of %i\n', loop_ids{iLoop}, iLoop, N);
 
         ind = find(MM(iLoop,:) <= 2 & MM(iLoop,:) > 0); % less than any disqualified match
 
@@ -43,9 +45,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
                 otherwise
                     MM(jLoop,iLoop) = MM(iLoop,jLoop);
             end
-
         end
-
     end
 
     if saveMatFile
@@ -54,6 +54,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
     fclose(fid);
     checkMatchingMatrix(MM);
 
+    toc
 
     function [disqualify] = aCompareInteractions
 
@@ -96,7 +97,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
                     if is_pair_incompatible || is_pair_asymmetric_incompatible
                         disqualify = BASEPAIR_MISMATCH;
                         if verbose
-                            fprintf('%s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
+                            fprintf('Basepair mismatch: %s %s\n',zEdgeText(foundEdgesFixAbs(i,j)), ...
                                               zEdgeText(queryEdgesFixAbs(i,j)));
                         end
 

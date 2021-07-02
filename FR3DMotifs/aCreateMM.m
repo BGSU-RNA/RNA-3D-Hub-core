@@ -25,7 +25,7 @@ function [MM] = aCreateMM(loop_ids,output_dir)
 
     for i = 1:N
 
-        fprintf('Loading search data for %s, loop %i out of %i\n', loop_ids{i}, i, N);
+        fprintf('aCreateMM: Loading search data for %s, loop %i out of %i\n', loop_ids{i}, i, N);
 
         subdir = fullfile(SavedSearchLocation, loop_ids{i});
 

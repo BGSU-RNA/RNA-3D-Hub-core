@@ -2,56 +2,56 @@
 % searches.
 
 function [] = groupsToSearches(Location,groups)
-    
+
     destination = [Location filesep 'Groups'];
     if ~exist(destination,'dir')
         mkdir(destination);
     end
-    notfound = 0;    
-    
+    notfound = 0;
+
     save([Location filesep 'groups.mat'], 'groups');
 
-    for i = 1:length(groups)   
-                                  
-        disp(i);
+    for i = 1:length(groups)
+
+        fprintf('groupsToSearches: Processing group %d of %d which has %d instances\n', i, length(groups), length(groups{i}));
 
         clear Group Search;
 
         Group.Candidates = [];
         Group.File = [];
         Group.Discrepancy = [];
-                                
+
         for j = 1:length(groups{i})
-            
+
             search1 = getSearchAddress(groups{i}{1}, groups{i}{j});
             search2 = getSearchAddress(groups{i}{j}, groups{i}{1});
             load( getPrecomputedDataAddress(groups{i}{j}) );
-                        
+
             if exist(search1,'file')
-                
+
                 load(search1);
-                
+
                 if j == 1
-                    
+
                     bulges  = aDetectBulgedBases(Search.File);
                     indices = setdiff(Search.Candidates(1,1:end-1), bulges);
-                    Group.Candidates = [indices 1];                   
-                    
+                    Group.Candidates = [indices 1];
+
                 else
 
                     [a,b,c] = intersect(Search.Query.Indices, Group.Candidates(1,1:end-1));
                     b = reshape(b, 1, []);
                     c = reshape(c, 1, []);
-                    
-                    indices = Search.Candidates(1,b);                        
+
+                    indices = Search.Candidates(1,b);
                     Group.Candidates(end+1,c) = indices;
                     Group.Candidates(end,end) = j;
 
                 end
-                
+
                 Group.File = [Group.File File];
                 Group.Discrepancy(end+1) = Search.Discrepancy(1);
-            
+
             elseif exist(search2,'file')
 
                 load(search2);
@@ -59,22 +59,22 @@ function [] = groupsToSearches(Location,groups)
                 [a,b,c]=intersect(Group.Candidates(1,1:end-1),Search.Candidates(1,1:end-1));
                 b = reshape(b, 1, []);
                 c = reshape(c, 1, []);
-                
+
                 Group.Candidates(end+1,b) = Search.Query.Indices(c);
-                                                                                                
+
                 Group.Candidates(end,end) = j;
                 Group.File = [Group.File File];
-                Group.Discrepancy(end+1) = Search.Discrepancy(1);                                                
-                
+                Group.Discrepancy(end+1) = Search.Discrepancy(1);
+
             else
                 fprintf('Warning! Not found %s, %s\n',groups{i}{1},groups{i}{j});
                 notfound = 1;
-%                 keyboard;                
+%                 keyboard;
                 break;
-            end            
+            end
 
-        end    
-        
+        end
+
         if notfound ~= 1
             % delete cols with zeros
             G = length(Group.Candidates(1,:));
@@ -97,7 +97,7 @@ function [] = groupsToSearches(Location,groups)
                 Group.DiscComputed = zeros(1,length(Group.Candidates(:,1)));
 
                 Group = xMutualDiscrepancy(Group.File,Group,400);
-                p = zOrderbySimilarity(Group.Disc);    
+                p = zOrderbySimilarity(Group.Disc);
                 Group.Disc = Group.Disc(p,p);
                 Group.Candidates = Group.Candidates(p,:);
 
@@ -112,26 +112,26 @@ function [] = groupsToSearches(Location,groups)
             % order relative to the exemplar
             exemplar = findExemplar(Group.Disc);
             [Group.Discrepancy, exemplar_order] = sort(Group.Disc(exemplar, :));
-            Group.LoopsOrderedByDiscrepancy = Group.LoopsOrderedBySimilarity(exemplar_order);   
+            Group.LoopsOrderedByDiscrepancy = Group.LoopsOrderedBySimilarity(exemplar_order);
             Group.Candidates = Group.Candidates(exemplar_order, :);
 
             Search = Group;
-            
-            if ~isfield(Search.File(1),'LooseCoplanar')     
+
+            if ~isfield(Search.File(1),'LooseCoplanar')
                 Search = aAddLooseCoplanar(Search);
             end
-            
+
             Search.consensusEdge = pConsensusInteractions(Search);
             Search.Signature = zMotifSignature(Search.consensusEdge);
-            fprintf('%s\n',Search.Signature);                                    
-            
+            fprintf('%s\n',Search.Signature);
+
             save([destination filesep Group.Query.Name '.mat'], 'Search');
         else
             notfound = 0;
         end
-        
+
     end
-        
+
 end
 
 function [index] = findExemplar(M)
