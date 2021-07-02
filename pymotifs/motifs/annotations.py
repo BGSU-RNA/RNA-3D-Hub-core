@@ -28,7 +28,7 @@ class Loader(BaseLoader):
         return False
 
     def remove(self, *args, **kwargs):
-        logger.exception("Cannot easily cleanup motif annotations")
+        logger.exception("Cannot easily clean up motif annotations")
 
     def known(self):
         annotations = {}
