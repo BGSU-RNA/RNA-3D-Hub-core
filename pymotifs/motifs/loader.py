@@ -20,6 +20,6 @@ from pymotifs.motifs.secondary_structure import Loader as SecondaryStructureLoad
 
 class Loader(core.StageContainer):
     stages = set([ReleaseLoader, DiscrepancyLoader, MotifLoader, LoopOrderLoader,
-              LoopPositionLoader, AssignmentLoader, AnnotationLoader, 
+              LoopPositionLoader, AssignmentLoader,
               SecondaryStructureLoader, ParentLoader])
 
