@@ -168,8 +168,14 @@ class Combiner(core.Base):
 
     def signature(self, directory, data):
         loader = BpSignaturesLoader(self.config, self.session)
+        c = 0
+        name_dict = {}
         for name, entry in loader(directory):
             data[name]['signature'] = entry['bp_signature']
+            c += 1
+            name_dict[name] = 1
+        self.logger.info('Found %d signatures in BpSignaturesLoader' % c)
+        self.logger.info('Found %d names in BpSignaturesLoader' % len(name_dict.keys()))
         return data
 
     def secondary_structures(self, directory, data):
