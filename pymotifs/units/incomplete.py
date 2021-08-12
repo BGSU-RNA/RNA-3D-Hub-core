@@ -54,8 +54,16 @@ class Loader(core.SimpleLoader):
         pdb : str
             The pdb to query for.
         """
-        return session.query(mod.UnitIncomplete).\
+
+        self.logger.info("Setting up query for %s" % pdb)
+
+        matches = session.query(mod.UnitIncomplete).\
             filter(mod.UnitIncomplete.pdb_id == pdb)
+
+        self.logger.info("Found %d results in the query" % len([m for m in matches]))
+
+        return matches
+
 
     def missing_keys(self, pdb):
         """Determine the unit ids in a file that are missing/unobserved. This
@@ -73,9 +81,14 @@ class Loader(core.SimpleLoader):
         missing : set
             A set of Entry tuples
         """
+
+        self.logger.info("Loading %s.cif" % pdb)
         cif = self.cif(pdb)
+
+        self.logger.info("Getting unobserved residues")
         total = it.chain(getattr(cif, 'pdbx_unobs_or_zero_occ_residues', []),
                          getattr(cif, 'pdbx_unobs_or_zero_occ_atoms', []))
+
         missing = set()
         for row in total:
             model = int(row['PDB_model_num'])
@@ -92,6 +105,9 @@ class Loader(core.SimpleLoader):
 
             key = Entry(pdb, model, chain, num, seq, alt_id, ins)
             missing.add(key)
+
+        self.logger.info("Found %d residues of concern" % len([m for m in total]))
+
         return missing
 
     def data(self, pdb, **kwargs):
@@ -113,6 +129,8 @@ class Loader(core.SimpleLoader):
             A list of pymotifs.model.UnitIncomplete entries for all incomplete
             unit ids.
         """
+
+        self.logger.info("Started data method for %s" % pdb)
         data = []
         for key in self.missing_keys(pdb):
             data.append(mod.UnitIncomplete(**key._asdict()))
