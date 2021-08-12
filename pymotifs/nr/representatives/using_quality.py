@@ -205,8 +205,8 @@ class CompScore(QualityBase):
                     if len(parts) >= 2 and parts[2] in counted_atoms:
                         current += 1
 
-                if not current:
-                    self.logger.error("No atoms in %s" % row.unit_id)
+                #if not current:
+                #    self.logger.error("No atoms in %s" % row.unit_id)
                 count += current
 
             if not count:
