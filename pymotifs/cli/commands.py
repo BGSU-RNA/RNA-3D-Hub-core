@@ -67,6 +67,8 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
         click.secho("Unknown stage %s" % err.args, err=True, fg='red')
         ctx.exit(1)
 
+    logging.info("Running from command %s", ' '.join(sys.argv))
+
     # get desired PDB IDs
     if not ids:
         ids = setup.pdbs(config, kwargs)
@@ -84,7 +86,6 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     kwargs['exclude'] = kwargs.get('skip_stage')
 
-    logging.info("Running from command %s", ' '.join(sys.argv))
     error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
     mailer = Emailer(config, engine)
