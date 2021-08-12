@@ -157,7 +157,7 @@ MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
 #MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION', 'ELECTRON MICROSCOPY'])
 """list of methods allowed when selected loops from representatives."""
 
-MOTIF_RESOLUTION_CUTOFF = '4.0'
+MOTIF_RESOLUTION_CUTOFF = '3.5'
 """The resolution cutoff for representatives to use in the ML atlas"""
 
 MANUAL_IFE_REPRESENTATIVES = set()
