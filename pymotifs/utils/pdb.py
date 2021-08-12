@@ -68,7 +68,7 @@ class RnaPdbsHelper(object):
         url = url.replace("earliest-date",earliest_date)
         url = url.replace("latest-date",latest_date)
 
-        #print("Trying url %s" % url)
+        print("Trying url %s" % url)
 
         try:
             for polytype in polytypes:
