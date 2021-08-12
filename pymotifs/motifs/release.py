@@ -259,6 +259,11 @@ class Loader(core.MassLoader):
             if size_limit is not None:
                 query = query.filter(loops.length < size_limit)
 
+            # avoid IL with only 4 nucleotides; happens with strange chain breaks
+            if loop_type == "IL":
+                query = query.filter(loops.length > 4)
+
+
             found.update(r.loop_id for r in query if r.loop_id not in exclude)
 
         if not found:
