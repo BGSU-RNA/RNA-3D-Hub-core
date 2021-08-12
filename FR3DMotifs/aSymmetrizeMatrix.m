@@ -1,6 +1,6 @@
 function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
 
-    disp('aSymmetrizeMatrix: Making the matrix symmetric...');
+    disp('aSymmetrizeMatrix: Checking for conflicting interactions and making the matrix symmetric...');
 
     tic
 
@@ -43,7 +43,7 @@ function [MM] = aSymmetrizeMatrix(MM, loop_ids, output_dir, saveMatFile)
                     MM(iLoop,jLoop) = BASESTACK_MISMATCH;
                     MM(jLoop,iLoop) = BASESTACK_MISMATCH;
                 otherwise
-                    MM(jLoop,iLoop) = MM(iLoop,jLoop);
+                    MM(jLoop,iLoop) = MM(iLoop,jLoop); % actually symmetrize
             end
         end
     end
