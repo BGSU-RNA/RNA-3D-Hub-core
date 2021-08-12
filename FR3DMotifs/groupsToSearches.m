@@ -97,7 +97,10 @@ function [] = groupsToSearches(Location,groups)
                 Group.DiscComputed = zeros(1,length(Group.Candidates(:,1)));
 
                 Group = xMutualDiscrepancy(Group.File,Group,400);
-                p = zOrderbySimilarity(Group.Disc);
+                % p = zOrderbySimilarity(Group.Disc); % old method, not as good
+                D = squareform(Group.Disc);
+                tree = linkage(D,'average');
+                p = optimalleaforder(tree,D);
                 Group.Disc = Group.Disc(p,p);
                 Group.Candidates = Group.Candidates(p,:);
 
