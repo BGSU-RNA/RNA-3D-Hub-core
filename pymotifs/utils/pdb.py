@@ -5,7 +5,6 @@ import datetime
 import requests
 
 from pymotifs import utils
-from pymotifs.tempPDBdata import tempyPDBdata
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class RnaPdbsHelper(object):
         logger.info('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
         print('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
 
-        polytypes = ["RNA","NA-hybrid"]
+        polytypes = ["RNA","NA-hybrid","DNA"]
         resultIDs = []
 
         url = "http://search.rcsb.org/rcsbsearch/v1/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22entity_poly.rcsb_entity_polymer_type%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22RNA%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22greater_or_equal%22%2C%22value%22%3A%22earliest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22less_or_equal%22%2C%22value%22%3A%22latest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%5D%7D%2C%22request_options%22%3A%7B%22pager%22%3A%7B%22start%22%3A0%2C%22rows%22%3A200000%7D%7D%2C%22return_type%22%3A%22entry%22%7D"
@@ -79,16 +78,8 @@ class RnaPdbsHelper(object):
                 for item in jsonR["result_set"]:
                     resultIDs.append(item["identifier"])
         except:
-            if tempyPDBdata["date"] == datetime.strftime(datetime.now(), '%Y-%m-%d'):
-                for polytype in polytypes:
-                    response = tempyPDBdata[polytype]
-                    jsonR = response.json()
-
-                    for item in jsonR["result_set"]:
-                        resultIDs.append(item["identifier"])
-            else:
-                logger.exception(err)
-                raise GetAllRnaPdbsError("Failed getting all PDBs")
+            logger.exception(err)
+            raise GetAllRnaPdbsError("Failed getting all PDBs")
 
         print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
         logger.info("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
