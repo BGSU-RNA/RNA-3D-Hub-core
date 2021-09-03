@@ -23,9 +23,9 @@ class Loader(core.SimpleLoader):
         return mod.ExpSeqInfo
 
     def to_process(self, pdbs, **kwargs):
-        """Fetch the sequences to process . This will use the given pdbs to
-        extract all sequences come from RNA chains in those structures. This
-        will then get all the unique sequences.
+        """Fetch the (sequence,type) pairs to process . This will use the given pdbs to
+        extract all sequences come from nucleic acid chains in those structures. This
+        will then get all the unique sequences paired with the macromolecule type.
 
         Parameters
         ----------
@@ -34,22 +34,26 @@ class Loader(core.SimpleLoader):
 
         Returns
         -------
-        sequences : list
-            A list of sequences to process.
+        seq_type_pairs : list
+            A list of (sequence,type) pairs to process.
+            For example, ('AGAACAUUC','RNA')
         """
 
-        sequences = set()
+        seq_type_pairs = set()
         helper = Structure(self.session.maker)
         for chunk in grouper(1000, pdbs):
-            ids = set(p[1] for p in helper.rna_chains(chunk, return_id=True))
+            chain_ids = set(p[1] for p in helper.rna_chains(chunk, return_id=True))
             with self.session() as session:
-                query = session.query(mod.ChainInfo.sequence).\
-                    filter(mod.ChainInfo.chain_id.in_(ids)).\
+                query = session.query(mod.ChainInfo.sequence,mod.ChainInfo.entity_macromolecule_type).\
+                    filter(mod.ChainInfo.chain_id.in_(chain_ids)).\
                     distinct()
 
-                sequences.update(result.sequence for result in query)
+                seq_type_pairs.update((result.sequence,result.entity_macromolecule_type) for result in query)
 
-        return sorted(sequences, key=lambda s: (len(s), s))
+        # todo:  change "Polydeoxyribonucleotide (DNA)" to "DNA", similarly for "RNA"
+        # todo:  make sure there are no other synonyms for "DNA"
+
+        return sorted(seq_type_pairs, key=lambda p: (len(p[0]), p[0], p[1]))
 
     def query(self, session, sequence):
         """The query to find and remove all exp seq info entries for a given
