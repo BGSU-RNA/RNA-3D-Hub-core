@@ -42,7 +42,7 @@ class Loader(core.SimpleLoader):
         seq_type_pairs = set()
         helper = Structure(self.session.maker)
         for chunk in grouper(1000, pdbs):
-            chain_ids = set(p[1] for p in helper.rna_chains(chunk, return_id=True))
+            chain_ids = set(p[1] for p in helper.na_chains(chunk, return_id=True))
             with self.session() as session:
                 query = session.query(mod.ChainInfo.sequence,mod.ChainInfo.entity_macromolecule_type).\
                     filter(mod.ChainInfo.chain_id.in_(chain_ids)).\
@@ -50,8 +50,11 @@ class Loader(core.SimpleLoader):
 
                 seq_type_pairs.update((result.sequence,result.entity_macromolecule_type) for result in query)
 
-        # todo:  change "Polydeoxyribonucleotide (DNA)" to "DNA", similarly for "RNA"
-        # todo:  make sure there are no other synonyms for "DNA"
+
+        self.logger.info("Sequence,type pairs:")
+        self.logger.info(seq_type_pairs)
+
+        # if the variable returned by this method is empty, the pipeline will crash
 
         return sorted(seq_type_pairs, key=lambda p: (len(p[0]), p[0], p[1]))
 
@@ -158,15 +161,15 @@ class Loader(core.SimpleLoader):
 
         return ''.join(normalized)
 
-    def data(self, seq, **kwargs):
+    def data(self, seq_type, **kwargs):
         """Compute data to store for the given sequence. This will compute what
         is needed to store, including the md5 hash which should be unique
         across all sequences.
 
         Parameters
         ----------
-        seq : str
-            The sequence to store.
+        seq_type = (seq,type) : str
+            The sequence to store, RNA/DNA/hybrid entity type
 
         Returns
         -------
@@ -174,6 +177,18 @@ class Loader(core.SimpleLoader):
             A dictonary with 'sequence', 'md5', 'normalized', 'length',
             'normalized_length' and 'was_normalized' entries.
         """
+
+
+        seq,entity_type = seq_type        # split pair into sequence and type
+
+        # todo:  add code right here which will use cases to convert long names
+        # to "DNA" or "RNA" or "hybrid"
+
+        # todo:  change "Polydeoxyribonucleotide (DNA)" to "DNA", similarly for "RNA"
+        # todo:  make sure there are no other synonyms for "DNA"
+
+        # entity_type = ...
+
 
         normalized = self.normalize(seq)
         return {
@@ -183,4 +198,5 @@ class Loader(core.SimpleLoader):
             'length': len(seq),
             'normalized_length': len(normalized) if normalized else 0,
             'was_normalized': normalized is not None
+            'entity_type':
         }
