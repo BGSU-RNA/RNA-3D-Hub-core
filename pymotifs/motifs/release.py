@@ -272,6 +272,76 @@ class Loader(core.MassLoader):
         return sorted(found)
 
 
+    def loops_and_strands(self, loop_type, ifes, size_limit=None,
+              **kwargs):
+        """Get the list of loop ids to use in clustering, along with a
+        list of unit ids for each strand.
+        These loops must be
+        from IFE's in the given list and marked as valid in the loop quality
+        step.
+        This is where RNA loops with modified nucleotides get excluded.
+
+        Parameters
+        ----------
+        loop_type : str
+            The type of loop to use, eg, IL, HL.
+        ifes : list
+            A list of ife ids to find loops in.
+
+        Returns
+        -------
+        loops: str
+            A list of loop ids to process.
+        """
+
+        exclude = self.loops_to_exclude(**kwargs)
+
+        found = set()
+        with self.session() as session:
+            loops = mod.LoopInfo
+            quality = mod.LoopQa
+            pos = mod.LoopPositions
+            ife_chains = mod.IfeChains
+            chain_info = mod.ChainInfo
+            units = mod.UnitInfo
+            query = session.query(pos.loop_id,pos.position,pos.border,pos.unit_id).\
+                join(loops, loops.loop_id == pos.loop_id).\
+                join(quality, quality.loop_id == loops.loop_id).\
+                join(units, units.unit_id == pos.unit_id).\
+                join(chain_info,
+                     (chain_info.chain_name == units.chain) &
+                     (chain_info.pdb_id == units.pdb_id)).\
+                join(ife_chains,
+                     ife_chains.chain_id == chain_info.chain_id).\
+                filter(quality.status == 1).\
+                filter(loops.type == loop_type).\
+                filter(ife_chains.ife_id.in_(ifes)).\
+                filter(~pos.loop_id.in_(BLACKLIST)).\
+                distinct()
+
+            if size_limit is not None:
+                query = query.filter(loops.length < size_limit)
+
+            # avoid IL with only 4 nucleotides; happens with strange chain breaks
+            if loop_type == "IL":
+                query = query.filter(loops.length > 4)
+
+            loopdata = {}
+            for result in query:
+                if not result.loop_id in loopdata:
+                    loopdata[result.loop_id] = {}
+                loopdata[result.loop_id][result.position] = (result.border,result.unit_id)
+
+            self.logger.info(loopdata)
+            print(loopdata)
+
+            found.update(r.loop_id for r in query if r.loop_id not in exclude)
+
+        if not found:
+            raise core.InvalidState("No loops to cluster for %s" %
+                                    loop_release_id)
+        return sorted(found)
+
     def load_and_cache(self, loop_type, releases, folder):
         """This will load the result of running the pipeline and cache the
         data.
@@ -318,6 +388,9 @@ class Loader(core.MassLoader):
                 raise core.InvalidState("Bad size limit")
 
         loops = self.loops(loop_type, ifes, size_limit=size_limit, **kwargs)
+
+        loops_and_strands = self.loops_and_strands(loop_type, ifes, size_limit=size_limit, **kwargs)
+
         self.logger.info("Found %d %s loops" % (len(loops),loop_type))
         self.logger.info("Starting to cluster all %s" % loop_type)
         builder = Builder(self.config, self.session)
