@@ -216,3 +216,4 @@ class Dispatcher(object):
                 raise err
 
         self.logger.info("Finished pipeline")
+        print("Finished pipeline")
