@@ -1,4 +1,4 @@
-"""A module to load unit rotation matrices for RNA into the database.
+"""A module to compute and store glycosidic bond orientations in the database.
 """
 
 from pymotifs import core
