@@ -118,6 +118,68 @@ class Structure(Base):
                 data.append(entry)
             return data
 
+    ############### Ding start ####################################
+    def na_chains(self, pdb, return_id=False, strict=False, extended=True):
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
+#        if extended:
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+
+
+        ##### add two more macromolecule types
+        short_macromolecule_types = set(['DNA','RNA','DNA/RNA Hybrid'])
+        macromolecule_types.add('polydeoxyribonucleotide')
+        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
+
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.chain_name,
+                     mod.ChainInfo.chain_id).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
+            #### replace the long terms to short terms
+            # query_short = query.replace('Polyribonucleotide (RNA)','RNA').replace('polyribonucleotide','RNA').\
+            #     replace('polydeoxyribonucleotide/polyribonucleotide hybrid','DNA/RNA Hybrid').\
+            #         replace('Polydeoxyribonucleotide (DNA)','DNA').replace('polydeoxyribonucleotide','DNA')
+            query_short = query.replace({'Polyribonucleotide (RNA)':'RNA','polyribonucleotide':'RNA',\
+                'polydeoxyribonucleotide/polyribonucleotide hybrid':'DNA/RNA Hybrid',\
+                'Polydeoxyribonucleotide (DNA)':'DNA','polydeoxyribonucleotide':'DNA'},inplace=True)
+
+            if isinstance(pdb, basestring):
+                query = query_short.filter_by(pdb_id=pdb)
+            else:
+                query = query_short.filter(mod.ChainInfo.pdb_id.in_(pdb))
+
+            # look specifically for A, C, G, U, N but not modified nts
+            # give new names for diff types
+            if strict:
+                func = mod.ChainInfo.sequence.op('regexp')
+                query_RNA = query.filter(func('^[ACGUN]$'))
+                query_DNA = query.filter(func('^[ACGTN]$'))
+                query_hybrid = query.filter(func('^[ACGTUN]'))
+
+            data = []
+            for result in query_RNA:
+                entry = result.chain_name
+                if return_id:
+                    entry = (result.chain_name, result.chain_id)
+                data.append(entry)
+            for result in query_DNA:
+                if return_id:
+                    entry = (result.chain_name, result.chain_id)
+                data.append(entry)
+            for result in query_hybrid:
+                if return_id:
+                    entry = (result.chain_name, result.chain_id)
+                data.append(entry)
+            return data
+    ############## Ding end   #####################################
+
+
+
+
+
+
+
     def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(mod.UnitInfo).\

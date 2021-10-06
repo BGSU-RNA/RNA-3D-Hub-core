@@ -181,14 +181,26 @@ class Loader(core.SimpleLoader):
 
         seq,entity_type = seq_type        # split pair into sequence and type
 
-        # todo:  add code right here which will use cases to convert long names
-        # to "DNA" or "RNA" or "hybrid"
-
+        # todo:  add code right here which will use cases to convert long names to "DNA" or "RNA" or "hybrid"
         # todo:  change "Polydeoxyribonucleotide (DNA)" to "DNA", similarly for "RNA"
         # todo:  make sure there are no other synonyms for "DNA"
-
         # entity_type = ...
-
+        seq = []
+        entity_type = []
+        for i,j in seq_type:
+            seq.append(i)
+            if j == 'Polydeoxyribonucleotide (DNA)':
+                entity_type.append('DNA')
+            elif j == 'Polyribonucleotide (RNA)':
+                entity_type.append('RNA')
+            elif j == 'polyribonucleotide':
+                entity_type.append('RNA')
+            elif j == 'polydeoxyribonucleotide':
+                entity_type.append('DNA')
+            elif j == 'polydeoxyribonucleotide/polyribonucleotide hybrid':
+                entity_type.append('DNA/RNA Hybrid')
+            else: 
+                entity_type.append(j)
 
         normalized = self.normalize(seq)
         return {
@@ -198,5 +210,5 @@ class Loader(core.SimpleLoader):
             'length': len(seq),
             'normalized_length': len(normalized) if normalized else 0,
             'was_normalized': normalized is not None
-            'entity_type':
+            'entity_type': entity_type
         }
