@@ -46,8 +46,8 @@ class Loader(core.SimpleLoader):
             chi = None
             orientation = ""
 
-            N1N9 = None
-            C2C4 = None
+            N1N9 = []
+            C2C4 = []
 
             if nt.sequence in ['A','G','DA','DG']:
                 N1N9 = nt.centers["N9"]
