@@ -15,7 +15,7 @@ from pymotifs.chains.info import Loader as ChainLoader
 class Loader(core.SimpleLoader):
     """The actual loader for this stage."""
 
-    print("info.py Loader is running")
+    print("hub-core/pymotifs/exp_seq/info.py Loader start running")
 
     dependencies = set([ChainLoader])
     mark = False
@@ -255,6 +255,7 @@ class Loader(core.SimpleLoader):
         # convert unusual letters
         normalized = self.normalize(seq, entity_type)
 
+
         return {
             'sequence': seq,
             'md5': self.md5(seq),
@@ -264,3 +265,4 @@ class Loader(core.SimpleLoader):
             'was_normalized': normalized is not None,
             'entity_type': entity_type
         }
+    print("hub-core/pymotifs/exp_seq/info.py Loader ends up")
