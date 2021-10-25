@@ -108,7 +108,7 @@ class Loader(core.SimpleLoader):
             for result in query:
                chain_type = simplify_type[result.entity_macromolecule_type]
                self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
-               data.add((result.sequence,chain_type))   # add this tuple to the set
+               data.update((result.sequence,chain_type))   # add this tuple to the set
 
         # sort the set of pairs into a list, first by sequence length, then by sequence, then by type
         return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
