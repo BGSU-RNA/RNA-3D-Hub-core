@@ -25,40 +25,31 @@ class Loader(core.SimpleLoader):
         return mod.ExpSeqInfo
 
     def to_process_old(self, pdbs, **kwargs):
-        """Fetch the (sequence,type) pairs to process . This will use the given pdbs to
-        extract all sequences come from nucleic acid chains in those structures. This
-        will then get all the unique sequences paired with the macromolecule type.
-
+        """Fetch the sequences to process . This will use the given pdbs to
+        extract all sequences come from RNA chains in those structures. This
+        will then get all the unique sequences.
         Parameters
         ----------
         pdbs : list
             The list of pdb ids to use.
-
         Returns
         -------
-        seq_type_pairs : list
-            A list of (sequence,type) pairs to process.
-            For example, ('AGAACAUUC','RNA')
+        sequences : list
+            A list of sequences to process.
         """
 
-        seq_type_pairs = set()
+        sequences = set()
         helper = Structure(self.session.maker)
         for chunk in grouper(1000, pdbs):
-            chain_ids = set(p[1] for p in helper.rna_chains(chunk, return_id=True))
+            ids = set(p[1] for p in helper.rna_chains(chunk, return_id=True))
             with self.session() as session:
-                query = session.query(mod.ChainInfo.sequence,mod.ChainInfo.entity_macromolecule_type).\
-                    filter(mod.ChainInfo.chain_id.in_(chain_ids)).\
+                query = session.query(mod.ChainInfo.sequence).\
+                    filter(mod.ChainInfo.chain_id.in_(ids)).\
                     distinct()
 
-                seq_type_pairs.update((result.sequence,result.entity_macromolecule_type) for result in query)
+                sequences.update(result.sequence for result in query)
 
-
-        self.logger.info("Sequence,type pairs:")
-        self.logger.info(seq_type_pairs)
-
-        # if the variable returned by this method is empty, the pipeline will crash
-
-        return sorted(seq_type_pairs, key=lambda p: (len(p[0]), p[0], p[1]))
+        return sorted(sequences, key=lambda s: (len(s), s))
 
     def to_process(self, pdbs, **kwargs):
         """Fetch the (sequence,type) pairs to process . This will use the given pdbs to
@@ -77,7 +68,7 @@ class Loader(core.SimpleLoader):
             For example, ('AGAACAUUC','rna')
         """
 
-        print("info.py to_process method")
+        # print("info.py to_process method")
         self.logger.info("to_process method")
 
         simplify_type = {}
@@ -105,10 +96,12 @@ class Loader(core.SimpleLoader):
 
             print("ran the query")
 
-            for result in query:
-               chain_type = simplify_type[result.entity_macromolecule_type]
-               self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
-               data.update((result.sequence,chain_type))   # add this tuple to the set
+            # for result in query:
+            #    chain_type = simplify_type[result.entity_macromolecule_type]
+            #    self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
+            #    data.update((result.sequence,chain_type))   # add this tuple to the set
+            data.update((result.sequence,result.entity_macromolecule_type) for result in query)
+            
 
         # sort the set of pairs into a list, first by sequence length, then by sequence, then by type
         return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
