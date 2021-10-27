@@ -101,9 +101,39 @@ class Loader(core.SimpleLoader):
             #    self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
             #    data.update((result.sequence,chain_type))   # add this tuple to the set
             data.update((result.sequence,result.entity_macromolecule_type) for result in query)
+            # The code should be written as following, but after I ran 103, the following codes can not work. 
+            # data.update((result.sequence,simplify_type[result.entity_macromolecule_type]) for result in query)
             
 
         # sort the set of pairs into a list, first by sequence length, then by sequence, then by type
+        return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
+
+    def to_process_tried(self, pdbs, **kwargs):
+        """
+            This function should works just like function to_process 
+            but does not need pdb ids because we want to fill in entity type for all exp_seq_id.
+        """
+        """
+        Returns
+        -------
+        seq_type_pairs : list
+            A list of (sequence,type) pairs to process.
+            For example, ('AGAACAUUC','rna')
+        """
+        simplify_type = {}
+        simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
+        simplify_type['Polyribonucleotide (RNA)'] = 'rna'
+        simplify_type['polyribonucleotide'] = 'rna'
+        simplify_type['polydeoxyribonucleotide'] = 'dna'
+        simplify_type['polydeoxyribonucleotide/polyribonucleotide hybrid'] = 'hybrid'
+        simplify_type['DNA/RNA Hybrid'] = 'hybrid'
+        macromolecule_types = simplify_type.keys()
+        data = set([])   # set so we get unique (sequence,type) pairs
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.sequence,
+                                  mod.ChainInfo.entity_macromolecule_type).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
+            data.update((result.sequence,simplify_type[result.entity_macromolecule_type]) for result in query)
         return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
 
 
