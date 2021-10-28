@@ -100,9 +100,8 @@ class Loader(core.SimpleLoader):
             #    chain_type = simplify_type[result.entity_macromolecule_type]
             #    self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
             #    data.update((result.sequence,chain_type))   # add this tuple to the set
-            data.update((result.sequence,result.entity_macromolecule_type) for result in query)
-            # The code should be written as following, but after I ran 103, the following codes can not work. 
-            # data.update((result.sequence,simplify_type[result.entity_macromolecule_type]) for result in query)
+            data.update((result.sequence,simplify_type[result.entity_macromolecule_type]) for result in query)
+
             
 
         # sort the set of pairs into a list, first by sequence length, then by sequence, then by type
@@ -152,7 +151,7 @@ class Loader(core.SimpleLoader):
         sequence = seq_type[0]
         entity_type = seq_type[1]
 
-        self.logger.info('Possibly deleting sequence %s type %s' % (sequence,entity_type))
+        # self.logger.info('Possibly deleting sequence %s type %s' % (sequence,entity_type))
 
         return session.query(mod.ExpSeqInfo).filter_by(md5=self.md5(sequence)).filter_by(entity_type=entity_type)
 
