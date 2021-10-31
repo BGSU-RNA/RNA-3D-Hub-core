@@ -51,6 +51,25 @@ class Loader(core.SimpleLoader):
 
         return sorted(sequences, key=lambda s: (len(s), s))
 
+    def identify_hybrid_sequences(self):
+        """
+            This function is trying to get all pdb ids whose entity_macromolecule_type is hybrid
+        """
+        """
+        Returns
+        -------
+            A list of pdb ids (hybrid macromolecule type)
+        """
+        hybrid_pdb_ids = []
+        with self.session() as session:
+            query_pdb_ids = session.query(mod.ChainInfo.sequence).\
+                                  filter(mod.ChainInfo.entity_macromolecule_type.in_(['polydeoxyribonucleotide/polyribonucleotide hybrid',\
+                                  'DNA/RNA Hybrid']))
+            for i in query_pdb_ids:
+                hybrid_pdb_ids.append(i[0])
+
+        return(hybrid_pdb_ids)
+
     def to_process(self, pdbs, **kwargs):
         """Fetch the (sequence,type) pairs to process . This will use the given pdbs to
         extract all sequences come from nucleic acid chains in those structures. This
@@ -94,8 +113,11 @@ class Loader(core.SimpleLoader):
                 filter(mod.ChainInfo.pdb_id.in_(pdbs)).\
                 filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
 
-            print("ran the query")
+############################################ query pdb ids start #####################################
+            self.logger.info(self.identify_hybrid_sequences())
+############################################ query pdb ids end   #####################################           
 
+            print("ran the query")
             # for result in query:
             #    chain_type = simplify_type[result.entity_macromolecule_type]
             #    self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
@@ -106,35 +128,6 @@ class Loader(core.SimpleLoader):
 
         # sort the set of pairs into a list, first by sequence length, then by sequence, then by type
         return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
-
-    def to_process_tried(self, pdbs, **kwargs):
-        """
-            This function should works just like function to_process 
-            but does not need pdb ids because we want to fill in entity type for all exp_seq_id.
-        """
-        """
-        Returns
-        -------
-        seq_type_pairs : list
-            A list of (sequence,type) pairs to process.
-            For example, ('AGAACAUUC','rna')
-        """
-        simplify_type = {}
-        simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
-        simplify_type['Polyribonucleotide (RNA)'] = 'rna'
-        simplify_type['polyribonucleotide'] = 'rna'
-        simplify_type['polydeoxyribonucleotide'] = 'dna'
-        simplify_type['polydeoxyribonucleotide/polyribonucleotide hybrid'] = 'hybrid'
-        simplify_type['DNA/RNA Hybrid'] = 'hybrid'
-        macromolecule_types = simplify_type.keys()
-        data = set([])   # set so we get unique (sequence,type) pairs
-        with self.session() as session:
-            query = session.query(mod.ChainInfo.sequence,
-                                  mod.ChainInfo.entity_macromolecule_type).\
-                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
-            data.update((result.sequence,simplify_type[result.entity_macromolecule_type]) for result in query)
-        return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
-
 
     def query(self, session, seq_type):
         """The query to find and remove all exp seq info entries for a given
