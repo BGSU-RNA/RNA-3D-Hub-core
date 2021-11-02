@@ -53,22 +53,40 @@ class Loader(core.SimpleLoader):
 
     def identify_hybrid_sequences(self):
         """
-            This function is trying to get all pdb ids whose entity_macromolecule_type is hybrid
+            This function is trying to get all sequences whose entity_macromolecule_type is hybrid
         """
         """
         Returns
         -------
-            A list of pdb ids (hybrid macromolecule type)
+            A list of sequences
         """
-        hybrid_pdb_ids = []
+        hybrid_sequences = []
         with self.session() as session:
-            query_pdb_ids = session.query(mod.ChainInfo.sequence).\
+            query = session.query(mod.ChainInfo.sequence).\
                                   filter(mod.ChainInfo.entity_macromolecule_type.in_(['polydeoxyribonucleotide/polyribonucleotide hybrid',\
-                                  'DNA/RNA Hybrid']))
-            for i in query_pdb_ids:
-                hybrid_pdb_ids.append(i[0])
+                                  'DNA/RNA Hybrid'])).distinct()
+            for i in query:
+                hybrid_sequences.append(i[0])
 
-        return(hybrid_pdb_ids)
+        return(hybrid_sequences)
+
+    # def identify_RNA_and_hybrid_sequences(self):
+    #     """
+    #         This function is trying to get those sequences which were labeled as RNA and Hybrid
+    #     """
+    #     """
+    #         Return: a list of sequences
+    #     """
+    #     RNA_hybrid_sequence = []
+    #     with self.session() as session:
+    #         RNA_hybrid_sequence = session.query(mod.ChainInfo.sequence).\
+    #                               filter(mod.ChainInfo.entity_macromolecule_type.in_(['polydeoxyribonucleotide/polyribonucleotide hybrid',\
+    #                               'DNA/RNA Hybrid'])).distinct()
+    #         for i in RNA_hybrid_sequence:
+    #             RNA_hybrid_sequence.append(i[0])
+
+    #     return(RNA_hybrid_sequence)        
+
 
     def to_process(self, pdbs, **kwargs):
         """Fetch the (sequence,type) pairs to process . This will use the given pdbs to
@@ -113,9 +131,9 @@ class Loader(core.SimpleLoader):
                 filter(mod.ChainInfo.pdb_id.in_(pdbs)).\
                 filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
 
-############################################ query pdb ids start #####################################
+############################################ query all existed sequences start #####################################
             self.logger.info(self.identify_hybrid_sequences())
-############################################ query pdb ids end   #####################################           
+############################################ query all existed sequences end   #####################################           
 
             print("ran the query")
             # for result in query:
