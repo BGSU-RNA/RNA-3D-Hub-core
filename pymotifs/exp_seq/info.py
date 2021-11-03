@@ -131,9 +131,9 @@ class Loader(core.SimpleLoader):
                 filter(mod.ChainInfo.pdb_id.in_(pdbs)).\
                 filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
 
-############################################ query all existed sequences start #####################################
+############################################ query all existed hybrid sequences start #####################################
             self.logger.info(self.identify_hybrid_sequences())
-############################################ query all existed sequences end   #####################################           
+############################################ query all existed hybrid sequences end   #####################################           
 
             print("ran the query")
             # for result in query:
@@ -161,8 +161,6 @@ class Loader(core.SimpleLoader):
 
         sequence = seq_type[0]
         entity_type = seq_type[1]
-
-        # self.logger.info('Possibly deleting sequence %s type %s' % (sequence,entity_type))
 
         return session.query(mod.ExpSeqInfo).filter_by(md5=self.md5(sequence)).filter_by(entity_type=entity_type)
 
