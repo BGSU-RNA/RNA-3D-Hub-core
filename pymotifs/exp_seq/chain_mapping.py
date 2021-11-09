@@ -19,8 +19,9 @@ from pymotifs.exp_seq.info import Loader as InfoLoader
 
 class Loader(core.SimpleLoader):
     dependencies = set([ChainLoader, InfoLoader])
+    print("hub-core/pymotifs/exp_seq/chain_mapping.py Loader start running")      
 
-    def to_process(self, pdbs, **kwargs):
+    def to_process_old(self, pdbs, **kwargs):
         """Compute all chain ids to process. This will extract all rna chain
         ids in the given list of pdbs.
 
@@ -36,11 +37,47 @@ class Loader(core.SimpleLoader):
         """
 
         helper = Structure(self.session.maker)
-        rna_chains = ft.partial(helper.rna_chains, return_id=True)
-        chains = it.imap(rna_chains, pdbs)
+        na_chains = ft.partial(helper.na_chains, return_id=True)
+        chains = it.imap(na_chains, pdbs)
         chains = it.chain.from_iterable(chains)
         chains = it.imap(op.itemgetter(1), chains)
+
         return sorted(set(chains))
+
+    def to_process(self,pdbs,**kwargs):
+        """Compute current chain ids to process. This will extract current chain
+        ids in the given list of pdbs.
+        Parameters
+        ----------
+        pdbs : list
+            A list of `str` pdb ids to process
+        Returns
+        -------
+        chain_id : list
+            A list of sorted `int` chain ids of the given list of pdbs.
+        """
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
+        macromolecule_types.add('polydeoxyribonucleotide')
+
+        with self.session() as session:
+            if isinstance(pdbs, basestring):
+                query = session.query(mod.ChainInfo.chain_name,
+                     mod.ChainInfo.chain_id).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types)).filter_by(pdb_id=pdbs)
+            else:
+                query = session.query(mod.ChainInfo.chain_name,
+                     mod.ChainInfo.chain_id).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types)).filter(mod.ChainInfo.pdb_id.in_(pdbs))
+
+            chain_id = []
+            for result in query:
+                entry = result.chain_id
+                chain_id.append(entry)
+            return sorted(set(chain_id))
 
     def query(self, session, chain_id):
         """Create a query to find all mapped chains. This will produce a query
@@ -106,3 +143,4 @@ class Loader(core.SimpleLoader):
 
         return mod.ExpSeqChainMapping(exp_seq_id=self.exp_id(chain_id),
                                       chain_id=chain_id)
+    print("hub-core/pymotifs/exp_seq/chain_mapping.py Loader ends up")
