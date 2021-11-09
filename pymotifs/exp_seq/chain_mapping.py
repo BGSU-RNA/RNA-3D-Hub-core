@@ -98,7 +98,7 @@ class Loader(core.SimpleLoader):
         return session.query(mod.ExpSeqChainMapping).\
             filter_by(chain_id=chain_id)
 
-    def exp_id(self, chain_id):
+    def exp_id_old(self, chain_id):
         """Compute the experimetnal sequence id for the given chain id. This
         will look up all experimental sequences with the same sequence as the
         given chain id.
@@ -125,6 +125,28 @@ class Loader(core.SimpleLoader):
                 raise core.InvalidState("There should be exactly one matching"
                                         " experimental sequence")
             return query.one().exp_seq_id
+        
+    def exp_id(self, chain_id):
+        simplify_type = {}
+        simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
+        simplify_type['Polyribonucleotide (RNA)'] = 'rna'
+        simplify_type['polyribonucleotide'] = 'rna'
+        simplify_type['polydeoxyribonucleotide'] = 'dna'
+        simplify_type['polydeoxyribonucleotide/polyribonucleotide hybrid'] = 'hybrid'
+        simplify_type['DNA/RNA Hybrid'] = 'hybrid'
+        data = []
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.sequence,mod.ChainInfo.entity_macromolecule_type).\
+                                    filter(mod.ChainInfo.chain_id == chain_id)
+            for result in query:
+                query2 = session.query(mod.ExpSeqInfo.exp_seq_id).\
+                        filter(mod.ExpSeqInfo.sequence == result.sequence).filter(mod.ExpSeqInfo.entity_type == simplify_type[result.entity_macromolecule_type])
+                if query2.count() != 1:
+                    raise core.InvalidState("There should be exactly one matching"
+                                            " experimental sequence")
+                else:
+                    data.append(result2.exp_seq_id for result2 in query2)
+            return data                  
 
     def data(self, chain_id, **kwargs):
         """Compute the mapping between the chain and an experimental sequence.
