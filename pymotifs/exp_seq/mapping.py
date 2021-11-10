@@ -30,6 +30,8 @@ class Loader(core.SimpleLoader):
     be easier to process. Instead we process a whole file at once.
     """
 
+    print("hub-core/pymotifs/exp_seq/mapping.py Loader start running")
+
     dependencies = set([InfoLoader, PositionLoader, ChainMappingLoader,
                         UnitLoader])
 
@@ -193,3 +195,4 @@ class Loader(core.SimpleLoader):
         exp_mapping = self.exp_mapping(cif.pdb, chains)
         for entry in self.chain_mapping(cif, chains, exp_mapping):
             yield entry
+    print("hub-core/pymotifs/exp_seq/mapping.py Loader ends up")
