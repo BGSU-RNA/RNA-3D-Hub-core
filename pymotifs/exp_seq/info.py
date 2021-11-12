@@ -14,15 +14,12 @@ from pymotifs.chains.info import Loader as ChainLoader
 
 class Loader(core.SimpleLoader):
     """The actual loader for this stage."""
-
-    print("hub-core/pymotifs/exp_seq/info.py Loader start running")
-
     dependencies = set([ChainLoader])
     mark = False
-
     @property
     def table(self):
         return mod.ExpSeqInfo
+        self.logger.info("I am here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     def to_process_old(self, pdbs, **kwargs):
         """Fetch the sequences to process . This will use the given pdbs to
@@ -51,43 +48,6 @@ class Loader(core.SimpleLoader):
 
         return sorted(sequences, key=lambda s: (len(s), s))
 
-    def identify_hybrid_sequences(self):
-        """
-            This function is trying to get all sequences whose entity_macromolecule_type is hybrid
-        """
-        """
-        Returns
-        -------
-            A list of sequences
-        """
-        hybrid_sequences = []
-        with self.session() as session:
-            query = session.query(mod.ChainInfo.sequence).\
-                                  filter(mod.ChainInfo.entity_macromolecule_type.in_(['polydeoxyribonucleotide/polyribonucleotide hybrid',\
-                                  'DNA/RNA Hybrid'])).distinct()
-            for i in query:
-                hybrid_sequences.append(i[0])
-
-        return(hybrid_sequences)
-
-    # def identify_RNA_and_hybrid_sequences(self):
-    #     """
-    #         This function is trying to get those sequences which were labeled as RNA and Hybrid
-    #     """
-    #     """
-    #         Return: a list of sequences
-    #     """
-    #     RNA_hybrid_sequence = []
-    #     with self.session() as session:
-    #         RNA_hybrid_sequence = session.query(mod.ChainInfo.sequence).\
-    #                               filter(mod.ChainInfo.entity_macromolecule_type.in_(['polydeoxyribonucleotide/polyribonucleotide hybrid',\
-    #                               'DNA/RNA Hybrid'])).distinct()
-    #         for i in RNA_hybrid_sequence:
-    #             RNA_hybrid_sequence.append(i[0])
-
-    #     return(RNA_hybrid_sequence)        
-
-
     def to_process(self, pdbs, **kwargs):
         """Fetch the (sequence,type) pairs to process . This will use the given pdbs to
         extract all sequences come from nucleic acid chains in those structures. This
@@ -107,6 +67,7 @@ class Loader(core.SimpleLoader):
 
         # print("info.py to_process method")
         self.logger.info("to_process method")
+        self.logger.info("I am here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
         simplify_type = {}
         simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
@@ -119,33 +80,47 @@ class Loader(core.SimpleLoader):
         macromolecule_types = simplify_type.keys()
 
         print("info.py to_process method")
+        self.logger.info("I am here, too!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
         data = set([])   # set so we get unique (sequence,type) pairs
 
         with self.session() as session:
-
             print("running the query")
 
             query = session.query(mod.ChainInfo.sequence,
                                   mod.ChainInfo.entity_macromolecule_type).\
                 filter(mod.ChainInfo.pdb_id.in_(pdbs)).\
                 filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
-
-############################################ query all existed hybrid sequences start #####################################
+            ################################# query all existed hybrid sequences start #####################################
             self.logger.info(self.identify_hybrid_sequences())
-############################################ query all existed hybrid sequences end   #####################################           
-
+            ################################ query all existed hybrid sequences end   #####################################           
             print("ran the query")
             # for result in query:
             #    chain_type = simplify_type[result.entity_macromolecule_type]
             #    self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
             #    data.update((result.sequence,chain_type))   # add this tuple to the set
             data.update((result.sequence,simplify_type[result.entity_macromolecule_type]) for result in query)
-
-            
-
         # sort the set of pairs into a list, first by sequence length, then by sequence, then by type
         return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
+
+    def identify_hybrid_sequences(self):
+        """
+            This function is trying to get all sequences whose entity_macromolecule_type is hybrid
+        """
+        """
+        Returns
+        -------
+            A list of sequences
+        """
+        hybrid_sequences = []
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.sequence).\
+                                  filter(mod.ChainInfo.entity_macromolecule_type.in_(['polydeoxyribonucleotide/polyribonucleotide hybrid',\
+                                  'DNA/RNA Hybrid'])).distinct()
+            for i in query:
+                hybrid_sequences.append(i[0])
+
+        return(hybrid_sequences)
 
     def query(self, session, seq_type):
         """The query to find and remove all exp seq info entries for a given
@@ -296,4 +271,3 @@ class Loader(core.SimpleLoader):
             'was_normalized': normalized is not None,
             'entity_type': entity_type
         }
-    print("hub-core/pymotifs/exp_seq/info.py Loader ends up")

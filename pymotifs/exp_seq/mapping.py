@@ -166,6 +166,8 @@ class Loader(core.SimpleLoader):
         macromolecule_types.add('DNA/RNA Hybrid')
         macromolecule_types.add('NA-hybrid')
         macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
+        macromolecule_types.add('polydeoxyribonucleotide')
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name.label('name'),
