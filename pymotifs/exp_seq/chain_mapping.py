@@ -67,11 +67,13 @@ class Loader(core.SimpleLoader):
             if isinstance(pdbs, basestring):
                 query = session.query(mod.ChainInfo.chain_name,
                      mod.ChainInfo.chain_id).\
-                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types)).filter_by(pdb_id=pdbs)
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types)).\
+                filter_by(pdb_id=pdbs)
             else:
                 query = session.query(mod.ChainInfo.chain_name,
                      mod.ChainInfo.chain_id).\
-                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types)).filter(mod.ChainInfo.pdb_id.in_(pdbs))
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types)).\
+                filter(mod.ChainInfo.pdb_id.in_(pdbs))
 
             chain_id = []
             for result in query:
@@ -126,7 +128,7 @@ class Loader(core.SimpleLoader):
                                         " experimental sequence")
             return query.one().exp_seq_id
         
-    def exp_id(self, chain_id):
+    def exp_id_two_queries(self, chain_id):
         simplify_type = {}
         simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
         simplify_type['Polyribonucleotide (RNA)'] = 'rna'
@@ -146,7 +148,40 @@ class Loader(core.SimpleLoader):
                                             " experimental sequence")
                 else:
                     data.append(result2.exp_seq_id for result2 in query2)
-            return data                  
+            return data  
+
+    def exp_id(self, chain_id):
+        """Compute the experimetnal sequence id for the given chain id. This
+        will look up all experimental sequences with the same sequence and entity types
+        as thegiven chain id.
+        Parameters
+        ----------
+        chain_id : int
+            The chain id.
+
+        Returns
+        -------
+        exp_seq_ids : list
+            List of int experimental sequence ids
+        """
+        simplify_type = {}
+        simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
+        simplify_type['Polyribonucleotide (RNA)'] = 'rna'
+        simplify_type['polyribonucleotide'] = 'rna'
+        simplify_type['polydeoxyribonucleotide'] = 'dna'
+        simplify_type['polydeoxyribonucleotide/polyribonucleotide hybrid'] = 'hybrid'
+        simplify_type['DNA/RNA Hybrid'] = 'hybrid'
+        with self.session() as session:
+            exp = mod.ExpSeqInfo
+            query = session.query(exp.exp_seq_id).\
+                join(mod.ChainInfo,
+                     (mod.ChainInfo.sequence == exp.sequence) & (simplify_type[mod.ChainInfo.sequence] == exp.entity_type)).\
+                filter(mod.ChainInfo.chain_id == chain_id)
+
+            if query.count() != 1:
+                raise core.InvalidState("There should be exactly one matching"
+                                        " experimental sequence and entity type")
+            return query.one().exp_seq_id            
 
     def data(self, chain_id, **kwargs):
         """Compute the mapping between the chain and an experimental sequence.
