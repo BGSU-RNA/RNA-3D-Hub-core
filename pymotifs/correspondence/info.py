@@ -66,7 +66,9 @@ class Loader(core.MassLoader):
 
             if not query.count():
                 self.logger.warning("No sequences for %s" % pdb)
-
+            
+            for result in query:
+                self.logger.info("show the query result:%s %s %s" % (result.id, result.length, result.species))
             return [ut.row2dict(result) for result in query]
 
     def length_match(self, pair):
