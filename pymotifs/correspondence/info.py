@@ -35,8 +35,8 @@ class Loader(core.MassLoader):
     allow_no_data = True
     table = CorrespondenceInfo
 
-    exact_cutoff = CORRESPONDENCE_EXACT_CUTOFF
-    huge_cutoff = CORRESPONDENCE_HUGE_CUTOFF
+    exact_cutoff = CORRESPONDENCE_EXACT_CUTOFF                                      ## = 36 """Length cutoff before being matched as small"""
+    huge_cutoff = CORRESPONDENCE_HUGE_CUTOFF                                        ## = 2000 """Length cutoff before being matched as huge"""
 
     def has_data(self, pdb, **kwargs):
         """Always returns false. This stage is odd in that we do the filtering
@@ -53,7 +53,7 @@ class Loader(core.MassLoader):
         """
 
         with self.session() as session:
-            query = session.query(ExpSeqPdb.exp_seq_id.label('id'),
+            query = session.query(ExpSeqPdb.exp_seq_id.label('id'),                 ## There are some label functions, they are here for rename the column to "id", "length", and "species" 
                                   ExpSeqInfo.normalized_length.label('length'),
                                   ChainSpecies.species_id.label('species')).\
                 join(ExpSeqInfo,

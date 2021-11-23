@@ -18,8 +18,7 @@ from pymotifs.exp_seq.info import Loader as InfoLoader
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([ChainLoader, InfoLoader])
-    print("hub-core/pymotifs/exp_seq/chain_mapping.py Loader start running")      
+    dependencies = set([ChainLoader, InfoLoader])    
 
     def to_process_old(self, pdbs, **kwargs):
         """Compute all chain ids to process. This will extract all rna chain
@@ -200,4 +199,3 @@ class Loader(core.SimpleLoader):
 
         return mod.ExpSeqChainMapping(exp_seq_id=self.exp_id(chain_id),
                                       chain_id=chain_id)
-    print("hub-core/pymotifs/exp_seq/chain_mapping.py Loader ends up")

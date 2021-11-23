@@ -12,7 +12,6 @@ from pymotifs.exp_seq.chain_mapping import Loader as ExpMappingLoader
 class Loader(core.SimpleLoader):
     dependencies = set([ExpMappingLoader, InfoLoader])
 
-    print("hub-core/pymotifs/exp_seq/positions.py Loader start running")
     @property
     def table(self):
         return mod.ExpSeqPosition
@@ -124,4 +123,3 @@ class Loader(core.SimpleLoader):
 
         sequence = self.sequence(exp_seq_id)
         return self.positions(exp_seq_id, sequence)
-    print("hub-core/pymotifs/exp_seq/positions.py Loader ends up")

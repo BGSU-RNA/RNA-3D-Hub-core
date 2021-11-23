@@ -19,7 +19,6 @@ class Loader(core.SimpleLoader):
     @property
     def table(self):
         return mod.ExpSeqInfo
-        self.logger.info("I am here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     def to_process_old(self, pdbs, **kwargs):
         """Fetch the sequences to process . This will use the given pdbs to
@@ -67,7 +66,6 @@ class Loader(core.SimpleLoader):
 
         # print("info.py to_process method")
         self.logger.info("to_process method")
-        self.logger.info("I am here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
         simplify_type = {}
         simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
@@ -80,8 +78,6 @@ class Loader(core.SimpleLoader):
         macromolecule_types = simplify_type.keys()
 
         print("info.py to_process method")
-        self.logger.info("I am here, too!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
         data = set([])   # set so we get unique (sequence,type) pairs
 
         with self.session() as session:
