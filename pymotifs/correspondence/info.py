@@ -148,7 +148,7 @@ class Loader(core.MassLoader):
 
         return (pair[0]['id'], pair[1]['id']) in self.known
 
-    def as_pair(self, pair):
+    def ids_with_column_names(self, pair):
         """Turn a tuple into a dictionary for the database.
 
         :param tuple pair: The sequence pair.
@@ -218,18 +218,22 @@ class Loader(core.MassLoader):
         :returns: The list pairs
         """
 
-        seqs = self.sequences(pdbs)                                         
-        self.logger.info("show the seqs info of pairs function: %s" % seqs) ## [{'species': set(4932), 'length': 76, 'id': 4177, 'entity_type': 'rna'}]
-        #pairs = it.combinations(seqs, 2)                                    ## just a guess, the function will return a list of diff combinations if we have more than 2 seqs. Thus, if we only have one seq, it will return [].
+        seqs = self.sequences(pdbs)                                         ## seqs is a list of dicts with information about sequences.                       
+        self.logger.info("show the seqs info of pairs function: %s" % seqs[0]) ## [{'species': set(4932), 'length': 76, 'id': 4177, 'entity_type': 'rna'}]
+        # pairs = it.combinations(seqs, 2)                                    ## just a guess, the function will return a list of diff combinations if we have more than 2 seqs. Thus, if we only have one seq, it will return [].
         # Thus, the problem is here, we can add condiction for each entity type.
         rna_pairs = it.combinations([f for f in seqs if f['entity_type']=='rna'],2)
         dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna'],2)
-        pairs = list(rna_pairs)+list(dna_pairs)
-        self.logger.info("Found pairs %s", pairs)                           ## <itertools.combinations object at 0x7fb8f641dec0>
+        hybrid_pairs = it.combinations([f for f in seqs if f['entity_type']=='hybrid'],2)
+        # pairs = list(rna_pairs)+list(dna_pairs)+list(hybrid_pairs)
+        # self.logger.info("Found pairs %s", pairs)                           ## <itertools.combinations object at 0x7fb8f641dec0>
         self_pairs = it.izip(seqs, seqs)                                    ## Ex. ({'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'}, {'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'})
         self.logger.info("Found self_pairs %s", self_pairs)                 ## <itertools.izip object at 0x7fb8f6405bd8>
-        return sorted(it.chain.from_iterable([self_pairs, pairs]),
-                      key=lambda p: (p[0]['id'], p[1]['id']))
+        # return sorted(it.chain.from_iterable([self_pairs, pairs]),
+        #               key=lambda p: (p[0]['id'], p[1]['id']))
+        
+        return sorted(it.chain.from_iterable([self_pairs,rna_pairs,dna_pairs,hybrid_pairs]),
+                      key=lambda p: (p[0]['id'], p[1]['id']))        
 
     def data(self, pdbs, **kwargs):
         """Compute all new correspondences pairs.
@@ -241,7 +245,7 @@ class Loader(core.MassLoader):
         pairs = self.pairs(pdbs)
         pairs = it.ifilter(self.is_match, pairs)
         pairs = sorted(pairs, key=lambda p: (p[0]['id'], p[1]['id']))
-        pairs = it.imap(self.as_pair, pairs)
+        pairs = it.imap(self.ids_with_column_names, pairs)
         pairs = list(pairs)
         self.logger.info("Found %i new correspondence pairs", len(pairs))
         return pairs
