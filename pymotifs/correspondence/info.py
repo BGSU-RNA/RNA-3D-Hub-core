@@ -55,7 +55,8 @@ class Loader(core.MassLoader):
         with self.session() as session:
             query = session.query(ExpSeqPdb.exp_seq_id.label('id'),                 ## There are some label functions, they are here for rename the column to "id", "length", and "species" 
                                   ExpSeqInfo.normalized_length.label('length'),
-                                  ChainSpecies.species_id.label('species')).\
+                                  ChainSpecies.species_id.label('species'),
+                                  ExpSeqInfo.entity_type.label('entity_type')).\
                 join(ExpSeqInfo,
                      ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
                 outerjoin(ChainSpecies,
@@ -69,6 +70,8 @@ class Loader(core.MassLoader):
             
             for result in query:
                 self.logger.info("show the query result:%s %s %s" % (result.id, result.length, result.species))
+                self.logger.info("show the lookup_sequences return: %s" % ut.row2dict(result))                  ## the return value example: {'length': 76L, 'id': 4177L, 'species': 4932L}
+                
             return [ut.row2dict(result) for result in query]
 
     def length_match(self, pair):
@@ -169,10 +172,12 @@ class Loader(core.MassLoader):
         mapping = {}
         for seq in sequences:
             sid = seq['id']
+            self.logger.info("show the seq info: %s %s %s %s" % (seq["id"], seq["length"],seq["species"],seq["entity_type"]))
             if sid not in mapping:
                 mapping[sid] = dict(seq)
                 mapping[sid]['species'] = set([seq['species']])
             mapping[sid]['species'].update([seq['species']])
+            self.logger.info("show the mapping info %s" % mapping)
         return mapping.values()
 
     def is_match(self, pair):
@@ -196,8 +201,10 @@ class Loader(core.MassLoader):
 
         self.logger.info("Using %i pdbs", len(pdbs))
         seqs = it.imap(self.lookup_sequences, pdbs)
+        self.logger.info("show the it.map's result: %s" % seqs)
         seqs = it.chain.from_iterable(seqs)
         seqs = self.unique_sequences(seqs)
+        self.logger.info("show the unique_sequences's result: %s" % seqs)
         if not seqs:
             raise core.InvalidState("Found no new sequences")
 
@@ -211,9 +218,16 @@ class Loader(core.MassLoader):
         :returns: The list pairs
         """
 
-        seqs = self.sequences(pdbs)
-        pairs = it.combinations(seqs, 2)
-        self_pairs = it.izip(seqs, seqs)
+        seqs = self.sequences(pdbs)                                         
+        self.logger.info("show the seqs info of pairs function: %s" % seqs) ## [{'species': set(4932), 'length': 76, 'id': 4177, 'entity_type': 'rna'}]
+        #pairs = it.combinations(seqs, 2)                                    ## just a guess, the function will return a list of diff combinations if we have more than 2 seqs. Thus, if we only have one seq, it will return [].
+        # Thus, the problem is here, we can add condiction for each entity type.
+        rna_pairs = it.combinations([f for f in seqs if f['entity_type']=='rna'],2)
+        dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna'],2)
+        pairs = list(rna_pairs)+list(dna_pairs)
+        self.logger.info("Found pairs %s", pairs)                           ## <itertools.combinations object at 0x7fb8f641dec0>
+        self_pairs = it.izip(seqs, seqs)                                    ## Ex. ({'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'}, {'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'})
+        self.logger.info("Found self_pairs %s", self_pairs)                 ## <itertools.izip object at 0x7fb8f6405bd8>
         return sorted(it.chain.from_iterable([self_pairs, pairs]),
                       key=lambda p: (p[0]['id'], p[1]['id']))
 
