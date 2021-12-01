@@ -69,7 +69,7 @@ class Loader(core.MassLoader):
                 self.logger.warning("No sequences for %s" % pdb)
             
             for result in query:
-                self.logger.info("show the query result:%s %s %s" % (result.id, result.length, result.species))
+                self.logger.info("show the query result:%s %s %s %s" % (result.id, result.length, result.species, result.entity_type))
                 self.logger.info("show the lookup_sequences return: %s" % ut.row2dict(result))                  ## the return value example: {'length': 76L, 'id': 4177L, 'species': 4932L}
                 
             return [ut.row2dict(result) for result in query]
@@ -113,6 +113,7 @@ class Loader(core.MassLoader):
         """
 
         common = pair[0]['species'].intersection(pair[1]['species'])
+        self.logger.info("show the current species: %s  %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
         if len(common):
             return True
         species = set()
@@ -180,6 +181,16 @@ class Loader(core.MassLoader):
             self.logger.info("show the mapping info %s" % mapping)
         return mapping.values()
 
+    def entity_type_matches(self, pair):
+        """Check if a pair of entity_types have compatible species. 
+
+        :param tuple pair: The pair of entity_types to compare.
+        :returns: The boolean
+        """
+
+        if pair[0]['entity_type'] == pair[1]['entity_type']:
+            return True
+
     def is_match(self, pair):
         """Check if a pair of sequences are a pair. A pair is a match if they
         are a good length, have matching sequences and is not known.
@@ -190,6 +201,7 @@ class Loader(core.MassLoader):
 
         return self.length_match(pair) and \
             self.species_matches(pair) and \
+            self.entity_type_matches(pair) and \
             not self.is_known(pair)
 
     def sequences(self, pdbs):
