@@ -187,9 +187,11 @@ class Loader(core.MassLoader):
         :param tuple pair: The pair of entity_types to compare.
         :returns: The boolean
         """
+        ## mark!!! do more logging.info!
+        if pair[0]['enity_type'] = 'dna':
+            self.logger.info("the entity_types of the current pair %s %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
+        return pair[0]['entity_type'] == pair[1]['entity_type']
 
-        if pair[0]['entity_type'] == pair[1]['entity_type']:
-            return True
 
     def is_match(self, pair):
         """Check if a pair of sequences are a pair. A pair is a match if they
