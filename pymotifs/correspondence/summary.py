@@ -9,14 +9,10 @@ from pymotifs import core
 from pymotifs import utils
 from pymotifs import models as mod
 
-# from pymotifs.models import CorrespondenceInfo as Info
-# from pymotifs.models import CorrespondencePositions as Position
 from pymotifs.correspondence.positions import Loader as PositionLoader
 
 from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
 from pymotifs.constants import CORRESPONDENCE_LIMITED_CHANGES
-
-from Bio import pairwise2
 
 
 
@@ -94,10 +90,6 @@ class Loader(core.Loader):
         """Detect if the given correspondence id is below our cutoffs for a
         good match.
         """
-        #############
-        min_size = min(min_size,max_size)
-        max_size = max(min_size,max_size)
-        #############
 
         if not info['aligned_count']:
             return False
@@ -110,13 +102,13 @@ class Loader(core.Loader):
         if min_size < CORRESPONDENCE_LIMITED_CHANGES:                        ## ===> if min_size < 80
             return info['mismatch_count'] <= 4
 
-        if max_size > min_size * 2 or min_size > max_size * 2:               ## So the min_size is not really the minimum size of two sequences in this whole python file.
+        if max_size > min_size * 2:               
             return False
 
         if not info['mismatch_count']:
             return True
 
-        return float(info['match_count']) / float(min_size) >= 0.95          ## float(info['match_count']) / min(float(min_size),float(min_size) >= 0.95
+        return float(info['match_count']) / float(min_size) >= 0.95          
 
     def alignment(self, corr_id):
         with self.session() as session:
@@ -175,29 +167,6 @@ class Loader(core.Loader):
                 data['first_gap_count'] += 1
             if not unit2:
                 data['second_gap_count'] += 1
-        ######## method 1 (need extra package) ##############
-        alignments = pairwise2.align.globalxx(seq1, seq2)
-        data['match_count'] = alignments[0][2]
-        data['mismatch_count'] = len(positions) - alignments[0][2]
-        ######## method 2 (MTP)                 #############
-        guide_matrix = {(0,0):0}
-        for i in range(-1,len(method2_seq1)):
-            for j in range(-1,len(method2_seq2)):
-                guide_matrix[(i,j)]=0
-                if i>-1 and j>-1:
-                    if method2_seq1[i]==method2_seq2[j]:
-                        guide_matrix[(i,j)]=1
-                    
-        maxdic = guide_matrix
-        for i in range(0,len(method2_seq1)):
-            for j in range(0,len(method2_seq2)):
-                if i>=0 and j>=0:
-                    maxdic[(i,j)] = max(maxdic[(i,j-1)],maxdic[(i-1,j)])
-                    if method2_seq1[i]==method2_seq2[j]:
-                        maxdic[(i,j)] = maxdic[(i-1,j-1)] + 1
-        
-        data['match_count'] = maxdic[(len(method2_seq1),len(method2_seq2))]
-        data['mismatch_count'] = len(positions) - data['match_count']
 
         return data
 
