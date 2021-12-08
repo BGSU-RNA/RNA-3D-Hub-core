@@ -32,7 +32,8 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(mod.CorrespondenceInfo.correspondence_id)
+            query = session.query(mod.CorrespondenceInfo.correspondence_id).\
+            filter(mod.CorrespondenceInfo.length == None)
             return [result.correspondence_id for result in query]
 
     def remove(self, corr_id, **kwargs):
@@ -47,11 +48,12 @@ class Loader(core.Loader):
         looks for the length field not being null.
         """
 
-        with self.session() as session:
-            query = session.query(mod.CorrespondenceInfo).\
-                filter(mod.CorrespondenceInfo.correspondence_id == corr_id).\
-                filter(mod.CorrespondenceInfo.length != None)
-            return bool(query.count())
+        # with self.session() as session:
+        #     query = session.query(mod.CorrespondenceInfo).\
+        #         filter(mod.CorrespondenceInfo.correspondence_id == corr_id).\
+        #         filter(mod.CorrespondenceInfo.length != None)
+        #     return bool(query.count())
+        return False
 
     def current(self, corr_id):
         """Get the current data for the correspondence.
@@ -130,6 +132,22 @@ class Loader(core.Loader):
                 results.append({'unit1': result.unit1, 'unit2': result.unit2}) 
         return results
 
+    # def alignment_testing(self, corr_id):
+    #     with self.session() as session:
+    #         e1 = aliased(mod.ExpSeqInfo)
+    #         e2 = aliased(mod.ExpSeqInfo)
+    #         query = session.query(e1.normalized.label('unit1'),
+    #                                 e2.normalized.label('unit2')).\
+    #             join(e1,
+    #                  mod.CorrespondenceInfo.exp_seq_id_1 == e1.exp_seq_id).\
+    #             join(e2,
+    #                  mod.CorrespondenceInfo.exp_seq_id_2 == e2.exp_seq_id).\
+    #             filter(mod.CorrespondencePositions.correspondence_id == corr_id)
+    #         results = []
+    #         for result in query:
+    #             results.append({'unit1': [],'unit2': []})
+
+
     def summary(self, positions):
         data = {
             'length': len(positions),
@@ -140,19 +158,11 @@ class Loader(core.Loader):
             'mismatch_count': 0
         }
 
-        seq1 = ''
-        seq2 = ''
-        method2_seq1 = []
-        method2_seq2 = []
+
 
         for position in positions:                      ## the following part is for matching bases for two sequences
             unit1 = position['unit1']
             unit2 = position['unit2']
-
-            seq1 = seq1+unit1
-            seq2 = seq2+unit2
-            method2_seq1.append(unit1)
-            method2_seq2.append(unit2)
 
             if unit1 and unit2:
                 data['aligned_count'] += 1
