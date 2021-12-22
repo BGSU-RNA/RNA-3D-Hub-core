@@ -148,7 +148,9 @@ class Loader(core.Loader):
                 return False
 
             if not info['mismatch_count']:
-                return 2                      
+                return 2  
+            if float(info['match_count']) / float(min_size) >= 0.95:
+                return 2                    
 
     def alignment(self, corr_id):
         with self.session() as session:
