@@ -64,7 +64,21 @@ class Loader(core.Loader):
 
         with self.session() as session:
             info = session.query(mod.CorrespondenceInfo).get(corr_id)
-            return utils.row2dict(info)                                     ## A dict for the values of columns in correspondence_info table for a specific corr_id.
+            current_exp_seq_id_1 = utils.row2dict(info)['exp_seq_id_1']
+            entity_type_info = session.query(mod.ExpSeqInfo.exp_seq_id).\
+                filter(mod.ExpSeqInfo.exp_seq_id == current_exp_seq_id_1)
+            # entity_type = utils.row2dict(entity_type_info)[entity_type]
+            result = utils.row2dict(info)
+            result['entity_type'] = entity_type_info
+            return result                                     ## A dict for the values of columns in correspondence_info table for a specific corr_id.
+
+
+    # def adding_entity_type(self, info):
+    #     with self.session() as session:
+    #         query = session.query(mod.ExpSeqInfo).\
+    #             filter(mod.ExpSeqInfo.exp_seq_id == current_exp_seq_id_1)
+        
+
 
     def sizes(self, info):
         """Compute the minimum size of the experimental sequences used in this
@@ -95,25 +109,46 @@ class Loader(core.Loader):
         """Detect if the given correspondence id is below our cutoffs for a
         good match.
         """
+        if info['entity_type'] == 'rna':
 
-        if not info['aligned_count']:
-            return False
+            if not info['aligned_count']:
+                return False
 
-        if min_size < CORRESPONDENCE_EXACT_CUTOFF:                           ## ====> min_size < 19
-            if min_size == max_size:
-                return info['mismatch_count'] == 0
-            return False
+            if min_size < CORRESPONDENCE_EXACT_CUTOFF:                           ## ====> min_size < 19
+                if min_size == max_size:
+                    return info['mismatch_count'] == 0
+                return False
 
-        if min_size < CORRESPONDENCE_LIMITED_CHANGES:                        ## ===> if min_size < 80
-            return info['mismatch_count'] <= 4
+            if min_size < CORRESPONDENCE_LIMITED_CHANGES:                        ## ===> if min_size < 80
+                return info['mismatch_count'] <= 4
 
-        if max_size > min_size * 2:               
-            return False
+            if max_size > min_size * 2:               
+                return False
 
-        if not info['mismatch_count']:
-            return True
+            if not info['mismatch_count']:
+                return True
 
-        return float(info['match_count']) / float(min_size) >= 0.95          
+            return float(info['match_count']) / float(min_size) >= 0.95
+
+        if info['entity_type'] == 'dna':
+            if not info['aligned_count']:
+                return False
+
+            if min_size < CORRESPONDENCE_EXACT_CUTOFF:                           ## ====> min_size < 19
+                if min_size == max_size:
+                    if info['mismatch_count'] == 0:
+                        return 2
+                return False
+
+            if min_size < CORRESPONDENCE_LIMITED_CHANGES:                        ## ===> if min_size < 80
+                if info['mismatch_count'] <= 4:
+                    return 2
+
+            if max_size > min_size * 2:               
+                return False
+
+            if not info['mismatch_count']:
+                return 2                      
 
     def alignment(self, corr_id):
         with self.session() as session:
@@ -192,5 +227,6 @@ class Loader(core.Loader):
         min_size, max_size = self.sizes(data)
         data.update(self.summary(self.alignment(corr_id)))
         data['good_alignment'] = self.good_alignment(data, min_size, max_size)
+        del data['entity_type']
 
         return mod.CorrespondenceInfo(**data)
