@@ -16,6 +16,8 @@ from pymotifs.utils.structures import Structure
 from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.exp_seq.info import Loader as InfoLoader
 
+from sqlalchemy import case
+
 
 class Loader(core.SimpleLoader):
     dependencies = set([ChainLoader, InfoLoader])    
@@ -169,12 +171,14 @@ class Loader(core.SimpleLoader):
         simplify_type['polyribonucleotide'] = 'rna'
         simplify_type['polydeoxyribonucleotide'] = 'dna'
         simplify_type['polydeoxyribonucleotide/polyribonucleotide hybrid'] = 'hybrid'
-        simplify_type['DNA/RNA Hybrid'] = 'hybrid'
+        simplify_type['DNA/RNA Hybrid'] = 'hybrid'  
+
         with self.session() as session:
             exp = mod.ExpSeqInfo
             query = session.query(exp.exp_seq_id).\
                 join(mod.ChainInfo,
-                     (mod.ChainInfo.sequence == exp.sequence) & (simplify_type[mod.ChainInfo.sequence] == exp.entity_type)).\
+                     # (mod.ChainInfo.sequence == exp.sequence) & (simplify_type[mod.ChainInfo.entity_macromolecule_type] == exp.entity_type)).\
+                     (mod.ChainInfo.sequence == exp.sequence) & (case(simplify_type, value = mod.ChainInfo.entity_macromolecule_type) == exp.entity_type)).\
                 filter(mod.ChainInfo.chain_id == chain_id)
 
             if query.count() != 1:
