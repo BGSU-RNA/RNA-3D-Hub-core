@@ -99,7 +99,7 @@ class Loader(core.Loader):
 
         return {'ids': ids, 'sequence': ''.join(sequence)}
 
-    def correlate(self, corr_id, ref, target):
+    def correlate(self, corr_id, ref, target): ## rename !! align sequences
         """Run the alignment on two sequences. This will do an alignment are
         return lists that contain the ids for aligned positions only.
 

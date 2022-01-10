@@ -152,7 +152,7 @@ class Loader(core.Loader):
             if float(info['match_count']) / float(min_size) >= 0.95:
                 return 2                    
 
-    def alignment(self, corr_id):
+    def alignment(self, corr_id): ### change name to get alignments
         with self.session() as session:
             p1 = aliased(mod.ExpSeqPosition)
             p2 = aliased(mod.ExpSeqPosition)
