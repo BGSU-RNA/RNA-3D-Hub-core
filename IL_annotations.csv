@@ -1,2 +1,94 @@
-IL_45028.1,,"Triple sheared","RNA IL motif","Zirbel"
-,"IL_2A64_006","Triple sheared from 2A64","Specific IL","Zirbel"
+IL_56467.1,,Triple sheared,Triple sheared,zirbel
+IL_56467.1,IL_4IOA_012,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.1,IL_4WF9_019,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.1,IL_4Y4O_193,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.1,IL_5J7L_258,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.1,IL_4V9F_020,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.2,,Triple sheared,Triple sheared,zirbel
+IL_55896.1,,tSH-tHS-tWS,,zirbel
+IL_53523.1,,tSH-inserted-tHW,,zirbel
+IL_05062.1,,Triple sheared with inserted A,Triple sheared,sree
+IL_09705.1,,Double sheared,Double sheared,sree
+IL_09705.1,IL_4WF9_054,4x5 with ntWS,,sree
+IL_74719.1,,Double sheared with bulged A,Double sheared,zirbel
+IL_37811.1,,Double sheared with inserted A,Double sheared,zirbel
+IL_48459.1,IL_1UN6_005,3x3 UU cWW,Single non-canonical cWW,zirbel
+IL_48459.1,IL_4E48_002,3x3 UU cWW water inserted,Single non-canonical cWW,zirbel
+IL_48459.1,IL_5ED1_002,3x3 AA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_5MWI_008,3x3 UU cWW,Single non-canonical cWW,zirbel
+IL_48459.1,IL_4KNQ_004,3x3 CC cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4E59_001,3x3 CC cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4KNQ_001,3x3 CC cWW,Single non-canonical cWW,zirbel
+IL_48459.1,IL_4KNQ_002,3x3 CC cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4E48_006,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4PKD_001,3x3 UU cWW with bulged A,Single non-canonical cWW,sree
+IL_48459.1,IL_2PWT_001,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4R0D_018,3x3 GU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4V9F_077,3x3 AA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4V5O_101,3x3 GA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4V88_467,3x3 AA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4V5O_113,3x3 CA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_2PWT_004,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4ZC7_004,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_1ZZ5_004,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_1ZZ5_002,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_1KFO_003,3x3 CA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_1KFO_002,3x3 CA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4TS2_004,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4P3T_005,3x3 CA cWW with bulged A,Single non-canonical cWW,sree
+IL_48459.1,IL_5ED2_004,3x3 CA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4LFB_061,3x3 UG cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_3SZX_003,3x3 UU cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4IOA_030,3x3 CA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4Y4O_211,3x3 CA cWW,Single non-canonical cWW,sree
+IL_48459.1,IL_4V88_385,3x3 UC cWW,Single non-canonical cWW,sree
+IL_60247.1,,Tandem non-canonical cWW pairs,Tandem non-canonical cWW pairs,sree
+IL_35110.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_35110.1,IL_4V9F_092,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_35110.1,IL_4IOA_096,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_35110.1,IL_5J7L_346,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_35110.1,IL_4WF9_100,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_35110.1,IL_4Y4O_278,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_04346.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_34470.1,,9x8 Sarcin-Ricin with GA cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_59724.1,,8x7 Sarcin-Ricin with CC bifurcated pair; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_50992.1,,9x8 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_24606.1,,8x6 Sarcin-Ricin with inserted Y; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_56501.1,,7x6 Sarcin-Ricin with UU cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_36582.1,,8x6 Sarcin-Ricin with inserted A; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_02349.1,,8x6 Sarcin-Ricin with bulged A; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_88269.1,,6x5 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_16109.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_93830.1,,7x7 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_34590.1,,9x9 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_20463.1,,7x11 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_63596.1,,C-loop,C-loop,zirbel
+IL_93147.1,,C-loop,C-loop,sree
+IL_51590.1,IL_4V88_408,C-loop with extra cWW pair,C-loop,zirbel
+IL_35410.1,,C-loop,C-loop,sree
+IL_08376.1,,C-loop,C-loop,sree
+IL_51265.1,,Kink-turn from U4,Kink-turn,sree
+IL_51265.1,IL_4LCK_006,Kink-turn from T-box riboswitch,Kink-turn,sree
+IL_29549.1,,Kink-turn,Kink-turn,zirbel
+IL_05466.1,,Kink-turn,Kink-turn,sree
+IL_05466.1,IL_3RW6_002,Kink-turn with non-sequential stacking,Kink-turn,zirbel
+IL_05466.1,IL_4LFB_011,Kink-turn with non-sequential stacking,Kink-turn,zirbel
+IL_05466.1,IL_5J7L_014,Kink-turn with non-sequential stacking,Kink-turn,zirbel
+IL_05466.1,IL_4V88_402,Kink-turn with non-sequential stacking,Kink-turn,zirbel
+IL_30294.1,,Kink-turn,Kink-turn,sree
+IL_44060.1,,Kink-turn from 23S H58,Kink-turn,sree
+IL_90922.1,,Kink-turn,Kink-turn,sree
+IL_61852.1,,Kink turn,Kink-turn,sree
+IL_93952.1,,Kink-turn,Kink-turn,sree
+IL_95811.1,,Vitamin B12 Aptamer,Vitamin B12 Aptamer,sree
+IL_80007.9,,Single bulged A,Single bulged A,zirbel
+IL_61258.4,,Single bulged C,Single bulged C,zirbel
+IL_59137.6,,Single bulged G,Single bulged G,zirbel
+IL_83039.8,,Single bulged U,Single bulged U,zirbel
+IL_13730.6,,Multiple bulged bases,Multiple bulged bases,zirbel
+IL_13730.6,IL_4IOA_084,Base triple twist,Base triple twist,zirbel
+IL_13730.6,IL_1NTA_001,Stack outside cWW,Stack outside cWW,zirbel
+IL_13730.6,IL_1U9S_008,Stack outside cWW,Stack outside cWW,zirbel
+IL_13730.6,IL_6JQ6_001,Stack outside cWW,Stack outside cWW,zirbel
+IL_13730.6,IL_6JQ6_004,Stack outside cWW,Stack outside cWW,zirbel
+IL_13730.6,IL_6JQ5_001,Stack outside cWW,Stack outside cWW,zirbel

@@ -10,7 +10,6 @@ import numpy as np
 import math
 from fr3d.modified_parent_mapping import modified_nucleotides
 
-
 class Loader(core.SimpleLoader):
     """A class to compute glycosidic bond orientations and load them into the database.
     """
@@ -29,6 +28,41 @@ class Loader(core.SimpleLoader):
         return session.query(mod.UnitOrientations).\
             filter_by(pdb_id=pdb)
 
+
+    def to_process(self, pdbs, **kwargs):
+        """
+        Find pdb files with no bond orientations computed.
+
+        Parameters
+        ----------
+        pdbs : list of strings
+
+        Returns
+        -------
+        pdbs_to_compute : list of strings, can be empty
+
+        """
+
+        # when just one file to process, pdbs is a string
+        if isinstance(pdbs,str):
+            pdbs = [pdbs]
+
+        with self.session() as session:
+            query = session.query(mod.UnitOrientations.pdb_id).\
+                   distinct()
+
+            pdbs_computed = set([r.pdb_id for r in query])
+
+        pdbs_to_compute = sorted(set(pdbs) - pdbs_computed)
+
+        # make sure to return at least one file name, o/w dispatcher complains
+        if len(pdbs_to_compute) == 0:
+            pdbs_to_compute = [pdbs[0]]
+
+        self.logger.info("Found %d files to process" % len(pdbs_to_compute))
+
+        return pdbs_to_compute
+
     def data(self, pdb, **kwargs):
         """
         Load the structure, compute the orientations, save.
@@ -46,8 +80,8 @@ class Loader(core.SimpleLoader):
             chi = None
             orientation = ""
 
-            N1N9 = None
-            C2C4 = None
+            N1N9 = []
+            C2C4 = []
 
             if nt.sequence in ['A','G','DA','DG']:
                 N1N9 = nt.centers["N9"]

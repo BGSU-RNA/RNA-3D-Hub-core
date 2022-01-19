@@ -77,7 +77,7 @@ class RnaPdbsHelper(object):
 
                 for item in jsonR["result_set"]:
                     resultIDs.append(item["identifier"])
-        except:
+        except Exception as err:
             logger.exception(err)
             raise GetAllRnaPdbsError("Failed getting all PDBs")
 
