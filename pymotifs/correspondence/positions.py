@@ -32,10 +32,12 @@ class Loader(core.Loader):
         """
 
         with self.session() as session:
-            query = session.query(mod.CorrespondenceInfo.correspondence_id)
+            query = session.query(mod.CorrespondenceInfo.correspondence_id).\
+                filter(mod.CorrespondenceInfo.length == None)
             if not query.count():
                 raise core.Skip("Skipping positions, no new correspondences")
             return [result.correspondence_id for result in query]
+
 
     def has_data(self, corr_id, **kwargs):
         """Check if we have data for the given correspondence id. This will
