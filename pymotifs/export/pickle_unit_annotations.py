@@ -9,10 +9,7 @@ import pickle
 from pymotifs import core
 from pymotifs import models as mod
 
-from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.exp_seq.mapping import Loader as MappingLoader
-from pymotifs.exp_seq.positions import Loader as PositionLoader
-from pymotifs.ife.info import Loader as IfeInfoLoader
+from pymotifs.units.bond_orientation import Loader as OrientationLoader
 
 from os import path
 
@@ -25,8 +22,7 @@ class Exporter(core.Loader):
     # General Setup
     compressed = False 
     mark = False 
-    dependencies = set([ChainLoader,
-                        PositionLoader, IfeInfoLoader, MappingLoader])
+    dependencies = set([OrientationLoader])
 
     def has_data(self, entry, *args, **kwargs):
         #self.logger.info("has_data: entry: %s" % str(entry))
@@ -94,7 +90,7 @@ class Exporter(core.Loader):
                    distinct().\
                    filter(mod.UnitInfo.unit_type_id == 'rna')
 
-            return [(r.pdb_id, r.model, r.chain) for r in query if r.pdb_id in pdbs]
+            return [(r.pdb_id, str(r.model), r.chain) for r in query if r.pdb_id in pdbs]
 
 
     def data(self, ichain, **kwargs):
