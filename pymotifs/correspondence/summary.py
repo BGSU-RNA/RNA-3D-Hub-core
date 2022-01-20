@@ -37,8 +37,8 @@ class Loader(core.Loader):
                 filter(mod.CorrespondenceInfo.length == None)
             if not query.count():
                 raise core.Skip("Skipping summary, no new correspondences")
-        result = [result.correspondence_id for result in query]
-        return
+
+        return [result.correspondence_id for result in query]
 
     def remove(self, corr_id, **kwargs):
         """We do not remove anything when summarizing as we aren't actually
