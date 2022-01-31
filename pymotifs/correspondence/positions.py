@@ -99,7 +99,7 @@ class Loader(core.Loader):
 
         return {'ids': ids, 'sequence': ''.join(sequence)}
 
-    def correlate(self, corr_id, ref, target): ## rename !! align sequences
+    def align_sequences(self, corr_id, ref, target): ## rename !! align_sequences
         """Run the alignment on two sequences. This will do an alignment are
         return lists that contain the ids for aligned positions only.
 
@@ -111,6 +111,13 @@ class Loader(core.Loader):
         """
 
         results = align([ref, target])
+        # for i in results:
+        #     self.logger.info(i)
+        with self.session() as session:
+            query = session.query(mod.exp_seq_info.entity_type).\
+
+
+
         self.logger.debug("Alignment is %i long", len(results))
         data = []
         for index, result in enumerate(results):
@@ -149,8 +156,8 @@ class Loader(core.Loader):
         exp_id1, exp_id2 = self.info(corr_id)
         sequence1 = self.sequence(exp_id1)
         sequence2 = self.sequence(exp_id2)
-
-        for position in self.correlate(corr_id, sequence1, sequence2):
+        alignment = self.align_sequences(corr_id, sequence1, sequence2)      ###
+        for position in alignment:
             yield mod.CorrespondencePositions(**position)
 
             pos1 = position['exp_seq_position_id_1']

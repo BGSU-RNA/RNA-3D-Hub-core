@@ -537,6 +537,7 @@ class Grouper(core.Base):
 
         grouped = set()
         groups = []
+        #### 
         for group in self.group(ifes, alignments, discrepancy):
             members = []
             sorted_group = sorted(group, key=ranking_key)
