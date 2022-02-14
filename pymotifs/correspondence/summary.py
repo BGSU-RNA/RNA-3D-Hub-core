@@ -132,25 +132,29 @@ class Loader(core.Loader):
 
         if info['entity_type'] == 'dna':
             if not info['aligned_count']:
-                return False
+                return 3                                                        ## 3 is flase here. Just to separate rows from rna pairs
+                                                                                
+            # if min_size < CORRESPONDENCE_EXACT_CUTOFF:                           ## ====> min_size < 19
+            #     if min_size == max_size:                                
+            #         if info['mismatch_count'] == 0:
+            #             return 2                                                  ## 2 stands for true here.
+            #     return 3
+            # ## we may not need the following condition now cuz we are making one to one basepairs now. 
+            # if min_size < CORRESPONDENCE_LIMITED_CHANGES:                        ## ===> if min_size < 80
+            #     if info['mismatch_count'] <= 4:
+            #         return 3                        # I just simply put 3 instead of 2 here. The original one is true.                                                   
 
-            if min_size < CORRESPONDENCE_EXACT_CUTOFF:                           ## ====> min_size < 19
-                if min_size == max_size:
-                    if info['mismatch_count'] == 0:
-                        return 2
-                return False
+            # if max_size > min_size * 2:               
+            #     return 3
 
-            if min_size < CORRESPONDENCE_LIMITED_CHANGES:                        ## ===> if min_size < 80
-                if info['mismatch_count'] <= 4:
-                    return 2
-
-            if max_size > min_size * 2:               
-                return False
-
-            if not info['mismatch_count']:
-                return 2  
-            if float(info['match_count']) / float(min_size) >= 0.95:
-                return 2                    
+            # if not info['mismatch_count']:
+            #     return 2  
+            # if float(info['match_count']) / float(min_size) >= 0.95:
+            #     return 3                            ## again, I just simply put 3 instead of 2 for now.       
+            if info['mismatch_count'] == 0:
+                return 2
+            else:
+                return 3              
 
     def alignment(self, corr_id): ### change name to get alignments
         with self.session() as session:

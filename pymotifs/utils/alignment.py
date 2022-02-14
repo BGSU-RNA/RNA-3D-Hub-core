@@ -85,9 +85,10 @@ def align_dna(data):
 
     def align_dna2(data):
         mapping = []
-        if data[0] == data[1] & length(data[0])<20:
-            for index, base in enumerate(data[0]):
-                mapping.append(index)
+        if len(data[0]['ids'])<20:
+            if data[0] == data[1]:
+                for i,j in zip(data[0]["ids"], data[1]["ids"]):
+                    mapping.append([i,j])
     return mapping
 
 

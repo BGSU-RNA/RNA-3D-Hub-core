@@ -111,14 +111,18 @@ class Loader(core.Loader):
         """
 
         results = align([ref, target])
+        self.logger.info('show the list of results of alignment')
+        self.logger.info(results)
+        self.logger.info('show the ref: %s'%ref)
+        self.logger.info('show the target: %s'%target)
         # for i in results:
         #     self.logger.info(i)
-        with self.session() as session:
-            query = session.query(mod.exp_seq_info.entity_type).\
+        # with self.session() as session:
+        #     query = session.query(mod.exp_seq_info.entity_type).\
 
 
 
-        self.logger.debug("Alignment is %i long", len(results))
+        # self.logger.debug("Alignment is %i long", len(results))
         data = []
         for index, result in enumerate(results):
             data.append({
