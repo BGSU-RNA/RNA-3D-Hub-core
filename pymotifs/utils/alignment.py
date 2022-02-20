@@ -83,12 +83,12 @@ def align_dna(data):
 
     return mapping
 
-    def align_dna2(data):
-        mapping = []
-        if len(data[0]['ids'])<20:
-            if data[0] == data[1]:
-                for i,j in zip(data[0]["ids"], data[1]["ids"]):
-                    mapping.append([i,j])
+def align_dna2(data):
+    mapping = []
+    if len(data[0]['ids'])<20:
+        if data[0] == data[1]:
+            for i,j in zip(data[0]["ids"], data[1]["ids"]):
+                mapping.append([i,j])
     return mapping
 
 

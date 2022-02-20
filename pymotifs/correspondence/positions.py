@@ -10,6 +10,7 @@ from pymotifs.exp_seq.info import Loader as InfoLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 
 from pymotifs.utils.alignment import align
+from pymotifs.utils.alignment import align_dna2
 
 
 class Loader(core.Loader):
@@ -99,40 +100,6 @@ class Loader(core.Loader):
 
         return {'ids': ids, 'sequence': ''.join(sequence)}
 
-    def align_sequences(self, corr_id, ref, target): ## rename !! align_sequences
-        """Run the alignment on two sequences. This will do an alignment are
-        return lists that contain the ids for aligned positions only.
-
-        :param int corr_id: The correspondence id to use.
-        :param dict ref: The reference sequence.
-        :param dict target: The target sequence.
-        :returns: A list of dictionaries for each position in the alignment. It
-        lists which positions are aligned.
-        """
-
-        results = align([ref, target])
-        self.logger.info('show the list of results of alignment')
-        self.logger.info(results)
-        self.logger.info('show the ref: %s'%ref)
-        self.logger.info('show the target: %s'%target)
-        # for i in results:
-        #     self.logger.info(i)
-        # with self.session() as session:
-        #     query = session.query(mod.exp_seq_info.entity_type).\
-
-
-
-        # self.logger.debug("Alignment is %i long", len(results))
-        data = []
-        for index, result in enumerate(results):
-            data.append({
-                'exp_seq_position_id_1': result[0],
-                'exp_seq_position_id_2': result[1],
-                'correspondence_id': corr_id,
-                'index': index
-            })
-        return data
-
     def info(self, corr_id):
         """Look up the sequences used in some correspondence.
 
@@ -148,6 +115,123 @@ class Loader(core.Loader):
 
             result = query.one()
             return (result.exp_seq_id_1, result.exp_seq_id_2)
+
+    def align_sequences(self, corr_id, ref, target): ## rename !! align_sequences
+        """Run the alignment on two sequences. This will do an alignment are
+        return lists that contain the ids for aligned positions only.
+
+        :param int corr_id: The correspondence id to use.
+        :param dict ref: The reference sequence.
+        :param dict target: The target sequence.
+        :returns: A list of dictionaries for each position in the alignment. It
+        lists which positions are aligned.
+        """
+
+        seq1, seq2 = self.info(corr_id)
+        self.logger.info('show seq1: %d and seq2: %d'%(seq1,seq2))
+        self.logger.info('show the corr_id: %d'%corr_id)
+        with self.session() as session:
+            query = session.query(mod.ExpSeqInfo).\
+                filter(mod.ExpSeqInfo.exp_seq_id.in_([seq1,seq2]))
+        for result in query:
+            print(result.entity_type)
+            print(result.exp_seq_id)
+        entity_type_check = set()
+        ## this is a double check for entity types because we have checked sequence pairs when we are making sequence pairs.
+        for result in query:
+            if result.entity_type == ['rna']:
+                entity_type_check.add('rna')
+            elif result.entity_type == ['dna']:
+                entity_type_check.add('dna')
+            elif result.entity_type == ['hybrid']:
+                entity_type_check.add('hybrid')
+
+        # for result in query:
+        #     entity_type_check.add(result.entity_type)
+        
+        if len(entity_type_check) > 1:
+            raise core.InvalidState('The entity types of the sequence pair are not identical')
+        elif list(entity_type_check) == ['rna']:
+            results = align([ref, target])
+            self.logger.info('show the list of results of alignment')
+            self.logger.info(results)
+            self.logger.info('show the ref: %s'%ref)
+            self.logger.info('show the target: %s'%target)
+            data = []
+            for index, result in enumerate(results):
+                self.logger.info('show the index: %s'%index)
+                self.logger.info('show the result[0]: %s'%result[0])
+                self.logger.info('show the result[1]: %s'%result[1])
+                data.append({
+                    'exp_seq_position_id_1': result[0],
+                    'exp_seq_position_id_2': result[1],
+                    'correspondence_id': corr_id,
+                    'index': index
+                })
+            
+        elif list(entity_type_check) == ['dna']:
+            results = align_dna2([ref, target])
+            data = []
+            for index, result in enumerate(results):
+                data.append({
+                    'exp_seq_position_id_1': result[0],
+                    'exp_seq_position_id_2': result[1],
+                    'correspondence_id': corr_id,
+                    'index': index
+                })
+           
+        elif list(entity_type_check) == ['hybrid']:
+            raise core.InvalidState('The hybrid pair alignments have not defined.')
+        
+        return data
+
+
+    # def info(self, corr_id):
+    #     """Look up the sequences used in some correspondence.
+
+    #     :param int corr_id: The id of the correspondence to lookup.
+    #     :returns: A tuple of experimental sequences used.
+    #     """
+
+    #     with self.session() as session:
+    #         query = session.query(mod.CorrespondenceInfo).\
+    #             filter_by(correspondence_id=corr_id)
+    #         if not query.count():
+    #             raise core.InvalidState("Unknown correspondence %s" % corr_id)
+
+    #         result = query.one()
+    #         return (result.exp_seq_id_1, result.exp_seq_id_2)
+
+    def align_sequences_old(self, corr_id, ref, target): ## rename !! align_sequences
+        """Run the alignment on two sequences. This will do an alignment are
+        return lists that contain the ids for aligned positions only.
+
+        :param int corr_id: The correspondence id to use.
+        :param dict ref: The reference sequence.
+        :param dict target: The target sequence.
+        :returns: A list of dictionaries for each position in the alignment. It
+        lists which positions are aligned.
+        """
+
+        results = align([ref, target])
+        self.logger.info('show the list of results of alignment')
+        self.logger.info(results)
+        self.logger.info('show the ref: %s'%ref)
+        self.logger.info('show the target: %s'%target)
+        data = []
+        for index, result in enumerate(results):
+            self.logger.info('show the index: %s'%index)
+            self.logger.info('show the result[0]: %s'%result[0])
+            self.logger.info('show the result[1]: %s'%result[1])
+            data.append({
+                'exp_seq_position_id_1': result[0],
+                'exp_seq_position_id_2': result[1],
+                'correspondence_id': corr_id,
+                'index': index
+            })
+        return data
+
+
 
     def data(self, corr_id, **kwargs):
         """Compute the positions for a correspondence. This will do a position
