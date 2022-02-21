@@ -131,43 +131,49 @@ class Loader(core.Loader):
         self.logger.info('show seq1: %d and seq2: %d'%(seq1,seq2))
         self.logger.info('show the corr_id: %d'%corr_id)
         with self.session() as session:
-            query = session.query(mod.ExpSeqInfo).\
+            query = session.query(mod.ExpSeqInfo.entity_type).\
                 filter(mod.ExpSeqInfo.exp_seq_id.in_([seq1,seq2]))
-        for result in query:
-            print(result.entity_type)
-            print(result.exp_seq_id)
+        # for result in query:
+        #     self.logger.info("show the query result:%s %s %s" % (result.exp_seq_id, result.entity_type, corr_id))
+        #     print(result.entity_type)
+        #     print(result.exp_seq_id)
+
+        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,,,,%s,,,,%s'%(corr_id,seq1,seq2))
         entity_type_check = set()
-        ## this is a double check for entity types because we have checked sequence pairs when we are making sequence pairs.
+        # this is a double check for entity types because we have checked sequence pairs when we are making sequence pairs.
         for result in query:
-            if result.entity_type == ['rna']:
+            self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,%s'%(result.entity_type,type(result.entity_type)))
+            if result.entity_type == 'rna':
                 entity_type_check.add('rna')
-            elif result.entity_type == ['dna']:
+            elif result.entity_type == 'dna':
                 entity_type_check.add('dna')
-            elif result.entity_type == ['hybrid']:
+            elif result.entity_type == 'hybrid':
                 entity_type_check.add('hybrid')
 
-        # for result in query:
-        #     entity_type_check.add(result.entity_type)
+        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%entity_type_check)
+        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%(list(entity_type_check) == ['dna']))
+        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%len(entity_type_check))
         
         if len(entity_type_check) > 1:
             raise core.InvalidState('The entity types of the sequence pair are not identical')
         elif list(entity_type_check) == ['rna']:
             results = align([ref, target])
-            self.logger.info('show the list of results of alignment')
-            self.logger.info(results)
-            self.logger.info('show the ref: %s'%ref)
-            self.logger.info('show the target: %s'%target)
+            # self.logger.info('show the list of results of alignment')
+            # self.logger.info(results)
+            # self.logger.info('show the ref: %s'%ref)
+            # self.logger.info('show the target: %s'%target)
             data = []
             for index, result in enumerate(results):
-                self.logger.info('show the index: %s'%index)
-                self.logger.info('show the result[0]: %s'%result[0])
-                self.logger.info('show the result[1]: %s'%result[1])
+                # self.logger.info('show the index: %s'%index)
+                # self.logger.info('show the result[0]: %s'%result[0])
+                # self.logger.info('show the result[1]: %s'%result[1])
                 data.append({
                     'exp_seq_position_id_1': result[0],
                     'exp_seq_position_id_2': result[1],
                     'correspondence_id': corr_id,
                     'index': index
                 })
+            return data
             
         elif list(entity_type_check) == ['dna']:
             results = align_dna2([ref, target])
@@ -179,11 +185,12 @@ class Loader(core.Loader):
                     'correspondence_id': corr_id,
                     'index': index
                 })
+            return data
            
         elif list(entity_type_check) == ['hybrid']:
             raise core.InvalidState('The hybrid pair alignments have not defined.')
         
-        return data
+        # return data
 
 
     # def info(self, corr_id):
@@ -214,15 +221,15 @@ class Loader(core.Loader):
         """
 
         results = align([ref, target])
-        self.logger.info('show the list of results of alignment')
-        self.logger.info(results)
-        self.logger.info('show the ref: %s'%ref)
-        self.logger.info('show the target: %s'%target)
+        # self.logger.info('show the list of results of alignment')
+        # self.logger.info(results)
+        # self.logger.info('show the ref: %s'%ref)
+        # self.logger.info('show the target: %s'%target)
         data = []
         for index, result in enumerate(results):
-            self.logger.info('show the index: %s'%index)
-            self.logger.info('show the result[0]: %s'%result[0])
-            self.logger.info('show the result[1]: %s'%result[1])
+            # self.logger.info('show the index: %s'%index)
+            # self.logger.info('show the result[0]: %s'%result[0])
+            # self.logger.info('show the result[1]: %s'%result[1])
             data.append({
                 'exp_seq_position_id_1': result[0],
                 'exp_seq_position_id_2': result[1],
@@ -244,7 +251,9 @@ class Loader(core.Loader):
         exp_id1, exp_id2 = self.info(corr_id)
         sequence1 = self.sequence(exp_id1)
         sequence2 = self.sequence(exp_id2)
+        ## self.logger.info('corr_id: %s  !!!!!!!!!!!!!%s!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'%(corr_id,sequence1))
         alignment = self.align_sequences(corr_id, sequence1, sequence2)      ###
+        ## self.logger.info('alignment %s'%alignment)
         for position in alignment:
             yield mod.CorrespondencePositions(**position)
 

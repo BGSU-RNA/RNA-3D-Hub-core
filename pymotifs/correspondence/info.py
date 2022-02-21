@@ -70,6 +70,7 @@ class Loader(core.MassLoader):
             
             for result in query:
                 self.logger.info("show the query result:%s %s %s %s" % (result.id, result.length, result.species, result.entity_type))
+                self.logger.info(type(result.species))
                 self.logger.info("show the lookup_sequences return: %s" % ut.row2dict(result))                  ## the return value example: {'length': 76L, 'id': 4177L, 'species': 4932L}
                 
             return [ut.row2dict(result) for result in query]
