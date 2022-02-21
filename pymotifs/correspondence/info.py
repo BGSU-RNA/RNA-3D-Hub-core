@@ -237,7 +237,9 @@ class Loader(core.MassLoader):
         # pairs = it.combinations(seqs, 2)                                    ## just a guess, the function will return a list of diff combinations if we have more than 2 seqs. Thus, if we only have one seq, it will return [].
         # Thus, the problem is here, we can add condiction for each entity type.
         rna_pairs = it.combinations([f for f in seqs if f['entity_type']=='rna'],2)
-        dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna'],2)
+        dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna' & f['length']<20],2)
+        if not dna_pairs:
+            raise core.Skip("Skipping for now because we do not want long dna pairs")
         hybrid_pairs = it.combinations([f for f in seqs if f['entity_type']=='hybrid'],2)
         # pairs = list(rna_pairs)+list(dna_pairs)+list(hybrid_pairs)
         # self.logger.info("Found pairs %s", pairs)                           ## <itertools.combinations object at 0x7fb8f641dec0>
