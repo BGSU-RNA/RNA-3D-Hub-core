@@ -91,7 +91,7 @@ def align_dna2(data):
             for i,j in it.izip(data[0]["ids"], data[1]["ids"]):
                 mapping.append([i,j])
     else:
-        raise core.skip('aviod making alignments for more than 20 length of DNA sequences')
+        raise core.Skip('aviod making alignments for more than 20 length of DNA sequences')
     return mapping
 
 
