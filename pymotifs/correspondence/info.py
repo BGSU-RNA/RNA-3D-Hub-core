@@ -55,11 +55,12 @@ class Loader(core.MassLoader):
         with self.session() as session:
             query = session.query(ExpSeqPdb.exp_seq_id.label('id'),                 ## There are some label functions, they are here for rename the column to "id", "length", and "species" 
                                   ExpSeqInfo.normalized_length.label('length'),
-                                  ChainSpecies.species_id.label('species'),
+                                  ChainSpecies.species_id.label('species'), # ChainInfo.taxonomy_id.lable('species')
                                   ExpSeqInfo.entity_type.label('entity_type')).\
                 join(ExpSeqInfo,
                      ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
-                outerjoin(ChainSpecies,
+                # outerjoin(ChainInfo, ChainInfo.chain_id == ExpSeqPdb.chain_id)
+                outerjoin(ChainSpecies,                                      
                           ChainSpecies.chain_id == ExpSeqPdb.chain_id).\
                 filter(ExpSeqPdb.pdb_id == pdb).\
                 filter(ExpSeqInfo.was_normalized).\
@@ -120,7 +121,7 @@ class Loader(core.MassLoader):
         species = set()
         for seq in pair:
             species.update(seq['species'])
-        return len(species) <= 1 or None in species or SYNTHENIC_SPECIES_ID in species
+        return len(species) <= 1 or None in species or SYNTHENIC_SPECIES_ID in species ## note: should be based on taxonmy id
 
     @property
     def known(self):
@@ -237,7 +238,7 @@ class Loader(core.MassLoader):
         # pairs = it.combinations(seqs, 2)                                    ## just a guess, the function will return a list of diff combinations if we have more than 2 seqs. Thus, if we only have one seq, it will return [].
         # Thus, the problem is here, we can add condiction for each entity type.
         rna_pairs = it.combinations([f for f in seqs if f['entity_type']=='rna'],2)
-        dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna' & f['length']<20],2)
+        dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna' & f['length']<=20],2)
         if not dna_pairs:
             raise core.Skip("Skipping for now because we do not want long dna pairs")
         hybrid_pairs = it.combinations([f for f in seqs if f['entity_type']=='hybrid'],2)

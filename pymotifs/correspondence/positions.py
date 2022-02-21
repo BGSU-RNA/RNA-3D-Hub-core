@@ -138,11 +138,11 @@ class Loader(core.Loader):
         #     print(result.entity_type)
         #     print(result.exp_seq_id)
 
-        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,,,,%s,,,,%s'%(corr_id,seq1,seq2))
+        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,,,,%s,,,,%s'%(corr_id,seq1,seq2))
         entity_type_check = set()
         # this is a double check for entity types because we have checked sequence pairs when we are making sequence pairs.
         for result in query:
-            self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,%s'%(result.entity_type,type(result.entity_type)))
+            # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,%s'%(result.entity_type,type(result.entity_type)))
             if result.entity_type == 'rna':
                 entity_type_check.add('rna')
             elif result.entity_type == 'dna':
@@ -150,9 +150,9 @@ class Loader(core.Loader):
             elif result.entity_type == 'hybrid':
                 entity_type_check.add('hybrid')
 
-        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%entity_type_check)
-        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%(list(entity_type_check) == ['dna']))
-        self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%len(entity_type_check))
+        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%entity_type_check)
+        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%(list(entity_type_check) == ['dna']))
+        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%len(entity_type_check))
         
         if len(entity_type_check) > 1:
             raise core.InvalidState('The entity types of the sequence pair are not identical')
