@@ -60,7 +60,7 @@ class Loader(core.SimpleLoader):
 
         helper = Structure(self.session.maker)
         data = []
-        na_chains = helper.rna_chains(pdb, return_id=True)
+        na_chains = helper.na_chains(pdb, return_id=True)
 
         if not na_chains:
             raise core.InvalidState("Structure %s contains no RNA or DNA" % pdb)

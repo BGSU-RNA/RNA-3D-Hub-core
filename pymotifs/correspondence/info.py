@@ -13,6 +13,7 @@ from pymotifs import utils as ut
 from pymotifs.models import ExpSeqInfo
 from pymotifs.models import ExpSeqPdb
 from pymotifs.models import ChainSpecies
+from pymotifs.models import ChainInfo
 from pymotifs.models import CorrespondenceInfo
 
 from pymotifs.constants import SYNTHENIC_SPECIES_ID
@@ -22,6 +23,8 @@ from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
 from pymotifs.exp_seq.loader import Loader as ExpSeqLoader
 from pymotifs.chains.info import Loader as ChainInfoLoader
 from pymotifs.chains.species import Loader as ChainSpeciesLoader
+
+from pymotifs import models as mod
 
 
 class Loader(core.MassLoader):
@@ -37,6 +40,28 @@ class Loader(core.MassLoader):
 
     exact_cutoff = CORRESPONDENCE_EXACT_CUTOFF                                      ## = 36 """Length cutoff before being matched as small"""
     huge_cutoff = CORRESPONDENCE_HUGE_CUTOFF                                        ## = 2000 """Length cutoff before being matched as huge"""
+
+
+    # def to_process(self, pdbs, **kwargs):
+    #     """This function is trying to limit only DNA sequence pairs,
+    #         and it can be removed someday.
+    #     """
+
+    #     with self.session() as session:
+    #         query = session.query(mod.ChainInfo.pdb_id,mod.ChainInfo.entity_macromolecule_type,mod.ChainInfo.sequence)
+    #         dna_pdbs = []
+    #         other_pdbs = []
+    #         for result in query:
+    #             if result.entity_macromolecule_type in ['Polydeoxyribonucleotide (DNA)','polydeoxyribonucleotide']:
+    #                 if len(result.sequence) <= 20:
+    #                     dna_pdbs.append(result.pdb_id)
+    #             else:
+    #                 other_pdbs.append(result.pdb_id)
+
+    #         if not dna_pdbs:
+    #             raise core.Skip("Skipping pdbs, no new dna sequences less than 20")
+    #         pdbs = dna_pdbs + other_pdbs
+    #         return pdbs
 
     def has_data(self, pdb, **kwargs):
         """Always returns false. This stage is odd in that we do the filtering
@@ -55,13 +80,12 @@ class Loader(core.MassLoader):
         with self.session() as session:
             query = session.query(ExpSeqPdb.exp_seq_id.label('id'),                 ## There are some label functions, they are here for rename the column to "id", "length", and "species" 
                                   ExpSeqInfo.normalized_length.label('length'),
-                                  ChainSpecies.species_id.label('species'), # ChainInfo.taxonomy_id.lable('species')
+                                  mod.ChainInfo.taxonomy_id, # ChainInfo.taxonomy_id.lable('species') # ChainSpecies.species_id.label('species')
                                   ExpSeqInfo.entity_type.label('entity_type')).\
                 join(ExpSeqInfo,
                      ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
-                # outerjoin(ChainInfo, ChainInfo.chain_id == ExpSeqPdb.chain_id)
-                outerjoin(ChainSpecies,                                      
-                          ChainSpecies.chain_id == ExpSeqPdb.chain_id).\
+                outerjoin(mod.ChainInfo,                                      
+                          mod.ChainInfo.chain_id == ExpSeqPdb.chain_id).\
                 filter(ExpSeqPdb.pdb_id == pdb).\
                 filter(ExpSeqInfo.was_normalized).\
                 distinct()
@@ -69,10 +93,10 @@ class Loader(core.MassLoader):
             if not query.count():
                 self.logger.warning("No sequences for %s" % pdb)
             
-            for result in query:
-                self.logger.info("show the query result:%s %s %s %s" % (result.id, result.length, result.species, result.entity_type))
-                self.logger.info(type(result.species))
-                self.logger.info("show the lookup_sequences return: %s" % ut.row2dict(result))                  ## the return value example: {'length': 76L, 'id': 4177L, 'species': 4932L}
+            # for result in query:
+            #     self.logger.info("show the query result:%s %s %s %s" % (result.id, result.length, result.species, result.entity_type))
+            #     self.logger.info(type(result.species))
+            #     self.logger.info("show the lookup_sequences return: %s" % ut.row2dict(result))                  ## the return value example: {'length': 76L, 'id': 4177L, 'species': 4932L}
                 
             return [ut.row2dict(result) for result in query]
 
@@ -89,22 +113,27 @@ class Loader(core.MassLoader):
         length_matches : bool
             If the lengths match
         """
+        if pair[0]['entity_type'] == 'rna':
+            smallest = min(p['length'] for p in pair)
+            largest = max(p['length'] for p in pair)
 
-        smallest = min(p['length'] for p in pair)
-        largest = max(p['length'] for p in pair)
+            if smallest < self.exact_cutoff:
+                return smallest == largest
 
-        if smallest < self.exact_cutoff:
-            return smallest == largest
+            lower = max(0.5 * largest, self.exact_cutoff)
+            upper = 2 * smallest
 
-        lower = max(0.5 * largest, self.exact_cutoff)
-        upper = 2 * smallest
+            if smallest >= self.huge_cutoff:
+                lower = self.huge_cutoff
+            else:
+                upper = min(upper, self.huge_cutoff)
 
-        if smallest >= self.huge_cutoff:
-            lower = self.huge_cutoff
-        else:
-            upper = min(upper, self.huge_cutoff)
-
-        return lower <= smallest <= largest <= upper
+            return lower <= smallest <= largest <= upper
+        if pair[0]['entity_type'] == 'dna':
+            if (pair[0]['length'] == pair[1]['length']) & (pair[0]['length'] <=20) & (pair[1]['length'] <= 20):
+                self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                return True
+            
 
     def species_matches(self, pair):
         """Check if a pair of sequences have compatible species. This means the
@@ -114,13 +143,15 @@ class Loader(core.MassLoader):
         :returns: The
         """
 
-        common = pair[0]['species'].intersection(pair[1]['species'])
-        self.logger.info("show the current species: %s  %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
+        # common = pair[0]['species'].intersection(pair[1]['species'])
+        common = pair[0]['taxonomy_id'].intersection(pair[1]['taxonomy_id'])
+        # self.logger.info("show the current species: %s  %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
         if len(common):
             return True
         species = set()
         for seq in pair:
-            species.update(seq['species'])
+            # species.update(seq['species'])
+            species.update(seq['taxonomy_id'])
         return len(species) <= 1 or None in species or SYNTHENIC_SPECIES_ID in species ## note: should be based on taxonmy id
 
     @property
@@ -175,12 +206,15 @@ class Loader(core.MassLoader):
         mapping = {}
         for seq in sequences:
             sid = seq['id']
-            self.logger.info("show the seq info: %s %s %s %s" % (seq["id"], seq["length"],seq["species"],seq["entity_type"]))
+            self.logger.info("show the seq info: %s %s %s %s" % (seq["id"], seq["length"],seq["taxonomy_id"],seq["entity_type"]))
             if sid not in mapping:
                 mapping[sid] = dict(seq)
-                mapping[sid]['species'] = set([seq['species']])
-            mapping[sid]['species'].update([seq['species']])
-            self.logger.info("show the mapping info %s" % mapping)
+                # mapping[sid]['species'] = set([seq['species']])
+                mapping[sid]['taxonomy_id'] = set([seq['taxonomy_id']])
+
+            # mapping[sid]['species'].update([seq['species']])
+            mapping[sid]['taxonomy_id'] = set([seq['taxonomy_id']])
+            # self.logger.info("show the mapping info %s" % mapping)
         return mapping.values()
 
     def entity_type_matches(self, pair):
@@ -216,10 +250,10 @@ class Loader(core.MassLoader):
 
         self.logger.info("Using %i pdbs", len(pdbs))
         seqs = it.imap(self.lookup_sequences, pdbs)
-        self.logger.info("show the it.map's result: %s" % seqs)
+        # self.logger.info("show the it.map's result: %s" % seqs)
         seqs = it.chain.from_iterable(seqs)
         seqs = self.unique_sequences(seqs)
-        self.logger.info("show the unique_sequences's result: %s" % seqs)
+        # self.logger.info("show the unique_sequences's result: %s" % seqs)
         if not seqs:
             raise core.InvalidState("Found no new sequences")
 
@@ -234,17 +268,17 @@ class Loader(core.MassLoader):
         """
 
         seqs = self.sequences(pdbs)                                         ## seqs is a list of dicts with information about sequences.                       
-        self.logger.info("show the seqs info of pairs function: %s" % seqs[0]) ## [{'species': set(4932), 'length': 76, 'id': 4177, 'entity_type': 'rna'}]
+        # self.logger.info("show the seqs info of pairs function: %s" % seqs[0]) ## [{'species': set(4932), 'length': 76, 'id': 4177, 'entity_type': 'rna'}]
         # pairs = it.combinations(seqs, 2)                                    ## just a guess, the function will return a list of diff combinations if we have more than 2 seqs. Thus, if we only have one seq, it will return [].
         # Thus, the problem is here, we can add condiction for each entity type.
         rna_pairs = it.combinations([f for f in seqs if f['entity_type']=='rna'],2)
-        dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna' & f['length']<=20],2)
-        if not dna_pairs:
-            raise core.Skip("Skipping for now because we do not want long dna pairs")
+        dna_pairs = it.combinations([f for f in seqs if f['entity_type']=='dna'],2) ###  & f['length']<=20]
+        # if not dna_pairs:
+        #     raise core.Skip("Skipping for now because we do not want long dna pairs")
         hybrid_pairs = it.combinations([f for f in seqs if f['entity_type']=='hybrid'],2)
         # pairs = list(rna_pairs)+list(dna_pairs)+list(hybrid_pairs)
         # self.logger.info("Found pairs %s", pairs)                           ## <itertools.combinations object at 0x7fb8f641dec0>
-        self_pairs = it.izip(seqs, seqs)                                    ## Ex. ({'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'}, {'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'})
+        self_pairs = it.izip(seqs, seqs)                                    ## Ex. [({'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'}, {'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'})]
         self.logger.info("Found self_pairs %s", self_pairs)                 ## <itertools.izip object at 0x7fb8f6405bd8>
         # return sorted(it.chain.from_iterable([self_pairs, pairs]),
         #               key=lambda p: (p[0]['id'], p[1]['id']))

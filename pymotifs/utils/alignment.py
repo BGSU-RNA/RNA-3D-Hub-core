@@ -3,6 +3,7 @@ import logging
 import shutil
 import tempfile
 import itertools as it
+from pymotifs import core
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -86,7 +87,7 @@ def align_dna(data):
 
 def align_dna2(data): # one_to_one_alignemnt
     mapping = []
-    if len(data[0]['ids'])<=20 & data[0] == data[1]:
+    if data[0] == data[1]:
         for i,j in it.izip(data[0]["ids"], data[1]["ids"]):
             mapping.append([i,j])
     else:
