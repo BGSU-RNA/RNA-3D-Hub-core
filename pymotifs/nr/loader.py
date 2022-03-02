@@ -3,7 +3,7 @@
 nr.release
     Create a new NR release and cache the NR data.
 nr.classes
-    Store all NR classes (equivleance groups).
+    Store all NR classes (equivalence classes).
 nr.parents
     Store the parent information for the cached NR release.
 nr.parent_counts
