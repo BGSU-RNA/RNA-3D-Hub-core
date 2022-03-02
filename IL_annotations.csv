@@ -4,9 +4,14 @@ IL_56467.1,IL_4WF9_019,"5x5 with tSH, cross-strand stack",,zirbel
 IL_56467.1,IL_4Y4O_193,"5x5 with tSH, cross-strand stack",,zirbel
 IL_56467.1,IL_5J7L_258,"5x5 with tSH, cross-strand stack",,zirbel
 IL_56467.1,IL_4V9F_020,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.1,IL_7A0S_013,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.6,IL_7RQB_016,"5x5 with tSH, cross-strand stack",,zirbel
 IL_56467.2,,Triple sheared,Triple sheared,zirbel
+IL_56467.6,,Triple sheared,Triple sheared,zirbel
+IL_56467.6,IL_4WF9_084,,,zirbel
 IL_55896.1,,tSH-tHS-tWS,,zirbel
 IL_53523.1,,tSH-inserted-tHW,,zirbel
+IL_53523.4,,tSH-inserted-tHW,,zirbel
 IL_05062.1,,Triple sheared with inserted A,Triple sheared,sree
 IL_09705.1,,Double sheared,Double sheared,sree
 IL_09705.1,IL_4WF9_054,4x5 with ntWS,,sree
@@ -43,6 +48,9 @@ IL_48459.1,IL_4IOA_030,3x3 CA cWW,Single non-canonical cWW,sree
 IL_48459.1,IL_4Y4O_211,3x3 CA cWW,Single non-canonical cWW,sree
 IL_48459.1,IL_4V88_385,3x3 UC cWW,Single non-canonical cWW,sree
 IL_60247.1,,Tandem non-canonical cWW pairs,Tandem non-canonical cWW pairs,sree
+IL_85877.9,,Tandem non-canonical cWW pairs,Tandem non-canonical cWW pairs,acoger
+,IL_6CF2_001,Non canonical cWW and near pair,Non canonical cWW and near pair,zirbel
+,IL_4V88_466,Non canonical cWW and near pair,Non canonical cWW and near pair,zirbel
 IL_35110.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_35110.1,IL_4V9F_092,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_35110.1,IL_4IOA_096,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
@@ -70,6 +78,9 @@ IL_08376.1,,C-loop,C-loop,sree
 IL_51265.1,,Kink-turn from U4,Kink-turn,sree
 IL_51265.1,IL_4LCK_006,Kink-turn from T-box riboswitch,Kink-turn,sree
 IL_29549.1,,Kink-turn,Kink-turn,zirbel
+IL_29549.5,,Kink-turn,Kink-turn,acoger
+IL_29549.8,,Kink-turn,Kink-turn,acoger
+IL_29549.8,IL_6CZR_123,Kink-turn with non-sequential stacking,Kink-turn,acoger
 IL_05466.1,,Kink-turn,Kink-turn,sree
 IL_05466.1,IL_3RW6_002,Kink-turn with non-sequential stacking,Kink-turn,zirbel
 IL_05466.1,IL_4LFB_011,Kink-turn with non-sequential stacking,Kink-turn,zirbel
@@ -92,3 +103,6 @@ IL_13730.6,IL_1U9S_008,Stack outside cWW,Stack outside cWW,zirbel
 IL_13730.6,IL_6JQ6_001,Stack outside cWW,Stack outside cWW,zirbel
 IL_13730.6,IL_6JQ6_004,Stack outside cWW,Stack outside cWW,zirbel
 IL_13730.6,IL_6JQ5_001,Stack outside cWW,Stack outside cWW,zirbel
+IL_39521.1,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
+IL_39521.3,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
+IL_39521.5,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
