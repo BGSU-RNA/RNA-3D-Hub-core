@@ -141,7 +141,7 @@ MAX_RESOLUTION_DISCREPANCY = 20.0
 MIN_NT_DISCREPANCY = 3
 
 NR_REPRESENTATIVE_METHOD = 'compscore'
-"""What representative selection method to use"""
+"""What representative selection method to use in nr.builder"""
 
 RSRZ_PAIRED_OUTLIERS = 1
 """The cutoff for finding if a loop contains poorly modeled interactions"""
