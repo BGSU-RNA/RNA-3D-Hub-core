@@ -34,12 +34,13 @@ class Exporter(core.Loader):
     # General Setup
     compressed = False 
     mark = False 
-    # dependencies = set([InfoLoader])
-    dependencies = set()
+    dependencies = set([InfoLoader])
+    #dependencies = set()
 
 
     def has_data(self, *args, **kwargs):
         filename = self.filename()
+        return False
         if os.path.exists(filename) is True:
             return True
         return False
@@ -62,7 +63,6 @@ class Exporter(core.Loader):
             The path to write to.
         """
 
-        # TO DO: put the important directories into the config
 
         filename = 'PDB_resolution_method.pickle'
 
@@ -70,26 +70,64 @@ class Exporter(core.Loader):
 
         return os.path.join("logs",filename)
 
+    def to_process(self, pdbs, **kwargs):
+        """Look up the list of IFE-chains to process.  Ignores the pdbs input.
 
-    def data(self):
+        Parameters
+        ----------
+        pdbs : list
+            Ignored.
+
+        Returns
+        -------
+            all existed pdb ids.
+        """
+        return [0]
+        with self.session() as session:
+            query = session.query(
+                       mod.PdbInfo.pdb_id
+                   ).\
+                   distinct()
+
+            #return [r.pdb_id for r in query]
+
+
+
+    def data(self, pdb, **kwargs):
         """
             This function is a query function.
         """
 
         with self.session() as session:
-            query = session(mod.PdbId.pdb_id,
-                            mod.PdbId.resolution,
-                            mod.PdbId.experimental_technique)
+            query = session.query(mod.ChainInfo.pdb_id,
+                            mod.ChainInfo.chain_name,
+                            mod.ChainInfo.entity_macromolecule_type,
+                            mod.PdbInfo.resolution,
+                            mod.PdbInfo.experimental_technique).\
+                            join(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id)
         # result = {row.pdb_id:{'resolution': row.resolution,'method': row.experimental_technique } for row in query}
-
+        print('am i here???????????????')
         result = {}
+        result['chain'] = {}
         for row in query:
-            result[row.pdb_id] = {'resolution': row.resolution,'method': row.experimental_technique }
+            #result[row.pdb_id] = {'resolution': row.resolution,'method': row.experimental_technique ,row.chain_name:row.entity_macromolecule_type}
+            # result['pdb_id'] = row.pdb_id
+            # result['resolution'] = row.resolution
+            # result['method'] = row.experimental_technique
+            # chaintype = row.entity_macromolecule_type
+            # if chaintype in result['chain']:
+            #     result['chain'][chaintype].append(row.chain_name)
+            # else:
+            #     result['chain'][chaintype] = [row.chain_name]
+            # result['chain'].append()
+            result[row.pdb_id][] = 
+        print(result)
+
         return result
 
 
 
-    def process(self, **kwargs):
+    def process(self, pdb, **kwargs):
         """Load centers/rotations data for the given IFE-chain.
 
         Parameters
@@ -102,7 +140,7 @@ class Exporter(core.Loader):
 
         filename = self.filename()
 
-        pinfo = self.data()
+        pinfo = self.data(pdb)
 
 
         with open(filename, 'wb') as fh:
