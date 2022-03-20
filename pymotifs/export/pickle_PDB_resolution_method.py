@@ -26,6 +26,7 @@ from sqlalchemy.sql import select
 from sqlalchemy.sql import union
 
 
+
 class Exporter(core.Loader):
     """Export pairs data in pickle format.
     """
@@ -70,32 +71,11 @@ class Exporter(core.Loader):
 
         return os.path.join("logs",filename)
 
-    def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFE-chains to process.  Ignores the pdbs input.
-
-        Parameters
-        ----------
-        pdbs : list
-            Ignored.
-
-        Returns
-        -------
-            all existed pdb ids.
-        """
-        return [0]
-        with self.session() as session:
-            query = session.query(
-                       mod.PdbInfo.pdb_id
-                   ).\
-                   distinct()
-
-            #return [r.pdb_id for r in query]
-
 
 
     def data(self, pdb, **kwargs):
         """
-            This function is a query function.
+            Look up all the existed pdbs to process.  Ignores the pdb input.
         """
 
         with self.session() as session:
@@ -105,22 +85,36 @@ class Exporter(core.Loader):
                             mod.PdbInfo.resolution,
                             mod.PdbInfo.experimental_technique).\
                             join(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id)
-        # result = {row.pdb_id:{'resolution': row.resolution,'method': row.experimental_technique } for row in query}
-        print('am i here???????????????')
-        result = {}
-        result['chain'] = {}
+        result = defaultdict(dict)
+        dna_long = ['Polydeoxyribonucleotide (DNA)','polydeoxyribonucleotide']
+        rna_long = ['Polyribonucleotide (RNA)','polyribonucleotide']
+        hybrid_long = ['polydeoxyribonucleotide/polyribonucleotide hybrid','DNA/RNA Hybrid']
+        entity_type_check = dna_long + rna_long + hybrid_long
+
         for row in query:
-            #result[row.pdb_id] = {'resolution': row.resolution,'method': row.experimental_technique ,row.chain_name:row.entity_macromolecule_type}
-            # result['pdb_id'] = row.pdb_id
-            # result['resolution'] = row.resolution
-            # result['method'] = row.experimental_technique
-            # chaintype = row.entity_macromolecule_type
-            # if chaintype in result['chain']:
-            #     result['chain'][chaintype].append(row.chain_name)
-            # else:
-            #     result['chain'][chaintype] = [row.chain_name]
-            # result['chain'].append()
-            result[row.pdb_id][] = 
+            if not result.get(row.pdb_id):
+                result[row.pdb_id]['chains'] = {}
+
+            if (not result[row.pdb_id]['chains'].get('DNA')) and (row.entity_macromolecule_type in dna_long):
+                result[row.pdb_id]['chains']['DNA'] = []
+            elif (not result[row.pdb_id]['chains'].get('RNA')) and (row.entity_macromolecule_type in rna_long):
+                result[row.pdb_id]['chains']['RNA'] = []
+            elif (not result[row.pdb_id]['chains'].get('Hybrid')) and (row.entity_macromolecule_type in hybrid_long):
+                result[row.pdb_id]['chains']['Hybrid'] = []
+            elif (not result[row.pdb_id]['chains'].get(row.entity_macromolecule_type)) and (row.entity_macromolecule_type not in entity_type_check):
+                result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
+                      
+            result[row.pdb_id]['resolution'] = row.resolution
+            result[row.pdb_id]['method'] = row.experimental_technique
+            if row.entity_macromolecule_type in dna_long:
+                result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
+            elif row.entity_macromolecule_type in rna_long:
+                result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
+            elif row.entity_macromolecule_type in hybrid_long:
+                result[row.pdb_id]['chains']['Hybrid'].append(row.chain_name)
+            else:
+                result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
+
         print(result)
 
         return result
