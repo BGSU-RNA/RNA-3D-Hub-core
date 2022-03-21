@@ -69,7 +69,7 @@ class Exporter(core.Loader):
 
         self.logger.info("filename: filename: %s" % filename)
 
-        return os.path.join("logs",filename)
+        return os.path.join("/var/www/html",filename)
 
 
 
