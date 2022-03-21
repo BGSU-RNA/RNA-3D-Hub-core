@@ -10,7 +10,7 @@ from pymotifs.exp_seq.info import Loader as InfoLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 
 from pymotifs.utils.alignment import align
-from pymotifs.utils.alignment import align_dna2
+from pymotifs.utils.alignment import one_to_one_alignment
 
 
 class Loader(core.Loader):
@@ -138,11 +138,11 @@ class Loader(core.Loader):
         #     print(result.entity_type)
         #     print(result.exp_seq_id)
 
-        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,,,,%s,,,,%s'%(corr_id,seq1,seq2))
+
         entity_type_check = set()
         # this is a double check for entity types because we have checked sequence pairs when we are making sequence pairs.
         for result in query:
-            # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s,%s'%(result.entity_type,type(result.entity_type)))
+            
             if result.entity_type == 'rna':
                 entity_type_check.add('rna')
             elif result.entity_type == 'dna':
@@ -150,23 +150,15 @@ class Loader(core.Loader):
             elif result.entity_type == 'hybrid':
                 entity_type_check.add('hybrid')
 
-        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%entity_type_check)
-        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%(list(entity_type_check) == ['dna']))
-        # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%s'%len(entity_type_check))
         
         if len(entity_type_check) > 1:
             raise core.InvalidState('The entity types of the sequence pair are not identical')
         elif list(entity_type_check) == ['rna']:
             results = align([ref, target])
-            # self.logger.info('show the list of results of alignment')
-            # self.logger.info(results)
-            # self.logger.info('show the ref: %s'%ref)
-            # self.logger.info('show the target: %s'%target)
+
             data = []
             for index, result in enumerate(results):
-                # self.logger.info('show the index: %s'%index)
-                # self.logger.info('show the result[0]: %s'%result[0])
-                # self.logger.info('show the result[1]: %s'%result[1])
+
                 data.append({
                     'exp_seq_position_id_1': result[0],
                     'exp_seq_position_id_2': result[1],
@@ -176,7 +168,7 @@ class Loader(core.Loader):
             return data
             
         elif list(entity_type_check) == ['dna']:
-            results = align_dna2([ref, target])
+            results = one_to_one_alignment([ref, target])
             data = []
             for index, result in enumerate(results):
                 data.append({
@@ -221,15 +213,10 @@ class Loader(core.Loader):
         """
 
         results = align([ref, target])
-        # self.logger.info('show the list of results of alignment')
-        # self.logger.info(results)
-        # self.logger.info('show the ref: %s'%ref)
-        # self.logger.info('show the target: %s'%target)
+
         data = []
         for index, result in enumerate(results):
-            # self.logger.info('show the index: %s'%index)
-            # self.logger.info('show the result[0]: %s'%result[0])
-            # self.logger.info('show the result[1]: %s'%result[1])
+
             data.append({
                 'exp_seq_position_id_1': result[0],
                 'exp_seq_position_id_2': result[1],
