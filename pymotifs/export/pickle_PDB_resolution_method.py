@@ -89,31 +89,55 @@ class Exporter(core.Loader):
         dna_long = ['Polydeoxyribonucleotide (DNA)','polydeoxyribonucleotide']
         rna_long = ['Polyribonucleotide (RNA)','polyribonucleotide']
         hybrid_long = ['polydeoxyribonucleotide/polyribonucleotide hybrid','DNA/RNA Hybrid']
-        entity_type_check = dna_long + rna_long + hybrid_long
+        entity_type_check = dna_long + rna_long + hybrid_long + ['Polypeptide(L)','Peptide nucleic acid']
 
         for row in query:
+            
             if not result.get(row.pdb_id):
                 result[row.pdb_id]['chains'] = {}
-
-            if (not result[row.pdb_id]['chains'].get('DNA')) and (row.entity_macromolecule_type in dna_long):
-                result[row.pdb_id]['chains']['DNA'] = []
-            elif (not result[row.pdb_id]['chains'].get('RNA')) and (row.entity_macromolecule_type in rna_long):
-                result[row.pdb_id]['chains']['RNA'] = []
-            elif (not result[row.pdb_id]['chains'].get('Hybrid')) and (row.entity_macromolecule_type in hybrid_long):
-                result[row.pdb_id]['chains']['Hybrid'] = []
-            elif (not result[row.pdb_id]['chains'].get(row.entity_macromolecule_type)) and (row.entity_macromolecule_type not in entity_type_check):
-                result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
-                      
             result[row.pdb_id]['resolution'] = row.resolution
             result[row.pdb_id]['method'] = row.experimental_technique
-            if row.entity_macromolecule_type in dna_long:
-                result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
-            elif row.entity_macromolecule_type in rna_long:
-                result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
-            elif row.entity_macromolecule_type in hybrid_long:
-                result[row.pdb_id]['chains']['Hybrid'].append(row.chain_name)
-            else:
-                result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
+
+            if row.entity_macromolecule_type == 'Polypeptide(L)':
+                if result[row.pdb_id]['chains'].get('protein'):
+                    result[row.pdb_id]['chains']['protein'].append(row.chain_name)
+                else:
+                    result[row.pdb_id]['chains']['protein'] = []
+                    result[row.pdb_id]['chains']['protein'].append(row.chain_name)
+            elif (row.entity_macromolecule_type in dna_long):
+                if result[row.pdb_id]['chains'].get('DNA'):
+                    result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
+                else:
+                    result[row.pdb_id]['chains']['DNA'] = []
+                    result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
+            elif (row.entity_macromolecule_type in rna_long):
+                if result[row.pdb_id]['chains'].get('RNA'):
+                    result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
+                else:
+                    result[row.pdb_id]['chains']['RNA'] = []
+                    result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
+            elif (row.entity_macromolecule_type in hybrid_long):
+                if result[row.pdb_id]['chains'].get('hybrid'):
+                    result[row.pdb_id]['chains']['hybrid'].append(row.chain_name)
+                else:
+                    result[row.pdb_id]['chains']['hybrid'] = []
+                    result[row.pdb_id]['chains']['hybrid'].append(row.chain_name)
+            elif (row.entity_macromolecule_type == 'Peptide nucleic acid'):
+                if result[row.pdb_id]['chains'].get('PNA'):
+                    result[row.pdb_id]['chains']['PNA'].append(row.chain_name)
+                else:
+                    result[row.pdb_id]['chains']['PNA'] = []
+                    result[row.pdb_id]['chains']['PNA'].append(row.chain_name)
+            elif (row.entity_macromolecule_type not in entity_type_check):
+                if result[row.pdb_id]['chains'].get(row.entity_macromolecule_type):
+                    result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
+                else:
+                    result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
+                    result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
+            
+
+
+            
 
         print(result)
 
@@ -146,4 +170,31 @@ class Exporter(core.Loader):
 
 
         pass
+
+
+
+
+        # for row in query:
+        #     if not result.get(row.pdb_id):
+        #         result[row.pdb_id]['chains'] = {}
+
+        #     if (not result[row.pdb_id]['chains'].get('DNA')) and (row.entity_macromolecule_type in dna_long):
+        #         result[row.pdb_id]['chains']['DNA'] = []
+        #     elif (not result[row.pdb_id]['chains'].get('RNA')) and (row.entity_macromolecule_type in rna_long):
+        #         result[row.pdb_id]['chains']['RNA'] = []
+        #     elif (not result[row.pdb_id]['chains'].get('Hybrid')) and (row.entity_macromolecule_type in hybrid_long):
+        #         result[row.pdb_id]['chains']['Hybrid'] = []
+        #     elif (not result[row.pdb_id]['chains'].get(row.entity_macromolecule_type)) and (row.entity_macromolecule_type not in entity_type_check):
+        #         result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
+                      
+        #     result[row.pdb_id]['resolution'] = row.resolution
+        #     result[row.pdb_id]['method'] = row.experimental_technique
+        #     if row.entity_macromolecule_type in dna_long:
+        #         result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
+        #     elif row.entity_macromolecule_type in rna_long:
+        #         result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
+        #     elif row.entity_macromolecule_type in hybrid_long:
+        #         result[row.pdb_id]['chains']['Hybrid'].append(row.chain_name)
+        #     else:
+        #         result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
 
