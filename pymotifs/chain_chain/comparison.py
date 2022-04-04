@@ -569,7 +569,12 @@ class Loader(core.SimpleLoader):
     def load_centers_rotations_pickle(self,info,allunitdictionary):
 
         for chain_string in info['ife_id'].split('+'):
-            picklefile = 'pickle-FR3D/' + chain_string.replace('|','-') + '_RNA.pickle'
+            # picklefile = 'pickle-FR3D/' + chain_string.replace('|','-') + '_RNA.pickle'
+            # chain_chain/comparison.py should read the _NA files instead of the _RNA files, 
+            # so they use the glycosidic atom location instead of the base center.  
+            # Then hopefully it will still work with RNA and it will also work with DNA.  
+            # We will have to check that it looks OK.
+            picklefile = 'pickle-FR3D/' + chain_string.replace('|','-') + '_NA.pickle'
 
             if not chain_string in allunitdictionary:
 
