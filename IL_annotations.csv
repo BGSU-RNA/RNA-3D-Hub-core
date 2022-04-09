@@ -1,15 +1,15 @@
 IL_56467.1,,Triple sheared,Triple sheared,zirbel
-IL_56467.1,IL_4IOA_012,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_4WF9_019,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_4Y4O_193,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_5J7L_258,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_4V9F_020,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_7A0S_013,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.6,IL_7RQB_016,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.1,IL_4IOA_012,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_4WF9_019,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_4Y4O_193,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_5J7L_258,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_4V9F_020,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_7A0S_013,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.6,IL_7RQB_016,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
 IL_56467.2,,Triple sheared,Triple sheared,zirbel
 IL_56467.6,,Triple sheared,Triple sheared,zirbel
 IL_56467.6,IL_4WF9_084,,,zirbel
-IL_55896.1,,tSH-tHS-tWS,,zirbel
+IL_55896.1,,tSH-tHS-tWS,,acoger
 IL_53523.1,,tSH-inserted-tHW,,zirbel
 IL_53523.4,,tSH-inserted-tHW,,zirbel
 IL_05062.1,,Triple sheared with inserted A,Triple sheared,sree
@@ -49,6 +49,7 @@ IL_48459.1,IL_4Y4O_211,3x3 CA cWW,Single non-canonical cWW,sree
 IL_48459.1,IL_4V88_385,3x3 UC cWW,Single non-canonical cWW,sree
 IL_60247.1,,Tandem non-canonical cWW pairs,Tandem non-canonical cWW pairs,sree
 IL_85877.9,,Tandem non-canonical cWW pairs,Tandem non-canonical cWW pairs,acoger
+,,,,
 ,IL_6CF2_001,Non canonical cWW and near pair,Non canonical cWW and near pair,zirbel
 ,IL_4V88_466,Non canonical cWW and near pair,Non canonical cWW and near pair,zirbel
 IL_35110.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
@@ -106,3 +107,6 @@ IL_13730.6,IL_6JQ5_001,Stack outside cWW,Stack outside cWW,zirbel
 IL_39521.1,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
 IL_39521.3,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
 IL_39521.5,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
+IL_56455.1,,Bacterial 5S Loop E,Loop E,zirbel
+IL_56455.2,,Bacterial 5S Loop E,Loop E,zirbel
+IL_56455.3,,Bacterial 5S Loop E,Loop E,zirbel
