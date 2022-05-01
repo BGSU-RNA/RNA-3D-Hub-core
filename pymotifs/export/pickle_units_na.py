@@ -98,9 +98,8 @@ class Exporter(core.Loader):
                    ).\
                    distinct().\
                    filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
-                   filter(mod.UnitInfo.pdb_id.in_(['7EDT','7K00']))
-                   ## this above lane can be comment out after testing purpose, and all pdbs will be calculating based on the glycosidic center.
-
+                   filter(mod.UnitInfo.pdb_id == '7K00')
+                   
             return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
