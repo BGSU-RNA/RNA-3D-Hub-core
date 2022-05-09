@@ -1,6 +1,7 @@
-"""Export the interactions for all structures. If given structures it will only
-export interactions from those pdbs but if given all it will export all
-interactions.
+"""
+Export the interactions for all structures to a single .gz file.
+If given structures it will only export interactions from those
+pdbs but if given all it will export all interactions.
 """
 
 import itertools as it
