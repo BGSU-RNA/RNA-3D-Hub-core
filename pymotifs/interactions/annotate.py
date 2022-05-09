@@ -42,16 +42,17 @@ class Loader(core.SimpleLoader):
     def data(self, pdb, **kwargs):
 
         categories = {}
-        categories['sO'] = 'sO'
+        #categories['basepair'] = []
+        categories['sO'] = []
 
         structure = self.structure(pdb)
-        interaction_to_triple_list, category_to_interactions = annotate_nt_nt_in_structure(structure,categories)
-
-        annotation_types = categories.keys()
+        interaction_to_triple_list, category_to_interactions, timerData, pair_to_data = annotate_nt_nt_in_structure(structure,categories)
 
         annotations = []
 
-        for category in categories.keys():
+        all_categories = list(set(categories.keys()) & set(category_to_interactions.keys()))
+
+        for category in all_categories:
             for interaction in category_to_interactions[category]:
                 if category == 'basepair':
                     if len(interaction) == 3:
@@ -68,12 +69,12 @@ class Loader(core.SimpleLoader):
                 for triple in interaction_to_triple_list[interaction]:
                     annotations.append({
                         'pdb_id'    : pdb,
-                        'unit_id_1' : triple[1],
-                        'unit_id_2' : triple[2],
+                        'unit_id_1' : triple[0],
+                        'unit_id_2' : triple[1],
                         'annotation': interaction_simple,
                         'annotation_detail' : interaction_detail,
                         'category'  : category,
-                        'crossing'  : triple[3]
+                        'crossing'  : triple[2]
                         })
 
         return annotations
