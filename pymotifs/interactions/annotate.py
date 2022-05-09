@@ -40,24 +40,40 @@ class Loader(core.SimpleLoader):
         return sorted(pairs, key=op.itemgetter('na_unit_id', 'aa_unit_id'))
 
     def data(self, pdb, **kwargs):
-        structure = self.structure(pdb)
 
         categories = {}
         categories['sO'] = 'sO'
 
-        interaction_to_triple_list, pair_to_interaction, pair_to_data, timerData = annotate_nt_nt_in_structure(structure,categories)
+        structure = self.structure(pdb)
+        interaction_to_triple_list, category_to_interactions = annotate_nt_nt_in_structure(structure,categories)
+
+        annotation_types = categories.keys()
 
         annotations = []
 
-        for interaction in interaction_to_triple_list:
-            if "s" in interaction and "O" in interaction:
+        for category in categories.keys():
+            for interaction in category_to_interactions[category]:
+                if category == 'basepair':
+                    if len(interaction) == 3:
+                        interaction_simple = interaction[0] + interaction[1:3].upper()
+                    elif len(interaction) == 4:
+                        interaction_simple = interaction[0:2] + interaction[2:4].upper()
+                    else:
+                        interaction_simple = interaction
+                    interaction_detail = interaction
+                else:
+                    interaction_simple = interaction
+                    interaction_detail = None
+
                 for triple in interaction_to_triple_list[interaction]:
                     annotations.append({
-                        'pdb_id' : pdb
-                        'unit_id_1' : triple[1]
-                        'unit_id_2' : triple[2]
-                        'annotation' : interaction
-                        'crossing' : triple[3]
+                        'pdb_id'    : pdb,
+                        'unit_id_1' : triple[1],
+                        'unit_id_2' : triple[2],
+                        'annotation': interaction_simple,
+                        'annotation_detail' : interaction_detail,
+                        'category'  : category,
+                        'crossing'  : triple[3]
                         })
 
         return annotations
