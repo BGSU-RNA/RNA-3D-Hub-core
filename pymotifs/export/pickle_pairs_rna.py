@@ -1,4 +1,5 @@
-"""Module for export of pairs data in pickle format for FR3D.
+"""
+Module for export of pairs data in pickle format for FR3D.
 """
 
 import numpy as np
@@ -9,11 +10,9 @@ from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.units.centers import Loader as CentersLoader
-from pymotifs.units.rotation import Loader as RotationsLoader
-from pymotifs.exp_seq.mapping import Loader as MappingLoader
-from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
+from pymotifs.interactions.pairwise import Loader as InteractionLoader
+from pymotifs.interactions.annotate import Loader as AnnotationLoader
 
 from collections import defaultdict
 
@@ -29,23 +28,21 @@ class Exporter(core.Loader):
     """Export pairs data in pickle format, one file per PDB.
     """
 
-
     # General Setup
     compressed = False 
     mark = False 
-    dependencies = set([ChainLoader, CentersLoader, RotationsLoader, 
-                        PositionLoader, IfeInfoLoader, MappingLoader])
-
+    dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader,
+                        IfeInfoLoader])
 
     def has_data(self, pdb, *args, **kwargs):
-        self.logger.info("has_data: pdb: %s" % str(pdb))
+        self.logger.debug("has_data: pdb: %s" % str(pdb))
         filename = self.filename(pdb)
-        self.logger.info("has_data: filename: %s" % filename)
-        if os.path.exists(filename) is True:
+        if os.path.exists(filename):
             self.logger.info("has_data: filename %s exists" % filename)
             return True
-        self.logger.info("has_data: filename %s is missing" % filename)
-        return False
+        else:
+            self.logger.info("has_data: filename %s is missing" % filename)
+            return False
 
 
     def remove():
@@ -66,17 +63,18 @@ class Exporter(core.Loader):
             The path to write to.
         """
 
-        # TO DO: put the important directories into the config
+        # TO DO: change RNA to NA
 
         filename = pdb + '_RNA_pairs.pickle'
 
-        self.logger.info("filename: filename: %s" % filename)
+        #self.logger.info("filename: %s" % filename)
 
         return os.path.join("pickle-FR3D",filename)
 
 
     def data(self, pdb, **kwargs):
-        """Get all pairs for the given PDB and format them for
+        """
+        Get all pairs for the given PDB and format them for
         convenient use by FR3D.
 
         Parameters
@@ -90,13 +88,7 @@ class Exporter(core.Loader):
         """
 
         with self.session() as session:
-            self.logger.info("data: Inside data retrieval routine")
-            self.logger.info("data: building query")
-
-            fui1 = aliased(mod.UnitInfo)
-            fui2 = aliased(mod.UnitInfo)
-            fupf = mod.UnitPairsFlanking
-            fupi = mod.UnitPairsInteractions
+            self.logger.info("data: building UnitPairs query")
 
             iui1 = aliased(mod.UnitInfo)
             iui2 = aliased(mod.UnitInfo)
@@ -126,6 +118,11 @@ class Exporter(core.Loader):
                     filter(iui1.unit_type_id == 'rna').\
                     filter(iui2.unit_type_id == 'rna').\
                     filter(iupi.pdb_id == pdb)
+
+            fui1 = aliased(mod.UnitInfo)
+            fui2 = aliased(mod.UnitInfo)
+            fupf = mod.UnitPairsFlanking
+            fupi = mod.UnitPairsInteractions
 
             subqueryF = session.query(fupf.unit_id_1,
                                fupf.unit_id_2,
@@ -165,7 +162,7 @@ class Exporter(core.Loader):
             # TO DO:  implement parsing logic from pairFileParsing.py here
             # and return that data instead of the full load.
 
-            constraintToPair = defaultdict(list)
+            interactionToPair = defaultdict(list)
 
             #constraintList = ['f_lwbp', 'f_stacks', 'f_bphs', 'f_brbs']
 
@@ -176,65 +173,84 @@ class Exporter(core.Loader):
                 # FUTURE: iterate over a list of column names?
 
                 if( result.f_lwbp is not None and len(result.f_lwbp) > 2):
-                    constraintToPair[result.f_lwbp].append((uid1, uid2, result.f_crossing))
+                    interactionToPair[result.f_lwbp].append((uid1, uid2, result.f_crossing))
                     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_lwbp, uid1, uid2, result.f_crossing))
 
                 if( result.f_stacks is not None and len(result.f_stacks) > 2):
-                    constraintToPair[result.f_stacks].append((uid1, uid2, result.f_crossing))
+                    interactionToPair[result.f_stacks].append((uid1, uid2, result.f_crossing))
                     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_stacks, uid1, uid2, result.f_crossing))
 
                 if( result.f_bphs is not None and len(result.f_bphs) > 2):
-                    constraintToPair[result.f_bphs].append((uid1, uid2, result.f_crossing))
+                    interactionToPair[result.f_bphs].append((uid1, uid2, result.f_crossing))
                     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_bphs, uid1, uid2, result.f_crossing))
 
                 if( result.f_brbs is not None and len(result.f_brbs) > 2):
-                    constraintToPair[result.f_brbs].append((uid1, uid2, result.f_crossing))
+                    interactionToPair[result.f_brbs].append((uid1, uid2, result.f_crossing))
                     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_brbs, uid1, uid2, result.f_crossing))
 
                 #for constraint in constraintList:
                 #    self.logger.info("constraint: %s" % constraint)
                 #    #self.logger.info("constraint value: %s" % result.constraint.value())
                 #    #if len(result.constraint.value()) > 2:
-                #    #    constraintToPair[constraint].append((uid1, uid2, result.f_crossing))
+                #    #    interactionToPair[constraint].append((uid1, uid2, result.f_crossing))
                 #    #    self.logger.info("type: units/constraint: %s : %s, %s / %s" % (result.getAttr(constraint), uid1, uid2, result.f_crossing))
                 #    pass
 
                 if result.flanking == "1":
-                    constraintToPair["bSS"].append((uid1, uid2, None))
+                    interactionToPair["bSS"].append((uid1, uid2, None))
                     self.logger.debug("type: units/constraint: bSS : %s, %s / None" % (uid1, uid2))
 
                 pass
 
-            #return [row2dict(result) for result in query] # full load data for testing
-            return constraintToPair
+
+            # categories to get from PairAnnotations table
+            categories = ['sO']
+
+            iann = mod.PairAnnotations
+
+            query3 = session.query(iann.unit_id_1,
+                               iann.unit_id_2,
+                               iann.annotation,
+                               iann.crossing).\
+                    filter(iann.category.in_(categories)).\
+                    filter(iann.pdb_id == pdb)
+
+            for result in query3:
+                uid1 = result.unit_id_1
+                uid2 = result.unit_id_2
+
+                if (result.annotation is not None and len(result.annotation) > 2):
+                    interactionToPair[result.annotation].append((uid1, uid2, result.crossing))
+                    self.logger.info("annotation: %s %s %s %s" % (uid1, result.annotation, uid2, result.crossing))
+
+            return interactionToPair
 
 
     def process(self, entry, **kwargs):
-        """Load centers/rotations data for the given IFE-chain.
+        """
+        Load pairwise interaction data for the given PDB file.
 
         Parameters
         ----------
         entry : object
-            The entry to process.
+            The entry to process, should be a PDB file.
         **kwargs : dict
             Generic keyword arguments.
         """
-
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/pairs/"
-
-        filename = self.filename(entry)
 
         pinfo = self.data(entry)
 
         self.logger.debug("process: raw data: %s" % pinfo)
 
+        filename = self.filename(entry)
+
         with open(filename, 'wb') as fh:
-            self.logger.info("process: filename open: %s" % filename)
+            self.logger.info("writing pickle file: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(pinfo, fh, 2)
 
+        # public directory where WebFR3D will access the .pickle files
+        webroot = self.config['locations']['fr3d_pickle_base'] + "/pairs/"
+
         os.system("rsync -u %s %s" % (filename, webroot))
         self.logger.info("rsync -u %s %s" % (filename, webroot))
-
-        pass
-
