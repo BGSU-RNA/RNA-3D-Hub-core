@@ -21,10 +21,7 @@ class Loader(core.SimpleLoader):
         return mod.PairAnnotations
 
     def query(self, session, pdb):
-        return session.query(self.table).filter_by(pdb_id=pdb)
-
-    def must_recompute(self, *args, **kwargs):
-        return True
+        return session.query(mod.PairAnnotations).filter_by(pdb_id=pdb)
 
     def annotations(self, structure):
         classifier = Classifier()
