@@ -1,4 +1,5 @@
-"""This module contains the code for creating a new NR set. It can find and
+"""
+This module contains the code for creating a new NR set. It can find and
 group all ifes from structures into classes and then pick a representative of
 that class.
 """
@@ -429,9 +430,9 @@ class Builder(core.Base):
 
 
 class RepresentativeFinder(core.Base):
-    """A class to find the representative for a group of ifes. This will find
-    the best in terms of bp/nt and attempt to find all those with more bp's and
-    nts in the set.
+    """A class to find the representative for a group of ifes.
+    This will find the best in terms of the criterion
+    NR_REPRESENTATIVE_METHOD.
 
     Attributes
     ----------

@@ -8,7 +8,6 @@ from pymotifs import utils
 
 logger = logging.getLogger(__name__)
 
-
 class GetAllRnaPdbsError(Exception):
     """Raised when when we cannot get a list of all pdbs."""
     pass
@@ -70,13 +69,17 @@ class RnaPdbsHelper(object):
 
         print("Trying url %s" % url)
 
-        for polytype in polytypes:
-            currenturl = url.replace("RNA",polytype)
-            response = requests.get(currenturl)
-            jsonR = response.json()
+        try:
+            for polytype in polytypes:
+                currenturl = url.replace("RNA",polytype)
+                response = requests.get(currenturl)
+                jsonR = response.json()
 
-            for item in jsonR["result_set"]:
-                resultIDs.append(item["identifier"])
+                for item in jsonR["result_set"]:
+                    resultIDs.append(item["identifier"])
+        except Exception as err:
+            logger.exception(err)
+            raise GetAllRnaPdbsError("Failed getting all PDBs")
 
         print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
         logger.info("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))

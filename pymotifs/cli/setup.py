@@ -27,6 +27,15 @@ def logs(options):
 def pdbs(config, options):
     logger = logging.getLogger(__name__)
     helper = RnaPdbsHelper()
+
+    # Note: before-date in the command line becomes before_date in options
+    # Note: specifying a before-date or after-date overrides the -all option
+    if 'before_date' in options or 'after_date' in options:
+        dates = (options.get('after_date', None),
+                 options.get('before_date', None))
+        logger.info("Getting PDBs within dates %s, %s" % dates)
+        return helper(dates=dates)
+
     if options.get('all', False):
         logger.info("Getting all PDBs")
         return helper()
@@ -34,12 +43,6 @@ def pdbs(config, options):
     if options.pop('known', None):
         logger.info("Using known pdbs only")
         return list(known(config, pdb=False))
-
-    if 'before_date' in options or 'after_date' in options:
-        dates = (options.get('after_date', None),
-                 options.get('before_date', None))
-        logger.info("Getting PDBs within dates %s, %s" % dates)
-        return helper(dates=dates)
 
     return []
 

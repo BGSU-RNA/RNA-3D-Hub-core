@@ -10,7 +10,7 @@ from .using_quality import *
 
 def known():
     """
-    List all the knonw methods to select representatives.
+    List all the known methods to select representatives.
     """
 
     finders = []

@@ -33,9 +33,9 @@ class Exporter(core.Loader):
 
 
     def has_data(self, entry, *args, **kwargs):
-        self.logger.info("has_data: entry: %s" % str(entry))
+        #self.logger.info("has_data: entry: %s" % str(entry))
         filename = self.filename(entry)
-        self.logger.info("has_data: filename: %s" % filename)
+        #self.logger.info("has_data: filename: %s" % filename)
         if os.path.exists(filename) is True:
             self.logger.info("has_data: filename %s exists" % filename)
             return True
@@ -74,6 +74,32 @@ class Exporter(core.Loader):
         self.logger.debug("filename: chain_string: %s" % chain_string)
 
         return os.path.join("pickle-FR3D",chain_string + "_RNA.pickle")
+
+
+    def to_process(self, pdbs, **kwargs):
+        """Look up the list of IFE-chains to process.  Ignores the pdbs input.
+
+        Parameters
+        ----------
+        pdbs : list
+            Ignored.
+
+        Returns
+        -------
+        (pdb_id, model, chain) : tuple
+            The components of the IFE-chains to be processed.
+        """
+
+        with self.session() as session:
+            query = session.query(
+                       mod.UnitInfo.pdb_id,
+                       mod.UnitInfo.model,
+                       mod.UnitInfo.chain
+                   ).\
+                   distinct().\
+                   filter(mod.UnitInfo.unit_type_id == 'rna')
+
+            return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
     def data(self, ichain, **kwargs):
@@ -149,32 +175,6 @@ class Exporter(core.Loader):
             self.logger.debug("cenrot: rsset: %s" % str(rsset))
 
             return rsset
-
-
-    def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFE-chains to process.  Ignores the pdbs input.
-
-        Parameters
-        ----------
-        pdbs : list
-            Ignored.
-
-        Returns
-        -------
-        (pdb_id, model, chain) : tuple
-            The components of the IFE-chains to be processed.
-        """
-
-        with self.session() as session:
-            query = session.query(
-                       mod.UnitInfo.pdb_id,
-                       mod.UnitInfo.model,
-                       mod.UnitInfo.chain
-                   ).\
-                   distinct().\
-                   filter(mod.UnitInfo.unit_type_id == 'rna')
-
-            return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
     def process(self, entry, **kwargs):

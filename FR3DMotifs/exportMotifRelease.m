@@ -1,5 +1,5 @@
 function [] = exportMotifRelease(location)
-   
+
     groups_location = fullfile(location, 'Groups');
 
     temp = dir( fullfile(groups_location, '*.mat') );
@@ -8,13 +8,16 @@ function [] = exportMotifRelease(location)
         fprintf('Check your input\n');
         return;
     end
-        
+
     MotifList      = fopen([location filesep 'MotifList.csv'],'w');
-    MotifPositions = fopen([location filesep 'MotifPositions.csv'],'w'); 
+    MotifPositions = fopen([location filesep 'MotifPositions.csv'],'w');
     CandOrder      = fopen([location filesep 'MotifLoopOrder.csv'],'w');
     DiscValues     = fopen([location filesep 'MutualDiscrepancy.csv'],'w');
     BpSignatures   = fopen([location filesep 'MotifBpSignatures.csv'],'w');
-    
+
+    fprintf('exportMotifRelease: There are %d motif groups\n', length(list))
+    num_loops = 0;
+
     for i = 1:length(list)
 
         clear Search
@@ -23,20 +26,22 @@ function [] = exportMotifRelease(location)
             continue
         end
         fprintf([list{i}, '\n']);
-        
-        motif_id = list{i}(1:end-4);        
+
+        motif_id = list{i}(1:end-4);
         LoopIds = {Search.File.Filename};
-        
+
         fprintf(BpSignatures, '"%s","%s"\n', motif_id, Search.Signature);
-        
-        N = length(Search.Candidates(:,1));        
+
+        N = length(Search.Candidates(:,1));
+
+        num_loops = num_loops + N;
 
         for j = 1:N
 
             loopid = Search.LoopsOrderedByDiscrepancy{j};
 
             fprintf(MotifList,'"%s","%s"\n', loopid, motif_id);
-                        
+
             for pos = 1:length(Search.Candidates(j,1:end-1))
                 NTid = Search.File(Search.Candidates(j,end)).NT(Search.Candidates(j,pos)).ID;
                 fprintf(MotifPositions,'%s,%s,%s,%i\n',motif_id,loopid,NTid,pos);
@@ -51,16 +56,19 @@ function [] = exportMotifRelease(location)
                         loopid,Search.Disc(reordered,k),Search.LoopsOrderedBySimilarity{k});
                 end
             end
-        
+
         end
-        
+
     end
+
+    fprintf('exportMotifRelease: There are %d loops\n', num_loops)
 
     fclose(MotifList);
     fclose(MotifPositions);
     fclose(CandOrder);
     fclose(DiscValues);
     fclose(BpSignatures);
-    fprintf('Done\n');
+
+    fprintf('exportMotifRelease: wrote out all data files for the motif release.\n');
 
 end

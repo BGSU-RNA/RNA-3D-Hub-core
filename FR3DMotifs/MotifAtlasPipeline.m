@@ -1,64 +1,73 @@
 %==========================================================================
 % The main entry point for updating the RNA 3D Motif Atlas.
 
-% takes two arguments:
-% loop_ids = full path to the file with loop ids to be clustered
-% location = full path to the directory where all resulting files
+% takes one argument:
+% output_dir = full path to the directory where all resulting files
 % should be stored.
+% It is presumed that loops.txt is already written there.
 
 % status 0 = success
 % status 1 = failure
 
-% example location under MA_root: /Releases/IL_20121005_1233
+% example output_dir under MA_root: /Releases/IL_20121005_1233
 %==========================================================================
 
-function [status, err_msg] = MotifAtlasPipeline(loop_ids, location)
+function [status, err_msg] = MotifAtlasPipeline(output_dir)
 
     status  = 0;  % success
     err_msg = '';
 
-    try
+    %try
 
-        % startLogging();
+        startLogging(output_dir);
 
-        if ~exist(location, 'dir'), mkdir(location); end
+        % loops.txt is already written to the output directory
+        loop_id_file = fullfile(output_dir,'loops.txt')
 
-        if ischar(loop_ids)
-            loop_ids = parse_loop_id_file(loop_ids);
-        elseif ~iscell(loop_ids)
+        if ischar(loop_id_file)
+            loop_ids = parse_loop_id_file(loop_id_file);
+        elseif ~iscell(loop_id_file)
             status = 1;
-            err_msg = 'Wrong output';
+            err_msg = 'Wrong list of loop ids';
             disp(err_msg);
             return;
         end
 
-        MM = aCreateMM(loop_ids);
+        disp('aCreateMM: Loading search data for all loops');
+        MM = aCreateMM(loop_ids, output_dir);
+        fprintf('MM has %d rows\n', size(MM,1))
 
-        MM = aAnalyzeExtraNucleotides(MM, loop_ids);
+        disp('aAnalyzeExtraNucleotides: Analyzing non-matched nucleotides');
+        MM = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir);
+        fprintf('MM has %d rows\n', size(MM,1))
 
-        MM = aSymmetrizeMatrix(MM, loop_ids);
+        disp('aSymmetrizeMatrix: Use best matching direction')
+        MM = aSymmetrizeMatrix(MM, loop_ids, output_dir);
+        fprintf('MM has %d rows\n', size(MM,1))
 
+        disp('aMaximumCliques: Identify maximal cliques to form motif groups')
         groups = aMaximumCliques(MM, loop_ids, 1);
 
-        groupsToSearches(location, groups);
+        disp('groupsToSearches: ')
+        groupsToSearches(output_dir, groups);
 
-        groupsToGraphML(location, groups, MM, loop_ids, 1);
+        disp('groupsToGraphML: ')
+        groupsToGraphML(output_dir, groups, MM, loop_ids, 1);
 
-        folderToVarna(location);
+        disp('folderToVarna: ')
+        folderToVarna(output_dir);
 
-        exportMotifRelease(location);
+        disp('exportMotifRelease: ')
+        exportMotifRelease(output_dir);
 
-        movefile([pwd filesep 'MM*.mat'], location);
-        movefile([pwd filesep 'MM*.txt'], location);
 
-        % stopLogging();
+    %catch err
+    %    err_msg = 'Error in MotifAtlasPipeline';
+    %    disp(err_msg);
+    %    status = 2;
+    %end
 
-    catch err
-        err_msg = 'Error in MotifAtlasPipeline';
-        disp(err_msg);
-        % stopLogging();
-        status = 2;
-    end
+    stopLogging();
 
 end
 
@@ -75,17 +84,13 @@ function [loop_ids] = parse_loop_id_file(filename)
 
 end
 
-function startLogging()
+function startLogging(location)
 
-    ma_root = getenv('MA_root');
+    % log to the same directory as the output files
+    % that increases the size of the output directory,
+    % but keeps the log files separate
 
-    if ~strcmp(ma_root, '')
-        log_path = fullfile(ma_root, 'logs');
-    else
-        log_path = pwd;
-    end
-
-    filename = fullfile(log_path, 'rna3dhub_log.txt');
+    filename = fullfile(location, 'MotifAtlasPipeline.log');
 
     fopen(filename, 'a');
     diary(filename);

@@ -214,5 +214,5 @@ def testOrdering():
     print("Ordering:")
     print(order)
 
-testOrdering()
+#testOrdering()
 #testPenaltyMatrix()

@@ -1,6 +1,6 @@
 """Store a new NR release and cache and NR grouping.
 
-This will compute the next NR release and store an entry in the NR release
+This will compute the next NR release id and store an entry in the NR release
 table about it. It will also use the given PDBs to create a new NR grouping.
 This grouping will then be cached for usage in future stages.
 """
@@ -77,7 +77,11 @@ class Loader(core.MassLoader):
         parent = current
         if current == '0.0':
             parent = next
+
+        # build the current release
         self.build(pdbs, parent, next, **kwargs)
+
+        # store the release id information
         return mod.NrReleases(nr_release_id=next,
                               date=now,
                               parent_nr_release_id=parent,

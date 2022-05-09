@@ -116,8 +116,8 @@ class QualityBase(Representative):
 
     def __call__(self, given):
         self.logger.info("Selecting representative for %s", given['name']['full'])
-        with_quailty = self.load_quality(given['members'])
-        candidates = self.select_candidates(with_quailty)
+        with_quality = self.load_quality(given['members'])
+        candidates = self.select_candidates(with_quality)
         ordered_by_quality = self.sort_by_quality(candidates)
         with_representative = self.use_hardcoded(ordered_by_quality)
         return self.final_ordering(with_representative, given['members'])
@@ -205,8 +205,8 @@ class CompScore(QualityBase):
                     if len(parts) >= 2 and parts[2] in counted_atoms:
                         current += 1
 
-                if not current:
-                    self.logger.error("No atoms in %s" % row.unit_id)
+                #if not current:
+                #    self.logger.error("No atoms in %s" % row.unit_id)
                 count += current
 
             if not count:

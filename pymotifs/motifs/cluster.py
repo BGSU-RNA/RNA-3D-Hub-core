@@ -39,6 +39,12 @@ from subprocess import Popen, list2cmdline
 from pymotifs import core
 from pymotifs.utils import matlab
 
+# The following text string is a template for the Matlab
+# command line commands to do all-against-all searches.
+# Change to the right directory, set the path with setup(),
+# then start aAaSearches with a given start/stop combination
+# for the different parallel jobs.
+
 SCRIPT = """
 cd '{base}'
 setup()
@@ -51,7 +57,7 @@ aAaSearches('{input_file}', {start}, {stop}, {enforceSize})
 # https://codereview.stackexchange.com/questions/6567/redirecting-subprocesses-output-stdout-and-stderr-to-the-logging-module
 
 class ClusterMotifs(core.Base):
-    jobs = 4
+    jobs = 4        # how many simultaneous Matlab jobs are going to be run
     script_prefix = 'aAa_script_'
     retries = 3
 
@@ -60,14 +66,17 @@ class ClusterMotifs(core.Base):
         self.fr3d_root = self.config['locations']['fr3d_root']
         self.mlab_input_filename = os.path.join(self.fr3d_root, 'loops.txt')
 
-    def make_release_directory(self, loop_type):
-        """Make a directory for the release files. The directory name will be
-        based off the current time. This should prevent duplicates.
+    def make_release_directory(self, loop_type, release_id):
+        """Make a directory for the release files.
+        The directory name will be based on the current time to avoid duplicatles.
+        Directory name includes loop type and release number.
 
         Parameters
         ----------
         loop_type : str
-            The loop type to create a director for.
+            The loop type to create a directory for
+        release_id : str
+            The motif release we are creating
 
         Returns
         -------
@@ -77,7 +86,7 @@ class ClusterMotifs(core.Base):
 
         release_dir = self.config['locations']['releases_dir']
         time_stamp = strftime("%Y-%m-%d_%H:%M", localtime())
-        output_dir = os.path.join(release_dir, loop_type + '_' + time_stamp)
+        output_dir = os.path.join(release_dir, loop_type + '_' + release_id + '_' + time_stamp)
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -86,11 +95,18 @@ class ClusterMotifs(core.Base):
         self.logger.info('Files will be saved in %s' % output_dir)
         return output_dir
 
-    def make_input_file_for_matlab(self, loops):
+    def make_input_file_for_matlab(self, loops, output_dir):
+        # write for Matlab
         with open(self.mlab_input_filename, 'wb') as out:
             out.write(','.join(loops))
 
         self.logger.info('Saved loop_ids into %s' % self.mlab_input_filename)
+
+        # store with the motif release data as well
+        with open(os.path.join(output_dir, 'loops.txt'), 'wb') as out:
+            out.write(','.join(loops))
+
+        self.logger.info('Saved loop_ids into %s' % os.path.join(output_dir, 'loops.txt'))
 
     def parallel_exec_commands(self, cmds):
         """Execute commands in parallel in multiple process.
@@ -202,7 +218,7 @@ class ClusterMotifs(core.Base):
         for filename in glob.glob(scripts):
             os.remove(filename)
 
-    def __call__(self, loop_type, loops):
+    def __call__(self, loop_type, loops, release_id):
         """Launch the main matlab motif clustering pipeline. This will cluster
         motifs of the given type for the given pdb files. This will get all
         valid loops from the best chains and models and then run a series of
@@ -218,13 +234,15 @@ class ClusterMotifs(core.Base):
 
         self._clean_up()
 
-        output_dir = self.make_release_directory(loop_type)
-        self.make_input_file_for_matlab(loops)
+        output_dir = self.make_release_directory(loop_type, release_id)
+        self.make_input_file_for_matlab(loops, output_dir)
         self.parallel_exec_commands(self.prepare_aAa_commands(loops))
+
+        self.logger.info('Starting Matlab to run MotifAtlasPipeline.m')
 
         mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         [status, err_msg] = \
-            mlab.MotifAtlasPipeline(self.mlab_input_filename, output_dir, nout=2)
+            mlab.MotifAtlasPipeline(output_dir, nout=2)
 
         if err_msg:
             raise matlab.MatlabFailed(err_msg)
