@@ -60,8 +60,6 @@ from fr3d.modified_parent_mapping import modified_nucleotides
 # some modified nucleotides have faces flipped compared to parent nt
 flipped_nts = ['PSU']
 
-from discrepancy import matrix_discrepancy
-
 # read input and output paths from localpath.py
 # note that fr3d.localpath does not synchronize with Git, so you can change it locally to point to your own directory structure
 try:
