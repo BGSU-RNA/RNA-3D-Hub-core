@@ -9,7 +9,7 @@ from pymotifs import models as mod
 from pymotifs.units.info import Loader as InfoLoader
 
 from fr3d.modified_parent_mapping import modified_nucleotides
-from NA_unit_annotation import annotate_bond_orientation
+from pymotifs.interactions.NA_unit_annotation import annotate_bond_orientation
 
 class Loader(core.SimpleLoader):
     """A class to compute glycosidic bond orientations and load them into the database.
@@ -26,7 +26,7 @@ class Loader(core.SimpleLoader):
         :returns: A query to get bond orientations.
         """
 
-        return session.query(mod.UnitOrientations).\
+        return session.query(mod.UnitAnnotations).\
             filter_by(pdb_id=pdb)
 
 
@@ -49,7 +49,7 @@ class Loader(core.SimpleLoader):
             pdbs = [pdbs]
 
         with self.session() as session:
-            query = session.query(mod.UnitOrientations.pdb_id).\
+            query = session.query(mod.UnitAnnotations.pdb_id).\
                    distinct()
 
             pdbs_computed = set([r.pdb_id for r in query])
@@ -78,7 +78,12 @@ class Loader(core.SimpleLoader):
         bond_orientations = annotate_bond_orientation(structure,pdb)
 
         for b in bond_orientations:
-            yield mod.UnitOrientations(unit_id=b["unit_id"],
+            yield mod.UnitAnnotations(unit_id=b["unit_id"],
                                     pdb_id=b["pdb_id"],
-                                    orientation=b["orientation"],
-                                    chi_degree=b["chi_degree"])
+                                    category="orientation",
+                                    value=b["orientation"])
+
+            yield mod.UnitAnnotations(unit_id=b["unit_id"],
+                                    pdb_id=b["pdb_id"],
+                                    category="chi_degree",
+                                    value=b["chi_degree"])
