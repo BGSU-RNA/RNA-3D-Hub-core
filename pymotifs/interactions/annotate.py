@@ -23,18 +23,22 @@ class Loader(core.SimpleLoader):
     def query(self, session, pdb):
         return session.query(mod.PairAnnotations).filter_by(pdb_id=pdb)
 
-    def annotations(self, structure):
-        classifier = Classifier()
-        pairs = []
-        for na_id, aa_id, (annotation, value) in classifier.classify(structure):
-            pairs.append({
-                'na_unit_id': na_id,
-                'aa_unit_id': aa_id,
-                'pdb_id': structure.pdb,
-                'annotation': annotation,
-                'value': value,
-            })
-        return sorted(pairs, key=op.itemgetter('na_unit_id', 'aa_unit_id'))
+    def to_process(self, pdbs, **kwargs):
+        """
+        Return PDB ids which do not have annotations in the table.
+
+        :param list pdb: The list of pdb ids. Currently ignored.
+        :param dict kwargs: The keyword arguments which are ignored.
+        :returns: A list of correspondence ids to process.
+        """
+
+        with self.session() as session:
+            query = session.query(mod.PairAnnotations.pdb_id).distinct()
+
+            annotated = set([result.pdb_id for result in query])
+
+        return sorted(list(set(pdbs) - annotated),reverse=True)
+
 
     def data(self, pdb, **kwargs):
 
@@ -73,5 +77,17 @@ class Loader(core.SimpleLoader):
                         'category'  : category,
                         'crossing'  : triple[2]
                         })
+
+        if len(annotations) == 0:
+            annotations.append({
+                'pdb_id'    : pdb,
+                'unit_id_1' : None,
+                'unit_id_2' : None,
+                'annotation': None,
+                'annotation_detail' : None,
+                'category'  : 'placeholder',
+                'crossing'  : None
+                })
+
 
         return annotations
