@@ -274,7 +274,7 @@ if __name__=="__main__":
             timerData = myTimer("Annotating bond orientation",timerData)
             bond_annotations = annotate_bond_orientation(structure,PDBid)
 
-            print(bond_annotations)
+            #print(bond_annotations)
 
             timerData = myTimer("Recording interactions",timerData)
             print("  Recording interactions in %s" % outputNAPairwiseInteractions)
