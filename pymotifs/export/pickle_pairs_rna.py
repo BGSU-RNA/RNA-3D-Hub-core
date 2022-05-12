@@ -37,11 +37,15 @@ class Exporter(core.Loader):
     def has_data(self, pdb, *args, **kwargs):
         self.logger.debug("has_data: pdb: %s" % str(pdb))
         filename = self.filename(pdb)
+
+        #self.logger.info("Replacing %s" % filename)
+        #return False
+
         if os.path.exists(filename):
-            self.logger.info("has_data: filename %s exists" % filename)
+            self.logger.info("Filename %s exists" % filename)
             return True
         else:
-            self.logger.info("has_data: filename %s is missing" % filename)
+            self.logger.info("Filename %s is missing" % filename)
             return False
 
 
@@ -221,7 +225,7 @@ class Exporter(core.Loader):
 
                 if (result.annotation is not None and len(result.annotation) > 2):
                     interactionToPair[result.annotation].append((uid1, uid2, result.crossing))
-                    self.logger.info("annotation: %s %s %s %s" % (uid1, result.annotation, uid2, result.crossing))
+                    #self.logger.info("annotation: %s %s %s %s" % (uid1, result.annotation, uid2, result.crossing))
 
             return interactionToPair
 
