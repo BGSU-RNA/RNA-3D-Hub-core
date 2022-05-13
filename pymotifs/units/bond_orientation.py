@@ -1,4 +1,5 @@
-"""A module to compute and store glycosidic bond orientations in the database.
+"""
+A module to compute and store glycosidic bond orientations in the database.
 """
 
 import numpy as np
@@ -54,7 +55,7 @@ class Loader(core.SimpleLoader):
 
             pdbs_computed = set([r.pdb_id for r in query])
 
-        pdbs_to_compute = sorted(set(pdbs) - pdbs_computed)
+        pdbs_to_compute = sorted(set(pdbs) - pdbs_computed,reverse=True)
 
         # make sure to return at least one file name, o/w dispatcher complains
         if len(pdbs_to_compute) == 0:
@@ -75,7 +76,10 @@ class Loader(core.SimpleLoader):
         # load the 3D structure file
         structure = self.structure(pdb)
 
-        bond_orientations = annotate_bond_orientation(structure,pdb)
+        bond_orientations, error_message = annotate_bond_orientation(structure,pdb,True)
+
+        if len(error_message) > 0:
+            self.logger.info(error_message)
 
         for b in bond_orientations:
             yield mod.UnitAnnotations(unit_id=b["unit_id"],
