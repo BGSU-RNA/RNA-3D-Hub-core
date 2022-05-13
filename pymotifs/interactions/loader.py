@@ -13,7 +13,8 @@ import pymotifs.core as core
 from pymotifs.interactions.pairwise import Loader as PairwiseLoader
 from pymotifs.interactions.flanking import Loader as FlankingLoader
 from pymotifs.interactions.summary import Loader as SummaryLoader
+from pymotifs.interactions.annotate import Loader as AnnotationLoader
 
 
 class Loader(core.StageContainer):
-    stages = set([PairwiseLoader, FlankingLoader, SummaryLoader])
+    stages = set([PairwiseLoader, FlankingLoader, AnnotationLoader, SummaryLoader])
