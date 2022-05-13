@@ -92,63 +92,66 @@ def annotate_bond_orientation(structure,pdb,pipeline=False):
                     C2C4 = nt.centers["C2"]
 
         if len(N1N9) == 3 and len(C2C4) == 3:
-            O4P_C1P = nt.centers["C1'"] - nt.centers["O4'"]
-            N1N9_C1P  = nt.centers["C1'"] - N1N9
-            C2C4_N1N9 = N1N9 - C2C4
+            C1P = nt.centers["C1'"]
+            O4P = nt.centers["O4'"]
 
-            # chi angle definition:
-            # O4*_C1*_N1_C2 (for pyrimidines)
-            # O4*_C1*_N9_C4 (for purines):
+            if len(C1P) == 3 and len(O4P) == 3:
+                O4P_C1P = C1P - O4P
+                N1N9_C1P  = C1P - N1N9
+                C2C4_N1N9 = N1N9 - C2C4
 
-            perp_to_sugar       = np.cross(O4P_C1P,N1N9_C1P)
-            norm_perp_to_sugar  = np.linalg.norm(perp_to_sugar)
-            if norm_perp_to_sugar != 0:
-                perp_to_sugar   = perp_to_sugar/norm_perp_to_sugar
+                # chi angle definition:
+                # O4*_C1*_N1_C2 (for pyrimidines)
+                # O4*_C1*_N9_C4 (for purines):
 
-            perp_to_base        = np.cross(-N1N9_C1P,C2C4_N1N9)
-            norm_perp_to_base   = np.linalg.norm(perp_to_base)
-            perp_to_base        = perp_to_base/norm_perp_to_base
+                perp_to_sugar       = np.cross(O4P_C1P,N1N9_C1P)
+                norm_perp_to_sugar  = np.linalg.norm(perp_to_sugar)
+                if norm_perp_to_sugar != 0:
+                    perp_to_sugar   = perp_to_sugar/norm_perp_to_sugar
 
-            cross_cross_chi = np.cross(perp_to_base,perp_to_sugar)
+                perp_to_base        = np.cross(-N1N9_C1P,C2C4_N1N9)
+                norm_perp_to_base   = np.linalg.norm(perp_to_base)
+                perp_to_base        = perp_to_base/norm_perp_to_base
 
-            # Take the dot product of the vectors perp_to_base &
-            # perp_to_sugar to get cos(chi).
-            # Take norm(cross product) to get sin(chi).
+                cross_cross_chi = np.cross(perp_to_base,perp_to_sugar)
 
-            cos_chi = np.dot(perp_to_sugar,perp_to_base)
-            if np.dot(cross_cross_chi,N1N9_C1P) > 0:
-                sin_chi = np.linalg.norm(cross_cross_chi)
-            else:
-                sin_chi = -np.linalg.norm(cross_cross_chi)
+                # Take the dot product of the vectors perp_to_base &
+                # perp_to_sugar to get cos(chi).
+                # Take norm(cross product) to get sin(chi).
 
-            # sign of chi_degree matches Bevilacqua 2011 paper on syn and anti
-            # this definition matches the IUPAC definition from http://www.chem.qmul.ac.uk/iupac/misc/pnuc2.html#230
-
-            chi  = 180*math.atan2(sin_chi,cos_chi)/math.pi # glycosidic bond angle
-
-            # Giving nomenclature according to chi values: anti (most common), or syn
-            if chi > -90 and chi < -45:
-                classification = 'int_syn'
-            elif chi >= -45 and chi < 90:
-                classification = 'syn'
-            else:
-                classification = 'anti'
-
-#            print("%-20s has chi = %13.8f and classification %s" % (nt.unit_id(),chi,classification))
-
-            if classification:
-                bond_annotations.append({'unit_id'    : nt.unit_id(),
-                                        'pdb_id'      : pdb,
-                                        'orientation' : classification,
-                                        'chi_degree'  : ("%0.3f" % chi)})
-
-            else:
-                if pipeline:
-                    error_message.append('%s had a calculation error' % nt.unit_id())
+                cos_chi = np.dot(perp_to_sugar,perp_to_base)
+                if np.dot(cross_cross_chi,N1N9_C1P) > 0:
+                    sin_chi = np.linalg.norm(cross_cross_chi)
                 else:
-                    print('%s had a calculation error' % nt.unit_id())
+                    sin_chi = -np.linalg.norm(cross_cross_chi)
+
+                # sign of chi_degree matches Bevilacqua 2011 paper on syn and anti
+                # this definition matches the IUPAC definition from http://www.chem.qmul.ac.uk/iupac/misc/pnuc2.html#230
+
+                chi  = 180*math.atan2(sin_chi,cos_chi)/math.pi # glycosidic bond angle
+
+                # Giving nomenclature according to chi values: anti (most common), or syn
+                if chi > -90 and chi < -45:
+                    classification = 'int_syn'
+                elif chi >= -45 and chi < 90:
+                    classification = 'syn'
+                else:
+                    classification = 'anti'
+
+    #            print("%-20s has chi = %13.8f and classification %s" % (nt.unit_id(),chi,classification))
+
+        if classification:
+            bond_annotations.append({'unit_id'    : nt.unit_id(),
+                                    'pdb_id'      : pdb,
+                                    'orientation' : classification,
+                                    'chi_degree'  : ("%0.3f" % chi)})
 
         else:
+            if pipeline:
+                error_message.append('%s had a calculation error' % nt.unit_id())
+            else:
+                print('%s had a calculation error' % nt.unit_id())
+
             bond_annotations.append({'unit_id'    : nt.unit_id(),
                         'pdb_id'      : pdb,
                         'orientation' : 'NA',
