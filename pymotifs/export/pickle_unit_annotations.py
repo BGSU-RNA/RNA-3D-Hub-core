@@ -1,4 +1,5 @@
-"""Module for export of unit annotations like syn/anti
+"""
+Module for export of unit annotations like syn/anti
 in pickle format for FR3D.
 """
 
@@ -28,11 +29,16 @@ class Exporter(core.Loader):
         #self.logger.info("has_data: entry: %s" % str(entry))
         filename = self.filename(entry)
         #self.logger.info("has_data: filename: %s" % filename)
+
+        # force re-writing of .pickle files
+        return False
+
         if os.path.exists(filename) is True:
             self.logger.info("has_data: filename %s exists" % filename)
             return True
-        self.logger.info("has_data: filename %s is missing" % filename)
-        return False
+        else:
+            self.logger.info("has_data: filename %s is missing" % filename)
+            return False
 
 
     def remove():
@@ -69,7 +75,7 @@ class Exporter(core.Loader):
 
 
     def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFE-chains to process.
+        """Look up the list of IFE chains to process.
 
         Parameters
         ----------
@@ -115,15 +121,21 @@ class Exporter(core.Loader):
         unit_id_to_annotations = {}
 
         with self.session() as session:
-            query = session.query(mod.UnitOrientations.unit_id,
-                               mod.UnitOrientations.orientation,
-                               mod.UnitOrientations.chi_degree).\
-                     filter(mod.UnitOrientations.pdb_id == pdb)
+            query = session.query(mod.UnitAnnotations.unit_id,
+                               mod.UnitAnnotations.category,
+                               mod.UnitAnnotations.value).\
+                     filter(mod.UnitAnnotations.pdb_id == pdb)
 
+            # loop over lines from the table
             for row in query:
                 fields = row.unit_id.split("|")
+                # match model and chain
                 if fields[1] == mdl and fields[2] == chn:
-                    unit_id_to_annotations[row.unit_id] = (row.orientation,row.chi_degree)
+                    if row.unit_id in unit_id_to_annotations:
+                        unit_id_to_annotations[row.unit_id][row.category] = row.value
+                    else:
+                        unit_id_to_annotations[row.unit_id] = {}
+                        unit_id_to_annotations[row.unit_id][row.category] = row.value
 
         return unit_id_to_annotations
 
