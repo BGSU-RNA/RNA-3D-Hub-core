@@ -7,20 +7,8 @@
 
 import numpy as np
 import argparse
-import csv
-import urllib
-import pickle
 import math
-import sys
-from datetime import datetime
-from math import floor
 import os
-from os import path
-
-from time import time
-
-from collections import defaultdict
-from mpl_toolkits.mplot3d import Axes3D
 
 from fr3d.modified_parent_mapping import modified_nucleotides
 
@@ -43,15 +31,14 @@ from fr3d.definitions import HB_donors
 from fr3d.definitions import HB_weak_donors
 from fr3d.definitions import HB_acceptors
 
-from discrepancy import matrix_discrepancy
-
+# read input and output paths from localpath.py
 # note that fr3d.localpath does not synchronize with Git, so you can change it locally to point to your own directory structure
-from fr3d.localpath import outputText
-from fr3d.localpath import outputNAPairwiseInteractions
-from fr3d.localpath import contact_list_file
-from fr3d.localpath import inputPath
-from fr3d.localpath import outputHTML
-from fr3d.data.base import EntitySelector
+try:
+    from fr3d.localpath import outputNAPairwiseInteractions
+    from fr3d.localpath import inputPath
+except:
+    inputPath = ""
+    outputNAPairwiseInteractions = ""
 
 from NA_pairwise_interactions import load_structure
 from NA_pairwise_interactions import get_parent
@@ -60,6 +47,7 @@ from NA_pairwise_interactions import myTimer
 def annotate_bond_orientation(structure,pdb,pipeline=False):
 
     bond_annotations = []
+    error_message = []
 
     nts = structure.residues(type = ["RNA linking","DNA linking"])  # load all RNA/DNA nucleotides
 
@@ -92,9 +80,10 @@ def annotate_bond_orientation(structure,pdb,pipeline=False):
                 C2C4 = nt.centers[modified_nucleotides[nt.sequence]["atoms"]["C2"]]
             else:
                 if pipeline:
-                    self.logger.info("%s has no identified parent" % nt.unit_id())
+                    error_message.append("%s has no identified parent" % nt.unit_id())
                 else:
                     print("%s has no identified parent" % nt.unit_id())
+
                 N1N9 = nt.centers["N9"]      # maybe this is present
                 if len(N1N9) == 3:
                     C2C4 = nt.centers["C4"]
@@ -151,11 +140,11 @@ def annotate_bond_orientation(structure,pdb,pipeline=False):
                 bond_annotations.append({'unit_id'    : nt.unit_id(),
                                         'pdb_id'      : pdb,
                                         'orientation' : classification,
-                                        'chi_degree'  : chi})
+                                        'chi_degree'  : ("%0.3f" % chi)})
 
             else:
                 if pipeline:
-                    self.logger.info('%s had a calculation error' % nt.unit_id())
+                    error_message.append('%s had a calculation error' % nt.unit_id())
                 else:
                     print('%s had a calculation error' % nt.unit_id())
 
@@ -165,7 +154,7 @@ def annotate_bond_orientation(structure,pdb,pipeline=False):
                         'orientation' : 'NA',
                         'chi_degree'  : None})
 
-    return bond_annotations
+    return bond_annotations, error_message
 
 def write_txt_output_file(outputNAPairwiseInteractions,PDBid,bond_annotations):
     """
