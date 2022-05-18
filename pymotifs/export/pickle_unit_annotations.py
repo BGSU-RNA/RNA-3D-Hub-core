@@ -31,7 +31,7 @@ class Exporter(core.Loader):
         #self.logger.info("has_data: filename: %s" % filename)
 
         # force re-writing of .pickle files
-        return False
+        #return False
 
         if os.path.exists(filename) is True:
             self.logger.info("has_data: filename %s exists" % filename)
