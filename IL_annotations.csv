@@ -1,17 +1,22 @@
 IL_56467.1,,Triple sheared,Triple sheared,zirbel
-IL_56467.1,IL_4IOA_012,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_4WF9_019,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_4Y4O_193,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_5J7L_258,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_4V9F_020,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.1,IL_7A0S_013,"5x5 with tSH, cross-strand stack",,zirbel
-IL_56467.6,IL_7RQB_016,"5x5 with tSH, cross-strand stack",,zirbel
+IL_56467.1,IL_4IOA_012,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_4WF9_019,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_4Y4O_193,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_5J7L_258,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_4V9F_020,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.1,IL_7A0S_013,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
+IL_56467.6,IL_7RQB_016,"5x5 with tSH, cross-strand stack","5x5 with tSH, cross-strand stack",zirbel
 IL_56467.2,,Triple sheared,Triple sheared,zirbel
 IL_56467.6,,Triple sheared,Triple sheared,zirbel
 IL_56467.6,IL_4WF9_084,,,zirbel
-IL_55896.1,,tSH-tHS-tWS,,zirbel
+IL_55896.1,,tSH-tHS-tWS,,acoger
 IL_53523.1,,tSH-inserted-tHW,,zirbel
 IL_53523.4,,tSH-inserted-tHW,,zirbel
+IL_53523.5,,tSH-inserted-tHW,,zirbel
+IL_53523.5,IL_4WF9_075,,,zirbel
+IL_53523.5,IL_5TBW_118,,,zirbel
+IL_53523.5,IL_5TBW_048,,,zirbel
+IL_53523.5,IL_7A0S_051,,,zirbel
 IL_05062.1,,Triple sheared with inserted A,Triple sheared,sree
 IL_09705.1,,Double sheared,Double sheared,sree
 IL_09705.1,IL_4WF9_054,4x5 with ntWS,,sree
@@ -57,7 +62,11 @@ IL_35110.1,IL_4IOA_096,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-b
 IL_35110.1,IL_5J7L_346,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_35110.1,IL_4WF9_100,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_35110.1,IL_4Y4O_278,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_35110.5,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_35110.1,IL_7RQB_103,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_35110.1,IL_7A0S_094,Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_04346.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_04346.5,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_34470.1,,9x8 Sarcin-Ricin with GA cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_59724.1,,8x7 Sarcin-Ricin with CC bifurcated pair; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_50992.1,,9x8 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree
@@ -65,16 +74,23 @@ IL_24606.1,,8x6 Sarcin-Ricin with inserted Y; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_56501.1,,7x6 Sarcin-Ricin with UU cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_36582.1,,8x6 Sarcin-Ricin with inserted A; G-bulge,Sarcin-Ricin; G-bulge,sree
 IL_02349.1,,8x6 Sarcin-Ricin with bulged A; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_02349.2,,8x6 Sarcin-Ricin with bulged A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_88269.1,,6x5 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree
+IL_88269.2,,6x5 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_16109.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_83354.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_93830.1,,7x7 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
+IL_93830.2,,7x7 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_34590.1,,9x9 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_20463.1,,7x11 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel
 IL_63596.1,,C-loop,C-loop,zirbel
+IL_63596.2,,C-loop,C-loop,zirbel
+IL_63596.3,,C-loop,C-loop,zirbel
 IL_93147.1,,C-loop,C-loop,sree
 IL_51590.1,IL_4V88_408,C-loop with extra cWW pair,C-loop,zirbel
 IL_35410.1,,C-loop,C-loop,sree
 IL_08376.1,,C-loop,C-loop,sree
+IL_08376.2,,C-loop,C-loop,zirbel
 IL_51265.1,,Kink-turn from U4,Kink-turn,sree
 IL_51265.1,IL_4LCK_006,Kink-turn from T-box riboswitch,Kink-turn,sree
 IL_29549.1,,Kink-turn,Kink-turn,zirbel
@@ -106,3 +122,6 @@ IL_13730.6,IL_6JQ5_001,Stack outside cWW,Stack outside cWW,zirbel
 IL_39521.1,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
 IL_39521.3,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
 IL_39521.5,,tSH-tHW-tHS,tSH-tHW-tHS,zirbel
+IL_56455.1,,Bacterial 5S Loop E,Loop E,zirbel
+IL_56455.2,,Bacterial 5S Loop E,Loop E,zirbel
+IL_56455.3,,Bacterial 5S Loop E,Loop E,zirbel
