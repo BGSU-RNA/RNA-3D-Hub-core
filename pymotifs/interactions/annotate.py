@@ -81,8 +81,8 @@ class Loader(core.SimpleLoader):
         if len(annotations) == 0:
             annotations.append({
                 'pdb_id'    : pdb,
-                'unit_id_1' : None,
-                'unit_id_2' : None,
+                'unit_id_1' : 'placeholder',
+                'unit_id_2' : 'placeholder',
                 'annotation': None,
                 'annotation_detail' : None,
                 'category'  : 'placeholder',
