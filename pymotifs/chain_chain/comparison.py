@@ -684,15 +684,18 @@ class Loader(core.SimpleLoader):
                 filter(mod.IfeInfo.new_style == 1).\
                 filter(mod.ChainInfo.chain_id == chain_id)
 
-        if not query.count():
-            raise core.InvalidState("Could not load chain with id %s" %
-                                    chain_id)
-        ife = ut.row2dict(query.first())
+            # the following lines were not indented this much, changed 2022-05-18
+            result = [row for row in query]
+
+            #if not query.count():
+            if len(result) == 0:
+                raise core.InvalidState("Could not load chain with id %s" %
+                                        chain_id)
+            ife = ut.row2dict(query.first())
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.sym_op,
-                                  mod.UnitInfo.alt_id,
-                                  ).\
+                                  mod.UnitInfo.alt_id).\
                 join(mod.ChainInfo,
                      (mod.ChainInfo.pdb_id == mod.UnitInfo.pdb_id) &
                      (mod.ChainInfo.chain_name == mod.UnitInfo.chain)).\
@@ -703,7 +706,10 @@ class Loader(core.SimpleLoader):
                 filter(mod.ChainInfo.chain_id == chain_id).\
                 distinct()
 
-            if not query.count():
+            result = [row for row in query]
+
+            #if not query.count():       # caused QueuePool limit of size 40 error
+            if len(result) == 0:
                 raise core.InvalidState("Could not get info for chain %s" %
                                         chain_id)
 
