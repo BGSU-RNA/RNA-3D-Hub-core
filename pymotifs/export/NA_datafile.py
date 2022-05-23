@@ -80,6 +80,14 @@ class Exporter(core.Loader):
         """
         return ['1']
 
+    def model_query(self, pdb, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.model).\
+                            filter(mod.UnitInfo.pdb_id == pdb).first()
+
+        return str(query)[1]
+
+
     def data(self, pdb, **kwargs):
         """
             Look up all the existed pdbs to process.  Ignores the pdb input.
@@ -104,6 +112,7 @@ class Exporter(core.Loader):
                 result[row.pdb_id]['chains'] = {}
             result[row.pdb_id]['resolution'] = row.resolution
             result[row.pdb_id]['method'] = row.experimental_technique
+            result[row.pdb_id]['model'] = self.model_query(row.pdb_id)
 
             if row.entity_macromolecule_type == 'Polypeptide(L)':
                 if result[row.pdb_id]['chains'].get('protein'):
