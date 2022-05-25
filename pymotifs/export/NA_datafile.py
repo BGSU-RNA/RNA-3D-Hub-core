@@ -8,12 +8,6 @@ import pickle
 from pymotifs import core
 from pymotifs import models as mod
 
-# from pymotifs.chains.info import Loader as ChainLoader
-# from pymotifs.units.centers import Loader as CentersLoader
-# from pymotifs.units.rotation import Loader as RotationsLoader
-# from pymotifs.exp_seq.mapping import Loader as MappingLoader
-# from pymotifs.exp_seq.positions import Loader as PositionLoader
-# from pymotifs.ife.info import Loader as IfeInfoLoader
 from pymotifs.pdbs.info import Loader as InfoLoader
 
 from collections import defaultdict
@@ -80,12 +74,15 @@ class Exporter(core.Loader):
         """
         return ['1']
 
-    def model_query(self, pdb, **kwargs):
+    def model_query(self, pdb, chain_name, **kwargs):
         with self.session() as session:
             query = session.query(mod.UnitInfo.model).\
-                            filter(mod.UnitInfo.pdb_id == pdb).first()
+                            filter(and_(mod.UnitInfo.pdb_id == pdb, mod.UnitInfo.chain == chain_name)).first()
 
-        return str(query)[1]
+        # return str(query)[1]
+        # the output of result will be like this format, (12L)
+        # thus, (, ), and L need to be removed.
+        return str(query).replace('(','').replace(')','').replace('L','').replace(',','')
 
 
     def data(self, pdb, **kwargs):
@@ -100,6 +97,7 @@ class Exporter(core.Loader):
                             mod.PdbInfo.resolution,
                             mod.PdbInfo.experimental_technique).\
                             join(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id)
+                            # join(mod.UnitInfo, and_(mod.ChainInfo.pdb_id == mod.UnitInfo.pdb_id, mod.ChainInfo.chain_name == mod.UnitInfo.chain))
         result = defaultdict(dict)
         dna_long = ['Polydeoxyribonucleotide (DNA)','polydeoxyribonucleotide']
         rna_long = ['Polyribonucleotide (RNA)','polyribonucleotide']
@@ -112,7 +110,12 @@ class Exporter(core.Loader):
                 result[row.pdb_id]['chains'] = {}
             result[row.pdb_id]['resolution'] = row.resolution
             result[row.pdb_id]['method'] = row.experimental_technique
-            result[row.pdb_id]['model'] = self.model_query(row.pdb_id)
+            
+            if result[row.pdb_id].get('model'):
+                result[row.pdb_id]['model'].append(self.model_query(row.pdb_id,row.chain_name))
+            else:
+                result[row.pdb_id]['model'] = []
+                result[row.pdb_id]['model'].append(self.model_query(row.pdb_id,row.chain_name))
 
             if row.entity_macromolecule_type == 'Polypeptide(L)':
                 if result[row.pdb_id]['chains'].get('protein'):
