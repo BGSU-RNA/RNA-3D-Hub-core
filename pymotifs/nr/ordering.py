@@ -62,16 +62,18 @@ class Loader(core.SimpleLoader):
         """
 
         # determine desired release or retrieve most recent release
-        latest = None
-        if kwargs.get('manual', {}).get('nr_release_id', False):
-            latest = kwargs['manual']['nr_release_id']
-        else:
-            data = self.cached(NR_CACHE_NAME)
-            if not data:
-                raise core.InvalidState("No precomputed grouping to store; specify a release")
-            latest = data['release']
+        # Removed 2022-05-26 since latest is not used, nor is data
+        if 0 > 1:
+            latest = None
+            if kwargs.get('manual', {}).get('nr_release_id', False):
+                latest = kwargs['manual']['nr_release_id']
+            else:
+                data = self.cached(NR_CACHE_NAME)
+                if not data:
+                    raise core.InvalidState("No precomputed grouping to store; specify a release")
+                latest = data['release']
 
-        self.logger.info("to_process: latest: %s" % latest)
+            self.logger.info("to_process: latest release is: %s" % latest)
 
         # find all nr_class_id values associated with this release
         if 0 > 1:
@@ -91,28 +93,26 @@ class Loader(core.SimpleLoader):
                 if not r.nr_release_id[0:2] == "0." and not r.nr_release_id[0:2] == "1.":
                     all_triples.append((r.nr_release_id,r.nr_class_id,r.name))
 
-            # sort by equivalence class name and then by release number
-            all_triples = sorted(all_triples, key = lambda r: (r[2], r[1]))
+            # sort by integer class id then by NR_###_#####.# class name
+            all_triples = sorted(all_triples, key = lambda r: (r[1], r[2]))
 
-            print("Possible error on next line")
-            self.logger.info("to_process: sorted triples", all_triples)
-            print("Possible error on previous line")
-
-            # get all pairs of nr_class_id and ife_id
-            query = session.query(mod.NrOrderingTest.nr_class_name)
+            # get all nr_class_name values that have an ordering in nr_ordering_test
+            query = session.query(mod.NrOrderingTest.nr_class_name).distinct()
             ordered_nr_class_name = [r.nr_class_name for r in query]
+
+            self.logger.info("to_process: found %d classes already ordered" % len(ordered_nr_class_name))
 
             # loop through triples, save first class_id for each name, save pair if not already ordered
             one_class_id_per_name = {}
             pairs_to_process = []
-            for (nr_release,nr_class,nr_name) in all_triples:
+            for (nr_release,nr_class_id,nr_name) in all_triples:
                 if not nr_name in one_class_id_per_name:
-                    one_class_id_per_name[nr_name] = (nr_release,nr_class)
+                    one_class_id_per_name[nr_name] = (nr_release,nr_class_id)
                     if not nr_name in ordered_nr_class_name:
-                        self.logger.info("to_process: need to order release %s class %s" % (nr_release,nr_name))
-                        pairs_to_process.append((nr_release,nr_class))
-#                    else:
-#                        self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
+                        self.logger.info("to_process: need to order class %16s originally from release %5s" % (nr_name,nr_release))
+                        pairs_to_process.append((nr_release,nr_class_id))
+                    #else:
+                    #    self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
 
             return pairs_to_process
 
@@ -195,7 +195,7 @@ class Loader(core.SimpleLoader):
 
         self.logger.info("query: class_id: %s" % class_id)
 
-        return session.query(mod.NrOrdering).\
+        return session.query(mod.NrOrderingTest).\
             filter_by(nr_class_id=class_id)
 
     def get_original_info(self, class_name):
@@ -351,10 +351,19 @@ class Loader(core.SimpleLoader):
 
             ifes = set(m[0] for m in members)
 
+            self.logger.info("distances_revised: starting loop")
+
             for result in query:
                 if result.ife1 not in ifes or result.ife2 not in ifes:
                     continue
                 distances_revised[result.ife1][result.ife2] = result.discrepancy
+
+            self.logger.info("distances_revised: finished loop")
+
+            if not distances_revised:
+                self.logger.info('Listing distances between ifes, if any:')
+                for result in query:
+                    self.logger.info('ife1 %s ife2 %s discrepancy %0.4f' % (result.ife1,result.ife2,result.discrepancy))
 
         if not distances_revised:
             raise core.Skip("No distances, skipping class: %i" % class_id)
@@ -560,12 +569,14 @@ class Loader(core.SimpleLoader):
         if len(members_revised) <= 2:
             # no need to try to find an ordering, all possible orderings are equivalent
             ordered_revised = members_revised
-        elif len(members_revised) <= 300:
+        elif len(members_revised) <= 140:
             # look up distances using database for smallish groups
             # on 10/15/2019, database lookup of a group with 299 members took 1.04 seconds
             # flat file reading of groups up to 450 members took under 2 seconds
             # 300 is a good cutoff between the two
             # before reading the flat file, it could take hours to look up discrepancies from the database for large groups
+            # On 5/25/2022, E.c., T.th., S.c. groups of size 150 to 220 took up to 55 minutes to read
+            # from the database.  Reduced the cutoff to 140.
 
             starttime = time.clock()
             #distances = self.distances(nr_release_id, class_id, members)
