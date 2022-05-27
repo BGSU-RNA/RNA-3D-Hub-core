@@ -24,4 +24,4 @@ class Exporter(StageContainer):
 
 #    stages = set([CifAtom, InteractionExporter, LoopExporter, PickleURExporter, PicklePRExporter])
 
-    stages = set([CifAtom, InteractionExporter, LoopExporter, PickleURExporter, PicklePRExporter, PickleUAExporter, IFEDiscrepancyExporter])
+    stages = set([CifAtom, InteractionExporter, LoopExporter, PickleURExporter, PicklePRExporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter])
