@@ -262,7 +262,7 @@ if __name__=="__main__":
 
         if 'glycosidic' in categories:
             timerData = myTimer("Annotating bond orientation",timerData)
-            bond_annotations = annotate_bond_orientation(structure,PDBid)
+            bond_annotations = annotate_bond_orientation(structure)
 
             #print(bond_annotations)
 
