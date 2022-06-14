@@ -37,7 +37,13 @@ class Loader(core.SimpleLoader):
 
             annotated = set([result.pdb_id for result in query])
 
-        return sorted(list(set(pdbs) - annotated),reverse=True)
+        #pdb_list = sorted(list(set(pdbs) - annotated),reverse=True)
+        pdb_list = sorted(list(set(pdbs) - annotated))
+
+        if len(pdb_list) == 0:
+            raise core.Skip("No PDB files need pair interactions annotated")
+
+        return pdb_list
 
 
     def data(self, pdb, **kwargs):
@@ -81,8 +87,8 @@ class Loader(core.SimpleLoader):
         if len(annotations) == 0:
             annotations.append({
                 'pdb_id'    : pdb,
-                'unit_id_1' : None,
-                'unit_id_2' : None,
+                'unit_id_1' : 'placeholder',
+                'unit_id_2' : 'placeholder',
                 'annotation': None,
                 'annotation_detail' : None,
                 'category'  : 'placeholder',
