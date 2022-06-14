@@ -65,6 +65,7 @@ class Exporter(core.Loader):
         self.logger.info("filename: filename: %s" % filename)
         ## change /html to /unit
         return os.path.join("/var/www/units",filename)
+        # return os.path.join("/var/www/html/units",filename)
         # return os.path.join("/usr/local/pipeline/hub-core/logs",filename)
 
     def to_process(self, pdbs, **kwargs):
@@ -74,7 +75,7 @@ class Exporter(core.Loader):
         """
         return ['1']
 
-    def model_query(self, **kwargs):
+    def model_query_old(self, **kwargs):
         with self.session() as session:
             query = session.query(mod.UnitInfo.pdb_id,mod.UnitInfo.chain,mod.UnitInfo.model).distinct()
                             # filter(and_(mod.UnitInfo.pdb_id == pdb, mod.UnitInfo.chain == chain_name)).first()
@@ -91,14 +92,32 @@ class Exporter(core.Loader):
             #     result[row.pdb_id][row.chain] = []
             #     result[row.pdb_id][row.chain].append(row.model)
             result[row.pdb_id][row.chain]=str(row.model).replace('L','')
+        return result
+
+    def model_query(self, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.pdb_id,mod.UnitInfo.model).distinct()
+        result = defaultdict(set)
+        for row in query:           
+            result[row.pdb_id].add(int(str(row.model).replace('L','')))
         return result      
         
+    def sym_op(self, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.pdb_id,mod.UnitInfo.chain,mod.UnitInfo.sym_op).distinct()
+        result = defaultdict(set)
+        for row in query:
+            result[str(row.pdb_id)+str(row.chain)].add(row.sym_op)
+        return result
+
+
 
     def data(self, pdb, **kwargs):
         """
             Look up all the existed pdbs to process.  Ignores the pdb input.
         """
         model_type = self.model_query()
+        sym_op_dict = self.sym_op()
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.pdb_id,
@@ -127,6 +146,12 @@ class Exporter(core.Loader):
             #         result[row.pdb_id]['model'].append(model_type[row.pdb_id][row.chain_name])
             # except:
             #     self.logger.info('The database currently do not have the model type for %s with chain %s' % (row.pdb_id,row.chain_name))
+            result[row.pdb_id]['model'] = sorted(model_type[row.pdb_id])
+            if result[row.pdb_id].get('symmetry'):
+                result[row.pdb_id]['symmetry'][row.chain_name] = list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])
+            else:
+                result[row.pdb_id]['symmetry'] = {}
+                result[row.pdb_id]['symmetry'][row.chain_name] = list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])
 
 
             if row.entity_macromolecule_type == 'Polypeptide(L)':
@@ -134,92 +159,37 @@ class Exporter(core.Loader):
                     result[row.pdb_id]['chains']['protein'].append(row.chain_name)
                 else:
                     result[row.pdb_id]['chains']['protein'] = []
-                    result[row.pdb_id]['chains']['protein'].append(row.chain_name)
-            ###########
-                try:
-                    if result[row.pdb_id].get('protein_model'):
-                        result[row.pdb_id]['protein_model'].append(model_type[row.pdb_id][row.chain_name])
-                    else:
-                        result[row.pdb_id]['protein_model'] = []
-                        result[row.pdb_id]['protein_model'].append(model_type[row.pdb_id][row.chain_name])
-                except:
-                    self.logger.info('The database currently do not have the protein model type for %s with chain %s' % (row.pdb_id,row.chain_name))      
+                    result[row.pdb_id]['chains']['protein'].append(row.chain_name)     
             elif (row.entity_macromolecule_type in dna_long):
                 if result[row.pdb_id]['chains'].get('DNA'):
                     result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
                 else:
                     result[row.pdb_id]['chains']['DNA'] = []
-                    result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
-            ###########
-                try:
-                    if result[row.pdb_id].get('DNA_model'):
-                        result[row.pdb_id]['DNA_model'].append(model_type[row.pdb_id][row.chain_name])
-                    else:
-                        result[row.pdb_id]['DNA_model'] = []
-                        result[row.pdb_id]['DNA_model'].append(model_type[row.pdb_id][row.chain_name])
-                except:
-                    self.logger.info('The database currently do not have the DNA model type for %s with chain %s' % (row.pdb_id,row.chain_name))                       
+                    result[row.pdb_id]['chains']['DNA'].append(row.chain_name)                     
             elif (row.entity_macromolecule_type in rna_long):
                 if result[row.pdb_id]['chains'].get('RNA'):
                     result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
                 else:
                     result[row.pdb_id]['chains']['RNA'] = []
-                    result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
-            ###########
-                try:
-                    if result[row.pdb_id].get('RNA_model'):
-                        result[row.pdb_id]['RNA_model'].append(model_type[row.pdb_id][row.chain_name])
-                    else:
-                        result[row.pdb_id]['RNA_model'] = []
-                        result[row.pdb_id]['RNA_model'].append(model_type[row.pdb_id][row.chain_name])
-                except:
-                    self.logger.info('The database currently do not have the RNA model type for %s with chain %s' % (row.pdb_id,row.chain_name))   
+                    result[row.pdb_id]['chains']['RNA'].append(row.chain_name)  
             elif (row.entity_macromolecule_type in hybrid_long):
                 if result[row.pdb_id]['chains'].get('hybrid'):
                     result[row.pdb_id]['chains']['hybrid'].append(row.chain_name)
                 else:
                     result[row.pdb_id]['chains']['hybrid'] = []
-                    result[row.pdb_id]['chains']['hybrid'].append(row.chain_name)
-            ###########
-                try:
-                    if result[row.pdb_id].get('hybrid_model'):
-                        result[row.pdb_id]['hybrid_model'].append(model_type[row.pdb_id][row.chain_name])
-                    else:
-                        result[row.pdb_id]['hybrid_model'] = []
-                        result[row.pdb_id]['hybrid_model'].append(model_type[row.pdb_id][row.chain_name])
-                except:
-                    self.logger.info('The database currently do not have the hybrid model type for %s with chain %s' % (row.pdb_id,row.chain_name))   
+                    result[row.pdb_id]['chains']['hybrid'].append(row.chain_name) 
             elif (row.entity_macromolecule_type == 'Peptide nucleic acid'):
                 if result[row.pdb_id]['chains'].get('PNA'):
                     result[row.pdb_id]['chains']['PNA'].append(row.chain_name)
                 else:
                     result[row.pdb_id]['chains']['PNA'] = []
                     result[row.pdb_id]['chains']['PNA'].append(row.chain_name)
-            ###########
-                try:
-                    if result[row.pdb_id].get('PNA_model'):
-                        result[row.pdb_id]['PNA_model'].append(model_type[row.pdb_id][row.chain_name])
-                    else:
-                        result[row.pdb_id]['PNA_model'] = []
-                        result[row.pdb_id]['PNA_model'].append(model_type[row.pdb_id][row.chain_name])
-                except:
-                    self.logger.info('The database currently do not have the PNA model type for %s with chain %s' % (row.pdb_id,row.chain_name))  
             elif (row.entity_macromolecule_type not in entity_type_check):
                 if result[row.pdb_id]['chains'].get(row.entity_macromolecule_type):
                     result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
                 else:
                     result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
                     result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
-            ###########
-                other_type_model = str(row.entity_macromolecule_type) + '_model'
-                try:
-                    if result[row.pdb_id].get(other_type_model):
-                        result[row.pdb_id][other_type_model].append(model_type[row.pdb_id][row.chain_name])
-                    else:
-                        result[row.pdb_id][other_type_model] = []
-                        result[row.pdb_id][other_type_model].append(model_type[row.pdb_id][row.chain_name])
-                except:
-                    self.logger.info('The database currently do not have the %s model type for %s with chain %s' % (row.entity_macromolecule_type,row.pdb_id,row.chain_name)) 
             
 
 
