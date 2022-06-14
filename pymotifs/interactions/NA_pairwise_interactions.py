@@ -203,11 +203,13 @@ def build_atom_to_unit_part_list():
     return atom_to_part_list
 
 
-def make_nt_cubes(bases, screen_distance_cutoff, nt_reference="base"):
+def make_nt_cubes_full(bases, screen_distance_cutoff, nt_reference="base"):
     """
     Builds cubes with side length screen_distance_cutoff
     using nt_reference as the point for each nucleotide.
     Cubes are named by a rounded value of x,y,z and by model.
+    Neighboring cubes surround the current cube, resulting in
+    lists of pairs of nucleotides that list each nucleotide twice.
     """
 
     # build a set of cubes and record which bases are in which cube
@@ -234,6 +236,48 @@ def make_nt_cubes(bases, screen_distance_cutoff, nt_reference="base"):
                         for c in [-1,0,1]:
                             k = "%d,%d,%d,%s" % (x+a,y+b,z+c,model)
                             baseCubeNeighbors[key].append(k)
+
+    return baseCubeList, baseCubeNeighbors
+
+
+def make_nt_cubes_half(bases, screen_distance_cutoff, nt_reference="base"):
+    """
+    Builds cubes with side length screen_distance_cutoff
+    using nt_reference as the point for each nucleotide.
+    Cubes are named by a rounded value of x,y,z and by model.
+    Neighboring cubes only cover half of the 26 possibilities,
+    resulting in lists of pairs of nucleotides that list each nucleotide once.
+    """
+
+    # build a set of cubes and record which bases are in which cube
+    # also record which other cubes are neighbors of each cube
+    baseCubeList = {}
+    baseCubeNeighbors = {}
+
+    # build a set of cubes and record which bases are in which cube
+    for base in bases:
+        center = base.centers[nt_reference]  # chosen reference point
+        if len(center) == 3:
+            x = floor(center[0]/screen_distance_cutoff)
+            y = floor(center[1]/screen_distance_cutoff)
+            z = floor(center[2]/screen_distance_cutoff)
+            model = base.model
+            key = "%d,%d,%d,%s" % (x,y,z,model)
+            if key in baseCubeList:
+                baseCubeList[key].append(base)
+            else:
+                baseCubeList[key] = [base]
+                baseCubeNeighbors[key] = []
+                cubes_seen = []
+                for a in [0,1]:
+                    for b in [0,1,-1]:
+                        for c in [0,1,-1]:
+                            if not [-a,-b,-c] in cubes_seen:
+                                cubes_seen.append([a,b,c])
+                                k = "%d,%d,%d,%s" % (x+a,y+b,z+c,model)
+                                baseCubeNeighbors[key].append(k)
+
+                print(cubes_seen)
 
     return baseCubeList, baseCubeNeighbors
 
@@ -572,7 +616,7 @@ def annotate_nt_nt_in_structure(structure,categories,timerData=None,get_datapoin
         timerData = myTimer("start")
 
     timerData = myTimer("Building cubes",timerData)
-    baseCubeList, baseCubeNeighbors = make_nt_cubes(bases, nt_nt_screen_distance, nt_reference_point)
+    baseCubeList, baseCubeNeighbors = make_nt_cubes_half(bases, nt_nt_screen_distance, nt_reference_point)
 
     # annotate nt-nt interactions
     print("  Annotating interactions")
