@@ -21,7 +21,8 @@ class Loader(core.SimpleLoader):
     
     def to_process(self, pdbs, **kwargs):
 
-        return ['5Z9W']
+        return ['6I2N', '4WR6', '6H5Q', '4WRO', '4WZD', '7MSF', '1EO4', '6MSF', '6NUT', '5A79', '5A7A', '5APO', '1VS9', '2I1C', '6QNQ', '5AFI', '1FJF', '5AA0', '5MJV', '5MSF', '5Z9W', '4Z92', '5FN1', '6GV4', '5M74']
+
 
 
 

@@ -101,7 +101,7 @@ class Exporter(core.Loader):
         for row in query:           
             result[row.pdb_id].add(int(str(row.model).replace('L','')))
         return result      
-        
+
     def sym_op(self, **kwargs):
         with self.session() as session:
             query = session.query(mod.UnitInfo.pdb_id,mod.UnitInfo.chain,mod.UnitInfo.sym_op).distinct()
@@ -109,8 +109,6 @@ class Exporter(core.Loader):
         for row in query:
             result[str(row.pdb_id)+str(row.chain)].add(row.sym_op)
         return result
-
-
 
     def data(self, pdb, **kwargs):
         """
@@ -126,7 +124,7 @@ class Exporter(core.Loader):
                             mod.PdbInfo.resolution,
                             mod.PdbInfo.experimental_technique).\
                             join(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id)
-                            # join(mod.UnitInfo, and_(mod.ChainInfo.pdb_id == mod.UnitInfo.pdb_id, mod.ChainInfo.chain_name == mod.UnitInfo.chain))
+                            # filter(mod.ChainInfo.pdb_id=='1BF5')
         result = defaultdict(dict)
         dna_long = ['Polydeoxyribonucleotide (DNA)','polydeoxyribonucleotide']
         rna_long = ['Polyribonucleotide (RNA)','polyribonucleotide']
@@ -138,21 +136,37 @@ class Exporter(core.Loader):
                 result[row.pdb_id]['chains'] = {}
             result[row.pdb_id]['resolution'] = row.resolution
             result[row.pdb_id]['method'] = row.experimental_technique
-            # try:
-            #     if result[row.pdb_id].get('model'):
-            #         result[row.pdb_id]['model'].append(model_type[row.pdb_id][row.chain_name])
-            #     else:
-            #         result[row.pdb_id]['model'] = []
-            #         result[row.pdb_id]['model'].append(model_type[row.pdb_id][row.chain_name])
-            # except:
-            #     self.logger.info('The database currently do not have the model type for %s with chain %s' % (row.pdb_id,row.chain_name))
-            result[row.pdb_id]['model'] = sorted(model_type[row.pdb_id])
-            if result[row.pdb_id].get('symmetry'):
-                result[row.pdb_id]['symmetry'][row.chain_name] = list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])
-            else:
-                result[row.pdb_id]['symmetry'] = {}
-                result[row.pdb_id]['symmetry'][row.chain_name] = list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])
 
+            result[row.pdb_id]['model'] = sorted(model_type[row.pdb_id])
+            # try:
+            #     self.logger.info('pdb_id: %s, chain: %s,sym_op_dict: %s'%(row.pdb_id,row.chain_name,list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])))
+            #     if result[row.pdb_id].get('symmetry'):
+            #         # result[row.pdb_id]['symmetry'][row.chain_name] = sym_op_dict[str(row.pdb_id)+str(row.chain_name)]
+            #         result[row.pdb_id]['symmetry'][str(list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])).replace("'",'').replace("[",'').replace("]",'')].append(row.chain_name)
+            #     else:
+            #         result[row.pdb_id]['symmetry'] = {}
+            #         # result[row.pdb_id]['symmetry'][row.chain_name] = sym_op_dict[str(row.pdb_id)+str(row.chain_name)]
+            #         # result[row.pdb_id]['symmetry'][list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])] = []
+            #         result[row.pdb_id]['symmetry'][str(list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])).replace("'",'').replace("[",'').replace("]",'')] = list(row.chain_name)
+            # except:
+            #     self.logger.info('something wrong here!!pdb_id: %s, chain_name: %s, sym_op: %s'%(row.pdb_id,row.chain_name,list(sym_op_dict[str(row.pdb_id)+str(row.chain_name)])))
+            
+            for opeator in sym_op_dict[str(row.pdb_id)+str(row.chain_name)]:
+                # self.logger.info('opeator: %s'%(str(opeator)))
+                if result[row.pdb_id].get('symmetry'):
+                    if result[row.pdb_id]['symmetry'].get(str(opeator)):
+                        result[row.pdb_id]['symmetry'][str(opeator)].append(row.chain_name)
+                    else:
+                        result[row.pdb_id]['symmetry'][str(opeator)] = []
+                        result[row.pdb_id]['symmetry'][str(opeator)].append(row.chain_name)
+                else:
+                    result[row.pdb_id]['symmetry'] = {}
+                    result[row.pdb_id]['symmetry'] = {str(opeator):[row.chain_name]}
+                # result[row.pdb_id]['symmetry'][str(opeator)].append(row.chain_name)
+                # if not result[row.pdb_id]['symmetry'].get(str(opeator)):
+                #     result[row.pdb_id]['symmetry'] = {str(opeator):row.chain_name}
+                # else:
+                #     result[row.pdb_id]['symmetry'][str(opeator)].append(row.chain_name)
 
             if row.entity_macromolecule_type == 'Polypeptide(L)':
                 if result[row.pdb_id]['chains'].get('protein'):
