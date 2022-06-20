@@ -142,7 +142,7 @@ class Exporter(core.Loader):
 
         os.system("rsync -u %s %s" % (filename, webroot))
 
-        #copy to unit folder
+        #copy to unit folder 
         copy_file = os.path.join("/var/www/units/",pdb + '_protein.pickle')
         with open(copy_file, 'wb') as fh:
             self.logger.info("process: copy_file open: %s" % copy_file)
