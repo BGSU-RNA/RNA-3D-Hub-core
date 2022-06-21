@@ -71,14 +71,12 @@ class Exporter(core.Loader):
 
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
-            query = session.query(mod.UnitInfo.unit_id,
-                            mod.UnitInfo.pdb_id,
-                            mod.UnitInfo.number,
-                            mod.UnitInfo.unit_type_id).\
+            query = session.query(mod.UnitInfo.pdb_id).\
                             filter(mod.UnitInfo.unit_type_id == 'aa').distinct()
         pdb_ids = []
         for row in query:
             pdb_ids.append(row.pdb_id)
+        # print(pdb_ids[0:500])
         return pdb_ids[0:500]
 
 
