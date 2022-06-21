@@ -69,6 +69,18 @@ class Exporter(core.Loader):
         self.logger.info("filename: filename: %s" % filename)
         return os.path.join("/usr/local/pipeline/hub-core/pickle-FR3D",filename)
 
+    def to_process(self, pdbs, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.unit_id,
+                            mod.UnitInfo.pdb_id,
+                            mod.UnitInfo.number,
+                            mod.UnitInfo.unit_type_id).\
+                            filter(mod.unit_type_id == 'aa').distinct()
+        pdb_ids = []
+        for row in query:
+            pdb_ids.append(row.pdb_id)
+        return pdb_ids[0:500]
+
 
     def data(self, pdb, **kwargs):
         """
