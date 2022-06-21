@@ -252,7 +252,7 @@ if __name__=="__main__":
 
         # suppress error messages, but report failures at the end
         try:
-            structure = load_structure(PDB)
+            structure, messages = load_structure(PDB)
         except Exception as ex:
             print("  Could not load structure %s due to exception %s: %s" % (PDB,type(ex).__name__,ex))
             if type(ex).__name__ == "TypeError":
