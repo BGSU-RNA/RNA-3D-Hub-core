@@ -76,18 +76,18 @@ class Loader(core.SimpleLoader):
         # load the 3D structure file
         structure = self.structure(pdb)
 
-        bond_orientations, error_message = annotate_bond_orientation(structure,pdb,True)
+        bond_orientations, error_message = annotate_bond_orientation(structure,True)
 
         if len(error_message) > 0:
             self.logger.info(error_message)
 
         for b in bond_orientations:
             yield mod.UnitAnnotations(unit_id=b["unit_id"],
-                                    pdb_id=b["pdb_id"],
+                                    pdb_id=pdb,
                                     category="orientation",
                                     value=b["orientation"])
 
             yield mod.UnitAnnotations(unit_id=b["unit_id"],
-                                    pdb_id=b["pdb_id"],
+                                    pdb_id=pdb,
                                     category="chi_degree",
                                     value=b["chi_degree"])
