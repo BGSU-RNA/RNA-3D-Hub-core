@@ -75,7 +75,7 @@ class Exporter(core.Loader):
                             mod.UnitInfo.pdb_id,
                             mod.UnitInfo.number,
                             mod.UnitInfo.unit_type_id).\
-                            filter(mod.unit_type_id == 'aa').distinct()
+                            filter(mod.UnitInfo.unit_type_id == 'aa').distinct()
         pdb_ids = []
         for row in query:
             pdb_ids.append(row.pdb_id)
