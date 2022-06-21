@@ -99,10 +99,10 @@ class Exporter(core.Loader):
                 chainIndice.append(int(str(row.number).replace('L','')))
                 if row.name == 'aa_fg':
                     aa_fg.append((np.asarray([row.x,row.y,row.z])))
-                    aa_backbone.append(None)
+                    aa_backbone.append(np.asarray([np.NaN,np.NaN,np.NaN]))
                 elif row.name == 'aa_backbone':
                     aa_backbone.append((np.asarray([row.x,row.y,row.z])))
-                    aa_fg.append(None)
+                    aa_fg.append(np.asarray([np.NaN,np.NaN,np.NaN]))
             else:
                 if row.name == 'aa_fg':
                     aa_fg[len(aa_fg)-1]=(np.asarray([row.x,row.y,row.z]))
