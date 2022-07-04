@@ -22,6 +22,7 @@ class Loader(core.SimpleLoader):
 
     def query(self, session, pdb):
         return session.query(mod.PairAnnotations).filter_by(pdb_id=pdb)
+        #return session.query(mod.PairAnnotations).filter_by(pdb_id=pdb).filter_by(category='basepair')
 
     def to_process(self, pdbs, **kwargs):
         """
@@ -34,11 +35,17 @@ class Loader(core.SimpleLoader):
 
         with self.session() as session:
             query = session.query(mod.PairAnnotations.pdb_id).distinct()
-
             annotated = set([result.pdb_id for result in query])
 
         #pdb_list = sorted(list(set(pdbs) - annotated),reverse=True)
         pdb_list = sorted(list(set(pdbs) - annotated))
+
+        # when adding a new category of annotations, you can process all PDBs
+        #pdb_list = pdbs
+
+        # if you need to run it twice, split the job in half
+        #pdb_list = pdb_list[:4000]
+        #pdb_list = pdb_list[4002:]
 
         if len(pdb_list) == 0:
             raise core.Skip("No PDB files need pair interactions annotated")
@@ -49,8 +56,10 @@ class Loader(core.SimpleLoader):
     def data(self, pdb, **kwargs):
 
         categories = {}
-        #categories['basepair'] = []
         categories['sO'] = []
+        categories['basepair'] = []
+        categories['coplanar'] = []
+        categories['stacking'] = []
 
         structure = self.structure(pdb)
         interaction_to_triple_list, category_to_interactions, timerData, pair_to_data = annotate_nt_nt_in_structure(structure,categories)
@@ -94,6 +103,5 @@ class Loader(core.SimpleLoader):
                 'category'  : 'placeholder',
                 'crossing'  : None
                 })
-
 
         return annotations
