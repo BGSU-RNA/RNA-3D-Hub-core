@@ -77,7 +77,7 @@ class Exporter(core.Loader):
         for row in query:
             pdb_ids.append(row.pdb_id)
         # print(pdb_ids[0:500])
-        return pdb_ids[0:500]
+        return pdb_ids
 
 
     def data(self, pdb, **kwargs):
