@@ -15,6 +15,7 @@ class TranslationFailed(Exception):
 
 def component_type(unit):
     seq = unit.sequence.upper()
+    nt = unit.type.lower()
     if seq in ['A', 'C', 'G', 'U']:
         return 'rna'
     if seq == 'HOH':
@@ -23,6 +24,12 @@ def component_type(unit):
         return 'aa'
     if seq in ['DA', 'DC', 'DG', 'DT']:
         return 'dna'
+    if nt == 'rna linking':
+        return 'rna'
+    if nt == 'dna linking':
+        return 'dna'
+    if nt == 'l-peptide linking':
+        return 'aa'
     return None
 
 
