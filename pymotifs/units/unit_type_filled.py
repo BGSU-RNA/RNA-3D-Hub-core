@@ -15,6 +15,7 @@ from pymotifs import utils
 # from pymotifs.pdbs.info import Loader as PdbLoader
 # from pymotifs.units import Loader as UnitInfoLoder
 from sqlalchemy import and_
+from collections import defaultdict
 
 
 class Loader(core.Loader):
@@ -26,14 +27,6 @@ class Loader(core.Loader):
     """The dependencies for this stage."""
 
     def to_process(self, pdbs, **kwargs):
-        """We transform the list of pdbs into the list of correspondences that
-        have not yet been summarized.
-
-        :param list pdb: The list of pdb ids. Currently ignored.
-        :param dict kwargs: The keyword arguments which are ignored.
-        :returns: A list of correspondence ids to process.
-        """
-
         with self.session() as session:
             query = session.query(mod.UnitInfo.unit_id).\
                 filter(mod.UnitInfo.unit_type_id == None)
@@ -41,7 +34,36 @@ class Loader(core.Loader):
                 raise core.Skip("Skipping summary, no new correspondences")
 
         return [result.unit_id for result in query]
-    def remove(self, unit_id, **kwargs):
+
+    def to_process_new(self, pdbs, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.unit_id,mod.UnitInfo.pdb_id).\
+                filter(mod.UnitInfo.unit_type_id == None).\
+                filter(mod.UnitInfo.pdb_id == '101D')
+            if not query.count():
+                raise core.Skip("Skipping summary, no new correspondences")
+        d = defaultdict(dict)
+        for result in query:
+            if d.get(result.pdb_id):
+                d[result.pdb_id].append(result.unit_id)
+            else:
+                d[result.pdb_id] = []
+                d[result.pdb_id].append(result.unit_id)
+        return list(d.values())
+
+    # def to_process_Z(self, pdbs, **kwargs):
+
+    #     with self.session() as session:
+    #         query = session.query(mod.UnitInfo.pdb_id).\
+    #             filter(mod.UnitInfo.unit_type_id == None).\
+    #             filter(mod.UnitInfo.pdb_id == '101D')
+    #         if not query.count():
+    #             raise core.Skip("Skipping summary, no new correspondences")
+
+    #     return [result.pdb_id for result in query]
+
+
+    def remove(self, pdb_id, **kwargs):
         self.logger.info("Not removing anything, recompute all correspondence")
 
     def has_data(self, unit_id, **kwargs):
@@ -51,8 +73,16 @@ class Loader(core.Loader):
                 filter(mod.UnitInfo.unit_id == unit_id).\
                 filter(mod.UnitInfo.unit_type_id != None)
             return bool(query.count())
+    def has_data_new(self, pdb_dict, **kwargs):
+        return 0
 
-    def current(self, unit_id):
+        with self.session() as session:
+            query = session.query(mod.UnitInfo).\
+                filter(mod.UnitInfo.unit_id.in_(pdb_dict.values())).\
+                filter(mod.UnitInfo.unit_type_id != None)
+            return bool(query.count())
+
+    def current(self, unit_id): # current row info
         """Get the current data for the correspondence.
         """
 
@@ -77,61 +107,76 @@ class Loader(core.Loader):
         return units.component_type(unit)
 
 
-    def as_unit(self, nt):
-        """Turn a `Component` into a `UnitInfo`.
-
-        Parameters
-        ----------
-        nt : Component
-            The `Component` to turn into a `UnitInfo`.
-
-        Returns
-        -------
-        unit : UnitInfo
-            The `Component` as a `UnitInfo`
-        """
-        return mod.UnitInfo(unit_id=nt.unit_id(),
-                            pdb_id=nt.pdb,
-                            model=nt.model,
-                            chain=nt.chain,
-                            unit=nt.sequence,
-                            number=nt.number,
-                            alt_id=getattr(nt, 'alt_id', None),
-                            ins_code=nt.insertion_code,
-                            sym_op=nt.symmetry,
-                            chain_index=nt.index,
-                            unit_type_id=self.type(nt))
-    def type_query(self, unit_id, **kwargs):
+    def type_query_old(self, unit_id, **kwargs):
         structure = self.structure(unit_id[:4])
         d = {}
         for base in structure.residues():
             d.update({base.unit_id():self.type(base)})
-        #print(d)
-        return d                 
+        return d
+
+    def type_query(self, unit_id, **kwargs):
+        print(unit_id)
+        if unit_id.split('|')[3].upper() in ['CU', 'FE', 'MG', 'NI', 'MN', 'K', 'NA', 'MO', 'CO', 'ZN', 'W', 'CA', 'V']:
+            return 'ion'
+        base = self.structure(unit_id[:4]).residues(unit_id)
+        # if base.unit_id().split('|')[3].upper() in ['CU', 'FE', 'MG', 'NI', 'MN', 'K', 'NA', 'MO', 'CO', 'ZN', 'W', 'CA', 'V']:
+        #     return {base.unit_id():'ion'}
+        # print(base.unit_id().split('|')[3])
+        d = self.type(base)
+        return d    
+
+    # def type_query(self, pdb_id, **kwargs):
+    #     structure = self.structure(pdb_id)
+    #     d = {}
+    #     for base in structure.residues():
+    #         d.update({base.unit_id():self.type(base)})
+    #     return d             
+
+    # def data(self, pdb_ids, **kwargs):
+    #     for pdb in pdb_ids:
+    #         with self.session() as session:
+    #             query = session.query(mod.UnitInfo.unit_id).\
+    #                 filter(mod.UnitInfo.unit_type_id == None).\
+    #                 filter(mod.UnitInfo.pdb_id == pdb)
+    #         type_dict = self.type_query(pdb_id)
+    #         for row in query:
+    #             data = self.current(row.unit_id)
+    #             row_update = type_dict[row.unit_id]
+    #             data['unit_type_id'] = row_update
+
+
+    #         yield mod.UnitInfo(**data)
 
 
     def data(self, unit_id, **kwargs):
         """Compute the summary for the given correspondence id. This will
         update the entry with the counts of match, mismatch and such.
         """
-
+        # print(unit_id)
+        # for unit_id in unit_ids:
+        # data = self.current(unit_id)
+        # row_update = self.type_query(unit_id)
+        # data['unit_type_id'] = row_update
         data = self.current(unit_id)
-        # print(data)
-        # print("111",data['unit_type_id'],data['unit_id'])
         try:
-            row_update = self.type_query(unit_id)[unit_id]
+            row_update = self.type_query(unit_id)
             data['unit_type_id'] = row_update
         except:
-            self.logger.info("The pipeline do not have unit_type_id for metal ion")
-
-        # if row_update:
-        #     data['unit_type_id'] = row_update
-        # else:
-        #     data['unit_type_id'] = None
-        # print("222",data['unit_type_id'],data['unit_id'])
-        # print(data)
-        # print(row_update)
+            self.logger.info("The pipeline do not have unit_type_id for %s"%unit_id)
 
 
         return mod.UnitInfo(**data)
+
+    def data_new(self, pdb_dict, **kwargs):
+        print(pdb_dict)
+        for unit_id in pdb_dict.values():
+            data = self.current(unit_id)
+            try:
+                row_update = self.type_query(unit_id)
+                data['unit_type_id'] = row_update
+            except:
+                self.logger.info("The pipeline do not have unit_type_id for %s"%unit_id)
+
+##############
+            yield mod.UnitInfo(**data)
 

@@ -55,17 +55,17 @@ class Loader(core.SimpleLoader):
         """
         return units.component_type(unit)
 
-    def to_process(self, pdbs, **kwargs):
-        try:
-            for i in pdbs:
-                structure = self.structure(i)
-                j = 1
-                for base in structure.residues():
-                    print(base.unit_id(),base.type,base.sequence, self.type(base),base.chain, self.unit_type_None_fixed(base), 'row',j)
-                    j = j+1
-        except:
-            print('running')
-        return(pdbs)
+    # def to_process(self, pdbs, **kwargs):
+    #     try:
+    #         for i in pdbs:
+    #             structure = self.structure(i)
+    #             j = 1
+    #             for base in structure.residues():
+    #                 print(base.unit_id(),base.type,base.sequence,base.symmetry, self.type(base),base.chain, self.unit_type_None_fixed(base), 'row',j)
+    #                 j = j+1
+    #     except:
+    #         print('running')
+    #     return(pdbs)
     def unit_type_None_fixed(self, nt):
         """we may not need to check the entity_macromolecule_type in the chain info table
         we can get the RNA linking or DNA linking information by nt.type
