@@ -43,9 +43,9 @@ class Loader(core.SimpleLoader):
         # when adding a new category of annotations, you can process all PDBs
         #pdb_list = pdbs
 
-        # if you need to run it twice, split the job in half
-        #pdb_list = pdb_list[:4000]
-        #pdb_list = pdb_list[4002:]
+        # if you need to run it twice, split the job roughly in half
+        #pdb_list = pdb_list[:3800]
+        #pdb_list = pdb_list[3800:]
 
         if len(pdb_list) == 0:
             raise core.Skip("No PDB files need pair interactions annotated")
