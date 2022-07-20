@@ -554,7 +554,7 @@ def annotate_nt_nt_interactions(bases, center_center_distance_cutoff, baseCubeLi
                                 new_annotation = False
                             elif len(interaction12) == 0:
                                 new_annotation = True
-                            elif interaction21 == interaction12_reversed:
+                            elif interaction21.lower() == interaction12_reversed.lower(): # tHh = thH
                                 new_annotation = False
                                 #print("  Matching annotation: %4s and %4s for %s and %s" % (interaction21,interaction12_reversed,nt2.unit_id(),nt1.unit_id()))
                             else:
