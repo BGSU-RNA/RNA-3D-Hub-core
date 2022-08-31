@@ -58,9 +58,9 @@ class Loader(core.SimpleLoader):
     # def to_process(self, pdbs, **kwargs):
     #     try:
     #         for i in pdbs:
-    #             structure = self.structure(i)
+    #             structure = self.structure(i).residues(polymeric=None)
     #             j = 1
-    #             for base in structure.residues():
+    #             for base in structure:
     #                 print(base.unit_id(),base.type,base.sequence,base.symmetry, self.type(base),base.chain, self.unit_type_None_fixed(base), 'row',j)
     #                 j = j+1
     #     except:

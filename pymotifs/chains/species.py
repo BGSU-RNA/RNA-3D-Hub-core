@@ -12,11 +12,12 @@ from pymotifs.utils.structures import Structure
 from pymotifs.utils.structures import UnknownTaxonomyException
 
 from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.species_mapping import Loader as SpeciesLoader
+# from pymotifs.species_mapping import Loader as SpeciesLoader
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([ChainLoader, SpeciesLoader])
+    # dependencies = set([ChainLoader, SpeciesLoader])
+    dependencies = set([ChainLoader])
     @property
     def table(self):
         return mod.ChainSpecies

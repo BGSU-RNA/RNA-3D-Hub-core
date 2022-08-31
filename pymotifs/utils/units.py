@@ -14,7 +14,9 @@ class TranslationFailed(Exception):
 
 
 def component_type(unit):
+    #print(AA)
     seq = unit.sequence.upper()
+    #print(seq)
     if seq in ['A', 'C', 'G', 'U']:
         return 'rna'
     if seq in ['DA', 'DC', 'DG', 'DT']:

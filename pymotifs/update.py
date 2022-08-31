@@ -6,7 +6,6 @@ that are part of the pipeline proper.
 
 from pymotifs import core
 from pymotifs import download
-from pymotifs import species_mapping
 from pymotifs.units import loader as units
 from pymotifs.pdbs import loader as pdbs
 from pymotifs.loops import loader as loops
@@ -26,7 +25,6 @@ class Loader(core.StageContainer):
         download.Downloader,
         pdbs.Loader,
         chains.Loader,
-        species_mapping.Loader,
         units.Loader,
         quality.Loader,
         interactions.Loader,

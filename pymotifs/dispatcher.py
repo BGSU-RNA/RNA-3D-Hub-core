@@ -203,6 +203,9 @@ class Dispatcher(object):
         """
 
         stages = self.stages(self.name)
+        # for index, stage in enumerate(stages):
+        #     if stage.name == 'species_mapping':
+        #         stages.pop(index)
         self.logger.info('Running stages: %s',
                          ', '.join(s.name for s in stages))
 
