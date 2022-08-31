@@ -332,6 +332,30 @@ class Loader(core.MassLoader):
                     loopdata[result.loop_id] = {}
                 loopdata[result.loop_id][result.position] = (result.border,result.unit_id)
 
+            # remove loops whose nts are all obtained from a symmetry operator
+            counter = 0
+            for loop_id in list(loopdata.keys()):
+                all_nontriv_symmetries = True
+                for position, unit_id in list(loopdata[loop_id].values()):
+                    fields = unit_id.split("|")
+                    if len(fields) < 9 or fields[8] == '1_555' or fields[8] == 'P_1':
+                        all_nontriv_symmetries = False
+                if all_nontriv_symmetries:
+                    counter += 1
+                    del loopdata[loop_id]
+                    self.logger.info("Removing %s with %s" % (loop_id,unit_id))
+                    if "P_P" in unit_id:
+                        keep_id = unit_id.replace("P_P","P_1")
+                    else:
+                        keep_id = "|".join(fields[0:5])
+                    for lid in loopdata.keys():
+                        for pos, id in loopdata[lid].values():
+                            if keep_id in id:
+                                self.logger.info(" Keeping %s with %s" % (lid,id))
+
+            self.logger.info("Removed %d loops because of symmetries" % counter)
+            print("Removed %d loops because of symmetries" % counter)
+
             self.logger.info(loopdata)
             print(loopdata)
 

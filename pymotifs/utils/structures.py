@@ -118,6 +118,38 @@ class Structure(Base):
                 data.append(entry)
             return data
 
+    def na_chains(self, pdb, return_id=False, strict=False, extended=True):
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+
+        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
+        macromolecule_types.add('polydeoxyribonucleotide')
+
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.chain_name,
+                     mod.ChainInfo.chain_id).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
+
+            if isinstance(pdb, basestring):
+                query = query.filter_by(pdb_id=pdb)
+            else:
+                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
+
+            # look specifically for A, C, G, U, N but not modified nts
+            if strict:
+                func = mod.ChainInfo.sequence.op('regexp')
+                query = query.filter(func('^[ACGUN]$'))
+
+            data = []
+            for result in query:
+                entry = result.chain_name
+                if return_id:
+                    entry = (result.chain_name, result.chain_id)
+                data.append(entry)
+            return data
+
     def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
