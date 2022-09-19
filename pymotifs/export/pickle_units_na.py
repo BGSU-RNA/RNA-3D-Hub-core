@@ -98,7 +98,7 @@ class Exporter(core.Loader):
                    ).\
                    distinct().\
                    filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid']))
-                   # filter(mod.UnitInfo.pdb_id == '4V9F')
+                   # filter(mod.UnitInfo.pdb_id == '4V9F') 
             return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
