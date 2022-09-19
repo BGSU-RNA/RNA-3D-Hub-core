@@ -29,8 +29,7 @@ class Loader(core.Loader):
 
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
-            query = session.query(mod.UnitRotations.unit_id,mod.UnitRotations.pdb_id).\
-                    filter(mod.UnitRotations.pdb_id.in_(['1ASY', '1EVV']))
+            query = session.query(mod.UnitRotations.unit_id,mod.UnitRotations.pdb_id)
         d = defaultdict(dict)
         for result in query:
             if result.unit_id.split('|')[3] not in ['A', 'C', 'G', 'U','DA', 'DC', 'DG', 'DT']:
