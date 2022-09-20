@@ -77,12 +77,13 @@ class Exporter(core.Loader):
 
 
     def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFE-chains to process.  Ignores the pdbs input.
+        """Look up the list of IFE-chains to process.  // Do not ignores the pdbs input.
 
         Parameters
         ----------
         pdbs : list
             Ignored.
+            // We do not ignore the pdbs input now. It can save time.
 
         Returns
         -------
@@ -97,7 +98,8 @@ class Exporter(core.Loader):
                        mod.UnitInfo.chain
                    ).\
                    distinct().\
-                   filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid']))
+                   filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
+                   filter(mod.UnitInfo.pdb_id.in_(pdbs))
                    # filter(mod.UnitInfo.pdb_id == '4V9F') 
             return [(r.pdb_id, r.model, r.chain) for r in query]
 
