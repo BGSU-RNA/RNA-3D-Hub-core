@@ -213,7 +213,10 @@ class Loader(core.MassLoader):
 
     def loops(self, loop_type, ifes, size_limit=None,
               **kwargs):
-        """Get the list of loop ids to use in clustering. These loops must be
+        """
+        Deprecated code as of 2022-10-23 since it cannot deal with symmetry operators.
+
+        Get the list of loop ids to use in clustering. These loops must be
         from IFE's in the given list and marked as valid in the loop quality
         step.
         This is where RNA loops with modified nucleotides get excluded.
@@ -274,11 +277,11 @@ class Loader(core.MassLoader):
 
     def loops_and_strands(self, loop_type, ifes, size_limit=None,
               **kwargs):
-        """Get the list of loop ids to use in clustering, along with a
+        """
+        Get the list of loop ids to use in clustering, along with a
         list of unit ids for each strand.
-        These loops must be
-        from IFE's in the given list and marked as valid in the loop quality
-        step.
+        These loops must be from IFE's in the given list and marked as
+        valid in the loop quality step.
         This is where RNA loops with modified nucleotides get excluded.
 
         Parameters
@@ -335,11 +338,31 @@ class Loader(core.MassLoader):
             self.logger.info(loopdata)
             print(loopdata)
 
+            for loop_id in loopdata.keys():
+                OK_symmetry_found = False
+                symmetries = set()
+                for position in loopdata[loop_id].keys():
+                    unit_id = loopdata[loop_id][position][1]
+                    fields = unit_id.split("|")
+                    if len(fields) < 9:
+                        OK_symmetry_found = True
+                    else:
+                        symmetries.add(fields[8])
+
+                if not OK_symmetry_found:
+                    if len(symmetries) == 1:
+                        symmetry = list(symmetries)[0]
+                        if not symmetry == "P_1":
+                            exclude.add(loop_id)
+                            self.logger.info("Excluding loop %s, all symmetry operation %s" % (loop_id,symmetry))
+
+            self.logger.info("Excluding %d loops" % len(exclude))
+
             found.update(r.loop_id for r in query if r.loop_id not in exclude)
 
         if not found:
-            raise core.InvalidState("No loops to cluster for %s" %
-                                    loop_release_id)
+            raise core.InvalidState("No loops to cluster for %s" % loop_release_id)
+
         return sorted(found)
 
     def load_and_cache(self, loop_type, releases, folder):
@@ -387,9 +410,9 @@ class Loader(core.MassLoader):
                                   size_limit)
                 raise core.InvalidState("Bad size limit")
 
-        loops = self.loops(loop_type, ifes, size_limit=size_limit, **kwargs)
+        #loops = self.loops(loop_type, ifes, size_limit=size_limit, **kwargs)
 
-        loops_and_strands = self.loops_and_strands(loop_type, ifes, size_limit=size_limit, **kwargs)
+        loops = self.loops_and_strands(loop_type, ifes, size_limit=size_limit, **kwargs)
 
         self.logger.info("Found %d %s loops" % (len(loops),loop_type))
         self.logger.info("Starting to cluster all %s" % loop_type)
