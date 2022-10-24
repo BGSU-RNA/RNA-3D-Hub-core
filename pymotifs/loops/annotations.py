@@ -61,17 +61,22 @@ class Loader(core.SimpleLoader):
                 # trim leading and trailing white space
                 row = [r.strip() for r in rawrow]
 
+                # record loop-specific annotations
                 if isinstance(row[1], str) and row[1]:
-                    if isinstance(row[2], str) and row[2]:
-                        loop_annotation1[row[1]]= [row[2], row[4]]     # save annotation and author
-                    if isinstance(row[3], str) and row[3]:
-                        loop_annotation2[row[1]]= [row[3], row[4]]     # save annotation and author
+                    for row1 in row[1].replace(" ","").replace(";",",").split(","):
+                        print(row1)
+                        if isinstance(row[2], str) and row[2]:
+                            loop_annotation1[row1] = [row[2], row[4]]     # save annotation and author
+                            if isinstance(row[3], str) and row[3]:
+                                loop_annotation2[row1] = [row[3], row[4]] # save annotation and author
+                            else:
+                                loop_annotation2[row1] = [row[2], row[4]] # repeat column C annotation
 
-                    # Listing a loop id but two blank annotations means
+                    # Listing a loop id with two blank annotations means
                     # not to annotate that loop, even using the motif annotation
                     if len(row[2]) == 0 and len(row[3]) == 0:
-                        loop_annotation1[row[1]] = ["NULL", row[4]]
-                        loop_annotation2[row[1]] = ["NULL", row[4]]
+                        loop_annotation1[row1] = ["NULL", row[4]]
+                        loop_annotation2[row1] = ["NULL", row[4]]
 
                 #Otherwise check for motif group and save motif annotation 1 and/or motif annotation 2
                 elif isinstance(row[0],str) and row[0]:
