@@ -17,12 +17,22 @@ def component_type(unit):
     seq = unit.sequence.upper()
     if seq in ['A', 'C', 'G', 'U']:
         return 'rna'
+    if seq in ['DA', 'DC', 'DG', 'DT']:
+        return 'dna'
     if seq == 'HOH':
         return 'water'
     if seq in AA:
         return 'aa'
-    if seq in ['DA', 'DC', 'DG', 'DT']:
+    ions = unit.unit_id().split('|')[3].upper()
+    if ions in ['CU', 'FE', 'MG', 'NI', 'MN', 'K', 'NA', 'MO', 'CO', 'ZN', 'W', 'CA', 'V']:
+        return 'ion'
+    nt = unit.type.lower()
+    if nt == 'rna linking':
+        return 'rna'
+    if nt == 'dna linking':
         return 'dna'
+    if nt == 'l-peptide linking':
+        return 'aa'
     return None
 
 
