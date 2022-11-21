@@ -31,8 +31,8 @@ class Loader(core.Loader):
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
             query = session.query(mod.UnitInfo.unit_id,mod.UnitInfo.pdb_id).\
-                filter(mod.UnitInfo.unit_type_id == None).\
-                    filter(mod.UnitInfo.pdb_id == '7VYX')
+                filter(mod.UnitInfo.unit_type_id == None)
+                    # filter(mod.UnitInfo.pdb_id == '7VYX')
             if not query.count():
                 raise core.Skip("Skipping summary, no new correspondences")
         d = defaultdict(dict)
@@ -85,6 +85,7 @@ class Loader(core.Loader):
         for unit_id in units_list:
             data = self.current(unit_id)
             try:
+                # print(unit_id, ':', type_query_dict[unit_id])
                 row_update = type_query_dict[unit_id]
                 data['unit_type_id'] = row_update
             # print(data)
