@@ -24,22 +24,30 @@ class Loader(core.Loader):
         self.precomputed = self.config['locations']['loops_mat_files']
 
     def to_process(self, pdbs, **kwargs):
+        # make a list of pdb ids that don't yet have loop information in both
+        # loop_info and loop_positions table
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
                 distinct()
-            dn_process = [r.pdb_id for r in query] #List of pdbs with corresponding entries in loop_positions
+            # pdb ids that have entries in both loop_info and loop_positions table
+            # Note: does not check that *every* loop in loop_info is also in loop_positions
+            dn_process = [r.pdb_id for r in query]
 
+        # pdb ids that don't aleady have data in both loop_info and loop_positions
         to_use = sorted(set(pdbs).difference(dn_process)) #Remove pdbs with entries in loop_positions
 
+        # find pdb ids that have no loops at all
+        # those are indicated by the presence of a 000 loop with type NA
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
                 filter(mod.LoopInfo.type == 'NA').\
                 distinct()
             dn_process = [r.pdb_id for r in query] #list of pdbs with corresponding entries in loop_info and type='NA'
 
-        to_use = sorted(set(to_use).difference(dn_process)) #Remove pdbs with no loops
+        # Remove pdbs with no loops
+        to_use = sorted(set(to_use).difference(dn_process))
 
         if not to_use:
             raise core.Skip("Nothing to process")
@@ -84,7 +92,9 @@ class Loader(core.Loader):
             return data
 
     def known(self, pdb):
-        """Determine the known
+        """
+        Query loop_positions and return a dictionary that maps
+        (loop_id,position) tuple to all the data on that row of the table
         """
 
         mapping = {}
@@ -101,7 +111,8 @@ class Loader(core.Loader):
         return mapping
 
     def annotations(self, pdb, remove=True):
-        """Call matlab and parse the annotations to create a list of unit id to
+        """
+        Call matlab and parse the annotations to create a list of unit id to
         loop mappings.
 
         :param str pdb: The pdb id to use.
@@ -118,19 +129,28 @@ class Loader(core.Loader):
         except:
             raise core.InvalidState("Could not create %s for matlab" % path)
 
+        # run Matlab to get detailed data about each loop, save in output_file
         [output_file, err_msg] = mlab.loadLoopPositions(path, nout=2)
         if err_msg != '':
             raise matlab.MatlabFailed(err_msg)
 
+        # read output_file and parse
         data = self.parse(output_file)
+
         if remove:
+            # clean up the temporary output file
             os.remove(output_file)
+
         return data
 
     def loop_units_mapping(self, pdb):
-        """Load the mapping from loop id to the unit ids stored as part of the
+        """
+        Load the mapping from loop id to the unit ids stored as part of the
         unit_ids field. This is used for sanity checking the given unit to loop
         positions mapping. This will load all loops mapping.
+
+        Queries loop_info table, unit_ids column
+        Returns a dictionary mapping loop_id to the set of unit ids
 
         :param str pdb: The PDB id to use.
         :returns: A dictonary mapping from loop id to unit ids.
@@ -146,8 +166,11 @@ class Loader(core.Loader):
             return mapping
 
     def normalizer(self, pdb):
-        """Create a callable that will normalize a comma seperated string of
+        """
+        Create a callable that will normalize a comma seperated string of
         unit ids for a particular structure.
+
+        Guess: turn modified nucleotide sequence into their parent sequence
 
         :param str pdb: The PDB id to use for normalization.
         :returns: A callable that will translate a comma seperated string of
@@ -162,28 +185,28 @@ class Loader(core.Loader):
         return fn
 
     def data(self, pdb, **kwargs):
-        """Update loop_positions table by loading data from the mat files
+        """
+        Add to loop_positions table by loading data from the mat files
         stored in the PrecomputedData folder
+
+        Note:  Matlab is not able to read modified nucleotides
 
         :param str pdb: The PDB id to get the loop positions for.
         """
 
         data = []
+
+        # Query loop_positions and return a dictionary that maps
+        # (loop_id,position) tuple to all the data on that row of the table
         known = self.known(pdb)
 
-#        print("loops/positions.py known")
-#        print(known)
-
+        # mapping is a dictionary mapping loop_id to the set of unit ids
         mapping = self.loop_units_mapping(pdb)
 
-#        print("loops/positions.py mapping")
-#        print(mapping)
-
+        # Guess:  turn modified nucleotide sequence into parent sequence
         normalizer = self.normalizer(pdb)
 
-#        print("loops/positions.py mapping")
-#        print(normalizer)
-
+        # loop over
         for row in self.annotations(pdb):
             entry = known.get((row['loop_id'], row['position']), {})
             if not entry:
@@ -191,14 +214,12 @@ class Loader(core.Loader):
 
             row['unit_id'] = normalizer(row['unit_id'])
             if row['loop_id'] not in mapping:
-#                raise core.InvalidState("Unknown loop: %s" % row['loop_id'])
                 self.logger.error("Unknown loop: %s" % row['loop_id'])
             else:
                 if row['unit_id'] not in mapping[row['loop_id']]:
                     msg = "Unit %s not part of expected units %s for %s"
                     entry = (row['unit_id'], mapping[row['loop_id']], row['loop_id'])
 
-#                    raise core.InvalidState(msg % entry)
                     self.logger.error(msg % entry)
                 else:
                     entry.update(row)
