@@ -24,7 +24,7 @@ from pymotifs.units.bond_orientation import Loader as BondOrientationLoader
 class Loader(core.StageContainer):
     """A container for all unit level `Stage`s.
     """
-
+    ## remove the DistancesLoader at 1/11/2023
     """The `Stages` this will run"""
-    stages = set([InfoLoader, DistancesLoader, CenterLoader, RotationLoader,
+    stages = set([InfoLoader, CenterLoader, RotationLoader,
                   CoordinateLoader, IncompleteLoader, BondOrientationLoader])
