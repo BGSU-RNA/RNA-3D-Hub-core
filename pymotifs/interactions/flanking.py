@@ -56,8 +56,7 @@ class Loader(core.SimpleLoader):
                     msg = "Line %s of %s did not include both units"
                     raise core.InvalidState(msg % (index,filename))
                 data.append({'unit_id_1':row[0], 'unit_id_2':row[1], 'flanking' : int(row[2]), 'pdb_id' : pdb})
-        print(filename)
-        print(data)
+
         return data
 
     def data(self, pdb, **kwargs):
@@ -75,7 +74,6 @@ class Loader(core.SimpleLoader):
         if status == 0:
             data = self.parse(ifn, pdb)
             os.remove(ifn)
-            print(data)
             return data
         elif status == 2:
             raise core.Skip('PDB file %s has no nucleotides' % pdb)
