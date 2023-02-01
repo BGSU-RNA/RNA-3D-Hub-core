@@ -301,7 +301,7 @@ class Loader(core.SimpleLoader):
             chains = it.ifilter(has_centers, chains)
             chains = it.imap(op.itemgetter('db_id'), chains)
             # convert chains from iterator to list of chain ids and append to list
-            chain_list = sorted(list(chains))
+            chain_list = sorted(set(chains))
             if len(chain_list) > 1:
                 groups_of_chain_ids.append(chain_list)
 

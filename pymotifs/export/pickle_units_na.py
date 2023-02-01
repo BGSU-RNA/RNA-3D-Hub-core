@@ -111,7 +111,7 @@ class Exporter(core.Loader):
             # because too many units were load into the unit_info table,
             # and the rnatest database have no corresponding rows for the unit_centers and unit_rotations table
             # Thus only the first 35338 rows will be process
-            return [(r.pdb_id, r.model, r.chain) for r in query][:35338]
+            return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
     def data(self, ichain, **kwargs):
@@ -187,6 +187,10 @@ class Exporter(core.Loader):
             self.logger.debug("cenrot: rsset: %s" % str(rsset))
 
             return rsset
+            # if len(rsset[0]) != 0:
+            #     return rsset
+            # else:
+            #     pass
 
 
     def process(self, entry, **kwargs):
@@ -202,15 +206,20 @@ class Exporter(core.Loader):
 
         webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
 
-        filename = self.filename(entry)
+        if len(self.data(entry)[0]) != None:
 
-        uinfo = self.data(entry)
+            filename = self.filename(entry)
 
-        with open(filename, 'wb') as fh:
-            self.logger.debug("process: filename open: %s" % filename)
-            # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
-            pickle.dump(uinfo, fh, 2)
+            uinfo = self.data(entry)
 
-        os.system("rsync -u %s %s" % (filename, webroot))
-        self.logger.debug("rsync -u %s %s" % (filename, webroot))
+            with open(filename, 'wb') as fh:
+                self.logger.debug("process: filename open: %s" % filename)
+                # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
+                pickle.dump(uinfo, fh, 2)
+
+            os.system("rsync -u %s %s" % (filename, webroot))
+            self.logger.debug("rsync -u %s %s" % (filename, webroot))
+
+        else:
+            pass
 
