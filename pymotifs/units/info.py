@@ -36,8 +36,6 @@ class Loader(core.SimpleLoader):
         query : sqlalchemy.orm.query.Query
             A query to find all units from the given structure.
         """
-        self.logger.info("problem checking")
-        self.logger.info(self.structure(pdb))
         return session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
 
     def type(self, unit):
