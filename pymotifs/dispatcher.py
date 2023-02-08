@@ -211,7 +211,8 @@ class Dispatcher(object):
 
         for stage in stages:
             try:
-                self.logger.info("Running stage: %s", stage.name)
+                self.logger.info("Running stage: %s" % stage.name)
+                print("Running stage: %s" % stage.name)
                 stage(entries, **kwargs)
             except Exception as err:
                 self.logger.error("Uncaught exception with stage: %s",

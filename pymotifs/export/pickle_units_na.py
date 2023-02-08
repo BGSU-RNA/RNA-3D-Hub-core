@@ -94,12 +94,11 @@ class Exporter(core.Loader):
             query = session.query(
                        mod.UnitInfo.pdb_id,
                        mod.UnitInfo.model,
-                       mod.UnitInfo.chain
-                   ).\
+                       mod.UnitInfo.chain).\
                    distinct().\
                    filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid']))
-                   # filter(mod.UnitInfo.pdb_id == '4V9F')
-            i = 1
+                   # filter(mod.UnitInfo.pdb_id == '149D')
+            # i = 1
             # for row in query:
             #     if row.pdb_id != '6XHY':
             #         i = i + 1
@@ -203,10 +202,13 @@ class Exporter(core.Loader):
         **kwargs : dict
             Generic keyword arguments.
         """
+        if len(self.data(entry)[0]) != 0:
+            # print(self.data(entry))
+            # print(self.data(entry)[0])
+            # print(len(self.data(entry)[0]))
+            # print(len(self.data(entry)[0]) != 0)
 
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
-
-        if len(self.data(entry)[0]) != None:
+            webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
 
             filename = self.filename(entry)
 
