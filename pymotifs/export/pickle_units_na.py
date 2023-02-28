@@ -77,13 +77,12 @@ class Exporter(core.Loader):
 
 
     def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFE-chains to process.  // Do not ignores the pdbs input.
+        """Look up the list of IFE-chains to process.  Ignores the pdbs input.
 
         Parameters
         ----------
         pdbs : list
             Ignored.
-            // We do not ignore the pdbs input now. It can save time.
 
         Returns
         -------
@@ -95,12 +94,22 @@ class Exporter(core.Loader):
             query = session.query(
                        mod.UnitInfo.pdb_id,
                        mod.UnitInfo.model,
-                       mod.UnitInfo.chain
-                   ).\
+                       mod.UnitInfo.chain).\
                    distinct().\
-                   filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
-                   filter(mod.UnitInfo.pdb_id.in_(pdbs))
-                   # filter(mod.UnitInfo.pdb_id == '4V9F') 
+                   filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid']))
+                   # filter(mod.UnitInfo.pdb_id == '149D')
+            # i = 1
+            # for row in query:
+            #     if row.pdb_id != '6XHY':
+            #         i = i + 1
+            #     else:
+            #         break
+            # print('show the index:',i)
+            
+            # 9/13/2022
+            # because too many units were load into the unit_info table,
+            # and the rnatest database have no corresponding rows for the unit_centers and unit_rotations table
+            # Thus only the first 35338 rows will be process
             return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
@@ -177,6 +186,10 @@ class Exporter(core.Loader):
             self.logger.debug("cenrot: rsset: %s" % str(rsset))
 
             return rsset
+            # if len(rsset[0]) != 0:
+            #     return rsset
+            # else:
+            #     pass
 
 
     def process(self, entry, **kwargs):
@@ -189,18 +202,25 @@ class Exporter(core.Loader):
         **kwargs : dict
             Generic keyword arguments.
         """
+        if len(self.data(entry)[0]) != 0:
+            # print(self.data(entry))
+            # print(self.data(entry)[0])
+            # print(len(self.data(entry)[0]))
+            # print(len(self.data(entry)[0]) != 0)
 
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
+            webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
 
-        filename = self.filename(entry)
+            filename = self.filename(entry)
 
-        uinfo = self.data(entry)
+            uinfo = self.data(entry)
 
-        with open(filename, 'wb') as fh:
-            self.logger.debug("process: filename open: %s" % filename)
-            # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
-            pickle.dump(uinfo, fh, 2)
+            with open(filename, 'wb') as fh:
+                self.logger.debug("process: filename open: %s" % filename)
+                # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
+                pickle.dump(uinfo, fh, 2)
 
-        os.system("rsync -u %s %s" % (filename, webroot))
-        self.logger.debug("rsync -u %s %s" % (filename, webroot))
+            os.system("rsync -u %s %s" % (filename, webroot))
+            self.logger.debug("rsync -u %s %s" % (filename, webroot))
 
+        else:
+            pass
