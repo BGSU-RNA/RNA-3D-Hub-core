@@ -23,11 +23,11 @@ class Loader(core.SimpleLoader):
     def query(self, session, pdb):
         return session.query(self.table).filter_by(pdb_id=pdb)
 
-    def must_recompute(self, *args, **kwargs):
+    def must_recompute(self, *args, **kwargs): # Detect if we have been told to recompute this stage for this pdb
         return True
 
     def annotations(self, structure):
-        classifier = Classifier()
+        classifier = Classifier()               # just rename the function and it will return the na and aa unit_id, pdb_id, annotation and values.
         pairs = []
         for na_id, aa_id, (annotation, value) in classifier.classify(structure):
             pairs.append({
@@ -41,5 +41,5 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb, **kwargs):
         structure = self.structure(pdb)
-        structure.infer_hydrogens()
+        structure.infer_amino_acid_hydrogens()          # necessary to force it to infer hydrogens on aa
         return self.annotations(structure)
