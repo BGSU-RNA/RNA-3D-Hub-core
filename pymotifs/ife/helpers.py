@@ -88,8 +88,6 @@ class IfeLoader(core.Base):
                 filter_by(pdb_id=data['pdb']).\
                 filter_by(chain=data['chain']).\
                 filter_by(model=model).\
-                filter_by(unit_type_id='rna').\
-                filter(mod.UnitInfo.unit.in_(('A','C','G','U'))).\
                 group_by(mod.UnitInfo.sym_op).\
                 limit(1)
             result = query.first()
@@ -133,7 +131,7 @@ class IfeLoader(core.Base):
 
     def __call__(self, pdb):
         helper = st.Structure(self.session.maker)
-        names = helper.rna_chains(pdb)
+        names = helper.na_chains(pdb)
         sym_op = self.sym_op(pdb)
         model = self.best_model(pdb, sym_op)
         load = ft.partial(self.load, pdb, model=model, sym_op=sym_op)
