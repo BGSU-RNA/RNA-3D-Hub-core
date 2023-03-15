@@ -97,7 +97,7 @@ class Exporter(core.Loader):
                        mod.UnitInfo.chain).\
                    distinct().\
                    filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid']))
-                   # filter(mod.UnitInfo.pdb_id == '149D')
+                   # filter(mod.UnitInfo.pdb_id == '7JQQ')
             # i = 1
             # for row in query:
             #     if row.pdb_id != '6XHY':
@@ -131,12 +131,41 @@ class Exporter(core.Loader):
         mdl = ichain[1]
         chn = ichain[2]
 
+        # with self.session() as session:
+        #     self.logger.debug("cenrot: Inside data retrieval routine")
+        #     self.logger.debug("cenrot: building query")
+
+        #     query = session.query(mod.UnitInfo.unit_id,
+        #                        mod.ExpSeqPosition.index.label('position_order'),
+        #                        mod.UnitCenters.x,
+        #                        mod.UnitCenters.y,
+        #                        mod.UnitCenters.z,
+        #                        mod.UnitRotations.cell_0_0,
+        #                        mod.UnitRotations.cell_0_1,
+        #                        mod.UnitRotations.cell_0_2,
+        #                        mod.UnitRotations.cell_1_0,
+        #                        mod.UnitRotations.cell_1_1,
+        #                        mod.UnitRotations.cell_1_2,
+        #                        mod.UnitRotations.cell_2_0,
+        #                        mod.UnitRotations.cell_2_1,
+        #                        mod.UnitRotations.cell_2_2).\
+        #              distinct().\
+        #              join(mod.UnitCenters, mod.UnitInfo.unit_id == mod.UnitCenters.unit_id).\
+        #              join(mod.UnitRotations, mod.UnitInfo.unit_id == mod.UnitRotations.unit_id).\
+        #              join(mod.ExpSeqUnitMapping, mod.UnitInfo.unit_id == mod.ExpSeqUnitMapping.unit_id).\
+        #              join(mod.ExpSeqPosition, mod.ExpSeqUnitMapping.exp_seq_position_id == mod.ExpSeqPosition.exp_seq_position_id).\
+        #              filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
+        #              filter(mod.UnitCenters.name == 'glycosidic').\
+        #              filter(mod.UnitInfo.pdb_id == pdb).\
+        #              filter(mod.UnitInfo.model == str(mdl)).\
+        #              filter(mod.UnitInfo.chain == chn).\
+        #              order_by(mod.ExpSeqPosition.index)
+
+        ## new query is here, we stopped using the exp_seq_position table to get the index.
         with self.session() as session:
-            self.logger.debug("cenrot: Inside data retrieval routine")
-            self.logger.debug("cenrot: building query")
 
             query = session.query(mod.UnitInfo.unit_id,
-                               mod.ExpSeqPosition.index.label('position_order'),
+                               mod.UnitInfo.chain_index.label('position_order'),
                                mod.UnitCenters.x,
                                mod.UnitCenters.y,
                                mod.UnitCenters.z,
@@ -152,14 +181,13 @@ class Exporter(core.Loader):
                      distinct().\
                      join(mod.UnitCenters, mod.UnitInfo.unit_id == mod.UnitCenters.unit_id).\
                      join(mod.UnitRotations, mod.UnitInfo.unit_id == mod.UnitRotations.unit_id).\
-                     join(mod.ExpSeqUnitMapping, mod.UnitInfo.unit_id == mod.ExpSeqUnitMapping.unit_id).\
-                     join(mod.ExpSeqPosition, mod.ExpSeqUnitMapping.exp_seq_position_id == mod.ExpSeqPosition.exp_seq_position_id).\
                      filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
                      filter(mod.UnitCenters.name == 'glycosidic').\
                      filter(mod.UnitInfo.pdb_id == pdb).\
                      filter(mod.UnitInfo.model == str(mdl)).\
                      filter(mod.UnitInfo.chain == chn).\
-                     order_by(mod.ExpSeqPosition.index)
+                     filter(mod.UnitInfo.chain_index != None).\
+                     order_by(mod.UnitInfo.chain_index)
 
             self.logger.debug("cenrot: query built")
 
@@ -171,7 +199,7 @@ class Exporter(core.Loader):
 
             for row in query:
                 units.append(row.unit_id)
-                order.append(row.position_order)
+                order.append(row.position_order - 1)
                 cntrs.append(np.asarray([row.x, row.y, row.z]))
                 rttns.append(np.asarray([np.asarray([row.cell_0_0, row.cell_0_1, row.cell_0_2]),
                              np.asarray([row.cell_1_0, row.cell_1_1, row.cell_1_2]),
@@ -224,4 +252,3 @@ class Exporter(core.Loader):
 
         else:
             pass
-
