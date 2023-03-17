@@ -18,6 +18,8 @@ from pymotifs import models as mod
 from pymotifs.constants import NR_CACHE_NAME
 from pymotifs.ife.helpers import IfeLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
+from pymotifs.quality.loader import Loader as QualityLoader
+from pymotifs.exp_seq.loader import Loader as ExpSeqLoader
 from pymotifs.nr.representatives.using_quality import CompScore
 from pymotifs.utils import row2dict
 
@@ -28,7 +30,7 @@ class IfeQualityLoader(core.SimpleLoader):
     ife_cqs.
     """
 
-    dependencies = set([IfeInfoLoader])
+    dependencies = set([IfeInfoLoader,QualityLoader,ExpSeqLoader])
 
     """Handle replacements via the recalculate option."""
     merge_data = True
