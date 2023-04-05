@@ -80,6 +80,7 @@ class Loader(core.SimpleLoader):
     """The dependencies for this stage"""
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         IfeLoader, CenterLoader, RotationLoader])
+    dependencies = set([])
 
 
     def known_unit_entries(self, table):
@@ -97,12 +98,15 @@ class Loader(core.SimpleLoader):
         known : set
             A set of tuples of (pdb, chain).
         """
+        ### making change here to avoid rna.
+        ### added filter
         with self.session() as session:
             info = mod.UnitInfo
             query = session.query(info.pdb_id,
                                   info.chain,
                                   ).\
                 join(table, table.unit_id == info.unit_id).\
+                filter(info.unit_type_id  == 'dna').\
                 distinct()
             return set((r.pdb_id, r.chain) for r in query)
 

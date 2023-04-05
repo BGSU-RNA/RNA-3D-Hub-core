@@ -122,11 +122,20 @@ class Grouper(core.Base):
                 self.logger.warn("No ifes found for %s" % pdb)
                 return []
 
-            grouped = it.imap(result2dict, query)
+            grouped = it.imap(result2dict, query)                       ## This is confusing. The result2dict function returns "A dictionary with the keys from the query". I am not sure what is the keys for a joined query.
+            self.logger.info('show the value of the "grouped" variable%s'%grouped) 
+            ## example ('d:', {u'is_accompanying': 0, u'is_integral': 1, 'name': 'A', u'sequence': 'CAAAGAAAAG', 'pdb': '7OOO', 'method': 'X-RAY DIFFRACTION', u'length': 10L, 'db_id': 139555L, 'bp': 0L, 'species': 32630L, u'resolution': 2.57, 'id': '7OOO|1|A+7OOO|1|B'})
+            ## this is an example for the result2dict, and the "grouped" variable is a iterative varibale stotes the previous dictionary variables.
             grouped = it.groupby(grouped, op.itemgetter('id'))
+            ## it.grouped: this function will generate the result like: {'7OOO|1|A+7OOO|1|B':[(***dict variable with clolumn names and values***),(***dict***)]}
+            ## the output are not necessary have the same type with my example.
+            ## the general idea is that ife_id and chains pairs were stored in grouped
+            ## 
             groups = []
             for ife_id, chains in grouped:
                 chains = list(chains)
+                ## print("show the chains variable in simplified.py:",chains)
+                ## result: ('show the chains variable in simplified.py:', [{u'is_accompanying': 0, u'is_integral': 1, 'name': 'D', u'sequence': 'CAAAGAAAAG', 'pdb': '7OOO', 'method': 'X-RAY DIFFRACTION', u'length': 11L, 'db_id': 139556L, 'bp': 0L, 'species': 32630L, u'resolution': 2.57, 'id': '7OOO|1|D+7OOO|1|E'}])
                 groups.append({
                     'id':  ife_id,
                     'pdb': chains[0]['pdb'],
@@ -161,7 +170,7 @@ class Grouper(core.Base):
 
         chain_ids = []
         for group in groups:
-            chain_ids.append(group['db_id'])
+            chain_ids.append(group['db_id'])            ## db_id is the chain id, not sure why it calls db_id here.
 
         with self.session() as session:
             sim = mod.ChainChainSimilarity
@@ -359,11 +368,11 @@ class Grouper(core.Base):
 
         pairs = it.product(group, group)
         pairs = it.ifilter(lambda (a, b): a != b, pairs)
-        pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)
+        pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)           ## who will give us the flag about the connections???
         pairs = list(pairs)
         for pair in pairs:
             self.logger.debug("Pair %s, %s not connected", *pair)
-        self.logger.debug("%i pairs are not connected", len(pairs))
+        self.logger.debug("%i pairs are not connected", len(pairs))             ## nothing to return???
 
     def split_by_species(self, group):
         """Split a group by species. This will put all members with the same
@@ -449,9 +458,9 @@ class Grouper(core.Base):
         # greatly (I think to ~30 min). For some reason this produces the
         # incorrect results though. This is likely been due to bugs that have
         # been fixed now.
-        equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
+        equiv = ft.partial(self.are_equivalent, alignments, discrepancies)  ## I am very confused here. we do not have group1 and group2 as assignment vairables here.
         pairs = it.combinations(chains, 2)
-        return it.ifilter(lambda p: equiv(*p), pairs)
+        return it.ifilter(lambda p: equiv(*p), pairs)                       ## I see. the pairs varibale will provide the group1 and group2. What is the valid pairs here? 
 
     def connections(self, chains, alignments, discrepancies):
         """Create a graph connections between all chains.
@@ -464,15 +473,15 @@ class Grouper(core.Base):
 
         graph = coll.defaultdict(set)
         for chain in chains:
-            graph[chain['id']].add(chain['id'])
+            graph[chain['id']].add(chain['id'])                 ## also ife ids
 
-        for chain1, chain2 in self.pairs(chains, alignments, discrepancies):
+        for chain1, chain2 in self.pairs(chains, alignments, discrepancies): ## I do not fully understand the pairs function but it will return valid pairs
             self.logger.debug("Equivalent: %s %s", chain1['id'], chain2['id'])
             graph[chain1['id']].add(chain2['id'])
             graph[chain2['id']].add(chain1['id'])
 
         self.logger.info("Created %i connections", len(graph))
-        return graph
+        return graph                                                    ## it seems like we are making the combination again, but this time will be valid pairs.
 
     def build_groups(self, graph):
         """Group the ifes based upon the given graph. This will group the ifes
@@ -496,22 +505,22 @@ class Grouper(core.Base):
 
         mapping = {}
         for chain in chains:
-            mapping[chain['id']] = chain
+            mapping[chain['id']] = chain            ## actually this is ife ids here. Not sure why it calls chain here. very confusing
 
         groups = []
-        graph = self.connections(chains, alignments, discrepancies)
-        for ids in self.build_groups(graph):
-            self.validate(graph, list(ids))
-            group = [mapping[id] for id in ids]
+        graph = self.connections(chains, alignments, discrepancies) ## not sure what is here. It will return valid pairs about ife ids.
+        for ids in self.build_groups(graph):                        ## 
+            self.validate(graph, list(ids))                         ## I though this function was doing some specific works, but it just writes log info. Not important at all.
+            group = [mapping[id] for id in ids]                     ## 
             for subgroup in self.enforce_species_splitting(group):
                 groups.append(subgroup)
 
         return groups
 
     def all_ifes(self, pdbs):
-        ifes = it.imap(self.ifes, pdbs)
-        ifes = it.chain.from_iterable(ifes)
-        ifes = it.ifilter(self.valid_ife, ifes)
+        ifes = it.imap(self.ifes, pdbs)                         ## pass in pdbs one by one to the self.ifes function, and generated a iterable output. 
+        ifes = it.chain.from_iterable(ifes)                     ## not sure what happens here but one element of this output must be a dict type. However, I do not understand why it is a dict type. 
+        ifes = it.ifilter(self.valid_ife, ifes)                 ## not sure what happens here. 
         ifes = list(ifes)
         if not ifes:
             raise core.InvalidState("No ifes found in given pdbs")
@@ -541,12 +550,12 @@ class Grouper(core.Base):
         for group in self.group(ifes, alignments, discrepancy):
             members = []
             sorted_group = sorted(group, key=ranking_key)
-            for index, member in enumerate(sorted_group):
+            for index, member in enumerate(sorted_group):       ## sorted_group variable is the key point here. 
                 grouped.add(member['id'])
-                member['rank'] = index
+                member['rank'] = index                          ## not sure why we want the index vairbale because the following code do not call the variable.
                 members.append(member)
 
-            groups.append({'members': members})
+            groups.append({'members': members})  ## 
 
         ife_ids = set(ife['id'] for ife in ifes)
         if ife_ids != grouped:
