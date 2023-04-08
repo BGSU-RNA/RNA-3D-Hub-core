@@ -154,9 +154,8 @@ class Loader(core.SimpleLoader):
             A list of (first, seconds) pairs of chain ids to compare.
         """
 
-
-        GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
         GeneratePickleFiles = True    # must be used in production, to update the files each week
+        GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
 
         if GeneratePickleFiles:
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
@@ -531,7 +530,8 @@ class Loader(core.SimpleLoader):
     def load_centers_rotations_pickle(self,info,allunitdictionary):
 
         for chain_string in info['ife_id'].split('+'):
-            picklefile = 'pickle-FR3D/' + chain_string.replace('|','-') + '_RNA.pickle'
+            ## changed from RNA to NA
+            picklefile = 'pickle-FR3D/' + chain_string.replace('|','-') + '_NA.pickle'
 
             if not chain_string in allunitdictionary:
 
