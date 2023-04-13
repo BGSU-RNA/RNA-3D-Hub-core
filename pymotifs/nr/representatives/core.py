@@ -44,14 +44,14 @@ class Representative(core.Base):
         """
 
         meth = op.itemgetter('method')
-        members = [ife for ife in group['members'] if meth(ife) in methods]
-        if not members:
-            members = group['members']
+        members = [ife for ife in group['members'] if meth(ife) in methods]             ##ife should be a dict variable and meth(ife) is trying to look for the value with 'method' key.
+        if not members:                                                                 ## not sure about the type of the ife vairable. I am going to check the group class. Yes, it is a dict type.
+            members = group['members']                                                  ## so the question is what parent is here.
 
         return {
-            'parent': copy.deepcopy(group.get('parent', [])),
-            'members': copy.deepcopy(members),
-        }
+            'parent': copy.deepcopy(group.get('parent', [])),                           ## it will return the value of 'parent' key, if the key 'parent' does not exist, it will be just a empty list [].
+            'members': copy.deepcopy(members),                                          ## so the description is wrong here. It is not necessary for the group variable to have the 'parent' entry.
+        }                                                                               ## Thus, this function just trying to filter the methods.
 
     def insert_as_representative(self, representative, members, sort=None):
         """
@@ -69,7 +69,7 @@ class Representative(core.Base):
             The function to use to sort the members if needed.
         """
 
-        ordered = [representative]
+        ordered = [representative]                                                      ## not sure what is representative here. 
         to_add = [m for m in members if m['id'] != representative['id']]
         if sort:
             to_add.sort(key=sort, reverse=True)
