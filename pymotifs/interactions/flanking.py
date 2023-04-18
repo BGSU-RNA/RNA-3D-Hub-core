@@ -66,10 +66,11 @@ class Loader(core.SimpleLoader):
         :kwargs: Keyword arguments.
         :returns: The interaction annotations.
         """
-        mlab = matlab.Matlab(str(self.config['locations']['fr3d_root']))
-
+        mlab = matlab.Matlab(str(self.config['locations']['fr3d_root']))  # connect to Matlab
+                                                                                #### https://github.com/BGSU-RNA/RNA-3D-Hub-core/blob/09d1044cd30bd396e701d6eb91b8eef75e78b1d4/conf/bootstrap.json.txt#L31
         self.logger.info('Running matlab on %s', pdb)
-        ifn, status, err_msg = mlab.loadFlankings(pdb, nout=3)
+        ifn, status, err_msg = mlab.loadFlankings(pdb, nout=3)            # Matlab loads .mat file for this pdb and returns flanking pair list
+        print(ifn)
         status = status[0][0]
         if status == 0:
             data = self.parse(ifn, pdb)

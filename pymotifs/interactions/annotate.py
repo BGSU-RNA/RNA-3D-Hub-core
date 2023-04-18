@@ -10,7 +10,7 @@ from pymotifs import models as mod
 from pymotifs.units.info import Loader as UnitLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
 
-from NA_pairwise_interactions import annotate_nt_nt_in_structure
+from fr3d.classifiers.NA_pairwise_interactions import annotate_nt_nt_in_structure
 
 class Loader(core.SimpleLoader):
     allow_no_data = True
