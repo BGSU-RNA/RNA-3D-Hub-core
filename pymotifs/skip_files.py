@@ -240,4 +240,5 @@ SKIP = {
         #, '5Z57' # failing ife.info as of 2018-10-03 (JJC)
         #, '5Z58' # failing ife.info as of 2018-10-03 (JJC)
         #, '6DZK' # failing ife.info as of 2018-10-03 (JJC)
+	, '5AFI' # adding at 4/18/2023 fail to run chain_chain.comparison.(Ekko)
 }
