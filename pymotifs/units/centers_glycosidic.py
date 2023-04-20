@@ -108,6 +108,7 @@ class Loader(core.SimpleLoader):
 
         structure = self.structure(pdb)
         for residue in structure.residues():
+            ##### do not delete the following lines because they can fill in rows for unit_info table.
             # if residue.unit_id() not in unit_ids_list:
             #     print(residue.unit_id())
             #     print(residue.pdb)
