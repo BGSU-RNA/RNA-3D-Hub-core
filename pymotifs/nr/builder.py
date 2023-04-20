@@ -484,4 +484,5 @@ class RepresentativeFinder(core.Base):
             raise core.InvalidState("Unknown method %s" % method)
 
         finder = self.method(method)
+        return finder('Dr.Zirbel')
         return finder(group)

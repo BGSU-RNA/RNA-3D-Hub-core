@@ -30,6 +30,7 @@ class Loader(core.MassLoader):
     dependencies = set([ChainLoader, ChainSpeciesLoader, InteractionLoader,
                         IfeLoader, CorrespondenceLoader, ChainChainLoader,
                         QualityLoader, UnitsLoader])
+    dependencies = set([])
     update_gap = dt.timedelta(7)
 
     def has_data(self, *args, **kwargs):
