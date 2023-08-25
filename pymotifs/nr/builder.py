@@ -384,16 +384,20 @@ class Builder(core.Base):
             The list of groups which have been modified to include the
             representative entry and the members are resorted.
         """
-
+        ## from pprint import pprint
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
         for group in copy.deepcopy(groups):
+            # obj_vars = vars(group)
+            # pprint(obj_vars)
             ordered_members = rep_finder(group)
             group['representative'] = ordered_members[0]
+            
             group['members'] = ordered_members
             for index, member in enumerate(group['members']):
                 member['rank'] = index
             data.append(group)
+        # print(qwerty)
         return data
 
     def __call__(self, pdbs, parent_release, current_release,
