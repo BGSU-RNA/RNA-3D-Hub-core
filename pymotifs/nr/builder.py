@@ -404,8 +404,10 @@ class Builder(core.Base):
         # return data
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
+        # self.logger.info("Found groups_find_representatives %s", groups)
         for group in copy.deepcopy(groups):
             ordered_members = rep_finder(group)
+            self.logger.info("Found ordered_members %s", ordered_members)
             group['representative'] = ordered_members[0]
             group['members'] = ordered_members
             for index, member in enumerate(group['members']):
@@ -438,7 +440,10 @@ class Builder(core.Base):
         named = self.name_groups(groups, parents['all'])
         filtered = self.filter_groups(named, cutoffs)
         with_parents = self.attach_parents(filtered, parents)
+        self.logger.info("Found with_parents %s", with_parents)
         with_reps = self.find_representatives(with_parents)
+        self.logger.info("Found find_representatives %s", with_reps)
+
         print(qwerty)
 
         return {
