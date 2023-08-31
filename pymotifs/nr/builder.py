@@ -386,21 +386,22 @@ class Builder(core.Base):
             representative entry and the members are resorted.
         """
 
-        from pprint import pprint
-        data = []
-        rep_finder = RepresentativeFinder(self.config, self.session)
-        for group in copy.deepcopy(groups):
-            obj_vars = vars(group)
-            pprint(obj_vars)
-            ordered_members = rep_finder(group)
-            group['representative'] = ordered_members[0]
+        # from pprint import pprint
+        # print("find_group_in_find_representatives_function")
+        # data = []
+        # rep_finder = RepresentativeFinder(self.config, self.session)
+        # for group in copy.deepcopy(groups):
+        #     obj_vars = vars(group)
+        #     pprint(obj_vars)
+        #     ordered_members = rep_finder(group)
+        #     group['representative'] = ordered_members[0]
             
-            group['members'] = ordered_members
-            for index, member in enumerate(group['members']):
-                member['rank'] = index
-            data.append(group)
-        print(qwerty)
-        return data
+        #     group['members'] = ordered_members
+        #     for index, member in enumerate(group['members']):
+        #         member['rank'] = index
+        #     data.append(group)
+        # print(qwerty)
+        # return data
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
         for group in copy.deepcopy(groups):
@@ -429,12 +430,16 @@ class Builder(core.Base):
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
         groups = self.group(pdbs, **kwargs)
+        self.logger.info("Found pdbs %s", pdbs)
+        self.logger.info("Found groups %s", groups)
         parents = self.load_parents(parent_release, cutoffs)
+        self.logger.info("Found parents %s", parents)
 
         named = self.name_groups(groups, parents['all'])
         filtered = self.filter_groups(named, cutoffs)
         with_parents = self.attach_parents(filtered, parents)
         with_reps = self.find_representatives(with_parents)
+        print(qwerty)
 
         return {
             'parent_counts': self.counts(parents, with_reps),
