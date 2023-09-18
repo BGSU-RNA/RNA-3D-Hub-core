@@ -20,6 +20,7 @@ from pymotifs.nr.groups.simplified import ranking_key
 from pymotifs.constants import NR_REPRESENTATIVE_METHOD
 from pymotifs.constants import RESOLUTION_GROUPS
 from pymotifs.constants import NR_CLASS_NAME
+from sqlalchemy import desc
 
 
 class Known(core.Base):
@@ -364,6 +365,29 @@ class Builder(core.Base):
             data.append(group)
         return data
 
+    def using_old_rank(self, group):
+        ife_id_list = []
+        for parent in group['parents']:
+            for member in parent['members']:
+                ife_id_list.append(member['id'])
+        with self.session() as session:
+            query = session.query(mod.NrCqs.ife_id,mod.NrCqs.nr_name,mod.NrCqs.composite_quality_score.label('cqs')).\
+            filter(mod.NrCqs.ife_id.in_(ife_id_list)).\
+                order_by(desc(mod.NrCqs.nr_name)).distinct(mod.NrCqs.ife_id)
+        last_cqs_values = {}
+        for result in query:
+            last_cqs_values[result.ife_id] = result.cqs
+
+        self.logger.info("Found last_cqs_values %s", last_cqs_values)
+
+        sorted_last_cqs_values = sorted(last_cqs_values.items(), key=lambda x: x[1])
+
+        self.logger.info("Found sorted_last_cqs_values %s", sorted_last_cqs_values)
+
+        old_rank = {ife_id: rank for rank, (ife_id, _) in enumerate(sorted_last_cqs_values)}
+        ### will return a dict, key is the ife_id and value is the rank of cqs {'ife_id1':0,'ife_id2':1,.....}
+        return old_rank   
+
     def find_representatives(self, groups, sorting_key=ranking_key):
         """Compute the representative for each group. This will modify the
         group to now have a 'representative' entry containing the
@@ -385,31 +409,28 @@ class Builder(core.Base):
             The list of groups which have been modified to include the
             representative entry and the members are resorted.
         """
-
-        # from pprint import pprint
-        # print("find_group_in_find_representatives_function")
-        # data = []
-        # rep_finder = RepresentativeFinder(self.config, self.session)
-        # for group in copy.deepcopy(groups):
-        #     obj_vars = vars(group)
-        #     pprint(obj_vars)
-        #     ordered_members = rep_finder(group)
-        #     group['representative'] = ordered_members[0]
-            
-        #     group['members'] = ordered_members
-        #     for index, member in enumerate(group['members']):
-        #         member['rank'] = index
-        #     data.append(group)
-        # print(qwerty)
-        # return data
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
-        # self.logger.info("Found groups_find_representatives %s", groups)
+        class_id_to_ranking = {}
+
+        self.logger.info("Found groups[0] %s", groups[0])
         for group in copy.deepcopy(groups):
-            ordered_members = rep_finder(group)
-            self.logger.info("Found ordered_members %s", ordered_members)
-            group['representative'] = ordered_members[0]
-            group['members'] = ordered_members
+            old_rank = self.using_old_rank(group)
+            self.logger.info("Found old_rank %s", old_rank)
+            self.logger.info("Found group %s", group)
+            self.logger.info("Found group_parents_members %s", group['parents'][0]['members'])
+            ## checking if we have new ife for this group
+            if len(old_rank) == len(group['parents'][0]['members']):
+                # Sort the members based on the rank value in old_rank
+                sorted_parent_members = sorted(group['parents'][0]['members'], key=lambda x: old_rank[x['id']])
+                sorted_members = sorted(group['members'], key=lambda x: old_rank[x['id']])
+                group['members'] = sorted_members
+                group['representative'] = sorted_members[0]
+                group['parents'][0]['members'] = sorted_parent_members
+            else:
+                ordered_members = rep_finder(group) 
+                group['representative'] = ordered_members[0]
+                group['members'] = ordered_members
             for index, member in enumerate(group['members']):
                 member['rank'] = index
             data.append(group)
@@ -432,17 +453,17 @@ class Builder(core.Base):
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
         groups = self.group(pdbs, **kwargs)
-        self.logger.info("Found pdbs %s", pdbs)
-        self.logger.info("Found groups %s", groups)
+        # self.logger.info("Found pdbs %s", pdbs)
+        # self.logger.info("Found groups %s", groups)
         parents = self.load_parents(parent_release, cutoffs)
-        self.logger.info("Found parents %s", parents)
+        # self.logger.info("Found parents %s", parents)
 
         named = self.name_groups(groups, parents['all'])
         filtered = self.filter_groups(named, cutoffs)
         with_parents = self.attach_parents(filtered, parents)
-        self.logger.info("Found with_parents %s", with_parents)
+        # self.logger.info("Found with_parents %s", with_parents)
         with_reps = self.find_representatives(with_parents)
-        self.logger.info("Found find_representatives %s", with_reps)
+        # self.logger.info("Found find_representatives %s", with_reps)
 
         print(qwerty)
 
@@ -485,7 +506,11 @@ class RepresentativeFinder(core.Base):
         -------
             An object that can be called to find the representative.
         """
+        self.logger.info("tracking numbers #0001")
         finder = reps.fetch(name)
+        self.logger.info("tracking numbers #0002")
+        ## Actually, the return info is equal to CompSocre(self.config, self.session)
+        ## We normally rename a class or initial a class in this way, finder = CompScore(self.config, self.session) 
         return finder(self.config, self.session)
 
     def __call__(self, group, method=NR_REPRESENTATIVE_METHOD):
@@ -510,4 +535,8 @@ class RepresentativeFinder(core.Base):
             raise core.InvalidState("Unknown method %s" % method)
 
         finder = self.method(method)
+        self.logger.info("Found group in findrepresentative class: %s", group)
+        new_data=finder(group)
+        self.logger.info("Found finder(group) in findrepresentative class: %s", new_data)
+        return new_data
         return finder(group)
