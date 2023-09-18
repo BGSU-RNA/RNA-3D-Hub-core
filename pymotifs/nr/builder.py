@@ -21,6 +21,7 @@ from pymotifs.constants import NR_REPRESENTATIVE_METHOD
 from pymotifs.constants import RESOLUTION_GROUPS
 from pymotifs.constants import NR_CLASS_NAME
 from sqlalchemy import desc
+from pymotifs.constants import WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS
 
 
 class Known(core.Base):
@@ -415,24 +416,30 @@ class Builder(core.Base):
 
         self.logger.info("Found groups[0] %s", groups[0])
         for group in copy.deepcopy(groups):
-            old_rank = self.using_old_rank(group)
-            self.logger.info("Found old_rank %s", old_rank)
-            self.logger.info("Found group %s", group)
-            self.logger.info("Found group_parents_members %s", group['parents'][0]['members'])
-            ## checking if we have new ife for this group
-            if len(old_rank) == len(group['parents'][0]['members']):
-                # Sort the members based on the rank value in old_rank
-                sorted_parent_members = sorted(group['parents'][0]['members'], key=lambda x: old_rank[x['id']])
-                sorted_members = sorted(group['members'], key=lambda x: old_rank[x['id']])
-                group['members'] = sorted_members
-                group['representative'] = sorted_members[0]
-                group['parents'][0]['members'] = sorted_parent_members
+            # old_rank = self.using_old_rank(group)
+            # self.logger.info("Found old_rank %s", old_rank)
+            # self.logger.info("Found group %s", group)
+            # self.logger.info("Found group_parents_members %s", group['parents'][0]['members'])
+            # ## checking if we have new ife for this group
+            # if len(old_rank) == len(group['parents'][0]['members']):
+            #     # Sort the members based on the rank value in old_rank
+            #     sorted_parent_members = sorted(group['parents'][0]['members'], key=lambda x: old_rank[x['id']])
+            #     sorted_members = sorted(group['members'], key=lambda x: old_rank[x['id']])
+            #     group['members'] = sorted_members
+            #     group['representative'] = sorted_members[0]
+            #     group['parents'][0]['members'] = sorted_parent_members
+            # else:
+            ## new if statement
+            ## 
+            if not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS and group['comment'] == 'Exact match':
+                group['representative'] = None
+                group['members'] = []
             else:
                 ordered_members = rep_finder(group) 
                 group['representative'] = ordered_members[0]
                 group['members'] = ordered_members
-            for index, member in enumerate(group['members']):
-                member['rank'] = index
+                for index, member in enumerate(group['members']):
+                    member['rank'] = index
             data.append(group)
         return data
 
