@@ -193,6 +193,6 @@ COMPSCORE_COEFFICENTS = {
 }
 
 """
-This constant can control if we want to generate a new release for a existing group
+Set this variable to True when you want to rank every single equivalence class and write those rankings to nr_chains, for example, when the ranking system is changed
 """
-WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS =  1
+WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS =  False

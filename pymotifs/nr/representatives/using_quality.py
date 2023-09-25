@@ -447,7 +447,7 @@ class CompScore(QualityBase):
 
             for result in query:
                 cqs = result.cqs
-        self.logger.info("Running stage: compscore function of using_quality")
+        self.logger.info("compscore function of using_quality")
         try:
             cqs
         except NameError:
