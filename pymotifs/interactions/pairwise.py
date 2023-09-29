@@ -111,8 +111,20 @@ class Loader(core.SimpleLoader):
         if status == 0:
             data = self.parse(ifn, pdb)
             os.remove(ifn)
+            if len(data) == 0:
+                data = {}
+                data['pdb_id'] = pdb                         
+                data['unit_id_1'] = 'placeholder'
+                data['unit_id_2'] = 'placeholder'
+                self.logger.info('Pdb file %s has no interactions, save a placeholder' % pdb)
+                return [data]
             return data
         elif status == 2:
-            raise core.Skip('Pdb file %s has no nucleotides' % pdb)
+            data = {}
+            data['pdb_id'] = pdb                          # key is column name, value goes in the column
+            data['unit_id_1'] = 'placeholder'
+            data['unit_id_2'] = 'placeholder'
+            self.logger.info('Pdb file %s has no nucleotides, save a placeholder' % pdb)
+            return [data]
         raise core.InvalidState('Matlab error code %i when analyzing %s' %
                                 status, pdb)
