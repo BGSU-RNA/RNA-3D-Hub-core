@@ -472,8 +472,6 @@ class Builder(core.Base):
         with_reps = self.find_representatives(with_parents)
         # self.logger.info("Found find_representatives %s", with_reps)
 
-        print(qwerty)
-
         return {
             'parent_counts': self.counts(parents, with_reps),
             'groups': with_reps,
