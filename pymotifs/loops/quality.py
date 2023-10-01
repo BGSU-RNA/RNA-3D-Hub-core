@@ -188,7 +188,9 @@ class Loader(core.SimpleLoader):
                                   mod.UnitIncomplete.alt_id,
                                   mod.UnitIncomplete.ins_code,
                                   ).\
-                filter_by(pdb_id=pdb)
+                filter_by(pdb_id=pdb).\
+                filter(mod.UnitIncomplete.model.isnot(None))
+
         return {Entry(**row2dict(r)) for r in query}
 
     def loops(self, pdb):
