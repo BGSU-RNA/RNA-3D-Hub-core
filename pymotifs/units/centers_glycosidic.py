@@ -13,12 +13,14 @@ from sqlalchemy import and_
 
 
 class Loader(core.SimpleLoader):
-    """A class to load all glycosidic centers into the database.
+    """
+    A class to load all glycosidic centers into the database.
+    Ignores pdbs passed in.
     """
 
     dependencies = set([InfoLoader])
     allow_no_data = True
-    
+
     def to_process(self, pdbs, **kwargs):
         # return ["1UVK"]
 
@@ -29,17 +31,17 @@ class Loader(core.SimpleLoader):
                                         #filter(and_(mod.UnitCenters.name == 'base',mod.UnitCenters.name != 'glycosidic')).distinct()
 
         pdb_ids = set()
-        for id in query_all_pdb_ids:
-            pdb_ids.add(str(id)[2:6])
-        existed_ids = set()
-        for id in query_glycosidic_present:
-            existed_ids.add(str(id)[2:6])        
+        for result in query_all_pdb_ids:
+            pdb_ids.add(result.pdb_id)
+        existing_ids = set()
+        for result in query_glycosidic_present:
+            existing_ids.add(result.pdb_id)
 
-        if len(pdb_ids - existed_ids - set(SKIP)) == 0:
+        if len(pdb_ids - existing_ids - set(SKIP)) == 0:
             raise core.Skip("No new glycosidic centers")
 
-        self.logger.info('%s'%list(pdb_ids - existed_ids - set(SKIP)))
-        return list(pdb_ids - existed_ids - set(SKIP))
+        self.logger.info('%s'%list(pdb_ids - existing_ids - set(SKIP)))
+        return sorted(pdb_ids - existing_ids - set(SKIP))
         # return ['4V3P']
 
     def query(self, session, pdb):
@@ -61,7 +63,7 @@ class Loader(core.SimpleLoader):
         component_type : str
             The component type.
         """
-        return units.component_type(unit)      
+        return units.component_type(unit)
 
 
     def data(self, pdb, **kwargs):
