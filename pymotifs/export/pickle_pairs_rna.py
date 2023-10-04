@@ -33,7 +33,7 @@ class Exporter(core.Loader):
     mark = False 
     dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader, IfeInfoLoader])
 
-    dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader, IfeInfoLoader])
+    dependencies = set([ChainLoader, InteractionLoader, IfeInfoLoader])
 
     def has_data(self, pdb, *args, **kwargs):
         self.logger.debug("has_data: pdb: %s" % str(pdb))

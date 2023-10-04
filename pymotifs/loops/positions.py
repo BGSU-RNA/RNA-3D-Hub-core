@@ -46,8 +46,14 @@ class Loader(core.Loader):
                 distinct()
             dn_process = [r.pdb_id for r in query] #list of pdbs with corresponding entries in loop_info and type='NA'
 
+        # problemtic pdbs for now, they are wasting so much time and do nothing 2023-10-04 
+        problemtic = set('1A34', '1BYX', '1ELH', '1G3A', '1H1K', '1MHK', '1N35', '1N38', '1TFW', '1TFY', '1UON', '2BGG', '2E9Z', '2F8S', '2F8T', '2G91', '2I91', '2M1O', '2M23', '2NUG', '2R92', '2RFK', '2VAL', '354D', '377D', '3AVU', '3AVV', '3AVW', '3AVX', '3AVY', '3BSN', '3BSO', '3H5X', '3H5Y', '3HTX', '3KNA', '3LRN', '3MQK', '3NCU', '3NMA', '3PLA', '3VNV', '3ZC0', '4E78', '4GV9', '4K4U', '4K4V', '4KTG', '4OQ8', '4W5O', '4W5Q', '4W5R', '4W5T')
+        
         # Remove pdbs with no loops
         to_use = sorted(set(to_use).difference(dn_process))
+
+        # Remove problemtic pbds
+        to_use = sorted(set(to_use).difference(problemtic))
 
         if not to_use:
             raise core.Skip("Nothing to process")
