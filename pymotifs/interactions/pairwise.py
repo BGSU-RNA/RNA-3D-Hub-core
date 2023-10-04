@@ -41,7 +41,22 @@ class Loader(core.SimpleLoader):
         :pdb: The pdb id
         :returns: A query to get interaction data.
         """
+        ## stopped using the quey function to check if we have reords for this table.
+        ## we added to_process function to do the same job.
+        # return 0
         return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb)
+    
+    def to_process(self, pdbs, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.unit_id_1).\
+                filter(mod.UnitPairsInteractions.unit_id_1 == 'placeholder')
+            if not query.count():
+                raise core.Skip("Skipping interactions.pairwise, no new interactions")
+
+        d = set()
+        for result in query:
+            d.add(result.pdb_id)
+        return list(set(pdbs)-d)
 
     def interaction_type(self, family):
         """Determine the interaction type of the given interaction. This will
