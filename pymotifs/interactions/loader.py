@@ -18,3 +18,4 @@ from pymotifs.interactions.annotate import Loader as AnnotationLoader  # omit 20
 
 class Loader(core.StageContainer):
     stages = set([PairwiseLoader, FlankingLoader, AnnotationLoader])
+    stages = set([PairwiseLoader, FlankingLoader])
