@@ -10,12 +10,14 @@ from pymotifs.constants import NR_CACHE_NAME
 
 from pymotifs.nr.utils import BaseLoader
 from pymotifs.nr.chains import Loader as ChainLoader
+from pymotifs.nr.class_rank import Loader as ClassRankLoader
 from pymotifs.nr.id_mapping import Loader as IdMappingLoader
 
 
 class Loader(BaseLoader):
-    dependencies = set([IdMappingLoader, ChainLoader])
+    dependencies = set([IdMappingLoader, ClassRankLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
+    allow_no_data = True
     @property
     def table(self):
         return mod.NrClassParents
@@ -23,12 +25,18 @@ class Loader(BaseLoader):
     def parents(self, release, grouping):
         data = []
         for group in grouping:
+            self.logger.info('Found group in nr.parents: %s', group)
             for parent in group['parents']:
-                data.append({
-                    'nr_class_id': group['name']['class_id'],
-                    'nr_release_id': release,
-                    'nr_class_parent_id': parent['name']['class_id']
-                })
+                self.logger.info('Found parent in nr.parents stage: %s', parent)
+                if not parent:
+                    data.append({
+                        'nr_class_id': group['name']['class_id'],
+                        'nr_release_id': release,
+                        'nr_class_parent_id': parent['name']['class_id']
+                    })
+                else:
+                    self.logger.info('Exact match, no need to generate new')
+                    pass
         return data
 
     def no_parents(self, data):

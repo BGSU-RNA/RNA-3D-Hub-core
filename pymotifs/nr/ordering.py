@@ -146,25 +146,25 @@ class Loader(core.SimpleLoader):
             # only the 0 element will be used
             class_name = [r.name for r in query]
 
-            # NrChains is the table nr_chains
-            query = session.query(mod.NrChains.ife_id).\
-                filter_by(nr_class_id=class_id)
-
-            # list of the ife_id's associated with this equivalence class
-            results = [r.ife_id for r in query]
-
             # retrieve all ordering information for the first class_name
             query = session.query(mod.NrOrderingTest.ife_id).filter_by(nr_class_name=class_name[0])
 
             count = query.count()
+            # this query would not work correctly, and we do not need this log info anymore.
+            # # NrChains is the table nr_chains
+            # query = session.query(mod.NrChains.ife_id).\
+            #     filter_by(nr_class_id=class_id)
 
-            self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members)" %
-                             (count, class_name[0], class_id, len(results)))
-            self.logger.debug("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
-                             (count, class_name[0], class_id, len(results), str(results)))
+            # # list of the ife_id's associated with this equivalence class
+            # results = [r.ife_id for r in query]
 
-            if not count == len(results):
-                self.logger.info("has_data: Number previously ordered is different from number of members.")
+            # self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members)" %
+            #                  (count, class_name[0], class_id, len(results)))
+            # self.logger.debug("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
+            #                  (count, class_name[0], class_id, len(results), str(results)))
+
+            # if not count == len(results):
+            #     self.logger.info("has_data: Number previously ordered is different from number of members.")
 
             # if there is one piece of ordering data for each IFE in this class, we have data
             # if count == len(results):  # a small number of classes have different numbers; don't re-order

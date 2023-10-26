@@ -120,35 +120,38 @@ class IfeQualityLoader(core.SimpleLoader):
                 data[ife_id] = entry
         return data
 
-    def nr_classes(self, release, resolution):
-        return self.load_nr_classes(release, resolution)
+    # comment this out on 10/13/2023
+    # we cannot find anywhere that uses the following functions. 
+    # If these two functions need to be used in the future, make the query works corrently with NrChains table/release_id.
+    # def nr_classes(self, release, resolution):
+    #     return self.load_nr_classes(release, resolution)
 
-    def load_nr_classes(self, release, resolution):
-        with self.session() as session:
-            query = session.query(
-                mod.NrChains.rank.label('index'),
-                mod.NrChains.ife_id.label('id'),
-                mod.IfeInfo.pdb_id,
-                mod.IfeInfo.length,
-                mod.IfeChains.chain_id,
-                mod.NrClasses.name,
-            ).\
-                join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
-                join(mod.IfeChains,
-                     mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
-                join(mod.NrClasses,
-                     mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
-                filter(mod.NrClasses.nr_release_id == release).\
-                filter(mod.NrClasses.resolution == resolution).\
-                filter(mod.IfeChains.index == 0)
+    # def load_nr_classes(self, release, resolution):
+    #     with self.session() as session:
+    #         query = session.query(
+    #             mod.NrChains.rank.label('index'),
+    #             mod.NrChains.ife_id.label('id'),
+    #             mod.IfeInfo.pdb_id,
+    #             mod.IfeInfo.length,
+    #             mod.IfeChains.chain_id,
+    #             mod.NrClasses.name,
+    #         ).\
+    #             join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
+    #             join(mod.IfeChains,
+    #                  mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
+    #             join(mod.NrClasses,
+    #                  mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
+    #             filter(mod.NrClasses.nr_release_id == release).\
+    #             filter(mod.NrClasses.resolution == resolution).\
+    #             filter(mod.IfeChains.index == 0)
 
-            data = coll.defaultdict(list)
-            for result in query:
-                entry = row2dict(result)
-                entry['rep'] = (entry['index'] == 0)
-                nr = entry['name']
-                data[nr].append(entry)
-        return data.values()
+    #         data = coll.defaultdict(list)
+    #         for result in query:
+    #             entry = row2dict(result)
+    #             entry['rep'] = (entry['index'] == 0)
+    #             nr = entry['name']
+    #             data[nr].append(entry)
+    #     return data.values()
 
     def ife_quality_data(self, ifes):
         compscore = self._create(CompScore)
@@ -232,7 +235,9 @@ class IfeQualityLoader(core.SimpleLoader):
         resolution = 'all'
         release = None
 
-        if kwargs.get('manual', {}).get('nr_release_id', False):
+        
+        if False and kwargs.get('manual', {}).get('nr_release_id', False):
+            # This query would not need to rewiten to get the release id from nr_classes and join with this nr_chains table
             release = kwargs['manual']['nr_release_id'] 
             self.logger.info("IQL: to_process: release: %s" % release) 
             with self.session() as session:

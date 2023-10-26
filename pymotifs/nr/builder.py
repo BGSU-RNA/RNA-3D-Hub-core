@@ -65,31 +65,33 @@ class Known(core.Base):
             }
 
         with self.session() as session:
-            query = session.query(mod.NrChains.ife_id.label('id'),
+            query = session.query(mod.NrClassRank.ife_id.label('id'),
                                   mod.NrClasses.handle.label('handle'),
                                   mod.NrClasses.version.label('version'),
                                   mod.NrClasses.nr_class_id.label('class_id'),
                                   mod.NrClasses.name.label('full_name'),
-                                  mod.NrChains.rep,
+                                  mod.NrClassRank.rank,
                                   mod.IfeInfo.bp_count.label('bp'),
                                   mod.IfeInfo.length.label('length'),
                                   mod.PdbInfo.resolution,
                                   ).\
                 join(mod.NrClasses,
-                     mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
+                     mod.NrClassRank.nr_class_name == mod.NrClasses.nr_class_id).\
                 join(mod.IfeInfo,
-                     mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
+                     mod.IfeInfo.ife_id == mod.NrClassRank.ife_id).\
                 join(mod.PdbInfo,
                      mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
-                order_by(mod.NrClasses.nr_class_id, mod.NrChains.rank)
+                order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
 
             results = coll.defaultdict(empty)
             for result in query:
                 member = as_member(result)
                 results[result.class_id]['members'].append(member)
-                if result.rep:
+                # if result.rep:
+                #     results[result.class_id]['representative'] = member
+                if result.rank == 0:
                     results[result.class_id]['representative'] = member
 
                 results[result.class_id]['name'] = {

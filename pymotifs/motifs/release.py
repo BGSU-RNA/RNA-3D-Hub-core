@@ -177,20 +177,35 @@ class Loader(core.MassLoader):
         and models.
         """
 
+        # with self.session() as session:
+        #     chains = mod.NrChains
+        #     classes = mod.NrClasses
+        #     ifes = mod.IfeInfo
+        #     pdbs = mod.PdbInfo
+        #     query = session.query(chains).\
+        #         join(classes, classes.nr_class_id == chains.nr_class_id).\
+        #         join(ifes, ifes.ife_id == chains.ife_id).\
+        #         join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
+        #         filter(chains.rep == 1).\
+        #         filter(chains.nr_release_id == nr_release_id).\
+        #         filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
+        #         filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
+        #         order_by(chains.ife_id)
+
+        ## made a new query because we stop updating the nr_chains table
         with self.session() as session:
-            chains = mod.NrChains
-            classes = mod.NrClasses
-            ifes = mod.IfeInfo
-            pdbs = mod.PdbInfo
-            query = session.query(chains).\
-                join(classes, classes.nr_class_id == chains.nr_class_id).\
-                join(ifes, ifes.ife_id == chains.ife_id).\
-                join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
-                filter(chains.rep == 1).\
-                filter(chains.nr_release_id == nr_release_id).\
-                filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
-                filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
-                order_by(chains.ife_id)
+            query = session.query(mod.NrClassRank.ife_id).\
+                join(mod.NrClasses, mod.NrClasses.name == mod.NrClassRank.nr_class_name).\
+                join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.NrClassRank.ife_id).\
+                join(mod.PdbInfo,mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
+                filter(mod.NrClassRank.rank == 0).\
+                filter(mod.NrClasses.nr_release_id == nr_release_id).\
+                filter(mod.NrClasses.resolution == MOTIF_RESOLUTION_CUTOFF).\
+                filter(mod.PdbInfo.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
+                order_by(mod.NrClassRank.ife_id)
+                
+
+
 
             if not query.count():
                 raise core.InvalidState("No ifes found for nr %s" %
