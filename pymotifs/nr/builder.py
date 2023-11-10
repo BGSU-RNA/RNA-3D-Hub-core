@@ -76,7 +76,7 @@ class Known(core.Base):
                                   mod.PdbInfo.resolution,
                                   ).\
                 join(mod.NrClasses,
-                     mod.NrClassRank.nr_class_name == mod.NrClasses.nr_class_id).\
+                     mod.NrClassRank.nr_class_name == mod.NrClasses.name).\
                 join(mod.IfeInfo,
                      mod.IfeInfo.ife_id == mod.NrClassRank.ife_id).\
                 join(mod.PdbInfo,
@@ -84,7 +84,7 @@ class Known(core.Base):
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
-
+            self.logger.info("finish the query of the class functionin the nr/builder.py")
             results = coll.defaultdict(empty)
             for result in query:
                 member = as_member(result)
@@ -103,6 +103,79 @@ class Known(core.Base):
                 }
 
         return results.values()
+
+    def Old_classes(self, release_id, cutoff):
+        """Get all classes with the given resolution cutoff in the given
+        release. If nothing is below the cutoff then an empty dictonary will be
+        returned.
+
+        :release_id: Release id to lookup.
+        :cutoff: The resolution cutoff to use. Default is 'all'.
+        :returns A list of dictonaries for each class.
+        """
+
+        def empty():
+            return {
+                'members': [],
+                'representative': None,
+                'name': {
+                    'class_id': None,
+                    'full': None,
+                    'handle': None,
+                    'version': None,
+                    'cutoff': cutoff,
+                },
+                'release': release_id,
+            }
+
+        def as_member(result):
+            return {
+                'id': result.id,
+                'length': result.length,
+                'bp': result.bp,
+                'resolution': result.resolution,
+            }
+
+        with self.session() as session:
+            query = session.query(mod.NrChains.ife_id.label('id'),
+                                mod.NrClasses.handle.label('handle'),
+                                mod.NrClasses.version.label('version'),
+                                mod.NrClasses.nr_class_id.label('class_id'),
+                                mod.NrClasses.name.label('full_name'),
+                                mod.NrChains.rep,
+                                mod.IfeInfo.bp_count.label('bp'),
+                                mod.IfeInfo.length.label('length'),
+                                mod.PdbInfo.resolution,
+                                ).\
+                join(mod.NrClasses,
+                    mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
+                join(mod.IfeInfo,
+                    mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
+                join(mod.PdbInfo,
+                    mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
+                filter(mod.NrClasses.nr_release_id == release_id).\
+                filter(mod.NrClasses.resolution == cutoff).\
+                order_by(mod.NrClasses.nr_class_id, mod.NrChains.rank)
+
+            results = coll.defaultdict(empty)
+            for result in query:
+                member = as_member(result)
+                results[result.class_id]['members'].append(member)
+                if result.rep:
+                    results[result.class_id]['representative'] = member
+
+                results[result.class_id]['name'] = {
+                    'class_id': result.class_id,
+                    'full': result.full_name,
+                    'handle': result.handle,
+                    'version': int(result.version),
+                    'cutoff': cutoff,
+                }
+
+        return results.values()
+
+
+
 
     def mapping(self, release_id, names):
         """Create a mapping from nr class names to id in the database. This
@@ -381,11 +454,11 @@ class Builder(core.Base):
         for result in query:
             last_cqs_values[result.ife_id] = result.cqs
 
-        self.logger.info("Found last_cqs_values %s", last_cqs_values)
+        # self.logger.info("Found last_cqs_values %s", last_cqs_values)
 
         sorted_last_cqs_values = sorted(last_cqs_values.items(), key=lambda x: x[1])
 
-        self.logger.info("Found sorted_last_cqs_values %s", sorted_last_cqs_values)
+        # self.logger.info("Found sorted_last_cqs_values %s", sorted_last_cqs_values)
 
         old_rank = {ife_id: rank for rank, (ife_id, _) in enumerate(sorted_last_cqs_values)}
         ### will return a dict, key is the ife_id and value is the rank of cqs {'ife_id1':0,'ife_id2':1,.....}
@@ -415,8 +488,13 @@ class Builder(core.Base):
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
         class_id_to_ranking = {}
+        ## nr_class_name_checking
 
-        self.logger.info("Found groups[0] %s", groups[0])
+        with self.session() as session:
+            query = session.query(mod.NrClassRank.nr_class_name).distinct()
+        nr_class_name_list = [row.nr_class_name for row in query]
+
+        # self.logger.info("Found groups[0] %s", groups[0])
         for group in copy.deepcopy(groups):
             # old_rank = self.using_old_rank(group)
             # self.logger.info("Found old_rank %s", old_rank)
@@ -432,11 +510,14 @@ class Builder(core.Base):
             #     group['parents'][0]['members'] = sorted_parent_members
             # else:
             ## new if statement
-            ## 
-            if not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS and group['comment'] == 'Exact match':
+            ## make two log info messages and show what is old and what is new.
+            # if not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS and group['comment'] == 'Exact match':
+            if (not group['name']['full'] in nr_class_name_list) and (not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS):
+                self.logger.info("Skiping representative for %s", group['name']['full'])
                 group['representative'] = None
                 group['members'] = []
             else:
+                self.logger.info("Selecting representative for %s", group['name']['full'])
                 ordered_members = rep_finder(group) 
                 group['representative'] = ordered_members[0]
                 group['members'] = ordered_members
@@ -513,9 +594,9 @@ class RepresentativeFinder(core.Base):
         -------
             An object that can be called to find the representative.
         """
-        self.logger.info("tracking numbers #0001")
+        # self.logger.info("tracking numbers #0001")
         finder = reps.fetch(name)
-        self.logger.info("tracking numbers #0002")
+        # self.logger.info("tracking numbers #0002")
         ## Actually, the return info is equal to CompSocre(self.config, self.session)
         ## We normally rename a class or initial a class in this way, finder = CompScore(self.config, self.session) 
         return finder(self.config, self.session)
@@ -542,8 +623,8 @@ class RepresentativeFinder(core.Base):
             raise core.InvalidState("Unknown method %s" % method)
 
         finder = self.method(method)
-        self.logger.info("Found group in findrepresentative class: %s", group)
+        # self.logger.info("Found group in findrepresentative class: %s", group)
         new_data=finder(group)
-        self.logger.info("Found finder(group) in findrepresentative class: %s", new_data)
+        # self.logger.info("Found finder(group) in findrepresentative class: %s", new_data)
         return new_data
         return finder(group)

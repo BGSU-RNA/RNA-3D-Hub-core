@@ -25,7 +25,7 @@ class Loader(BaseLoader):
 
     def chains(self, grouping):
         """Compute the chain level data to store. The produced chains will be
-        suitable for writing to the ``nr_chains`` table in the database.
+        suitable for writing to the ``nr_class_rank`` table in the database.
 
         Parameters
         ----------
@@ -40,15 +40,30 @@ class Loader(BaseLoader):
         chains : list
             A list of chain dicts to store.
         """
+        # nr_class_name_list = self.nr_class_name_checking()
         data = []
         for group in grouping:
-            for chain in group['members']:
-                data.append({
-                    'ife_id': chain['id'],
-                    'nr_class_name': group['name']['full'],
-                    'rank': chain['rank']
-                })
+            # if not group['name']['full'] in nr_class_name_list:
+                for chain in group['members']:
+                    data.append({
+                        'ife_id': chain['id'],
+                        'nr_class_name': group['name']['full'],
+                        'rank': chain['rank'],
+                        'nr_class_id': group['name']['class_id']
+                    })
+            # else:
+            #    pass
         return data
+
+
+    def nr_class_name_checking(self):
+        """
+        Look for all existing nr_class_names in the nr_class_rank table.
+        
+        """
+        with self.session() as session:
+            query = session.query(mod.NrClassRank.nr_class_name).distinct()
+        return [row.nr_class_name for row in query]
 
     def data(self, release, **kwargs):
         """Compute the data to store.

@@ -185,23 +185,33 @@ class Loader(core.SimpleLoader):
         """
 
 
-        GeneratePickleFiles = True    # must be used in production, to update the files each week
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
+        GeneratePickleFiles = True    # must be used in production, to update the files each week
 
         if GeneratePickleFiles:
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
             # takes about 2 1/3 minutes on production in December 2020
             self.logger.info('Getting the unit_id to experimental sequence position table')
+            pdbs_set = set(pdbs)
             with self.session() as session:
                 EM = mod.ExpSeqUnitMapping
-                query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)
-
+                # query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)
+                query = session.query(EM.unit_id,EM.exp_seq_position_id).\
+                    join(mod.UnitInfo, mod.UnitInfo.unit_id == EM.unit_id).\
+                        filter(mod.UnitInfo.pdb_id.in_(pdbs))
+                count = 0
+                for r in query:
+                    count += 1
+                self.logger.info('Got %d unit to position mappings' % count)
                 unit_to_position = {}      # will be a dictionary of dictionaries
                 count = 0
                 for r in query:
                     if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
                         if len(fields) > 3:
+                            ## skip unexpected pdbs
+                            if not fields[0] in pdbs_set:
+                                continue
                             key = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
                             if not key in unit_to_position:
                                 unit_to_position[key] = {}

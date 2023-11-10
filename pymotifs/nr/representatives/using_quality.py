@@ -118,24 +118,24 @@ class QualityBase(Representative):
         return ordered + self.sort_by_quality(rest)
 
     def __call__(self, given):
-        # Get information about the __call__ function
-        caller_frame = inspect.currentframe().f_back
-        caller_function_name = caller_frame.f_code.co_name
-        caller_module = inspect.getmodule(caller_frame).__name__
+        # # Get information about the __call__ function
+        # caller_frame = inspect.currentframe().f_back
+        # caller_function_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
         
-        # Use traceback to get the calling code line
-        stack = traceback.extract_stack()
-        calling_code_line = stack[-2][1]
-        self.logger.info("__call__ method called from function '%s' in module '%s' at line %s" % (caller_function_name, caller_module, calling_code_line))
-        self.logger.info("show the runnng message 1: %s", stack[-3])
-        self.logger.info("show the runnng message 2: %s", stack[-2])
-        self.logger.info("show the runnng message 3: %s", stack[-1])
-        self.logger.info("show the runnng message 4: %s", stack[0])
-        self.logger.info("show the runnng message 5: %s", stack[1])
-        self.logger.info("show the runnng message 6: %s", stack[2])
+        # # Use traceback to get the calling code line
+        # stack = traceback.extract_stack()
+        # calling_code_line = stack[-2][1]
+        # self.logger.info("__call__ method called from function '%s' in module '%s' at line %s" % (caller_function_name, caller_module, calling_code_line))
+        # self.logger.info("show the runnng message 1: %s", stack[-3])
+        # self.logger.info("show the runnng message 2: %s", stack[-2])
+        # self.logger.info("show the runnng message 3: %s", stack[-1])
+        # self.logger.info("show the runnng message 4: %s", stack[0])
+        # self.logger.info("show the runnng message 5: %s", stack[1])
+        # self.logger.info("show the runnng message 6: %s", stack[2])
 
 
-        self.logger.info("Selecting representative for %s", given['name']['full'])
+        # self.logger.info("Selecting representative for %s", given['name']['full'])
         with_quality = self.load_quality(given['members'])
         candidates = self.select_candidates(with_quality)
         ordered_by_quality = self.sort_by_quality(candidates)
