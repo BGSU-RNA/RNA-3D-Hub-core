@@ -28,7 +28,8 @@ from pymotifs import models as mod
 
 from pymotifs.constants import NR_CACHE_NAME
 
-from pymotifs.nr.chains import Loader as NrChainLoader
+# from pymotifs.nr.chains import Loader as NrChainLoader
+from pymotifs.nr.class_rank import Loader as NrClassRankLoader
 from pymotifs.nr.classes import Loader as NrClassLoader
 from pymotifs.nr.cqs import NrQualityLoader
 from pymotifs.chain_chain.comparison import Loader as SimilarityLoader
@@ -44,7 +45,7 @@ class Loader(core.SimpleLoader):
     """
 
     trials = 100
-    dependencies = set([NrChainLoader, NrClassLoader, NrQualityLoader, SimilarityLoader])
+    dependencies = set([NrClassRankLoader, NrClassLoader, NrQualityLoader, SimilarityLoader])
 
     def to_process(self, pdbs, **kwargs):
         """Look up all NR classes. This ignores the given PDBs and just creates
@@ -146,25 +147,25 @@ class Loader(core.SimpleLoader):
             # only the 0 element will be used
             class_name = [r.name for r in query]
 
-            # NrChains is the table nr_chains
-            query = session.query(mod.NrChains.ife_id).\
-                filter_by(nr_class_id=class_id)
-
-            # list of the ife_id's associated with this equivalence class
-            results = [r.ife_id for r in query]
-
             # retrieve all ordering information for the first class_name
             query = session.query(mod.NrOrderingTest.ife_id).filter_by(nr_class_name=class_name[0])
 
             count = query.count()
+            # this query would not work correctly, and we do not need this log info anymore.
+            # # NrChains is the table nr_chains
+            # query = session.query(mod.NrChains.ife_id).\
+            #     filter_by(nr_class_id=class_id)
 
-            self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members)" %
-                             (count, class_name[0], class_id, len(results)))
-            self.logger.debug("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
-                             (count, class_name[0], class_id, len(results), str(results)))
+            # # list of the ife_id's associated with this equivalence class
+            # results = [r.ife_id for r in query]
 
-            if not count == len(results):
-                self.logger.info("has_data: Number previously ordered is different from number of members.")
+            # self.logger.info("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members)" %
+            #                  (count, class_name[0], class_id, len(results)))
+            # self.logger.debug("has_data: %s previously-ordered IFEs in class %s (id: %s, %s members): %s" %
+            #                  (count, class_name[0], class_id, len(results), str(results)))
+
+            # if not count == len(results):
+            #     self.logger.info("has_data: Number previously ordered is different from number of members.")
 
             # if there is one piece of ordering data for each IFE in this class, we have data
             # if count == len(results):  # a small number of classes have different numbers; don't re-order
@@ -251,12 +252,13 @@ class Loader(core.SimpleLoader):
         self.logger.info("members_revised:  class_id: %s" % class_id)
 
         with self.session() as session:
-            nch = aliased(mod.NrChains)
-
-            query = session.query(nch.ife_id, nch.nr_chain_id).\
+            # nch = aliased(mod.NrChains)
+            nch = aliased(mod.NrClassRank)
+            # the nr_class_rank_id would not be used. Ekko puts the nr_class_rank_ids cuz the following function want to get the first elemnet of the return value.
+            query = session.query(nch.ife_id, nch.nr_class_rank_id).\
                 filter(nch.nr_class_id == class_id)
 
-            members = [(r.ife_id, r.nr_chain_id) for r in query]
+            members = [(r.ife_id, r.nr_class_rank_id) for r in query]
 
 #        if len(members) == 1:
 #            raise core.Skip("Skip group of size 1")
@@ -329,8 +331,8 @@ class Loader(core.SimpleLoader):
         with self.session() as session:
             chains1 = aliased(mod.IfeChains)
             chains2 = aliased(mod.IfeChains)
-            nr1 = aliased(mod.NrChains)
-            nr2 = aliased(mod.NrChains)
+            nr1 = aliased(mod.NrClassRank)
+            nr2 = aliased(mod.NrClassRank)
             sim = mod.ChainChainSimilarity
 
             query = session.query(sim.discrepancy,
@@ -343,9 +345,12 @@ class Loader(core.SimpleLoader):
                 join(nr2, nr2.ife_id == chains2.ife_id).\
                 filter(nr1.nr_class_id == nr2.nr_class_id).\
                 filter(nr1.nr_class_id == class_id).\
-                filter(nr1.nr_release_id == nr2.nr_release_id).\
-                filter(nr1.nr_release_id == release_id).\
                 order_by(nr1.ife_id, nr2.ife_id)
+                # we used to use the release_id to limit the result, but we do not need it anymore
+                # this is because we do not need to find the original release id of one class_id
+                # Ekko has checked the results between the old query with the new query, and the result is the same.
+                # filter(nr1.nr_release_id == nr2.nr_release_id).\
+                # filter(nr1.nr_release_id == release_id).\
 
             distances_revised = coll.defaultdict(lambda: coll.defaultdict(int))
 
@@ -640,7 +645,9 @@ class Loader(core.SimpleLoader):
             data_revised.append(mod.NrOrderingTest(
                 nr_class_id=orig_class_id,
                 nr_class_name=nr_class_name,
-                nr_chain_id=nr_chain_id,
+                # we do not need the nr_chain_id now
+                # nr_chain_id=nr_chain_id,
+                # nr_chain_id is equal to the nr_class_rank_id now. 
                 ife_id=ife_id,
                 class_order=index,
             ))

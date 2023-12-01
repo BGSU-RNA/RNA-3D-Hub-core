@@ -41,7 +41,22 @@ class Loader(core.SimpleLoader):
         :pdb: The pdb id
         :returns: A query to get interaction data.
         """
+        ## stopped using the quey function to check if we have reords for this table.
+        ## we added to_process function to do the same job.
+        # return 0
         return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb)
+    
+    def to_process(self, pdbs, **kwargs):
+        with self.session() as session:
+            query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.unit_id_1).\
+                filter(mod.UnitPairsInteractions.unit_id_1 == 'placeholder')
+            if not query.count():
+                raise core.Skip("Skipping interactions.pairwise, no new interactions")
+
+        d = set()
+        for result in query:
+            d.add(result.pdb_id)
+        return list(set(pdbs)-d)
 
     def interaction_type(self, family):
         """Determine the interaction type of the given interaction. This will
@@ -111,8 +126,20 @@ class Loader(core.SimpleLoader):
         if status == 0:
             data = self.parse(ifn, pdb)
             os.remove(ifn)
+            if len(data) == 0:
+                data = {}
+                data['pdb_id'] = pdb                         
+                data['unit_id_1'] = 'placeholder'
+                data['unit_id_2'] = 'placeholder'
+                self.logger.info('Pdb file %s has no interactions, save a placeholder' % pdb)
+                return [data]
             return data
         elif status == 2:
-            raise core.Skip('Pdb file %s has no nucleotides' % pdb)
+            data = {}
+            data['pdb_id'] = pdb                          # key is column name, value goes in the column
+            data['unit_id_1'] = 'placeholder'
+            data['unit_id_2'] = 'placeholder'
+            self.logger.info('Pdb file %s has no nucleotides, save a placeholder' % pdb)
+            return [data]
         raise core.InvalidState('Matlab error code %i when analyzing %s' %
                                 status, pdb)

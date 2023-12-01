@@ -192,16 +192,26 @@ class Loader(core.SimpleLoader):
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
             # takes about 2 1/3 minutes on production in December 2020
             self.logger.info('Getting the unit_id to experimental sequence position table')
+            pdbs_set = set(pdbs)
             with self.session() as session:
                 EM = mod.ExpSeqUnitMapping
-                query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)
-
+                # query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)
+                query = session.query(EM.unit_id,EM.exp_seq_position_id).\
+                    join(mod.UnitInfo, mod.UnitInfo.unit_id == EM.unit_id).\
+                        filter(mod.UnitInfo.pdb_id.in_(pdbs))
+                count = 0
+                for r in query:
+                    count += 1
+                self.logger.info('Got %d unit to position mappings' % count)
                 unit_to_position = {}      # will be a dictionary of dictionaries
                 count = 0
                 for r in query:
                     if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
                         if len(fields) > 3:
+                            ## skip unexpected pdbs
+                            if not fields[0] in pdbs_set:
+                                continue
                             key = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
                             if not key in unit_to_position:
                                 unit_to_position[key] = {}
@@ -301,7 +311,8 @@ class Loader(core.SimpleLoader):
             chains = it.ifilter(has_centers, chains)
             chains = it.imap(op.itemgetter('db_id'), chains)
             # convert chains from iterator to list of chain ids and append to list
-            chain_list = sorted(list(chains))
+            # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
+            chain_list = sorted(set(chains))
             if len(chain_list) > 1:
                 groups_of_chain_ids.append(chain_list)
 
@@ -848,22 +859,29 @@ class Loader(core.SimpleLoader):
         c2 = []
         r1 = []
         r2 = []
-        seen = set()
+        seen1 = set()
+        seen2 = set()
 
         for (unit1,unit2) in unit_pairs:
-            if unit1 in seen:
-                raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit1 %s" % unit1)
-            seen.add(unit1)
 
-            if unit2 in seen:
-                raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit2 %s" % unit2)
-            seen.add(unit2)
+            if unit1 in seen1:
+                #raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit1 %s" % unit1)
+                self.logger.info("gather_matching_centers_rotations: Got duplicate unit1 %s" % unit1)
 
-            if allunitdictionary.get(unit1) is not None and allunitdictionary.get(unit2) is not None:
-                c1.append(allunitdictionary[unit1][0])
-                c2.append(allunitdictionary[unit2][0])
-                r1.append(allunitdictionary[unit1][1])
-                r2.append(allunitdictionary[unit2][1])
+            elif unit2 in seen2:
+                #raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit2 %s" % unit2)
+                self.logger.info("gather_matching_centers_rotations: Got duplicate unit2 %s" % unit2)
+
+            else:
+                # only add when neither has been seen already
+                seen1.add(unit1)
+                seen2.add(unit2)
+
+                if allunitdictionary.get(unit1) is not None and allunitdictionary.get(unit2) is not None:
+                    c1.append(allunitdictionary[unit1][0])
+                    c2.append(allunitdictionary[unit2][0])
+                    r1.append(allunitdictionary[unit1][1])
+                    r2.append(allunitdictionary[unit2][1])
 
         return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 

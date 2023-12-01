@@ -40,11 +40,36 @@ class Entry(coll.namedtuple('Entry', ['pdb_id', 'model', 'chain', 'number',
 class Loader(core.SimpleLoader):
     merge = True
     allow_no_data = True
-    use_marks = True
+    use_marks = True      # not sure what this does, except to not check files!
+    use_marks = False
     dependencies = set([InfoLoader])
 
+    def to_process(self, pdbs, **kwargs):
+        """
+        Do one query to determine which pdb ids are not already checked for incomplete residues.
+        """
+
+        with self.session() as session:
+            query = session.query(mod.UnitIncomplete.pdb_id).distinct()
+
+        existing_ids = set()
+        for result in query:
+            # self.logger.info(result.pdb_id)
+            existing_ids.add(result.pdb_id)
+
+        pdbs_to_check = set(pdbs) - existing_ids
+
+        self.logger.info("Found %d existing ids and %d pdbs to check" % (len(existing_ids),len(pdbs_to_check)))
+
+        if len(pdbs_to_check) == 0:
+            raise core.Skip("All pdb ids already represented in unit_incomplete table")
+
+        return sorted(pdbs_to_check)
+
     def query(self, session, pdb):
-        """Build a query to
+        """
+        Build a query to see if this pdb id is already in the unit_incomplete table.
+        Inefficient to do this one file at a time, but that is how SimpleLoader works, I guess.
 
         Parameters
         ----------
@@ -55,18 +80,19 @@ class Loader(core.SimpleLoader):
             The pdb to query for.
         """
 
-        self.logger.info("Setting up query for %s" % pdb)
+        # self.logger.info("Setting up query for %s" % pdb)
 
         matches = session.query(mod.UnitIncomplete).\
             filter(mod.UnitIncomplete.pdb_id == pdb)
 
-        self.logger.info("Found %d results in the query" % len([m for m in matches]))
+        # self.logger.info("Found %d results in the query" % len([m for m in matches]))
 
         return matches
 
 
     def missing_keys(self, pdb):
-        """Determine the unit ids in a file that are missing/unobserved. This
+        """
+        Determine the unit ids in a file that are missing/unobserved. This
         parses the mmCIF file for the given PDB and examines the
         'pdbx_unobs_or_zero_occ_residues' and 'pdbx_unobs_or_zero_occ_atoms'
         data blocks for this information.
@@ -85,7 +111,8 @@ class Loader(core.SimpleLoader):
         self.logger.info("Loading %s.cif" % pdb)
         cif = self.cif(pdb)
 
-        self.logger.info("Getting unobserved residues")
+        #self.logger.info("Getting unobserved residues")
+
         total = it.chain(getattr(cif, 'pdbx_unobs_or_zero_occ_residues', []),
                          getattr(cif, 'pdbx_unobs_or_zero_occ_atoms', []))
 
@@ -105,8 +132,6 @@ class Loader(core.SimpleLoader):
 
             key = Entry(pdb, model, chain, num, seq, alt_id, ins)
             missing.add(key)
-
-        self.logger.info("Found %d residues of concern" % len([m for m in total]))
 
         return missing
 
@@ -130,8 +155,21 @@ class Loader(core.SimpleLoader):
             unit ids.
         """
 
-        self.logger.info("Started data method for %s" % pdb)
+        #self.logger.info("Started data method for %s" % pdb)
+
+        missing = self.missing_keys(pdb)
+
         data = []
-        for key in self.missing_keys(pdb):
-            data.append(mod.UnitIncomplete(**key._asdict()))
+        if len(missing) == 0:
+            # add an entry with the pdb id but all other entries NULL so we don't check this file again.
+            self.logger.info("Found %d residues of concern in %s, adding NULL entry" % (len(missing), pdb))
+            d = {}
+            d['pdb_id'] = pdb
+            data.append(mod.UnitIncomplete(**d))
+        else:
+            self.logger.info("Found %d residues of concern in %s" % (len(missing), pdb))
+            for key in missing:
+                # convert from Entry to dictionary and pass in key-value pairs with **
+                data.append(mod.UnitIncomplete(**key._asdict()))
+
         return data

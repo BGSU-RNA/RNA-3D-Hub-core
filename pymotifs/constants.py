@@ -191,3 +191,8 @@ COMPSCORE_COEFFICENTS = {
     'rfree': 18,
     'fraction_unobserved': 4,
 }
+
+"""
+Set this variable to True when you want to rank every single equivalence class and write those rankings to nr_chains, for example, when the ranking system is changed
+"""
+WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS =  False
