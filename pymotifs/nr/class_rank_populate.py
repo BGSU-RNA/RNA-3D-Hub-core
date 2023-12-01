@@ -66,13 +66,20 @@ class class_rank_populate_loader(core.SimpleLoader):
                 id = name_ife_to_nr_class_id[name_ife]
                 name, ife = name_ife.split("&")
                 first_ife = ife.split("+")[0]
+
+                # already done on rnatest, so don't do this again
                 if len(first_ife.split("|")) == 3:
+                    name_rank_ife.append((name, id, rank, ife))
+
+                # originally we did not do this on rnatest
+                # release before 1.xx have no model numbers
+                if len(first_ife.split("|")) == 2:
                     name_rank_ife.append((name, id, rank, ife))
 
             # write to database in the nicest order
             for name, id, rank, ife in sorted(name_rank_ife):
-                print("%s %s %s" % (name, id, ife, rank))
-                self.logger.info("%s %s %s" % (name, id, ife, rank))
+                print("%s %s %s %s" % (name, id, ife, rank))
+                self.logger.info("%s %s %s %s" % (name, id, ife, rank))
 
                 yield mod.NrClassRank(
                     nr_class_name = name,

@@ -462,7 +462,7 @@ class Builder(core.Base):
 
         old_rank = {ife_id: rank for rank, (ife_id, _) in enumerate(sorted_last_cqs_values)}
         ### will return a dict, key is the ife_id and value is the rank of cqs {'ife_id1':0,'ife_id2':1,.....}
-        return old_rank   
+        return old_rank
 
     def find_representatives(self, groups, sorting_key=ranking_key):
         """Compute the representative for each group. This will modify the
@@ -512,13 +512,13 @@ class Builder(core.Base):
             ## new if statement
             ## make two log info messages and show what is old and what is new.
             # if not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS and group['comment'] == 'Exact match':
-            if (not group['name']['full'] in nr_class_name_list) and (not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS):
-                self.logger.info("Skiping representative for %s", group['name']['full'])
+            if (group['name']['full'] in nr_class_name_list) and (not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS):
+                self.logger.info("Already have ranking and representative for %s", group['name']['full'])
                 group['representative'] = None
                 group['members'] = []
             else:
-                self.logger.info("Selecting representative for %s", group['name']['full'])
-                ordered_members = rep_finder(group) 
+                self.logger.info("Ranking and selecting representative for %s", group['name']['full'])
+                ordered_members = rep_finder(group)
                 group['representative'] = ordered_members[0]
                 group['members'] = ordered_members
                 for index, member in enumerate(group['members']):
@@ -598,7 +598,7 @@ class RepresentativeFinder(core.Base):
         finder = reps.fetch(name)
         # self.logger.info("tracking numbers #0002")
         ## Actually, the return info is equal to CompSocre(self.config, self.session)
-        ## We normally rename a class or initial a class in this way, finder = CompScore(self.config, self.session) 
+        ## We normally rename a class or initial a class in this way, finder = CompScore(self.config, self.session)
         return finder(self.config, self.session)
 
     def __call__(self, group, method=NR_REPRESENTATIVE_METHOD):
