@@ -63,9 +63,24 @@ class Loader(core.MassLoader):
             current = query.one()
             return current.nr_release_id, current.index
 
+    def current_dna_version(self):
+        with self.session() as session:
+            query = session.query(mod.NrReleases.nr_release_id,
+                                  mod.NrReleases.index).\
+                order_by(desc(mod.NrReleases.index)).\
+                limit(1)
+
+            if query.count() == 0:
+                return '0.0', 0
+
+            current = query.one()
+            return current.nr_release_id, current.index        
+
     def data(self, pdbs, **kwargs):
 
         now = kwargs.get('before_date', dt.datetime.strftime(dt.datetime.now(), '%Y-%m-%d %H:%M:%S'))
+        DNA_checking = kwargs.get('DNA-release','')
+
 
         if ":" in now:
             nowstring = dt.datetime.strftime(dt.datetime.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
@@ -73,14 +88,17 @@ class Loader(core.MassLoader):
 #            nowstring = now.strftime("%Y%m%d"),
             nowstring = now.replace("-","")
 
-        current, index = self.current_id()
-        next = self.next_id(current)
-        parent = current
-        if current == '0.0':
-            parent = next
-        self.build(pdbs, parent, next, **kwargs)
-        return mod.NrReleases(nr_release_id=next,
-                              date=now,
-                              parent_nr_release_id=parent,
-                              description = nowstring,
-                              index=index + 1)
+        if DNA_checking != 1:
+            current, index = self.current_id()
+            next = self.next_id(current)
+            parent = current
+            if current == '0.0':
+                parent = next
+            self.build(pdbs, parent, next, **kwargs)
+            return mod.NrReleases(nr_release_id=next,
+                                date=now,
+                                parent_nr_release_id=parent,
+                                description = nowstring,
+                                index=index + 1)
+        else:
+
