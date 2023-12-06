@@ -1,8 +1,12 @@
 """
-Temporary stage to add modified nucleotides to loop_positions table
-
-This module contains a loader to load all unit level information into the
-database.
+For each chain in each PDB file, try to assign a consensus name to the chain.
+Do this by looking up mappings to Rfam families
+Also by processing the pdb chain description.
+Store information in the chain_property_value table
+property can be:
+    standardized_name
+    source
+    rfam_family
 """
 
 from cgi import print_arguments
@@ -10,48 +14,42 @@ import itertools as it
 from operator import contains
 import pymotifs.core as core
 from pymotifs import models as mod
-from pymotifs.utils import units
-from pymotifs import utils
-# from pymotifs.download import Downloader
-# from pymotifs.pdbs.info import Loader as PdbLoader
-# from pymotifs.units import Loader as UnitInfoLoder
-from sqlalchemy import and_
-from collections import defaultdict
-from Bio.Alphabet import ThreeLetterProtein
-from sqlalchemy import desc
-from sqlalchemy import asc
-from sqlalchemy import not_
-
-
-
+from pymotifs.chains.taxid_species_domain import Loader as DomainLoader
+from pymotifs.rfam.map_to_rfam import Loader as MapLoader
 
 class Loader(core.Loader):
     merge_data = True
     mark = False
 
-    # this stage is only run on existing chains, no dependencies needed
-    dependencies = set([])
+    # needs to be done after the rfam mapping stage
+    dependencies = set([DomainLoader,MapLoader])
 
     def to_process(self, pdbs, **kwargs):
-        '''
-        After we get some files fixed and some not fixed, we may want to
-        only work on the files that we didn't fix yet, by doing a query here
-        and only returning the files that need work.
-        For now, just return the list of pdbs that is passed into this function.
-        '''
+        """
+        Ignore list of pdb ids passed in.
+        Find pdb ids that have an RNA chain in chain_info but that are not
+        in chain_property_value, and pass those back.
+        This way, we will work through the pdb ids that are not yet in
+        chain_property_value.
+        """
+
+        # this could work better if it operated at the chain level
+        # then if some chains in a PDB file are already mapped, it could still map more
+
+        # pdb ids with an RNA chain in chain_info
         with self.session() as session:
-            # query = session.query(mod.ChainPropertyValue.pdb_id).\
             query = session.query(mod.ChainInfo.pdb_id).\
                 filter(mod.ChainInfo.entity_macromolecule_type.contains('Polyribonucleotide'))
         not_in_table_pdbs = set([r.pdb_id for r in query])
-        
+
+        # pdb ids with a chain mapped to an Rfam family in chain_property_value
         with self.session() as session:
-            # query = session.query(mod.ChainPropertyValue.pdb_id).\
-            query = session.query(mod.ChainPropertyValue.pdb_id)
+            query = session.query(mod.ChainPropertyValue.pdb_id).\
+                filter(mod.ChainPropertyValue.property == 'rfam_family')
         in_table_pdbs = set([r.pdb_id for r in query])
-        # return sorted(set(pdbs) - in_table_pdbs)
-        return(sorted(not_in_table_pdbs - in_table_pdbs))
-        # return sorted(not_in_table_pdbs)
+
+        # return a list of the list of pdb ids that are not in chain_property_value
+        return [sorted(not_in_table_pdbs - in_table_pdbs)]
 
     def has_data(self, pdb_dict, **kwargs):
         """
@@ -63,19 +61,9 @@ class Loader(core.Loader):
         return False
 
     def remove(self, pdb, **kwargs):
-
         """
-        with self.session() as session:
-            query = session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
-            ids = [result.loop_id for result in query]
-
-        if not ids:
-            return True
-
-        with self.session() as session:
-            return session.query(mod.LoopPositions).\
-                filter(mod.LoopPositions.loop_id.in_(ids)).\
-                delete(synchronize_session=False)
+        We need a method that would remove data from the database.
+        But apparently it does not actually need to remove anything.
         """
 
         return True
@@ -101,81 +89,114 @@ class Loader(core.Loader):
     #             d.update({unit_id:'aa'})
     #     return d
 
-    '''
-    This function checks to see if the string specified file from rfam 
-    exists, if not then download the file from rfam. Once the file is 
-    present this program reads and returns the tab separated file from rfam
-    '''
 
     def open_and_format_file(self,file_str, delim):
+        """
+        Generic function to read a csv file
+        """
         import os, csv
         file_content = None
         text_file = open(file_str, "r")
         if os.path.exists(file_str):
             file_content = csv.reader(text_file.readlines(), delimiter=delim)
         return file_content
-    '''
-    Converts taxonomy flat file into a dictionary of tax ids to domain and lineage.
-    '''
-    def tax_to_domain(self,tax_list):
-        tax_dict = {}
-        for row in tax_list:
-            tax_id = row[0]
-            domain = row[1]
-            lineage = row[2]
-            if tax_id not in tax_dict and domain != "":
-                tax_dict[tax_id] = domain,lineage
-        return tax_dict
-    '''
-    This function maps chains to rfam data.
-    '''
-    def map_chains_to_rfam_data(self,rfam_pdb_list, rfam_family_list, pdb_id): # Make this more efficient
+
+
+    # def tax_to_domain(self,tax_list):
+    #     """
+    #     Converts taxonomy flat file into a dictionary of tax ids to domain and lineage.
+    #     """
+    #     tax_dict = {}
+    #     for row in tax_list:
+    #         tax_id = row[0]
+    #         domain = row[1]
+    #         lineage = row[2]
+    #         if tax_id not in tax_dict and domain != "":
+    #             tax_dict[tax_id] = domain,lineage
+    #     return tax_dict
+
+
+    def get_taxid_to_domain(self):
+        """
+        Read mapping from taxonomy to domain into a dictionary
+        """
+
+        taxid_to_domain = {}
+        with self.session() as session:
+            query = session.query(mod.TaxidSpeciesDomain.taxonomy_id,
+                                  mod.TaxidSpeciesDomain.domain)
+            for row in query:
+                if row.domain:
+                    taxid_to_domain[row.taxonomy_id] = row.domain
+
+        return taxid_to_domain
+
+
+    def map_chains_to_rfam_data(self, rfam_pdb_list, rfam_family_list, pdb_id):
+        """
+        Create a dictionary mapping chains in pdb_id to rfam family information
+        """
+
         # 1st. Loop over the pdb list and add the rfam family
         # and start and end nodes to the dictionary
-        # This function reads two data files (rfam.pdb, family.txt)
-        chain_to_rfamily_id = {}  # chain -> RF0001, chain start, chain end
+        chain_to_rfamily_id = {}
         for line in rfam_pdb_list[1:]:
-            if pdb_id in line[1].upper():
-                chain = line[2]  # ignore model number use the %s format 
+            if pdb_id.upper() in line[1].upper():
+                chain = line[2]
                 rfam_family = line[0]
-                if chain not in chain_to_rfamily_id:
+                if not chain in chain_to_rfamily_id:
+                    # family, bit_score, chain_start, chain_end
                     chain_to_rfamily_id[chain] = rfam_family, line[5], line[3], line[4]
 
-        
         # 2nd. Loop over the family list
-        rfam_family_to_family = {}  # RF0001 -> 5S ribosomal RNA
+        # map Rfam id to Rfam family name
+        # RF00001 -> 5S ribosomal RNA
+        rfam_family_to_family = {}
         for line in rfam_family_list:
             family = line[-1]
             rfam_family = line[0]
             rfam_family_to_family[rfam_family] = family
-        
+
         # 3rd. combine chain_to_rfamily_id and rfam_family_to_family by rfamily id
-        rfamilyid_to_rfam_data = {}  # chain -> RF0001, chain start, chain end, 5S ribosomal RNA
+        # chain -> RF00001, chain start, chain end, 5S ribosomal RNA
+        chain_to_rfam_data = {}
         for key in chain_to_rfamily_id:
             rfam_family = chain_to_rfamily_id[key][0]
             bit_score = chain_to_rfamily_id[key][1]
             chain_start = chain_to_rfamily_id[key][2]
             chain_end = chain_to_rfamily_id[key][3]
             family = rfam_family_to_family[rfam_family]
-            rfamilyid_to_rfam_data[key] = [rfam_family, family, bit_score, chain_start, chain_end] # change dictionary to chain to rfam data
-            # print ("%s | %s" % (key, rfamilyid_to_rfam_data[key]))
+            chain_to_rfam_data[key] = [rfam_family, family, bit_score, chain_start, chain_end] # change dictionary to chain to rfam data
+            #print ("%s | %s" % (key, chain_to_rfam_data[key]))
 
-        return rfamilyid_to_rfam_data # keys are chains in the form pdbid|1|chain
-    
-    def domain_checking(self,rna_chains, all_chains, pdb_id):
-        checks = set()
-        from_title = False
+        return chain_to_rfam_data # keys are chains in the form pdbid|1|chain
+
+
+    def domain_checking(self, rna_chains, all_chains, pdb_id):
+        """
+        Determine the biological source, which could be
+        domain like archaea, bacteria, eukarya
+        organelle like mitochondria, chloroplast
+        other like virus and unknown
+
+        Inputs:
+        rna_chains is a list of dictionaries
+        all_chains is protein chains and any other chains in the pdb file
+        pdb_id
+        """
+
+        if len(rna_chains) == 0:
+            return rna_chains
+
+        checks = set()                        # collect pieces of evidence for a source
+        from_title = False                    # note where the evidence comes from
         from_rfam_ncbi_mismatch = False
         from_ssu_lsu_ncbi_mismatch  = False
         clue_count_dict = {}
-        
-        mitochondria_count = 0.0
-        chloroplast_count = 0.0
-        indicator_count = 0.0
+
         voted_domain = None
-        
-        # checking title [This check is at the PDB level]
-        # if len(rna_chains) > 0:
+
+        # check PDB title, which is stored with each chain
         title = rna_chains[0]['title']
         if "mitochond".upper() in title.upper() or "mitoriboso".upper() in title.upper():
             checks.add("Mitochondria")
@@ -183,8 +204,11 @@ class Loader(core.Loader):
         elif "chloroplast".upper() in title.upper():
             checks.add("Chloroplast")
             from_title = True
-        
-        # checking compound name [This check is at the PDB level]
+
+        # check compound name for non-RNA chains since protein chains are often marked better
+        mitochondria_count = 0.0  # use float so Python 2.7 does not do integer division
+        chloroplast_count = 0.0
+        indicator_count = 0.0
         for chain in all_chains:
             if "chloroplast".upper() in chain['compound'].upper():
                 chloroplast_count += 1
@@ -200,34 +224,31 @@ class Loader(core.Loader):
                 voted_domain = "Mitochondria"
             elif c_percent > threshold:
                 voted_domain = "Chloroplast"
-        
-        # checking if there is a mismatch between SSU chain and LSU chain domains [This check is at the PDB level]
+
+        # check if the domain of the organism is Eukarya but the chain maps to bacteria, mitochondria, or chlororplast ribosome
         ssu = None
         lsu = None
-        lsu_rfam_id_set = {"RF02541","RF02546"}
-        ssu_rfam_id_set = {"RF00177","RF02545","RF02542"} 
-        for row in rna_chains:
-            if row['tax_id'].isdigit() and 'rfam_family' in row:
-                if row['domain'].startswith("Eukarya"): # Should we check for mismatches outside of just Eukarya?
-                    if row['rfam_family'] in ssu_rfam_id_set: 
-                        ssu = row
-                    elif row['rfam_family'] in lsu_rfam_id_set:
-                        lsu = row
+        lsu_rfam_id_set = {"RF02541","RF02546"}   # Rfam LSU families that mitochondria / chloroplast map into
+        ssu_rfam_id_set = {"RF00177","RF02545"}   # Rfam SSU families that mitochondria / chloroplast map into
+        for chain in rna_chains:
+            if chain['tax_id'].isdigit() and 'rfam_family' in chain:
+                if chain['domain'].startswith("Eukary"):
+                    if chain['rfam_family'] in ssu_rfam_id_set:
+                        ssu = chain
+                    elif chain['rfam_family'] in lsu_rfam_id_set:
+                        lsu = chain
+        # look for both SSU and LSU mapping to an organelle somehow
         if ssu and lsu:
-            ssu_ncbi_domain = ssu['domain']
-            lsu_ncbi_domain = lsu['domain']
-            if ssu_ncbi_domain != lsu_ncbi_domain:
-                from_ssu_lsu_ncbi_mismatch = True
+            from_ssu_lsu_ncbi_mismatch = True
 
-        # checking mismatch between rfam domain and ncbi domain   [This check is at the chain level]
-
+        # check mismatch between rfam domain and ncbi domain   [This check is at the chain level]
         for chain in rna_chains:
             from_rfam_ncbi_mismatch = False
             lsu_ncbi_mismatch = False
-            ssu_ncbi_mismatch = False 
+            ssu_ncbi_mismatch = False
             from_ssu_lsu_ncbi_mismatch  = False
             if chain['tax_id'].isdigit() and 'rfam_family' in chain:
-                if chain['domain'].startswith("Eukarya"):
+                if chain['domain'].startswith("Eukary"):
                     if chain['rfam_family'] in lsu_rfam_id_set:
                         lsu_ncbi_mismatch = True
                     elif chain['rfam_family'] in ssu_rfam_id_set:
@@ -235,10 +256,10 @@ class Loader(core.Loader):
             if lsu_ncbi_mismatch or ssu_ncbi_mismatch:
                 from_rfam_ncbi_mismatch = True
 
-            #Gathering checks into a dictionary
+            # Gather checks into a dictionary
             other_pdb_count = len(all_chains)
             if len(all_chains) < 1:
-                self.logger.info("PDB %s is missing chains from all chains" % (pdb_id))
+                self.logger.info("PDB %s does not have non-RNA chains" % (pdb_id))
                 other_pdb_count = 1
             clue_checks_dict = {"PDB_Title" :from_title, "PDB_Name": voted_domain, "Other_chains": (indicator_count / other_pdb_count > 0), "NCBI_Rfam_mismatch":from_rfam_ncbi_mismatch, "SSU_LSU_mismatch":from_ssu_lsu_ncbi_mismatch}
             row_counter = 0
@@ -246,8 +267,8 @@ class Loader(core.Loader):
                 if clue:
                     row_counter += 1
             clue_count_dict[chain['chain_name']] = [row_counter, checks, clue_checks_dict]    #chains are keys
-        
-        # checking the domain source of each row at the pdb id level
+
+        # check the domain source of each row at the pdb id level
         for chain in rna_chains:
             source_str = "NCBI"
             # ith_row = rna_dict[pdb][i]
@@ -257,6 +278,7 @@ class Loader(core.Loader):
             num_clues = clue_count_dict[chain['chain_name']][0]
             check_set = clue_count_dict[chain['chain_name']][1]
             clue_booleans = clue_count_dict[chain['chain_name']][2]
+
             # Nicholas Reworking code stopped here February 15 @ 7:26PM
             if len(check_set) == 1:
                 if num_clues > 1:
@@ -268,16 +290,15 @@ class Loader(core.Loader):
                         consensus_domain = list(check_set)[0]
 
                 if chain['tax_id'].isdigit():
-                    chain['source'] = source_str   
+                    chain['source'] = source_str
                 else:
-                    chain['source'] = "No_tax" 
+                    chain['source'] = "No_tax"
                 chain['clues'] = {'from_title':clue_booleans["PDB_Title"], 'from_compound_name':clue_booleans["PDB_Name"], 'percent_m_or_c_chains':clue_booleans["Other_chains"], 'from_Rfam_ncbi_domain_mismatch':clue_booleans["NCBI_Rfam_mismatch"], 'from_ssu_lsu_domain_mismatch':clue_booleans["SSU_LSU_mismatch"], 'num_clues': num_clues, 'check_set':check_set}
                 chain['domain'] = consensus_domain
 
                 if "Mitochondria" in checks and "Chloroplast" in checks:
-                    print("Error Mitochondrial and Chloroplast found in same chain")
-                    print(pdb_id)
-                    print("")
+                    self.logger.info("Error Mitochondrial and Chloroplast found in same chain of %s" % pdb_id)
+
         # check empty domain chains for clues as to their protien chains
         # for i in range(len(rna_dict[pdb])):
         domain_set = set()
@@ -311,8 +332,9 @@ class Loader(core.Loader):
                     chain['domain'] = voted_domain
                     chain['source'] = "Protein / RNA chains vote (compound name: Multiple domains found)"
 
-        #return rna_dict.copy()
-    
+        return rna_chains
+
+
     def consensus_naming(self, rna_chains, rfam_family_to_standard_name):
         new_rfam = set()
         # for pdb in pdb_dict:
@@ -320,18 +342,18 @@ class Loader(core.Loader):
             pdb_compound_name = chain['compound']
             # rfam_id = chain['rfam_family']
             standard_name = None
-            
+
             # chain['std_name'] = pdb_compound_name
             if 'rfam_family' in chain:
                 if chain['rfam_family'] in rfam_family_to_standard_name :
                     chain['std_name'] = rfam_family_to_standard_name[chain['rfam_family']] # add consensus name
-                    #     # checking manual domain with the consensus domain
+                    #     # check manual domain with the consensus domain
                 else:
                     # chain['std_name'] = None
                     if chain['rfam_family'] is not None:
                         if chain['rfam_family'].startswith("RF"):
                             new_rfam.add(chain['rfam_family'])
-                # Archea rules          
+                # Archea rules
                 if "7S.S" in pdb_compound_name.upper(): # Rule: if the PDB compound contains "7S.S", say "Signal recognition particle domain S
                     standard_name = "Signal recognition particle domain S RNA; SRP S RNA"
                     chain['std_name'] = standard_name
@@ -347,8 +369,8 @@ class Loader(core.Loader):
                         chain['std_name'] = standard_name
                     elif 'std_name' not in chain and chain['domain'].startswith("Archaea") and '23S' in pdb_compound_name.upper() and int(chain['chain_length']) < 2000:
                         standard_name = "Large subunit ribosomal RNA fragment"
-                        chain['std_name'] = standard_name              
-                
+                        chain['std_name'] = standard_name
+
                 # RF00001 length rule: if chain length > 500 use PDB description as consensus name
                 chain_length = chain['chain_length']
                 if str(chain_length).isdigit():
@@ -360,9 +382,10 @@ class Loader(core.Loader):
                             standard_name = 'Small subunit ribosomal RNA fragment; SSU rRNA fragment'
                         else:
                             standard_name = 'Small subunit ribosomal RNA; SSU rRNA'
-                        chain['std_name'] = standard_name   
+                        chain['std_name'] = standard_name
                 # if not chain['domain'] == 'Mitochondrial' and "16S" in pdb_compound_name and int(chain_length) < 500:
                 #     name = 'Small subunit ribosomal RNA fragment; SSU rRNA fragment'
+
 
     def make_rfam_family_to_standard_name(self, consensus_name_list):
         rfam_family_to_standard_name = {}
@@ -372,16 +395,53 @@ class Loader(core.Loader):
             rfam_family_to_standard_name[line[0]] = standard_name
         return rfam_family_to_standard_name
 
-    def data(self, pdb_id, **kwargs):
+
+    def data(self, pdb_ids, **kwargs):
         """
+        Input is an entire list of pdb ids, so we only have to read data files once.
+        Add information about RNA chains in this pdb file.
         This method gets called on each item in the list returned by the
         to_process method, one after another.
         We will get one pdb identifier at a time.
         """
 
-        # query the database for all RNA chains in the Chain info table
+        # Load data files
+        self.logger.info("Reading data files")
+
+        # NCBI Taxonomy files
+        # taxonomy_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/tax_dictionary.csv"
+        # tax_dict = self.tax_to_domain(self.open_and_format_file(taxonomy_file,'\t')) # rename to tax_to_dict using find and replace
+
+        # read database table with mappings of taxonomy ids to species and domain
+        taxid_to_domain = self.get_taxid_to_domain()
+
+        # Rfam files
+        # rfam_pdb_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/Rfam.pdb"
+        rfam_pdb_file = "/usr/local/pipeline/alignments/pdb_chain_to_rfam.txt"
+
+        # load an Rfam data file listing all Rfam families and information about the family
+        rfam_family_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/family.txt"
+        rfam_family_txt = self.open_and_format_file(rfam_family_file, '\t') # returns a list of list of strings
+        rfam_family_txt_arr = [line[:4] for line in rfam_family_txt]
+
+        # read mappings of chains to Rfam families
+        # TODO: need to be more sophisticated because more than one mapping may be listed for a chain
+        #
+        rfam_pdb = self.open_and_format_file(rfam_pdb_file, '\t')
+        rfam_pdb_arr = [line for line in rfam_pdb if not line[0] == 'RF00000']
+
+        # standard names file
+        consensus_names_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/manual_consensus_names.tsv"
+        consensus_names = self.open_and_format_file(consensus_names_file, '\t')
+        consensus_arr = [line for line in consensus_names]
+        rfam_family_to_standard_name = self.make_rfam_family_to_standard_name(consensus_arr)
+
+        # store data about chains by their pdb id
+        pdb_to_chains = {}
+
+        # query the database for all chains in the chain_info table with these pdb_ids
         with self.session() as session:
-            rna_query = session.query(mod.ChainInfo.pdb_id,
+            chain_query = session.query(mod.ChainInfo.pdb_id,
                                     mod.ChainInfo.chain_name,
                                     mod.ChainInfo.entity_macromolecule_type,
                                     mod.ChainInfo.chain_length,
@@ -389,174 +449,119 @@ class Loader(core.Loader):
                                     mod.ChainInfo.taxonomy_id,
                                     mod.PdbInfo.title).\
                 outerjoin(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id).\
-                filter(mod.ChainInfo.pdb_id == pdb_id, mod.ChainInfo.entity_macromolecule_type.contains('Polyribonucleotide')).\
-                order_by(asc(mod.ChainInfo.chain_id))
-        
-        print("Current PDB: %s" %(pdb_id))
+                filter(mod.ChainInfo.pdb_id.in_(pdb_ids))
+
+            for r in chain_query: # r is a structured variable (like a row)
+
+                if not r.pdb_id in pdb_to_chains:
+                    pdb_to_chains[r.pdb_id] = {'rna_chains' : [], 'other_pdb_chains' : []}
+
+                chain_dict = {}
+                chain_dict['pdb_id'] = str(r.pdb_id)
+                chain_dict['chain_name'] = str(r.chain_name)
+                chain_dict['title'] = str(r.title)
+                chain_dict['tax_id'] = str(r.taxonomy_id)
+                chain_dict['compound'] = str(r.compound)
+                chain_dict['chain_length'] = str(r.chain_length)
+                # chain_dict['macromolecule'] = str(r.entity_macromolecule_type)
+
+                # add domain according to taxonomy id
+                chain_dict['domain'] = taxid_to_domain.get(chain_dict['tax_id'], "None")
+
+                if 'polyribonucleotide' in r.entity_macromolecule_type.lower():
+                    # this is an RNA chain
+                    pdb_to_chains[r.pdb_id]['rna_chains'].append(chain_dict)
+                else:
+                    # not an RNA chain
+                    pdb_to_chains[r.pdb_id]['other_pdb_chains'].append(chain_dict)
+
         data = [] # array containing annotated rna chains (domain, rfam family, standard name)
 
-        if rna_query.count() > 0:
-            
-            print("Procesing PDB: %s" %(pdb_id))
-
-            # query the database for data on all pdb chains that are not RNA in the Chain info table
-            with self.session() as session:
-                pdb_query = session.query(mod.ChainInfo.pdb_id,
-                                        mod.ChainInfo.chain_name,
-                                        mod.ChainInfo.entity_macromolecule_type,
-                                        mod.ChainInfo.chain_length,
-                                        mod.ChainInfo.compound,
-                                        mod.ChainInfo.taxonomy_id,
-                                        mod.PdbInfo.title).\
-                    outerjoin(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id).\
-                    filter(mod.ChainInfo.pdb_id == pdb_id, not_(mod.ChainInfo.entity_macromolecule_type.contains('Polyribonucleotide'))).\
-                    order_by(asc(mod.ChainInfo.chain_id))
-            
-            # Loading data files
-            self.logger.info("Started Reading files!") # check timestamp in log file
-
-            # NCBI Taxonomy files read
-            taxonomy_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/tax_dictionary.csv"
-            tax_dict = self.tax_to_domain(self.open_and_format_file(taxonomy_file,'\t')) # rename to tax_to_dict using find and replace
-            
-            # Rfam files read
-            rfam_pdb_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/Rfam.pdb"
-            rfam_family_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/family.txt"
-            rfam_family_txt = self.open_and_format_file(rfam_family_file, '\t') # returns a list of list of strings
-            rfam_pdb = self.open_and_format_file(rfam_pdb_file, '\t')
-            rfam_family_txt_arr = [line[:4] for line in rfam_family_txt]
-            rfam_pdb_arr = [line for line in rfam_pdb]
-            rfam_dict = self.map_chains_to_rfam_data(rfam_pdb_arr,rfam_family_txt_arr,pdb_id)
-            
-            # standard names file read
-            consensus_names_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/manual_consensus_names.tsv"
-            consensus_names = self.open_and_format_file(consensus_names_file, '\t')
-            consensus_arr = [line for line in consensus_names]
-            self.logger.info("Ended Reading files!") # check time stamp in log file
-
-            # Start processing PDB Files
+        # loop over pdb ids, process all chains for each one
+        for pdb_id in sorted(pdb_to_chains.keys()):
             self.logger.info("Processing PDB file %s" %(pdb_id))
 
-            other_pdb_chains = []
-            rna_chains = []
+            # map chains to rfam data
+            chain_to_rfam_data = self.map_chains_to_rfam_data(rfam_pdb_arr,rfam_family_txt_arr,pdb_id)
 
-            for r in rna_query: # r is a structured variable (like a row)
-                chain_dict = {}
-                chain_dict['pdb_id'] = str(r.pdb_id)
-                chain_dict['chain_name'] = str(r.chain_name)
-                # chain_dict['macromolecule'] = str(r.entity_macromolecule_type)
-                chain_dict['chain_length'] = str(r.chain_length)
-                chain_dict['compound'] = str(r.compound)
-                chain_dict['title'] = str(r.title)
-                chain_dict['tax_id'] = str(r.taxonomy_id)
-                
-                # adding ncbi taxonomy data
-                if chain_dict['tax_id'] in tax_dict:
-                    # chain_dict['lineage'] = tax_dict[chain_dict['tax_id']][1]
-                    chain_dict['domain'] = tax_dict[chain_dict['tax_id']][0]
-                else:
-                    chain_dict['domain'] = "None"
+            rna_chains = pdb_to_chains[pdb_id]['rna_chains']
+            other_pdb_chains = pdb_to_chains[pdb_id]['other_pdb_chains']
 
-                # adding rfam data
-                if chain_dict['chain_name'] in rfam_dict:
-                    chain_dict['rfam_family'] = rfam_dict[chain_dict['chain_name']][0]
-                    chain_dict['rfam_description'] = rfam_dict[chain_dict['chain_name']][1]       
-                    chain_dict['rfam_bit_score'] = rfam_dict[chain_dict['chain_name']][2]
-                
-                rna_chains.append(chain_dict)
+            #print(chain_to_rfam_data)
 
-            for r in pdb_query: # r is a structured variable (like a row)
-                chain_dict = {}
-                chain_dict['pdb_id'] = str(r.pdb_id)
-                chain_dict['chain_name'] = str(r.chain_name)
-                # chain_dict['macromolecule'] = str(r.entity_macromolecule_type)
-                chain_dict['compound'] = str(r.compound)
-                chain_dict['title'] = str(r.title)
-                chain_dict['tax_id'] = str(r.taxonomy_id)
-                if chain_dict['tax_id'] in tax_dict:
-                    # chain_dict['lineage'] = tax_dict[chain_dict['tax_id']][1]
-                    chain_dict['domain'] = tax_dict[chain_dict['tax_id']][0]
-                other_pdb_chains.append(chain_dict)
+            if len(rna_chains) == 0:
+                continue
 
-            rfam_family_to_standard_name = self.make_rfam_family_to_standard_name(consensus_arr)
+            for chain_dict in rna_chains:
+                # add rfam data
+                if chain_dict['chain_name'] in chain_to_rfam_data:
+                    chain_dict['rfam_family'] = chain_to_rfam_data[chain_dict['chain_name']][0]
+                    chain_dict['rfam_description'] = chain_to_rfam_data[chain_dict['chain_name']][1]
+                    chain_dict['rfam_bit_score'] = chain_to_rfam_data[chain_dict['chain_name']][2]
 
+            # check for domain conflicts
+            rna_chains = self.domain_checking(rna_chains, other_pdb_chains, pdb_id)
 
-            # checking for domain conflicts
-            self.domain_checking(rna_chains, other_pdb_chains, pdb_id) 
-
-            # adding standard name
+            # add standard name
             self.consensus_naming(rna_chains, rfam_family_to_standard_name)
 
-            rna_str = ""
-            for line in rna_chains:
-                if 'std_name' in line:
-                    print("%s | %s | %s | %s\n" % (pdb_id,line['chain_name'], line['domain'], line['std_name']))
-                    rna_str += "%s | %s | %s | %s\n" % (pdb_id, line['chain_name'], line['domain'], line['std_name'])
+            # Make dictionaries for this PDB id.  Each one becomes a row in chain_property_value table
+            for chain in rna_chains:
+                domain = chain.get('domain','')
+                rfam_family = chain.get('rfam_family','')
+                std_name = chain.get('std_name','')
 
-                else:
-                    print("%s | %s | %s | %s\n" % (pdb_id,line['chain_name'], line['domain'], 'No standard name found'))                   
-                    rna_str += "%s | %s | %s | %s\n" % (pdb_id, line['chain_name'], line['domain'], 'No standard name found')
+                if domain == 'None':
+                    domain = ''
 
-            # write csv files here
+                print("%s | %4s | %12s | %8s | %s" % (pdb_id,chain['chain_name'], domain, rfam_family, std_name))
+                self.logger.info("%s | %4s | %12s | %8s | %s" % (pdb_id,chain['chain_name'], domain, rfam_family, std_name))
 
-            # rna_annotations = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/output.txt"
-            # with open(rna_annotations, 'a') as f:
-            #     f.write(rna_str)
-            
-            # Making dictionaries for PDB_ID
-            for chain in rna_chains: #for chain_dict in other_pdb_chains. Check if its an rna chain, if so make this little dictionary if we have (name, doman rfam family), append it to the data list
-                standard_name_dict = {}
-                domain_dict = {}
-                rfam_family_dict = {}
-                chain_id = chain['chain_name']
+                # only save data if all fields are present; aim for completeness
+                if domain and rfam_family and std_name:
 
-                # standard name dict
-                property_val = "standardized_name"
-                if 'std_name' in chain:
-                    value = chain['std_name']
-                    standard_name_dict['pdb_id'] = pdb_id
-                    standard_name_dict['chain'] = chain_id
-                    standard_name_dict['property'] = property_val
-                    standard_name_dict['value'] = value
+                    # standard name dictionary
+                    if 'std_name' in chain:
+                        standard_name_dict = {}
+                        standard_name_dict['pdb_id'] = pdb_id
+                        standard_name_dict['chain'] = chain['chain_name']
+                        standard_name_dict['property'] = "standardized_name"
+                        standard_name_dict['value'] = chain['std_name']
+                        data.append(standard_name_dict)
 
-                # Domain dict
-                property_val = "source"
-                if 'domain' in chain:
-                    if not chain['domain'].startswith("None"):
-                        value = chain['domain']
-                        domain_dict['pdb_id'] = pdb_id
-                        domain_dict['chain'] = chain_id
-                        domain_dict['property'] = property_val
-                        domain_dict['value'] = value
-                
-                # Rfam family dict
-                property_val = "rfam_family"
-                if 'rfam_family' in chain:
-                    value = chain['rfam_family']
-                    rfam_family_dict['pdb_id'] = pdb_id
-                    rfam_family_dict['chain'] = chain_id
-                    rfam_family_dict['property'] = property_val
-                    rfam_family_dict['value'] = value
+                    # Domain dictionary
+                    if 'domain' in chain:
+                        if not chain['domain'].startswith("None"):
+                            domain_dict = {}
+                            domain_dict['pdb_id'] = pdb_id
+                            domain_dict['chain'] = chain['chain_name']
+                            domain_dict['property'] = "source"
+                            domain_dict['value'] = chain['domain']
+                            data.append(domain_dict)
 
-                # Appending dictionairies to the data list
-                if len(standard_name_dict.values()) > 0:
-                    data.append(standard_name_dict)
-                    # print(standard_name_dict)
-                    # self.logger.info(standard_name_dict)
-                if len(domain_dict.values()) > 0:
-                    # print(domain_dict)
-                    # self.logger.info(domain_dict)
-                    data.append(domain_dict)
-                if len(rfam_family_dict.values()) > 0:
-                    # print(rfam_family_dict)
-                    # self.logger.info(rfam_family_dict)
-                    data.append(rfam_family_dict)
+                    # Rfam family dictionary
+                    if 'rfam_family' in chain:
+                        rfam_family_dict = {}
+                        rfam_family_dict['pdb_id'] = pdb_id
+                        rfam_family_dict['chain'] = chain['chain_name']
+                        rfam_family_dict['property'] = "rfam_family"
+                        rfam_family_dict['value'] = chain['rfam_family']
+                        data.append(rfam_family_dict)
 
-        # yielding rows to the chain_property_value table if data is not empty
+        for row in data:
+            #print(row)
+            self.logger.info(row)
+
+        self.logger.info('Ready to add %d pieces of data about chains' % len(data))
+        print('Ready to add %d pieces of data about chains' % len(data))
+
+        # temporarily do not write data to the database
+        # data = []
+
         if len(data) > 0:
+            # yield rows to the chain_property_value table
             for row in data:
-                # print("IT works!")
                 yield mod.ChainPropertyValue(**row)
         else:
-            raise core.Skip("RNA data not found for pdb id %s" % (pdb_id))
-       
+            raise core.Skip("No chain name data found for pdb id %s" % (pdb_id))
+

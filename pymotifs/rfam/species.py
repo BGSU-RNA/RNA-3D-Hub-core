@@ -43,8 +43,7 @@ class Loader(core.SimpleLoader):
             given_name = session.query(mod.ChainInfo).get(chain_id).source
 
         if assigned in set([None, 512]) and given_name == 'Escherichia coli':
-            self.logger.warning("Chain %s should probably have 562 as species",
-                                chain_id)
+            self.logger.warning("Chain %s should probably have 562 as species" % chain_id)
             species = 562
 
         if species is None:

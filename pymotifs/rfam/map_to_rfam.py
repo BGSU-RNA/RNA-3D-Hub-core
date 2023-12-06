@@ -542,7 +542,7 @@ class Loader(core.Loader):
         self.write_mapping(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'pdb_chain_to_rfam.txt'),chain_to_range_to_mapping)
 
         # when you need to re-align everything, you can use this list
-        if True:
+        if False:
             rfam_families_to_align = set()
             for chain in chain_to_range_to_mapping.keys():
                 for range_string in chain_to_range_to_mapping[chain].keys():

@@ -59,6 +59,9 @@ function [Text] = motifToVarna(Search, Location, execute)
 
     Text = sprintf('%s %s -o %s/%s.png',javaCommand,Text,destination,Search.FileName(1:end-4));
 
+    % temporary, to see the commands
+    fprintf('%s\n',Text);
+
     if execute == 1
         unix(Text);
     else
