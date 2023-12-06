@@ -1,7 +1,8 @@
 """
-This is a stage to load all clash data into our database. This do not use the
+This is a stage to load all clash data into our database. This does not use the
 atom style unit ids because we don't have any entries about this so far, but it
 is simple enough to create them.
+Database table is unit_clashes
 """
 
 import pymotifs.core as core
