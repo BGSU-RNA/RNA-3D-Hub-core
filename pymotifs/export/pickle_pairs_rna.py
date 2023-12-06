@@ -29,8 +29,8 @@ class Exporter(core.Loader):
     """
 
     # General Setup
-    compressed = False 
-    mark = False 
+    compressed = False
+    mark = False
     dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader, IfeInfoLoader])
 
     dependencies = set([ChainLoader, InteractionLoader, IfeInfoLoader])
@@ -116,12 +116,13 @@ class Exporter(core.Loader):
                                iupf.flanking).\
                     join(iui1, iupi.unit_id_1 == iui1.unit_id).\
                     join(iui2, iupi.unit_id_2 == iui2.unit_id).\
-                    outerjoin(iupf, and_(iupi.unit_id_1 == iupf.unit_id_1, iupi.unit_id_2 == iupf.unit_id_2, 
+                    outerjoin(iupf, and_(iupi.unit_id_1 == iupf.unit_id_1, iupi.unit_id_2 == iupf.unit_id_2,
                               iupi.pdb_id == iupf.pdb_id)).\
                     filter(iupi.unit_id_1.isnot(None)).\
                     filter(iupi.unit_id_2.isnot(None)).\
                     filter(iui1.unit_type_id == 'rna').\
                     filter(iui2.unit_type_id == 'rna').\
+                    filter(iupf.flanking == 1).\
                     filter(iupi.pdb_id == pdb)
 
             fui1 = aliased(mod.UnitInfo)
@@ -145,12 +146,13 @@ class Exporter(core.Loader):
                                fupf.flanking).\
                     join(fui1, fupf.unit_id_1 == fui1.unit_id).\
                     join(fui2, fupf.unit_id_2 == fui2.unit_id).\
-                    outerjoin(fupi, and_(fupi.unit_id_1 == fupf.unit_id_1, fupi.unit_id_2 == fupf.unit_id_2, 
+                    outerjoin(fupi, and_(fupi.unit_id_1 == fupf.unit_id_1, fupi.unit_id_2 == fupf.unit_id_2,
                               fupi.pdb_id == fupf.pdb_id)).\
                     filter(fupf.unit_id_1.isnot(None)).\
                     filter(fupf.unit_id_2.isnot(None)).\
                     filter(fui1.unit_type_id == 'rna').\
                     filter(fui2.unit_type_id == 'rna').\
+                    filter(iupf.flanking == 1).\
                     filter(fupf.pdb_id == pdb)
 
             query = subqueryI.union(subqueryF).order_by(iui1.model, iui1.chain, iui1.chain_index,
