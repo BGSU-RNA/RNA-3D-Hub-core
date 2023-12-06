@@ -12,7 +12,8 @@ from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.constants import COMPSCORE_COEFFICENTS
 from pymotifs.constants import NR_CACHE_NAME
-from pymotifs.nr.chains import Loader as ChainLoader
+# from pymotifs.nr.chains import Loader as ChainLoader
+from pymotifs.nr.class_rank import Loader as ClassRankLoader
 from pymotifs.nr.parent_counts import Loader as CountLoader
 from pymotifs.utils import row2dict
 
@@ -22,7 +23,7 @@ class NrQualityLoader(core.SimpleLoader):
     in table nr_cqs.
     """
 
-    dependencies = set([ChainLoader, CountLoader])
+    dependencies = set([ClassRankLoader, CountLoader])
 
     """We allow this to merge data since sometimes we want to replace.
 
@@ -165,11 +166,14 @@ class NrQualityLoader(core.SimpleLoader):
         cqs_data = {}
 
         ife_list = []
-
+        # we stop using the following query cuz we stop updating the nrchains table
+        # with self.session() as session:
+        #     query = session.query(mod.NrChains.ife_id).\
+        #         join(mod.NrClasses, mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
+        #         filter(mod.NrClasses.name == nr_name)
         with self.session() as session:
-            query = session.query(mod.NrChains.ife_id).\
-                join(mod.NrClasses, mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
-                filter(mod.NrClasses.name == nr_name)
+            query = session.query(mod.NrClassRank.ife_id).\
+                filter(mod.NrClassRank.nr_class_name == nr_name)
 
             for result in query:
                 ife_list.append(result[0])
