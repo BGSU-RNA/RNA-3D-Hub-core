@@ -64,7 +64,7 @@ class Exporter(core.Loader):
 
         self.logger.info("filename: filename: %s" % filename)
         ## change /html to /unit
-        return os.path.join("/var/www/units",filename)
+        return os.path.join("/var/www/html/units",filename)
         # return os.path.join("/usr/local/pipeline/hub-core/logs",filename)
 
     def to_process(self, pdbs, **kwargs):
