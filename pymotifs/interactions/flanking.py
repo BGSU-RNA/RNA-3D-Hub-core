@@ -100,12 +100,12 @@ class Loader(core.SimpleLoader):
             return data
         elif status == 2:
             self.logger.info('%s has no nucleotides, adding placeholder value', pdb)
-            data.append({'unit_id_1':'placeholder', 'unit_id_2':'placeholder', 'flanking' : 0, 'pdb_id' : pdb})
+            data = {'unit_id_1':'placeholder', 'unit_id_2':'placeholder', 'flanking' : 0, 'pdb_id' : pdb}
             return data
             #raise core.Skip('PDB file %s has no nucleotides' % pdb)
         elif status == 3:
             self.logger.info('%s has no flanking interactions, adding placeholder value', pdb)
-            data.append({'unit_id_1':'placeholder', 'unit_id_2':'placeholder', 'flanking' : 0, 'pdb_id' : pdb})
+            data = {'unit_id_1':'placeholder', 'unit_id_2':'placeholder', 'flanking' : 0, 'pdb_id' : pdb}
             return data
             # raise core.Skip('PDB file %s has no flanking interactions' % pdb)
         raise core.InvalidState('Matlab error code %i when analyzing %s' % status, pdb)
