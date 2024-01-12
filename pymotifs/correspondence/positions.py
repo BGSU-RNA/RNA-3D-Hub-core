@@ -39,6 +39,7 @@ class Loader(core.Loader):
                 raise core.Skip("Skipping positions, no new correspondences")
             return [result.correspondence_id for result in query]
 
+
     def has_data(self, corr_id, **kwargs):
         """Check if we have data for the given correspondence id. This will
         check if the stored length is not null, in which case it has been

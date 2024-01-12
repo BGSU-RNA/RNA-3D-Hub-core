@@ -470,7 +470,7 @@ class Stage(base.Base):
                 try:
                     self.remove(entry, **kwargs)
                 except Exception as err:
-                    raise InvalidState("Could not cleanup failed data %s",
+                    raise InvalidState("Could not clean up failed data %s",
                                        entry)
                 else:
                     failed.append(entry)

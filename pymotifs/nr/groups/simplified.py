@@ -542,7 +542,9 @@ class Grouper(core.Base):
         ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
         alignments = self.alignments(ifes)
+        self.logger.info("retreive alignments to cluster")
         discrepancy = self.discrepancies(ifes)
+        self.logger.info("retreive discrepancies to cluster")
 
         grouped = set()
         groups = []

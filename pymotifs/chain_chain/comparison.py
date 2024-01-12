@@ -161,23 +161,33 @@ class Loader(core.SimpleLoader):
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
             # takes about 2 1/3 minutes on production in December 2020
             self.logger.info('Getting the unit_id to experimental sequence position table')
+            pdbs_set = set(pdbs)
             with self.session() as session:
                 EM = mod.ExpSeqUnitMapping
-                query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)                        ## why select_from
-
+                # query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)
+                query = session.query(EM.unit_id,EM.exp_seq_position_id).\
+                    join(mod.UnitInfo, mod.UnitInfo.unit_id == EM.unit_id).\
+                        filter(mod.UnitInfo.pdb_id.in_(pdbs))
+                count = 0
+                for r in query:
+                    count += 1
+                self.logger.info('Got %d unit to position mappings' % count)
                 unit_to_position = {}      # will be a dictionary of dictionaries
                 count = 0
                 for r in query:
                     if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
                         if len(fields) > 3:
+                            ## skip unexpected pdbs
+                            if not fields[0] in pdbs_set:
+                                continue
                             key = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
                             if not key in unit_to_position:
                                 unit_to_position[key] = {}
                             unit_to_position[key][r.unit_id] = r.exp_seq_position_id
                             count += 1
                 self.logger.info('Got %d unit to position mappings' % count)
-                pickle.dump(unit_to_position, open("unit_to_position.pickle", "wb" ), 2)                        ## store the object unit_to_position in the unit_to_position.pickle file. "wb" means write-binary. Not sure why we have the number "2" here. 
+                pickle.dump(unit_to_position, open("unit_to_position.pickle", "wb" ), 2)                        ## store the object unit_to_position in the unit_to_position.pickle file. "wb" means write-binary. Not sure why we have the number "2" here.
                 self.logger.info('Wrote pickle file unit_to_position.pickle')
 
             unit_to_position = {}     # hopefully clear this from memory
@@ -228,7 +238,7 @@ class Loader(core.SimpleLoader):
         # grouper is part of the nr stage, so it appears that way in the log file
         self.logger.info("Grouping PDB ids by sequence and species")
         grouper = Grouper(self.config, self.session)
-        grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False. 
+        grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False.
         grouper.must_enforce_single_species = True
         groups = grouper(pdbs)                                                                                               ## Grouped PDB ids by sequence and species. How this class works
         if not groups:
@@ -247,22 +257,13 @@ class Loader(core.SimpleLoader):
         groups_of_chain_ids = []
 
         for group in groups:
-            chains = it.ifilter(disc.valid_chain, group['members'])                                                           ## 
+            chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
             chains = it.ifilter(has_rotations, chains)
             chains = it.ifilter(has_centers, chains)
             chains = it.imap(op.itemgetter('db_id'), chains)
-
-            # helps to freeze this list, only refer to chains once
-            chain_list = sorted(list(chains))
-
-            # on rnatest, chain 22200 was in a group twice, don't know why.  Also 6811, 2654, 27150, 62623, 62624, 62618, 62619, 6778.
-            if len(list(set(chain_list))) < len(chain_list):
-                self.logger.info('Duplicate chain in this group:')
-                self.logger.info(chain_list)
-
-            chain_list = sorted(list(set(chain_list)))
-
-            # convert chains from iterator to list of unique chain ids and append to list
+            # convert chains from iterator to list of chain ids and append to list
+            # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
+            chain_list = sorted(set(chains))
             if len(chain_list) > 1:
                 groups_of_chain_ids.append(chain_list)
 
@@ -647,15 +648,18 @@ class Loader(core.SimpleLoader):
                 filter(mod.IfeInfo.new_style == 1).\
                 filter(mod.ChainInfo.chain_id == chain_id)
 
-        if not query.count():
-            raise core.InvalidState("Could not load chain with id %s" %
-                                    chain_id)
-        ife = ut.row2dict(query.first())
+            # the following lines were not indented this much, changed 2022-05-18
+            result = [row for row in query]
+
+            #if not query.count():
+            if len(result) == 0:
+                raise core.InvalidState("Could not load chain with id %s" %
+                                        chain_id)
+            ife = ut.row2dict(query.first())
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.sym_op,
-                                  mod.UnitInfo.alt_id,
-                                  ).\
+                                  mod.UnitInfo.alt_id).\
                 join(mod.ChainInfo,
                      (mod.ChainInfo.pdb_id == mod.UnitInfo.pdb_id) &
                      (mod.ChainInfo.chain_name == mod.UnitInfo.chain)).\
@@ -666,7 +670,10 @@ class Loader(core.SimpleLoader):
                 filter(mod.ChainInfo.chain_id == chain_id).\
                 distinct()
 
-            if not query.count():
+            result = [row for row in query]
+
+            #if not query.count():       # caused QueuePool limit of size 40 error
+            if len(result) == 0:
                 raise core.InvalidState("Could not get info for chain %s" %
                                         chain_id)
 
@@ -805,28 +812,29 @@ class Loader(core.SimpleLoader):
         c2 = []
         r1 = []
         r2 = []
-
-        # for quality control, track which nts have been seen already
-        # On rnatest, we had one chain getting compared to itself, so track unit1 and unit2 separately
         seen1 = set()
         seen2 = set()
 
         for (unit1,unit2) in unit_pairs:
+
             if unit1 in seen1:
-                self.logger.info(unit_pairs)
-                raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit1 %s" % unit1)
-            seen1.add(unit1)
+                #raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit1 %s" % unit1)
+                self.logger.info("gather_matching_centers_rotations: Got duplicate unit1 %s" % unit1)
 
-            if unit2 in seen2:
-                self.logger.info(unit_pairs)
-                raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit2 %s" % unit2)
-            seen2.add(unit2)
+            elif unit2 in seen2:
+                #raise core.InvalidState("gather_matching_centers_rotations: Got duplicate unit2 %s" % unit2)
+                self.logger.info("gather_matching_centers_rotations: Got duplicate unit2 %s" % unit2)
 
-            if allunitdictionary.get(unit1) is not None and allunitdictionary.get(unit2) is not None:
-                c1.append(allunitdictionary[unit1][0])
-                c2.append(allunitdictionary[unit2][0])
-                r1.append(allunitdictionary[unit1][1])
-                r2.append(allunitdictionary[unit2][1])
+            else:
+                # only add when neither has been seen already
+                seen1.add(unit1)
+                seen2.add(unit2)
+
+                if allunitdictionary.get(unit1) is not None and allunitdictionary.get(unit2) is not None:
+                    c1.append(allunitdictionary[unit1][0])
+                    c2.append(allunitdictionary[unit2][0])
+                    r1.append(allunitdictionary[unit1][1])
+                    r2.append(allunitdictionary[unit2][1])
 
         return np.array(c1), np.array(c2), np.array(r1), np.array(r2)
 

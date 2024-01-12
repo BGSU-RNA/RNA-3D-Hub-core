@@ -39,6 +39,12 @@ from subprocess import Popen, list2cmdline
 from pymotifs import core
 from pymotifs.utils import matlab
 
+# The following text string is a template for the Matlab
+# command line commands to do all-against-all searches.
+# Change to the right directory, set the path with setup(),
+# then start aAaSearches with a given start/stop combination
+# for the different parallel jobs.
+
 SCRIPT = """
 cd '{base}'
 setup()
@@ -51,7 +57,7 @@ aAaSearches('{input_file}', {start}, {stop}, {enforceSize})
 # https://codereview.stackexchange.com/questions/6567/redirecting-subprocesses-output-stdout-and-stderr-to-the-logging-module
 
 class ClusterMotifs(core.Base):
-    jobs = 4
+    jobs = 4        # how many simultaneous Matlab jobs are going to be run
     script_prefix = 'aAa_script_'
     retries = 3
 
@@ -236,7 +242,7 @@ class ClusterMotifs(core.Base):
 
         mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         [status, err_msg] = \
-            mlab.MotifAtlasPipeline(self.mlab_input_filename, output_dir, nout=2)
+            mlab.MotifAtlasPipeline(output_dir, nout=2)
 
         if err_msg:
             raise matlab.MatlabFailed(err_msg)

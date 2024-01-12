@@ -65,12 +65,18 @@ class RnaPdbsHelper(object):
         polytypes = ["DNA"]
         resultIDs = []
 
-        url = "https://search.rcsb.org/rcsbsearch/v2/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22entity_poly.rcsb_entity_polymer_type%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22RNA%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22greater_or_equal%22%2C%22value%22%3A%22earliest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22less_or_equal%22%2C%22value%22%3A%22latest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%5D%7D%2C%22request_options%22%3A%7B%22paginate%22%3A%7B%22start%22%3A0%2C%22rows%22%3A200000%7D%7D%2C%22return_type%22%3A%22entry%22%7D"
+        # converted to regular text, we can try this sometime
+        # url = "http://search.rcsb.org/rcsbsearch/v1/query?json={"query":{"type":"group","logical_operator":"and","nodes":[{"type":"terminal","service":"text","parameters":{"attribute":"entity_poly.rcsb_entity_polymer_type","operator":"exact_match","value":"RNA"}},{"type":"terminal","service":"text","parameters":{"operator":"greater_or_equal","value":"1000-01-01T00:00:00Z","attribute":"rcsb_accession_info.initial_release_date"}},{"type":"terminal","service":"text","parameters":{"operator":"less_or_equal","value":"2022-07-20T00:00:00Z","attribute":"rcsb_accession_info.initial_release_date"}}]},"request_options":{"pager":{"start":0,"rows":200000}},"return_type":"entry"}"
+
+        # change http to http2, v1 to v2, pager to paginate on 2022-07-20
+        # limit to 10,000 rows on 2023-08-09 when PDB imposed that limit
+        url = "https://search.rcsb.org/rcsbsearch/v2/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22entity_poly.rcsb_entity_polymer_type%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22RNA%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22greater_or_equal%22%2C%22value%22%3A%22earliest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22less_or_equal%22%2C%22value%22%3A%22latest-dateT00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%5D%7D%2C%22request_options%22%3A%7B%22paginate%22%3A%7B%22start%22%3A0%2C%22rows%22%3A10000%7D%7D%2C%22return_type%22%3A%22entry%22%7D"
+
         url = url.replace("earliest-date",earliest_date)
         url = url.replace("latest-date",latest_date)
 
-        # print("Trying url %s" % url)
-
+        print("Trying url %s" % url)
+        logger.info("Trying url %s" % url)
 
         try:
             for polytype in polytypes:
@@ -79,9 +85,15 @@ class RnaPdbsHelper(object):
                 response = requests.get(currenturl)
                 jsonR = response.json()
 
+                logger.info("Number of rows received is %d; limit is 10,000" % len(jsonR["result_set"]))
+
                 for item in jsonR["result_set"]:
                     resultIDs.append(item["identifier"])
         except Exception as err:
+            print('Looping over polytopes')
+            for key in jsonR.keys():
+                print(key,jsonR[key])
+
             logger.exception(err)
             raise GetAllRnaPdbsError("Failed getting all PDBs")
 

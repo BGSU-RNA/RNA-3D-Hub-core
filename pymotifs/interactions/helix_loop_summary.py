@@ -37,20 +37,20 @@ WHERE
 class Loader(core.SimpleLoader):
     dependencies = set([InterLoader])
 
-    def has_data(self, pdb, **kwargs):
-        return True
+    def has_data(self, pdb, **kwargs):                  # Check if we have already stored data for this pdb file in the database
+        return True                                     # not sure why we have True values here, 
 
-    def query(self, session, pdb):
+    def query(self, session, pdb):                              # this function does similar work with the has_data function
         return session.query(Summary).filter_by(pdb_id=pdb)
 
-    def table(self, element):
+    def table(self, element):                               # key words changes
         if element == 'helix':
             return 'nt_helix_view'
         if element == 'loop':
             return 'nt_loop_view'
-        raise ValueError("Unknown element type %s" % element)
+        raise ValueError("Unknown element type %s" % element)  
 
-    def build(self, element1, element2, range_type):
+    def build(self, element1, element2, range_type):    # 
         if range_type == 'sr':
             operator = '<'
         elif range_type == 'lr':
@@ -97,7 +97,7 @@ class Loader(core.SimpleLoader):
         parts = ['helix', 'loop']
         value_names = ['bps', 'stacks', 'bphs']
         for chain in self.chains(pdb):
-            summary = Summary(pdb_id=pdb, chain=chain)
+            summary = Summary(pdb_id=pdb, chain=chain)                      # I did not find where the Summary function was defined
 
             for range_name in ['lr', 'sr']:
                 for part1 in parts:

@@ -6,8 +6,10 @@ function [MM] = aCreateMM(loop_ids,output_dir)
 
     % if the file has already been created, use that
     if exist(FILENAME,'file')
-        MM = load(FILENAME);
+        disp('Loading MM matrix from MM_initial.mat')
+        load(FILENAME,'MM');
         return
+    end
 
     N = length(loop_ids);
 
@@ -23,7 +25,7 @@ function [MM] = aCreateMM(loop_ids,output_dir)
 
     for i = 1:N
 
-        fprintf('Loading search data for %s, loop %i out of %i\n', loop_ids{i}, i, N);
+        fprintf('aCreateMM: Loading search data for %s, loop %i out of %i\n', loop_ids{i}, i, N);
 
         subdir = fullfile(SavedSearchLocation, loop_ids{i});
 

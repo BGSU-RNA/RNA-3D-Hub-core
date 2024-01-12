@@ -33,24 +33,31 @@ function [status, err_msg] = MotifAtlasPipeline(output_dir)
             return;
         end
 
-        disp('Loading search data for all loops');
+        disp('aCreateMM: Loading search data for all loops');
         MM = aCreateMM(loop_ids, output_dir);
+        fprintf('MM has %d rows\n', size(MM,1))
 
-        disp('Analyzing non-matched nucleotides');
+        disp('aAnalyzeExtraNucleotides: Analyzing non-matched nucleotides');
         MM = aAnalyzeExtraNucleotides(MM, loop_ids, output_dir);
+        fprintf('MM has %d rows\n', size(MM,1))
 
-        disp('Use best matching direction')
+        disp('aSymmetrizeMatrix: Use best matching direction')
         MM = aSymmetrizeMatrix(MM, loop_ids, output_dir);
+        fprintf('MM has %d rows\n', size(MM,1))
 
-        disp('Identify maximal cliques to form motif groups')
+        disp('aMaximumCliques: Identify maximal cliques to form motif groups')
         groups = aMaximumCliques(MM, loop_ids, 1);
 
+        disp('groupsToSearches: ')
         groupsToSearches(output_dir, groups);
 
+        disp('groupsToGraphML: ')
         groupsToGraphML(output_dir, groups, MM, loop_ids, 1);
 
+        disp('folderToVarna: ')
         folderToVarna(output_dir);
 
+        disp('exportMotifRelease: ')
         exportMotifRelease(output_dir);
 
 
@@ -83,7 +90,7 @@ function startLogging(location)
     % that increases the size of the output directory,
     % but keeps the log files separate
 
-    filename = fullfile(location, 'rna3dhub_log.txt');
+    filename = fullfile(location, 'MotifAtlasPipeline.log');
 
     fopen(filename, 'a');
     diary(filename);

@@ -188,7 +188,9 @@ class Loader(core.SimpleLoader):
                                   mod.UnitIncomplete.alt_id,
                                   mod.UnitIncomplete.ins_code,
                                   ).\
-                filter_by(pdb_id=pdb)
+                filter_by(pdb_id=pdb).\
+                filter(mod.UnitIncomplete.model.isnot(None))
+
         return {Entry(**row2dict(r)) for r in query}
 
     def loops(self, pdb):
@@ -310,8 +312,12 @@ class Loader(core.SimpleLoader):
 
 
     def units_between(self, unit1, unit2):
-        """Get a list of all units between two units. This assumes they are on
+        """
+        Get a list of all units between two units. This assumes they are on
         the same chain and have the same symmetry operator.
+        This method refers to the ExpSeqUnitMapping table, which is surprising
+        because the same information could be obtained from chain_index
+        in the unit_info table.
         """
 
         start = self.position_info(unit1)

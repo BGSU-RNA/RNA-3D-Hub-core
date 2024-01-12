@@ -67,12 +67,16 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
         click.secho("Unknown stage %s" % err.args, err=True, fg='red')
         ctx.exit(1)
 
+    logging.info("Running from command %s", ' '.join(sys.argv))
+
     # get desired PDB IDs
     if not ids:
         ids = setup.pdbs(config, kwargs)
 
     logging.info("There are %d files listed to skip in skip_files.py" % len(SKIP))
     logging.info("There are %d files from skip_files.py that are also current PDB ids" % len(SKIP & set(ids)))
+
+    logging.info(sorted((SKIP & set(ids))))
 
     logging.info("The following files in skip_files.py are not current PDB files")
     logging.info(SKIP - set(ids))
@@ -84,7 +88,6 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
 
     kwargs['exclude'] = kwargs.get('skip_stage')
 
-    logging.info("Running from command %s", ' '.join(sys.argv))
     error = None
     dispatcher = Dispatcher(name, config, sessionmaker(engine), **kwargs)
     mailer = Emailer(config, engine)

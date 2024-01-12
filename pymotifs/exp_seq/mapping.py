@@ -69,7 +69,7 @@ class Loader(core.SimpleLoader):
             A dict from `exp_mapping` that maps to experimental sequence
             position id.
 
-        Yeilds
+        Yields
         -------
         mapping : ExpSeqUnitMapping
             A series of unit mappings that map from experimental sequence
@@ -77,6 +77,7 @@ class Loader(core.SimpleLoader):
         """
 
         trans = {m.name: m for m in mapped_chains}
+
         for mapping in cif.experimental_sequence_mapping(trans.keys()):
             unit_id = mapping['unit_id']
             index = mapping['index']
@@ -88,12 +89,16 @@ class Loader(core.SimpleLoader):
 
             pos_id = exp_mapping[key]
             mapped = trans[chain]
-            yield mod.ExpSeqUnitMapping(
-                unit_id=unit_id,
-                exp_seq_chain_mapping_id=mapped.id,
-                exp_seq_position_id=pos_id,
-                chain=chain,
-            )
+
+            if unit_id:
+                yield mod.ExpSeqUnitMapping(
+                    unit_id=unit_id,
+                    exp_seq_chain_mapping_id=mapped.id,
+                    exp_seq_position_id=pos_id,
+                    chain=chain,
+                    )
+            else:
+                print('exp_seq/mapping.py unit_id is None',unit_id,mapped.id,pos_id)
 
     def exp_mapping(self, pdb, chains):
         """Compute a mapping from index in a chain to experimental sequence
@@ -153,7 +158,7 @@ class Loader(core.SimpleLoader):
         Returns
         -------
         chains : list
-            A list of mapped chain names.
+            A list of lists containing 'id', 'chain_id', 'name'
         """
 
         # in November 2020, the type for RNA comes back as polyribonucleotide
@@ -161,7 +166,6 @@ class Loader(core.SimpleLoader):
         # note:  it would be really helpful to find a less fragile way to do this!
         # also set in structures.py
         macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
-#        if extended:
         macromolecule_types.add('DNA/RNA Hybrid')
         macromolecule_types.add('NA-hybrid')
         macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
@@ -189,10 +193,19 @@ class Loader(core.SimpleLoader):
             An entry as from `Loader.chain_mapping`.
         """
 
+        # load the cif file
         cif = self.cif(pdb)
         chains = self.mapped_chains(cif.pdb)
+        self.logger.info('Found chains %s to map' % chains)
+        print('Found chains %s to map' % chains)
+
         if not chains:
             raise core.InvalidState("Found no chains in %s" % pdb)
+
         exp_mapping = self.exp_mapping(cif.pdb, chains)
+
+        print('exp_seq/mapping exp_mapping:')
+        print(exp_mapping)
+
         for entry in self.chain_mapping(cif, chains, exp_mapping):
             yield entry

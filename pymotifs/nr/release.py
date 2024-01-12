@@ -1,6 +1,6 @@
 """Store a new NR release and cache and NR grouping.
 
-This will compute the next NR release and store an entry in the NR release
+This will compute the next NR release id and store an entry in the NR release
 table about it. It will also use the given PDBs to create a new NR grouping.
 This grouping will then be cached for usage in future stages.
 """

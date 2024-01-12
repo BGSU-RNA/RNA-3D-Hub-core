@@ -305,8 +305,18 @@ class Parser(object):
                 continue
 
             uid = as_key(self.unit_id_renamer(residue.attrib))
+
             if uid not in mapping:
-                raise core.InvalidState("Could not find unit id for %s" % str(uid))
+                print(residue)
+                print(data)
+                # give up on this file but do not crash the pipeline
+                # this file will get checked every week
+                # it *should* download a new data file every week, then the problem may resolve itself
+                raise core.Skip("Could not find unit id for %s" % str(uid))
+
+                # crash the pipeline
+                # raise core.InvalidState("Could not find unit id for %s" % str(uid))
+
 
             if not mapping[uid]:
                 raise core.InvalidState("No unit ids known for %s", uid)

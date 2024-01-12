@@ -168,7 +168,7 @@ class Loader(core.MassLoader):
                 query = session.query(
                     self.table.exp_seq_id_1.label('id1'),
                     self.table.exp_seq_id_2.label('id2'),
-                ).distinct()
+                )
 
                 self._known = set((result.id1, result.id2) for result in query)
         return self._known

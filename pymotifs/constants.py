@@ -141,7 +141,7 @@ MAX_RESOLUTION_DISCREPANCY = 20.0
 MIN_NT_DISCREPANCY = 3
 
 NR_REPRESENTATIVE_METHOD = 'compscore'
-"""What representative selection method to use"""
+"""What representative selection method to use in nr.builder"""
 
 RSRZ_PAIRED_OUTLIERS = 1
 """The cutoff for finding if a loop contains poorly modeled interactions"""
@@ -157,7 +157,7 @@ MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION'])
 #MOTIF_ALLOWED_METHODS = set(['X-RAY DIFFRACTION', 'ELECTRON MICROSCOPY'])
 """list of methods allowed when selected loops from representatives."""
 
-MOTIF_RESOLUTION_CUTOFF = '4.0'
+MOTIF_RESOLUTION_CUTOFF = '3.5'
 """The resolution cutoff for representatives to use in the ML atlas"""
 
 MANUAL_IFE_REPRESENTATIVES = set()
@@ -191,3 +191,8 @@ COMPSCORE_COEFFICENTS = {
     'rfree': 18,
     'fraction_unobserved': 4,
 }
+
+"""
+Set this variable to True when you want to rank every single equivalence class and write those rankings to nr_chains, for example, when the ranking system is changed
+"""
+WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS =  False

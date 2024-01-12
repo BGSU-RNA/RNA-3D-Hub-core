@@ -206,13 +206,13 @@ def generateUniformDataset(n,d,seed=None):
     return points, distance
 
 def testOrdering():
-    size = 50
+    size = 150
     points, distance = generateUniformDataset(size,3,2276393)
-    order = treePenalizedPathLength(distance,2*size,39873)
+    order = treePenalizedPathLength(distance,20,39873)
     print("Points:")
     print(points)
     print("Ordering:")
     print(order)
 
-testOrdering()
+#testOrdering()
 #testPenaltyMatrix()

@@ -13,6 +13,8 @@ loop_exclude_file : str
     Name of a file to that contains loops to exclude from clustering. This is
     meant for testing out different excluding procedures without update loop
     quality. The file should contain a single loop id per line, and only that.
+loop_type : str
+    The specific loop type to process
 """
 
 import datetime as dt
@@ -58,6 +60,7 @@ class Loader(core.MassLoader):
     """
 
     types = ['IL', 'HL']
+    ## types = ['J3']
     dependencies = set([NrLoader, LoopLoader])
 
     def nr_release_id(self, before_date=None, **kwargs):
@@ -174,20 +177,35 @@ class Loader(core.MassLoader):
         and models.
         """
 
+        # with self.session() as session:
+        #     chains = mod.NrChains
+        #     classes = mod.NrClasses
+        #     ifes = mod.IfeInfo
+        #     pdbs = mod.PdbInfo
+        #     query = session.query(chains).\
+        #         join(classes, classes.nr_class_id == chains.nr_class_id).\
+        #         join(ifes, ifes.ife_id == chains.ife_id).\
+        #         join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
+        #         filter(chains.rep == 1).\
+        #         filter(chains.nr_release_id == nr_release_id).\
+        #         filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
+        #         filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
+        #         order_by(chains.ife_id)
+
+        ## made a new query because we stop updating the nr_chains table
         with self.session() as session:
-            chains = mod.NrChains
-            classes = mod.NrClasses
-            ifes = mod.IfeInfo
-            pdbs = mod.PdbInfo
-            query = session.query(chains).\
-                join(classes, classes.nr_class_id == chains.nr_class_id).\
-                join(ifes, ifes.ife_id == chains.ife_id).\
-                join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
-                filter(chains.rep == 1).\
-                filter(chains.nr_release_id == nr_release_id).\
-                filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
-                filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
-                order_by(chains.ife_id)
+            query = session.query(mod.NrClassRank.ife_id).\
+                join(mod.NrClasses, mod.NrClasses.name == mod.NrClassRank.nr_class_name).\
+                join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.NrClassRank.ife_id).\
+                join(mod.PdbInfo,mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
+                filter(mod.NrClassRank.rank == 0).\
+                filter(mod.NrClasses.nr_release_id == nr_release_id).\
+                filter(mod.NrClasses.resolution == MOTIF_RESOLUTION_CUTOFF).\
+                filter(mod.PdbInfo.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
+                order_by(mod.NrClassRank.ife_id)
+                
+
+
 
             if not query.count():
                 raise core.InvalidState("No ifes found for nr %s" %
@@ -211,7 +229,10 @@ class Loader(core.MassLoader):
 
     def loops(self, loop_type, ifes, size_limit=None,
               **kwargs):
-        """Get the list of loop ids to use in clustering. These loops must be
+        """
+        Deprecated code as of 2022-10-23 since it cannot deal with symmetry operators.
+
+        Get the list of loop ids to use in clustering. These loops must be
         from IFE's in the given list and marked as valid in the loop quality
         step.
         This is where RNA loops with modified nucleotides get excluded.
@@ -257,6 +278,11 @@ class Loader(core.MassLoader):
             if size_limit is not None:
                 query = query.filter(loops.length < size_limit)
 
+            # avoid IL with only 4 nucleotides; happens with strange chain breaks
+            if loop_type == "IL":
+                query = query.filter(loops.length > 4)
+
+
             found.update(r.loop_id for r in query if r.loop_id not in exclude)
 
         if not found:
@@ -264,6 +290,100 @@ class Loader(core.MassLoader):
                                     loop_release_id)
         return sorted(found)
 
+
+    def loops_and_strands(self, loop_type, ifes, size_limit=None,
+              **kwargs):
+        """
+        Get the list of loop ids to use in clustering, along with a
+        list of unit ids for each strand.
+        These loops must be from IFE's in the given list and marked as
+        valid in the loop quality step.
+        This is where RNA loops with modified nucleotides get excluded.
+
+        Parameters
+        ----------
+        loop_type : str
+            The type of loop to use, eg, IL, HL.
+        ifes : list
+            A list of ife ids to find loops in.
+
+        Returns
+        -------
+        loops: str
+            A list of loop ids to process.
+        """
+
+        exclude = self.loops_to_exclude(**kwargs)
+
+        found = set()
+        with self.session() as session:
+            loops = mod.LoopInfo
+            quality = mod.LoopQa
+            pos = mod.LoopPositions
+            ife_chains = mod.IfeChains
+            chain_info = mod.ChainInfo
+            units = mod.UnitInfo
+            query = session.query(pos.loop_id,pos.position,pos.border,pos.unit_id).\
+                join(loops, loops.loop_id == pos.loop_id).\
+                join(quality, quality.loop_id == loops.loop_id).\
+                join(units, units.unit_id == pos.unit_id).\
+                join(chain_info,
+                     (chain_info.chain_name == units.chain) &
+                     (chain_info.pdb_id == units.pdb_id)).\
+                join(ife_chains,
+                     ife_chains.chain_id == chain_info.chain_id).\
+                filter(quality.status == 1).\
+                filter(loops.type == loop_type).\
+                filter(ife_chains.ife_id.in_(ifes)).\
+                filter(~pos.loop_id.in_(BLACKLIST)).\
+                distinct()
+
+            if size_limit is not None:
+                query = query.filter(loops.length < size_limit)
+
+            # avoid IL with only 4 nucleotides; happens with strange chain breaks
+            if loop_type == "IL":
+                query = query.filter(loops.length > 4)
+
+            loopdata = {}
+            for result in query:
+                loop_id = result.loop_id
+                if not loop_id in exclude:
+                    if not loop_id in loopdata:
+                        loopdata[loop_id] = {}
+                    loopdata[loop_id][result.position] = (result.border,result.unit_id)
+
+            # identify and remove loops generated by a single non-trivial symmetry operator
+            symmetry_exclusion_counter = 0
+            for loop_id in list(loopdata.keys()):
+                default_symmetry_found = False
+                symmetries = set()
+                for position in loopdata[loop_id].keys():
+                    unit_id = loopdata[loop_id][position][1]
+                    fields = unit_id.split("|")
+                    if len(fields) < 9:
+                        default_symmetry_found = True
+                    else:
+                        symmetries.add(fields[8])
+
+                if not default_symmetry_found:
+                    if len(symmetries) == 1:
+                        symmetry = list(symmetries)[0]
+                        if not symmetry == "P_1":
+                            self.logger.info("Excluding loop %s, all symmetry operation %s" % (loop_id,symmetry))
+                            del loopdata[loop_id]
+                            symmetry_exclusion_counter += 1
+
+            self.logger.info("Excluding %d loops because of symmetries" % symmetry_exclusion_counter)
+
+            self.logger.info(loopdata)
+
+            found = loopdata.keys()
+
+        if not found:
+            raise core.InvalidState("No loops to cluster for %s" % loop_release_id)
+
+        return sorted(found)
 
     def load_and_cache(self, loop_type, releases, folder):
         """This will load the result of running the pipeline and cache the
@@ -310,7 +430,10 @@ class Loader(core.MassLoader):
                                   size_limit)
                 raise core.InvalidState("Bad size limit")
 
-        loops = self.loops(loop_type, ifes, size_limit=size_limit, **kwargs)
+        #loops = self.loops(loop_type, ifes, size_limit=size_limit, **kwargs)
+
+        loops = self.loops_and_strands(loop_type, ifes, size_limit=size_limit, **kwargs)
+
         self.logger.info("Found %d %s loops" % (len(loops),loop_type))
         self.logger.info("Starting to cluster all %s" % loop_type)
         builder = Builder(self.config, self.session)
@@ -342,8 +465,13 @@ class Loader(core.MassLoader):
             nowstring = now.replace("-","")
         """
 
+        loop_types = self.types
+
+        if 'loop_type' in kwargs.get('manual', {}):
+            loop_types = [kwargs['manual']['loop_type']]
+
         data = []
-        for loop_type in self.types:
+        for loop_type in loop_types:
             motifs = self.cluster(loop_type, releases, ifes, **kwargs)
             with open(motifs['graph'], 'rb') as raw:
                 graphml = raw.read().replace('\n', '')

@@ -18,6 +18,9 @@ from pymotifs.ife.helpers import IfeLoader
 
 from .core import Representative
 
+import inspect
+import traceback
+
 
 class QualityBase(Representative):
     """
@@ -115,9 +118,26 @@ class QualityBase(Representative):
         return ordered + self.sort_by_quality(rest)
 
     def __call__(self, given):
-        self.logger.info("Selecting representative for %s", given['name']['full'])
-        with_quailty = self.load_quality(given['members'])
-        candidates = self.select_candidates(with_quailty)
+        # # Get information about the __call__ function
+        # caller_frame = inspect.currentframe().f_back
+        # caller_function_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        
+        # # Use traceback to get the calling code line
+        # stack = traceback.extract_stack()
+        # calling_code_line = stack[-2][1]
+        # self.logger.info("__call__ method called from function '%s' in module '%s' at line %s" % (caller_function_name, caller_module, calling_code_line))
+        # self.logger.info("show the runnng message 1: %s", stack[-3])
+        # self.logger.info("show the runnng message 2: %s", stack[-2])
+        # self.logger.info("show the runnng message 3: %s", stack[-1])
+        # self.logger.info("show the runnng message 4: %s", stack[0])
+        # self.logger.info("show the runnng message 5: %s", stack[1])
+        # self.logger.info("show the runnng message 6: %s", stack[2])
+
+
+        # self.logger.info("Selecting representative for %s", given['name']['full'])
+        with_quality = self.load_quality(given['members'])
+        candidates = self.select_candidates(with_quality)
         ordered_by_quality = self.sort_by_quality(candidates)
         with_representative = self.use_hardcoded(ordered_by_quality)
         return self.final_ordering(with_representative, given['members'])
@@ -205,8 +225,8 @@ class CompScore(QualityBase):
                     if len(parts) >= 2 and parts[2] in counted_atoms:
                         current += 1
 
-                if not current:
-                    self.logger.error("No atoms in %s" % row.unit_id)
+                #if not current:
+                #    self.logger.error("No atoms in %s" % row.unit_id)
                 count += current
 
             if not count:
@@ -410,6 +430,7 @@ class CompScore(QualityBase):
         """
         Compute composite quality score using six indicators weighted by various coefficients
         set in constants.py
+        In the future, we may just use the quality instead of doing the database query ___ 9/1/2023
         """
         quality = member['quality']
         ife_id = member['id']
@@ -426,7 +447,7 @@ class CompScore(QualityBase):
 
             for result in query:
                 cqs = result.cqs
-
+        self.logger.info("compscore function of using_quality")
         try:
             cqs
         except NameError:
