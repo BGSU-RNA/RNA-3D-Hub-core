@@ -22,16 +22,22 @@ class class_rank_populate_loader(core.SimpleLoader):
 
     def to_process(self, pdbs, **kwargs):
         """
-        Just return a list with one item
+        Stratify by resolution
         """
 
-        return [1]
+        return ['all']
+        return ['20.0']
+
+        # all has too many to yield all at once
+        return ['all_0','all_1','all_2','all_3','all_4','all_5','all_6','all_7','all_8','all_9']
+
+        # return ['1.5','2.0','2.5','3.0','3.5','4.0','20.0','all']
 
     def query(self, session, nr_name):
         return session.query(mod.NrCqs.nr_name).\
             filter(mod.NrCqs.nr_name == nr_name)
 
-    def data(self, nr_name, **kwargs):
+    def data(self, resolution, **kwargs):
         """
         Read the nr_classes and nr_chains tables.
         Keep the most recent ranking, but keep the earliest nr_class_id
@@ -42,12 +48,19 @@ class class_rank_populate_loader(core.SimpleLoader):
             # join the two tables, order by nr_class_id so that the most recent is last
             query = session.query(mod.NrClasses.name,mod.NrClasses.nr_class_id,mod.NrChains.ife_id,mod.NrChains.rank).\
                 join(mod.NrChains, mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
+                filter(mod.NrClasses.name.like('NR_' + resolution + '%%')).\
                 order_by(mod.NrClasses.nr_class_id)
+
+            print('Query is done, processing rows')
 
             # map class_name and ife to rank
             name_ife_to_rank = {}
             name_ife_to_nr_class_id = {}
+            c = 0
             for result in query:
+                c += 1
+                if c % 100000 == 0:
+                    print('Processed %d rows from resolution %s' % (c,resolution))
                 name = result.name
                 ife = result.ife_id
                 rank = result.rank
@@ -60,31 +73,36 @@ class class_rank_populate_loader(core.SimpleLoader):
                     # only write once, presumably the first time it occurred
                     name_ife_to_nr_class_id[name_ife] = result.nr_class_id
 
-            # sort by name, then rank, then ife
-            name_rank_ife = []
-            for name_ife, rank in name_ife_to_rank.items():
-                id = name_ife_to_nr_class_id[name_ife]
-                name, ife = name_ife.split("&")
-                first_ife = ife.split("+")[0]
+        print('Done with query and saving')
 
-                # already done on rnatest, so don't do this again
-                if len(first_ife.split("|")) == 3:
-                    name_rank_ife.append((name, id, rank, ife))
+        # sort by name, then rank, then ife
+        name_rank_ife = []
+        for name_ife, rank in name_ife_to_rank.items():
+            id = name_ife_to_nr_class_id[name_ife]
+            name, ife = name_ife.split("&")
+            first_ife = ife.split("+")[0]
 
-                # originally we did not do this on rnatest
-                # release before 1.xx have no model numbers
-                if len(first_ife.split("|")) == 2:
-                    name_rank_ife.append((name, id, rank, ife))
+            # already done on rnatest, so don't do this again
+            if len(first_ife.split("|")) == 3:
+                name_rank_ife.append((name, id, rank, ife))
 
-            # write to database in the nicest order
-            for name, id, rank, ife in sorted(name_rank_ife):
+            # originally we did not do this on rnatest
+            # release before 1.xx have no model numbers
+            if len(first_ife.split("|")) == 2:
+                name_rank_ife.append((name, id, rank, ife))
+
+        # write to database in the nicest order
+        c = 0
+        for name, id, rank, ife in sorted(name_rank_ife):
+            c += 1
+            if c % 1000 == 0:
                 print("%s %s %s %s" % (name, id, ife, rank))
-                self.logger.info("%s %s %s %s" % (name, id, ife, rank))
+            self.logger.info("%s %s %s %s" % (name, id, ife, rank))
 
-                yield mod.NrClassRank(
-                    nr_class_name = name,
-                    nr_class_id = id,
-                    ife_id = ife,
-                    rank = rank)
+            yield mod.NrClassRank(
+                nr_class_name = name,
+                nr_class_id = id,
+                ife_id = ife,
+                rank = rank)
 
 

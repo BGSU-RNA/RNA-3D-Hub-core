@@ -156,7 +156,8 @@ class Grouper(core.Base):
         return groups
 
     def discrepancies(self, groups):
-        """Load the discrepancies for the given groups. If use_discrepancy is
+        """
+        Load the discrepancies for the given groups. If use_discrepancy is
         False this will return an empty dictionary. The returned data structure
         will be a dictionary of dictionaries where the final values are Bools.
         The keys in each dictionary are the chain ids which have been aligned.
@@ -176,7 +177,8 @@ class Grouper(core.Base):
             sim = mod.ChainChainSimilarity
             query = session.query(sim).\
                 filter(sim.chain_id_1.in_(chain_ids)).\
-                filter(sim.chain_id_2.in_(chain_ids))
+                filter(sim.chain_id_2.in_(chain_ids)).\
+                filter(sim.chain_id_1 < sim.chain_id_2)
 
             discrepancy = coll.defaultdict(dict)
             for result in query:
@@ -239,7 +241,8 @@ class Grouper(core.Base):
         return True
 
     def are_similar_species(self, group1, group2):
-        """Check if the longest chains of the two groups agree. Species are
+        """
+        Check if the longest chains of the two groups agree. Species are
         similar if they are the same, or if either one is either synthetic or
         None.
 
@@ -265,7 +268,8 @@ class Grouper(core.Base):
         return True
 
     def has_good_discrepancy(self, all_discrepancy, group1, group2):
-        """Check if two groups have a good discrepancy or not. The discrepancy
+        """
+        Check if two groups have a good discrepancy or not. The discrepancy
         matrix should be a nested dictionary as produced by the `discrepancy`
         method. This only uses the longest chain of each group.
 
@@ -301,7 +305,7 @@ class Grouper(core.Base):
             return True
 
         if db_id1 not in all_discrepancy:
-            self.logger.warning("No computed discrepancy for %s", group1['id'])
+            self.logger.warning("No computed discrepancy for %s, %s", (group1['id'],group2['id']))
             return True
 
         discrepancy = all_discrepancy[db_id1]
@@ -338,7 +342,8 @@ class Grouper(core.Base):
         return id1 in EQUIVALENT_PAIRS or id2 in EQUIVALENT_PAIRS
 
     def are_equivalent(self, alignments, discrepancies, group1, group2):
-        """Determine if two chains are equivalent. This requires that the
+        """
+        Determine if two chains are equivalent. This requires that the
         chains align well and are not of conflicting species.
 
         :param dict alignments: A dictionary of dictionaries about the
@@ -541,14 +546,18 @@ class Grouper(core.Base):
         self.logger.info("Will group %i pdbs", len(pdbs))
         ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
+        self.logger.info("retrieving alignments to cluster")
+        print("retrieving alignments to cluster")
+
         alignments = self.alignments(ifes)
-        self.logger.info("retreive alignments to cluster")
+        self.logger.info("retrieving discrepancies to cluster")
+        print("retrieving discrepancies to cluster")
         discrepancy = self.discrepancies(ifes)
-        self.logger.info("retreive discrepancies to cluster")
 
         grouped = set()
         groups = []
-        #### 
+        self.logger.info("forming groups")
+        print("forming groups")
         for group in self.group(ifes, alignments, discrepancy):
             members = []
             sorted_group = sorted(group, key=ranking_key)

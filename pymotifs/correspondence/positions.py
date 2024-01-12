@@ -1,4 +1,5 @@
-"""This is a stage to align two experimental sequences and store the alignment
+"""
+This is a stage to align two experimental sequences and store the alignment
 between each nucleotide.
 """
 
@@ -14,7 +15,8 @@ from pymotifs.utils.alignment import one_to_one_alignment
 
 
 class Loader(core.Loader):
-    """A loader for computing the position to position alignment and storing
+    """
+    A loader for computing the position to position alignment and storing
     it.
     """
 
@@ -22,10 +24,11 @@ class Loader(core.Loader):
     dependencies = set([CorrLoader, InfoLoader, PositionLoader])
 
     def to_process(self, pdbs, **kwargs):
-        """We transform all the pdbs into the correspondences to do. While this
-        does not respect the pdbs given but it does make all other code a lot
-        cleaner and easier to understand. This pulls out all stored
-        correspondence ids.
+        """
+        Ignore the list of pdbs passed in.
+        Query the correspondence_info table.
+        Get all correspondence_id values without a length,
+        indicating that no correspondence is calculated yet.
 
         :param list pdb: The list of pdb ids. Currently ignored.
         :param dict kwargs: The keyword arguments which are ignored.

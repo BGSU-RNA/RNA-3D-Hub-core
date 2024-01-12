@@ -40,11 +40,30 @@ class Loader(core.Loader):
 
         # find pdb ids that have no loops at all
         # those are indicated by the presence of a 000 loop with type NA
+        # with self.session() as session:
+        #     query = session.query(mod.LoopInfo.pdb_id).\
+        #         filter(mod.LoopInfo.type == 'NA').\
+        #         distinct()
+        #     dn_process = [r.pdb_id for r in query] #list of pdbs with corresponding entries in loop_info and type='NA'
+        
+        # the previous query is too strict and it will never let some pdb ids to be processed when they have NA loops, and valid loops at the same time 
         with self.session() as session:
+            # Subquery to find pdb_ids that have types other than 'NA'
+            subquery = session.query(mod.LoopInfo.pdb_id).\
+                filter(mod.LoopInfo.type != 'NA').\
+                distinct().\
+                subquery()
+
+            # Main query that selects pdb_ids that are only associated with 'NA'
+            # this outerjoin is a left outer join, subquery.c.pdb_id == None will select pdbs only have NA loops
             query = session.query(mod.LoopInfo.pdb_id).\
                 filter(mod.LoopInfo.type == 'NA').\
-                distinct()
-            dn_process = [r.pdb_id for r in query] #list of pdbs with corresponding entries in loop_info and type='NA'
+                distinct().\
+                outerjoin(subquery, mod.LoopInfo.pdb_id == subquery.c.pdb_id).\
+                filter(subquery.c.pdb_id == None)
+
+            dn_process = [r.pdb_id for r in query]
+
 
         # problemtic pdbs for now, they are wasting so much time and do nothing 2023-10-04 
         # these PDB files are being skipped because they have an HL in loop_info that has unit ids from different chains, which is not an HL, and so positions.py should stop trying to extract them.
