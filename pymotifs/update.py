@@ -18,6 +18,7 @@ from pymotifs.chain_chain import loader as cc
 from pymotifs.export import loader as export
 from pymotifs.nr import loader as nr
 from pymotifs.quality import loader as quality
+#from pymotifs.rfam import loader as rfam
 
 
 class Loader(core.StageContainer):
@@ -34,5 +35,5 @@ class Loader(core.StageContainer):
         ife.Loader,
         cc.Loader,
         export.Exporter,
-        nr.Loader,
+        nr.Loader
     ])

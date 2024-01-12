@@ -122,7 +122,7 @@ class QualityBase(Representative):
         # caller_frame = inspect.currentframe().f_back
         # caller_function_name = caller_frame.f_code.co_name
         # caller_module = inspect.getmodule(caller_frame).__name__
-        
+
         # # Use traceback to get the calling code line
         # stack = traceback.extract_stack()
         # calling_code_line = stack[-2][1]
@@ -447,7 +447,7 @@ class CompScore(QualityBase):
 
             for result in query:
                 cqs = result.cqs
-        self.logger.info("compscore function of using_quality")
+        #self.logger.info("compscore function of using_quality")
         try:
             cqs
         except NameError:

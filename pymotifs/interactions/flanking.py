@@ -1,5 +1,5 @@
-"""Import all flanking interactions.
-
+"""
+Import all flanking interactions.
 Runs fr3d on the given files to determine all flankng interactions and then
 imports them into the database.
 """
@@ -30,8 +30,13 @@ class Loader(core.SimpleLoader):
     def table(self):
         return mod.UnitPairsFlanking
 
+
     def query(self, session, pdb):
-        """Create a query to access interaction data for the given pdb.
+        """
+        Create a query to access interaction data for the given pdb.
+        This is how it knows which pdb files already have data.
+        However, pdb files without any flanking interactions have no data,
+        so they get read week after week, wasting over 1 hour as of 2023-12-06.
 
         :session: The database session to use.
         :pdb: The pdb id
@@ -39,8 +44,11 @@ class Loader(core.SimpleLoader):
         """
         return session.query(mod.UnitPairsFlanking).filter_by(pdb_id=pdb)
 
+
     def parse(self, filename, pdb):
-        """Reads the csv file, imports all interactions, deletes the file when
+        """
+        Reads a csv file that lists pairs of unit ids making the flanking interaction,
+        imports all interactions, deletes the file when
         done to avoid stale data and free up disk space
 
         :filename: The input filename.
@@ -59,26 +67,45 @@ class Loader(core.SimpleLoader):
 
         return data
 
+
     def data(self, pdb, **kwargs):
-        """Compute the interaction annotations for a pdb file.
+        """
+        Load and then write the the database, all flanking interactions for a pdb file.
+
+        When the PDB file has no nucleotides or no flanking interactions, write a placeholder
+        so it will not be processed again.
 
         :pdb: The pdb id to process.
         :kwargs: Keyword arguments.
         :returns: The interaction annotations.
         """
+
+        # temporary code to add placeholders to all files with no flanking data
+        # 2023-12-06
+        # When DNA structures are added and make flanking interactions with RNA,
+        # remove all placeholders, check each file once more, then run this code again.
+        # data = []
+        # data.append({'unit_id_1':'placeholder', 'unit_id_2':'placeholder', 'flanking' : 0, 'pdb_id' : pdb})
+        # return data
+
         mlab = matlab.Matlab(str(self.config['locations']['fr3d_root']))  # connect to Matlab
                                                                                 #### https://github.com/BGSU-RNA/RNA-3D-Hub-core/blob/09d1044cd30bd396e701d6eb91b8eef75e78b1d4/conf/bootstrap.json.txt#L31
         self.logger.info('Running matlab on %s', pdb)
         ifn, status, err_msg = mlab.loadFlankings(pdb, nout=3)            # Matlab loads .mat file for this pdb and returns flanking pair list
-        print(ifn)
+        # print(ifn)
         status = status[0][0]
         if status == 0:
             data = self.parse(ifn, pdb)
             os.remove(ifn)
             return data
         elif status == 2:
-            raise core.Skip('PDB file %s has no nucleotides' % pdb)
+            self.logger.info('%s has no nucleotides, adding placeholder value', pdb)
+            data = {'unit_id_1':'placeholder', 'unit_id_2':'placeholder', 'flanking' : 0, 'pdb_id' : pdb}
+            return data
+            #raise core.Skip('PDB file %s has no nucleotides' % pdb)
         elif status == 3:
-            raise core.Skip('PDB file %s has no flanking interactions' % pdb)
-        raise core.InvalidState('Matlab error code %i when analyzing %s' %
-                                status, pdb)
+            self.logger.info('%s has no flanking interactions, adding placeholder value', pdb)
+            data = {'unit_id_1':'placeholder', 'unit_id_2':'placeholder', 'flanking' : 0, 'pdb_id' : pdb}
+            return data
+            # raise core.Skip('PDB file %s has no flanking interactions' % pdb)
+        raise core.InvalidState('Matlab error code %i when analyzing %s' % status, pdb)

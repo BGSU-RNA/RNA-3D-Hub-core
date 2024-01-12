@@ -25,17 +25,18 @@ class Loader(BaseLoader):
     def parents(self, release, grouping):
         data = []
         for group in grouping:
-            self.logger.info('Found group in nr.parents: %s', group)
+            #self.logger.info('Found group in nr.parents: %s', group)
             for parent in group['parents']:
-                self.logger.info('Found parent in nr.parents stage: %s', parent)
+                #self.logger.info('Found parent in nr.parents stage: %s', parent)
                 if not parent:
+                    self.logger.info('New group %s' % group['name']['full'])
                     data.append({
                         'nr_class_id': group['name']['class_id'],
                         'nr_release_id': release,
                         'nr_class_parent_id': parent['name']['class_id']
                     })
                 else:
-                    self.logger.info('Exact match, no need to generate new')
+                    self.logger.info('Exact match for %s, no need to generate new' % group['name']['full'])
                     pass
         return data
 
