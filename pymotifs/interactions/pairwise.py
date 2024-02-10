@@ -41,22 +41,28 @@ class Loader(core.SimpleLoader):
         :pdb: The pdb id
         :returns: A query to get interaction data.
         """
-        ## stopped using the quey function to check if we have reords for this table.
+        ## stopped using the query function to check if we have reords for this table.
         ## we added to_process function to do the same job.
         # return 0
         return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb)
-    
+
     def to_process(self, pdbs, **kwargs):
+        """
+        Query to find pdb ids with 'placeholder' unit ids, which means that the
+        structure was processed to find pairwise interactions, none were found,
+        and now we can avoid checking again.
+        """
+
+        # find all unique pdb ids that have been processed and have a pairwise interaction or have a placeholder
         with self.session() as session:
-            query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.unit_id_1).\
-                filter(mod.UnitPairsInteractions.unit_id_1 == 'placeholder')
-            if not query.count():
-                raise core.Skip("Skipping interactions.pairwise, no new interactions")
+            query = session.query(mod.UnitPairsInteractions.pdb_id).distinct()
 
         d = set()
         for result in query:
             d.add(result.pdb_id)
-        return list(set(pdbs)-d)
+
+        # remove the pdb ids just found from the list of those that need to be processed
+        return sorted(list(set(pdbs)-d))
 
     def interaction_type(self, family):
         """Determine the interaction type of the given interaction. This will
@@ -128,10 +134,10 @@ class Loader(core.SimpleLoader):
             os.remove(ifn)
             if len(data) == 0:
                 data = {}
-                data['pdb_id'] = pdb                         
+                data['pdb_id'] = pdb
                 data['unit_id_1'] = 'placeholder'
                 data['unit_id_2'] = 'placeholder'
-                self.logger.info('Pdb file %s has no interactions, save a placeholder' % pdb)
+                self.logger.info('PDB file %s has no interactions, save a placeholder' % pdb)
                 return [data]
             return data
         elif status == 2:
@@ -139,7 +145,6 @@ class Loader(core.SimpleLoader):
             data['pdb_id'] = pdb                          # key is column name, value goes in the column
             data['unit_id_1'] = 'placeholder'
             data['unit_id_2'] = 'placeholder'
-            self.logger.info('Pdb file %s has no nucleotides, save a placeholder' % pdb)
+            self.logger.info('PDB file %s has no nucleotides, save a placeholder' % pdb)
             return [data]
-        raise core.InvalidState('Matlab error code %i when analyzing %s' %
-                                status, pdb)
+        raise core.InvalidState('Matlab error code %i when analyzing %s' % (status, pdb))
