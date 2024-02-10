@@ -122,7 +122,6 @@ class Exporter(core.Loader):
                     filter(iupi.unit_id_2.isnot(None)).\
                     filter(iui1.unit_type_id == 'rna').\
                     filter(iui2.unit_type_id == 'rna').\
-                    filter(iupf.flanking == 1).\
                     filter(iupi.pdb_id == pdb)
 
             fui1 = aliased(mod.UnitInfo)
@@ -152,7 +151,6 @@ class Exporter(core.Loader):
                     filter(fupf.unit_id_2.isnot(None)).\
                     filter(fui1.unit_type_id == 'rna').\
                     filter(fui2.unit_type_id == 'rna').\
-                    filter(iupf.flanking == 1).\
                     filter(fupf.pdb_id == pdb)
 
             query = subqueryI.union(subqueryF).order_by(iui1.model, iui1.chain, iui1.chain_index,
@@ -176,6 +174,9 @@ class Exporter(core.Loader):
             for result in query:
                 uid1 = result.unit_id_1
                 uid2 = result.unit_id_2
+
+                if uid1 == 'placeholder':
+                    continue
 
                 # FUTURE: iterate over a list of column names?
 
