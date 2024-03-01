@@ -87,9 +87,12 @@ def align_dna(data):
 
 def one_to_one_alignment(data): # one_to_one_alignemnt # name changed to same dna align
     mapping = []
-    condiction = data[0] == data[1]
-    condiction = True
-    if condiction:
+    # condition = data[0] == data[1]
+    # condition = True
+    # condition = len(data[0])<=20 and len(data[0])==len(data[1]) and data[0] == data[1]
+    condition = len(data[0])<=20 and len(data[0])==len(data[1])
+    condition = len(data[0])==len(data[1])
+    if condition:
         for i,j in it.izip(data[0]["ids"], data[1]["ids"]):
             mapping.append([i,j])
     else:

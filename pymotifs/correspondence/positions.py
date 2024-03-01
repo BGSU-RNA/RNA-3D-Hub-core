@@ -61,7 +61,7 @@ class Loader(core.Loader):
                 return False
 
             corr = corr.one()
-            return corr.length != None
+            return (corr.length != None) and (corr.length != 0)
 
     def remove(self, corr_id, **kwargs):
         """Remove all the data for the given correspondence id.

@@ -1,8 +1,10 @@
 """
-Compute chain to chain discrepancies within equivalence classes.
-This will 1) look at good
-correspondences, 2) extract all the aligned chains, 3) compute the
-geometric discrepancy between them, and 4) place the discrepanices
+Compute chain to chain discrepancies within groups having sequence correspondences.
+This will:
+1) look at good correspondences,
+2) extract all the aligned chains,
+3) compute the geometric discrepancy between them, and
+4) place the discrepanices
 in the database.
 
 This will only compare the first chain in each IFE.
@@ -80,7 +82,7 @@ class Loader(core.SimpleLoader):
     """The dependencies for this stage"""
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
                         IfeLoader, CenterLoader, RotationLoader])
-    dependencies = set([])
+    # dependencies = set([])
 
 
     def known_unit_entries(self, table):
@@ -131,7 +133,8 @@ class Loader(core.SimpleLoader):
 
 
     def to_process(self, pdbs, **kwargs):
-        """This will compute all pairs to compare. This will group all pdbs
+        """
+        This will compute all pairs to compare. This will group all pdbs
         using only sequence and species and then produce a list of chains that
         are only the chains in the same group. It will also filter out all
         pairs that have a chain with a poor resolution or is too small. This
@@ -157,10 +160,11 @@ class Loader(core.SimpleLoader):
         GeneratePickleFiles = True    # must be used in production, to update the files each week
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
 
+        # temporarily knock this out on rnatest
         if GeneratePickleFiles:
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
             # takes about 2 1/3 minutes on production in December 2020
-            self.logger.info('Getting the unit_id to experimental sequence position table')
+            # self.logger.info('Getting the unit_id to experimental sequence position table')
             pdbs_set = set(pdbs)
             with self.session() as session:
                 EM = mod.ExpSeqUnitMapping
@@ -194,6 +198,7 @@ class Loader(core.SimpleLoader):
 
         if GeneratePickleFiles:
             # takes about 6.5 minutes on production in December 2020
+            # getting killed on rnatest when we try to do DNA structures
             self.logger.info('Getting the position to position mappings')
 
             position_to_position = defaultdict(list)                                                            ## A dictionary-like object. It will not raise error. It will provides a default value for the key does not exist. In this case, it will return a empty list object if the key does not exist.
@@ -201,10 +206,13 @@ class Loader(core.SimpleLoader):
 
             i = 0
             j = 1
+            chunk_size = 100000
             newcount = 1
+            found_lines = False
 
             while j < 9999:
-                if newcount == 0:
+                if newcount == 0 and found_lines:
+                    # already found data, but then got an empty set of data
                     j = 9999            # this will be the last query, check for very large numbers
                 else:
                     j = i+1
@@ -213,8 +221,8 @@ class Loader(core.SimpleLoader):
                     CP = mod.CorrespondencePositions
                     query = session.query(CP.exp_seq_position_id_1,CP.exp_seq_position_id_2).\
                     select_from(CP).\
-                    filter(CP.exp_seq_position_id_1 < 100000*j).\
-                    filter(CP.exp_seq_position_id_1 >= 100000*i)
+                    filter(CP.exp_seq_position_id_1 < chunk_size*j).\
+                    filter(CP.exp_seq_position_id_1 >= chunk_size*i)
 
                     newcount = 0
                     for r in query:
@@ -222,7 +230,11 @@ class Loader(core.SimpleLoader):
                         count += 1
                         newcount += 1
 
-                    self.logger.info('Total of %10d position to position correspondences, id up to %d' % (count,100000*j))
+                    print('Total of %10d position to position correspondences, id up to %10d' % (count,chunk_size*j))
+                    self.logger.info('Total of %10d position to position correspondences, id up to %10d' % (count,chunk_size*j))
+
+                    if newcount > 0:
+                        found_lines = True
 
                 i = i + 1
 
@@ -710,7 +722,7 @@ class Loader(core.SimpleLoader):
                 join(mapping2, mapping2.exp_seq_id == info.exp_seq_id_2).\
                 filter(mapping1.chain_id == chain1).\
                 filter(mapping2.chain_id == chain2).\
-                filter(info.good_alignment == 1)
+                filter(info.good_alignment >= 1)
 
             result = query.first()
             if result:

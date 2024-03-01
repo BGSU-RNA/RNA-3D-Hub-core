@@ -131,7 +131,7 @@ class Loader(core.MassLoader):
             return lower <= smallest <= largest <= upper
         if pair[0]['entity_type'] == 'dna':
             if (pair[0]['length'] == pair[1]['length']) & (pair[0]['length'] <=20) & (pair[1]['length'] <= 20):
-                self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 return True
             
 
@@ -223,8 +223,8 @@ class Loader(core.MassLoader):
         :param tuple pair: The pair of entity_types to compare.
         :returns: The boolean
         """
-        if pair[0]['entity_type'] == 'dna':
-            self.logger.info("the entity_types of the current pair %s %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
+        # if pair[0]['entity_type'] == 'dna':
+        #     self.logger.info("the entity_types of the current pair %s %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
         return pair[0]['entity_type'] == pair[1]['entity_type']
 
 

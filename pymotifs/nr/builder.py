@@ -20,19 +20,27 @@ from pymotifs.nr.groups.simplified import ranking_key
 from pymotifs.constants import NR_REPRESENTATIVE_METHOD
 from pymotifs.constants import RESOLUTION_GROUPS
 from pymotifs.constants import NR_CLASS_NAME
+from pymotifs.constants import DNA_CLASS_NAME
 from sqlalchemy import desc
+from sqlalchemy import func
 from pymotifs.constants import WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS
 
 
 class Known(core.Base):
-    def handles(self):
+    def handles(self, group_type):
         """Return a set of all known handles for the nr set.
         """
+        if group_type == 'DNA':
+            query_key = group_type
+        else:
+            query_key = 'NR_' 
         with self.session() as session:
-            query = session.query(mod.NrClasses.handle).distinct()
+            query = session.query(mod.NrClasses.handle).\
+            filter(func.substr(mod.NrClasses.name, 1, 3) == query_key).\
+            distinct()
             return set(result.handle for result in query)
 
-    def classes(self, release_id, cutoff):
+    def classes(self, release_id, cutoff, group_type):
         """Get all classes with the given resolution cutoff in the given
         release. If nothing is below the cutoff then an empty dictonary will be
         returned.
@@ -64,6 +72,11 @@ class Known(core.Base):
                 'resolution': result.resolution,
             }
 
+        if group_type == 'DNA':
+            query_key = group_type
+        else:
+            query_key = 'NR_'   
+
         with self.session() as session:
             query = session.query(mod.NrClassRank.ife_id.label('id'),
                                   mod.NrClasses.handle.label('handle'),
@@ -83,6 +96,7 @@ class Known(core.Base):
                      mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
+                filter(func.substr(mod.NrClasses.name, 1, 3) == query_key).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
             self.logger.info("finish the query of the class functionin the nr/builder.py")
             results = coll.defaultdict(empty)
@@ -217,11 +231,11 @@ class Builder(core.Base):
     release as well as determine the representative.
     """
 
-    def load_parents(self, parent_release, cutoffs):
+    def load_parents(self, parent_release, cutoffs, group_type):
         parents = {}
         known = Known(self.config, self.session)
         for cutoff in cutoffs:
-            parents[cutoff] = known.classes(parent_release, cutoff)
+            parents[cutoff] = known.classes(parent_release, cutoff, group_type)
         return parents
 
     def group(self, pdbs, **kwargs):
@@ -243,18 +257,43 @@ class Builder(core.Base):
             List of grouped IFE's.
         """
         grouper = Grouper(self.config, self.session)
-        conf = self.config['nr']
-        self.logger.warning("conf: %s" % str(conf))
-        grouper.use_discrepancy = conf.get('use_discrepancy',
-                                           grouper.use_discrepancy)
-        grouper.use_species = conf.get('use_species', grouper.use_species)
-        if not grouper.use_species:
-            enforce = conf.get('enforce_species',
-                               grouper.must_enforce_single_species)
-            grouper.must_enforce_single_species = enforce
-        return grouper(pdbs, **kwargs)
+        # I think we have to set the nr_molecule_parent_current value in the following pipeline running for both DNA and RNA
+        group_type = kwargs.get('nr_molecule_parent_current','').split(",")[0]
+        # group_type = 'DNA'
+        # self.logger.info("Found group_type!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: %s", group_type)
+        # conf = self.config['nr']                        ## the nr is just a string here, the name have no actual meanning here. I dont think I need to change the name and distinguish them
+                                                        ## However, keep the 'nr' keyword here is confusing. I think I should change this.
+        if group_type != 'DNA':
+            conf = self.config['nr']
+            self.logger.warning("conf: %s" % str(conf))
+            grouper.use_discrepancy = conf.get('use_discrepancy',
+                                            grouper.use_discrepancy)
+            grouper.use_species = conf.get('use_species', grouper.use_species)
+            if not grouper.use_species:
+                enforce = conf.get('enforce_species',
+                                grouper.must_enforce_single_species)
+                grouper.must_enforce_single_species = enforce
+            return grouper(pdbs, **kwargs)
+        else:
+            self.config['dna'] = {'use_discrepancy': True}
+            conf = self.config['dna']
+            self.logger.warning("conf: %s" % str(conf))
+            grouper.use_discrepancy = conf.get('use_discrepancy',
+                                            grouper.use_discrepancy)
+            # grouper.use_species = conf.get('use_species', grouper.use_species)
+            # try again to avoid using species
+            grouper.use_species = False
+            # if not grouper.use_species:
+            #     enforce = conf.get('enforce_species',
+            #                     grouper.must_enforce_single_species)
+            #     ## we do not want to build dna group by single species. Thus, change True to False
+            #     ## pipeline have been killed. 
+            #     ## I think there is too much to group.
+            #     ## Thus, Ekko thinks it is better to group by species for test runnings
+            #     grouper.must_enforce_single_species = enforce
+            return grouper(pdbs, **kwargs)
 
-    def name_groups(self, groups, parents):
+    def name_groups(self, groups, parents, group_type):
         """Compute the naming and parents of all groups. Note that this will
         assign parent entries to all groups. However, these parent entries will
         be incorrect when the group is filtered to only those entries within
@@ -281,7 +320,7 @@ class Builder(core.Base):
 
         namer = Namer(self.config, self.session)
         known = Known(self.config, self.session)
-        named = namer(groups, parents, known.handles())
+        named = namer(groups, parents, known.handles(group_type))
 
         named_count = it.imap(lambda g: len(g['members']), named)
         named_count = sum(named_count)
@@ -356,21 +395,27 @@ class Builder(core.Base):
         updated['members'] = filtered
         return updated
 
-    def class_name(self, resolution, entry):
+    def class_name(self, resolution, entry, group_type):
         """Create the name of the class given the class and resolution.
 
         :param dict entry: The class.
         :param str resolution: The resolution cutoff.
         :returns: The class name.
         """
+        if group_type != 'DNA':
+            return NR_CLASS_NAME.format(
+                resolution=resolution,
+                handle=entry['name']['handle'],
+                version=entry['name']['version']
+            )
+        else:
+            return DNA_CLASS_NAME.format(
+                resolution=resolution,
+                handle=entry['name']['handle'],
+                version=entry['name']['version']
+            )            
 
-        return NR_CLASS_NAME.format(
-            resolution=resolution,
-            handle=entry['name']['handle'],
-            version=entry['name']['version']
-        )
-
-    def filter_groups(self, groups, resolutions):
+    def filter_groups(self, groups, resolutions, group_type):
         """This will filter each group so that it contains only the members
         with that pass the given resolution cutoff. The cutoffs should be
         be values that are accepted by within_cutoff. In addition, the groups
@@ -397,7 +442,7 @@ class Builder(core.Base):
                 filtered = self.within_cutoff(entry, resolution)
                 if not filtered:
                     continue
-                filtered['name']['full'] = self.class_name(resolution, entry)
+                filtered['name']['full'] = self.class_name(resolution, entry, group_type)
                 filtered['name']['cutoff'] = resolution
                 data.append(filtered)
         return sorted(data, key=lambda g: g['name']['cutoff'])
@@ -464,7 +509,7 @@ class Builder(core.Base):
         ### will return a dict, key is the ife_id and value is the rank of cqs {'ife_id1':0,'ife_id2':1,.....}
         return old_rank
 
-    def find_representatives(self, groups, sorting_key=ranking_key):
+    def find_representatives(self, groups, group_type, sorting_key=ranking_key):
         """Compute the representative for each group. This will modify the
         group to now have a 'representative' entry containing the
         representative entry. In addition, the members will be sorted and
@@ -490,8 +535,15 @@ class Builder(core.Base):
         class_id_to_ranking = {}
         ## nr_class_name_checking
 
+        if group_type == 'DNA':
+            query_key = group_type
+        else:
+            query_key = 'NR_'   
+
         with self.session() as session:
-            query = session.query(mod.NrClassRank.nr_class_name).distinct()
+            query = session.query(mod.NrClassRank.nr_class_name).\
+            filter(func.substr(mod.NrClassRank.nr_class_name, 1, 3) == query_key).\
+            distinct()
         nr_class_name_list = [row.nr_class_name for row in query]
 
         # self.logger.info("Found groups[0] %s", groups[0])
@@ -524,7 +576,6 @@ class Builder(core.Base):
                 for index, member in enumerate(group['members']):
                     member['rank'] = index
             data.append(group)
-        # print(qwerty)
         return data
 
     def __call__(self, pdbs, parent_release, current_release,
@@ -544,16 +595,21 @@ class Builder(core.Base):
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
         groups = self.group(pdbs, **kwargs)
+        group_type = kwargs.get('nr_molecule_parent_current','').split(",")[0]
+        # self.logger.info("Found kwargs !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: %s", kwargs)
+        # self.logger.info("Found group_type!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: %s", group_type)
+        # group_type = 'DNA'
+
         # self.logger.info("Found pdbs %s", pdbs)
         # self.logger.info("Found groups %s", groups)
-        parents = self.load_parents(parent_release, cutoffs)
+        parents = self.load_parents(parent_release, cutoffs, group_type)
         # self.logger.info("Found parents %s", parents)
 
-        named = self.name_groups(groups, parents['all'])
-        filtered = self.filter_groups(named, cutoffs)
+        named = self.name_groups(groups, parents['all'], group_type)
+        filtered = self.filter_groups(named, cutoffs, group_type)
         with_parents = self.attach_parents(filtered, parents)
         # self.logger.info("Found with_parents %s", with_parents)
-        with_reps = self.find_representatives(with_parents)
+        with_reps = self.find_representatives(with_parents, group_type)
         # self.logger.info("Found find_representatives %s", with_reps)
 
         return {

@@ -30,7 +30,7 @@ class Helper(core.Base):
                 join(info,
                      info.correspondence_id == corr_pdb.correspondence_id).\
                 filter(corr_pdb.pdb_id_1 == pdb).\
-                filter(info.good_alignment == 1).\
+                filter(info.good_alignment >= 1).\
                 order_by(corr_pdb.pdb_id_2).\
                 distinct()
             return [result.pdb_id_2 for result in query]
@@ -64,7 +64,7 @@ class Helper(core.Base):
                 join(ife2, ife2.chain_id == pdbs.chain_id_2).\
                 filter(pdbs.pdb_id_1 == pdb1).\
                 filter(pdbs.pdb_id_2 == pdb2).\
-                filter(corr.good_alignment == 1).\
+                filter(corr.good_alignment >= 1).\
                 filter(pdbs.chain_id_1 != pdbs.chain_id_2).\
                 filter(ife1.is_integral == 1).\
                 filter(ife2.is_integral == 1)
@@ -162,7 +162,10 @@ class Helper(core.Base):
             query = session.query(info)
 
             if good is not None:
-                query = query.filter(info.good_alignment == good)
+                if good:
+                    query = query.filter(info.good_alignment >= 1)
+                else:
+                    query = query.filter(info.good_alignment == good)
 
             mapping = coll.defaultdict(dict)
             for result in query:

@@ -81,19 +81,24 @@ class IfeLoader(core.Base):
             data = ut.result2dict(query.one())
             data['model'] = model
 
-        with self.session() as session:
-            query = session.query(mod.UnitInfo.sym_op,
-                                  func.count(1).label('count'),
-                                  ).\
-                filter_by(pdb_id=data['pdb']).\
-                filter_by(chain=data['chain']).\
-                filter_by(model=model).\
-                group_by(mod.UnitInfo.sym_op).\
-                limit(1)
-            result = query.first()
-            data['length'] = 0
-            if result:
-                data['length'] = result.count
+        # with self.session() as session:
+        #     query = session.query(mod.UnitInfo.sym_op,
+        #                           func.count(1).label('count'),
+        #                           ).\
+        #         filter_by(pdb_id=data['pdb']).\
+        #         filter_by(chain=data['chain']).\
+        #         filter_by(model=model).\
+        #         group_by(mod.UnitInfo.sym_op).\
+        #         limit(1)
+        #     result = query.first()
+        #     data['length'] = 0
+        #     if result:
+        #         data['length'] = result.count
+        # data['length'] will also calculate water units, this query works for rna structures even if the rna has water units.
+        # however, it is not work for dna structures for some unknown reason.
+        # thus, ekko directly make it equal to the 'full_length'. 
+        # Dr. Zirbel believes we should used the full_length insteal of making different lengths for hybrid chains
+        data['length'] = data['full_length']
 
         helper = st.BasePairQueries(self.session)
         rep = helper.representative

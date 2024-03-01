@@ -155,6 +155,7 @@ def cli(ctx, **options):
               help='Get files posted on or before DATE (YYYY-MM-DD)')
 #@click.option('--before-date', default=datetime.now(),
 #              help='Get files posted before DATE (YYYY-MM-DD)')
+@click.option('--nr_molecule_parent_current', type=str, help='Parent release,current release like DNA,0.3,0.4')
 @click.option('--exclude', multiple=True, type=PDB,
               help='Excluded PDB(s)')
 @click.option('--ignore-time', is_flag=True, help='Ignore time for rerunning')
@@ -162,6 +163,7 @@ def cli(ctx, **options):
               help='Define a variable')
 @click.option('--comp-limit', type=int, help='Set maximum group size for discrepancy calcuations')
 @click.option('--data-limit', type=int, help='Maximum number of discrepancy calculations per group')
+@click.option('--nr_molecule_parent_current', type=str, help='molecule,parent release,current release like DNA,0.3,0.4')
 @click.argument('name')
 @click.argument('ids', nargs=-1, type=PDB)
 @click.pass_context

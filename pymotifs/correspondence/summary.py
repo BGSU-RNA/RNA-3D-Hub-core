@@ -33,7 +33,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(mod.CorrespondenceInfo.correspondence_id).\
-                filter(mod.CorrespondenceInfo.length == None)
+                filter(mod.CorrespondenceInfo.good_alignment == None)
             if not query.count():
                 raise core.Skip("Skipping summary, no new correspondences")
 
@@ -60,16 +60,21 @@ class Loader(core.Loader):
 
     def current(self, corr_id):
         """Get the current data for the correspondence.
+            The function will also get the entity type for the corr_id, this is because the following function 'good_alignemnt" need
+            to know the entity type in order to switch the code part of if condiction to use. 
         """
 
         with self.session() as session:
             info = session.query(mod.CorrespondenceInfo).get(corr_id)
             current_exp_seq_id_1 = utils.row2dict(info)['exp_seq_id_1']
-            entity_type_info = session.query(mod.ExpSeqInfo.exp_seq_id).\
+            entity_type_info = session.query(mod.ExpSeqInfo.entity_type).\
                 filter(mod.ExpSeqInfo.exp_seq_id == current_exp_seq_id_1)
             # entity_type = utils.row2dict(entity_type_info)[entity_type]
             result = utils.row2dict(info)
-            result['entity_type'] = entity_type_info
+            # print(entity_type_info.one()[0])
+            # print(utils.row2dict(entity_type_info),"!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            result['entity_type'] = entity_type_info.one()[0]
+            # print(result,"!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             return result                                     ## A dict for the values of columns in correspondence_info table for a specific corr_id.
 
 
@@ -131,6 +136,7 @@ class Loader(core.Loader):
             return float(info['match_count']) / float(min_size) >= 0.95
 
         if info['entity_type'] == 'dna':
+            return 5
             if not info['aligned_count']:
                 return 3                                                        ## 3 is flase here. Just to separate rows from rna pairs
                                                                                 
@@ -174,6 +180,7 @@ class Loader(core.Loader):
             results = []
             for result in query:
                 results.append({'unit1': result.unit1, 'unit2': result.unit2}) 
+            # print(results,"!!!!!!!!!!!!!!!!!!!")
         return results
 
     # def alignment_testing(self, corr_id):
