@@ -19,9 +19,6 @@ class Dispatcher(object):
     and run them as well if desired.
     """
 
-    # should we manually set the current id?
-    # read_manual = True
-
     def __init__(self, name, *args, **kwargs):
         """Create a new dispatcher.
 

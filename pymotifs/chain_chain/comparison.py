@@ -156,9 +156,8 @@ class Loader(core.SimpleLoader):
         pairs : list
             A list of (first, seconds) pairs of chain ids to compare.
         """
-
-        GeneratePickleFiles = True    # must be used in production, to update the files each week
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
+        GeneratePickleFiles = True    # must be used in production, to update the files each week
 
         # temporarily knock this out on rnatest
         if GeneratePickleFiles:
@@ -248,14 +247,15 @@ class Loader(core.SimpleLoader):
         # Group PDB ids by species and sequence
         # groups is a list of lists of integer chain identifiers
         # grouper is part of the nr stage, so it appears that way in the log file
-        self.logger.info("Grouping PDB ids by sequence and species")
+        self.logger.info("Grouping PDB ids only by sequence for DNA")
         grouper = Grouper(self.config, self.session)
         grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False.
         grouper.must_enforce_single_species = True
+        grouper.must_enforce_single_species = False
         groups = grouper(pdbs)                                                                                               ## Grouped PDB ids by sequence and species. How this class works
         if not groups:
             raise core.InvalidState("No groups produced")
-        self.logger.info("Grouped PDB ids by sequence and species")
+        self.logger.info("Grouped PDB ids only by sequence for DNA")
 
 
         # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix

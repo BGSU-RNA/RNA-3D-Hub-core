@@ -33,7 +33,7 @@ class Loader(core.Loader):
 
         with self.session() as session:
             query = session.query(mod.CorrespondenceInfo.correspondence_id).\
-                filter(mod.CorrespondenceInfo.good_alignment == None)
+                filter(mod.CorrespondenceInfo.length == None)
             if not query.count():
                 raise core.Skip("Skipping summary, no new correspondences")
 

@@ -130,7 +130,8 @@ class Loader(core.MassLoader):
 
             return lower <= smallest <= largest <= upper
         if pair[0]['entity_type'] == 'dna':
-            if (pair[0]['length'] == pair[1]['length']) & (pair[0]['length'] <=20) & (pair[1]['length'] <= 20):
+            # if (pair[0]['length'] == pair[1]['length']) & (pair[0]['length'] <=20) & (pair[1]['length'] <= 20):
+            if pair[0]['length'] == pair[1]['length']:
                 # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 return True
             

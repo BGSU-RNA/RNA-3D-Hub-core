@@ -18,6 +18,7 @@ class Loader(BaseLoader):
 
     dependencies = set([IdMappingLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
+    allow_no_data = True
 
     @property
     def table(self):

@@ -292,34 +292,47 @@ class Grouper(core.Base):
         """
 
         if not self.use_discrepancy:
+            # self.logger.info("deflaut value of use_discrepancy: %s, group1_2(%s, %s)"%(self.use_discrepancy,group1['id'],group2['id']))
             return True
 
         db_id1 = group1['db_id']
         db_id2 = group2['db_id']
+        dis_test = all_discrepancy.get(db_id1,{db_id1:'discrepancy not found:'+str(db_id1)})
         if not disc.valid_chain(group1) or not disc.valid_chain(group2):
             self.logger.debug("Chains not valid for discrepancy")
+            self.logger.info("Chains not valid for discrepancy, if statement:(%s,%s), length:(%s,%s), resolution:(%s,%s)"%(disc.valid_chain(group1),disc.valid_chain(group2),group1['length'],group2['length'],group1['resolution'],group2['resolution']))
+            self.logger.info("discrepancy value: %s, %s"%(dis_test.get(db_id1,'null'),dis_test.get(db_id2,'null')))
+            self.logger.info("Chains not valid for discrepancy for %s, %s", (group1['id'],group2['id']))
             return True
 
         if not all_discrepancy:
             self.logger.debug("No discrepancies, so ignoring")
+            # self.logger.info("No discrepancies, so ignoring")
+            self.logger.info("No discrepancies, so ignoring for %s, %s", (group1['id'],group2['id']))
             return True
 
         if db_id1 not in all_discrepancy:
             self.logger.warning("No computed discrepancy for %s, %s", (group1['id'],group2['id']))
+            self.logger.info("No computed discrepancy for %s, %s", (group1['id'],group2['id']))
             return True
 
         discrepancy = all_discrepancy[db_id1]
         if db_id2 not in discrepancy:
             self.logger.debug("Splitting %s %s: No discrepancy between them",
                               group1['id'], group2['id'])
+            # self.logger.info("Splitting %s %s: No discrepancy between them",
+            #                   group1['id'], group2['id'])
             return False
 
         if discrepancy[db_id2] > NR_DISCREPANCY_CUTOFF or discrepancy[db_id2] < 0:
             self.logger.debug("Splitting %s %s: Too large discrepancy %f",
                               group1['id'], group2['id'], discrepancy[db_id2])
+            self.logger.info("Splitting %s %s: Too large discrepancy %f",
+                              group1['id'], group2['id'], discrepancy[db_id2])
             return False
 
-        self.logger.debug("Good discrepancy %s %s", group1['id'], group2['id'])
+        self.logger.debug("Good discrepancy %s %s, discrepancy values: (%s, %s)"%(group1['id'], group2['id'], discrepancy.get(db_id1, 'NULL'), discrepancy.get(db_id2, 'NULL')))
+        # self.logger.info("Good discrepancy %s %s, discrepancy values: (%s, %s)"%(group1['id'], group2['id'], discrepancy.get(db_id1, 'NULL'), discrepancy.get(db_id2, 'NULL')))
         return True
 
     def is_hard_coded_join(self, group1, group2):
@@ -514,8 +527,11 @@ class Grouper(core.Base):
 
         groups = []
         graph = self.connections(chains, alignments, discrepancies) ## not sure what is here. It will return valid pairs about ife ids.
-        for ids in self.build_groups(graph):                        ##
-            self.validate(graph, list(ids))                         ## I though this function was doing some specific works, but it just writes log info. Not important at all.
+        self.logger.info("connection found, building groups")
+        all_groups = self.build_groups(graph)
+        self.logger.info("processing all groups")
+        for ids in all_groups:                        ##
+            # self.validate(graph, list(ids))                         ## I though this function was doing some specific works, but it just writes log info. Not important at all.
             group = [mapping[id] for id in ids]                     ##
             for subgroup in self.enforce_species_splitting(group):
                 groups.append(subgroup)
