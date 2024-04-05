@@ -214,6 +214,8 @@ class Dispatcher(object):
                 self.logger.error("Uncaught exception with stage: %s",
                                   self.name)
                 raise err
+            if 'ml_release_id' in kwargs['manual']:
+                del kwargs['manual']['ml_release_id']
 
         self.logger.info("Finished pipeline")
         print("Finished pipeline")
