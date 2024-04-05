@@ -7,6 +7,7 @@ property can be:
     standardized_name
     source
     rfam_family
+As of end of 2023, only store in chain_property_value when source, Rfam family, and standardized_name are known
 """
 
 from cgi import print_arguments
