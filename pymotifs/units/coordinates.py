@@ -5,8 +5,6 @@ level entries (atom_site in cif) but will not include the header lines like
 'loop_' or '_atom_site.group_PDB'.
 """
 
-from cStringIO import StringIO
-
 import pymotifs.core as core
 from pymotifs import models as mod
 
@@ -15,6 +13,13 @@ from fr3d.data import Structure
 
 from pymotifs.units.info import Loader as InfoLoader
 
+import sys
+
+# safe for python 2 and 3
+if sys.version_info[0] == 2:
+    import cStringIO as sio
+else:
+    import io as sio
 
 class Loader(core.SimpleLoader):
     """The loader to store unit_coordinates data.
@@ -48,7 +53,7 @@ class Loader(core.SimpleLoader):
     def coordinates(self, pdb, residue):
         """Compute a string of the coordinates in CIF format (the atom_site
         block) for the given residue. Exclude the header and trailing lines
-        that are part of the atom_site entries, because these entries are meant 
+        that are part of the atom_site entries, because these entries are meant
         to be concatenated together for the coordinate server later.
 
         Parameters
@@ -66,13 +71,13 @@ class Loader(core.SimpleLoader):
         """
 
         structure = Structure([residue], pdb=pdb)
-        sio = StringIO()
         writer = CifAtom(sio, unit_ids=False, protect_lists_of_lists=True)
         writer(structure)
+        sio = sio.StringIO()
         raw = sio.getvalue()
         coords = []
         for line in raw.split('\n'):
-            # Exclude header/comment lines that start with: 1) "data_", 
+            # Exclude header/comment lines that start with: 1) "data_",
             # 2) "loop_",  3) "_", or 4) "#".
             if not line or \
                     line.startswith('data_') or \
