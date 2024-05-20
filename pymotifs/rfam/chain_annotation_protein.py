@@ -7,7 +7,6 @@ import sys
 import gzip
 import time
 from ftplib import FTP
-import cStringIO
 import os
 
 
@@ -22,7 +21,7 @@ class Loader(core.SimpleLoader):
             query = session.query(mod.ChainInfo.pdb_id, mod.ChainInfo.chain_name) \
                            .filter(mod.ChainInfo.entity_macromolecule_type.contains('Polypeptide'))
         protein_pdbs = set([(r.pdb_id.lower(), r.chain_name) for r in query])
-        
+
         with self.session() as session:
             query = session.query(mod.ChainPropertyValue)
         in_table_pdbs = set([(r.pdb_id.lower(), r.chain) for r in query])
@@ -58,7 +57,7 @@ class Loader(core.SimpleLoader):
         filepath = "/usr/local/pipeline/hub-core/aux/pdb_unp_mapping_files/pdb_chain_uniprot.csv.gz"
         unp_mapping_dict = {}
         unp_accessions = set()
-        
+
         with gzip.open(filepath, 'rb') as f:
             content = cStringIO.StringIO(f.read())
             csv_reader = csv.reader(content, delimiter=",")
@@ -70,7 +69,7 @@ class Loader(core.SimpleLoader):
                     print(identifier)
                     unp_mapping_dict[identifier] = line[2]
                     unp_accessions.add(line[2])
-        
+
         return unp_mapping_dict, unp_accessions
 
     def download_pdb_mapping_file(self):

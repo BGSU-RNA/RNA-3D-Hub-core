@@ -8,10 +8,15 @@ import inspect
 import logging
 from ftplib import FTP
 import itertools as it
-import cStringIO as sio
 import collections as coll
-
 import requests
+import sys
+
+# safe for python 2 and 3
+if sys.version_info[0] == 2:
+    import cStringIO as sio
+else:
+    import io as sio
 
 
 """Generic logger for all utilities."""

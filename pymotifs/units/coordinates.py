@@ -6,8 +6,6 @@ level entries (atom_site in cif) but will not include the header lines like
 'loop_' or '_atom_site.group_PDB'.
 """
 
-from cStringIO import StringIO
-
 import pymotifs.core as core
 from pymotifs import models as mod
 
@@ -16,6 +14,13 @@ from fr3d.data import Structure
 
 from pymotifs.units.info import Loader as InfoLoader
 
+import sys
+
+# safe for python 2 and 3
+if sys.version_info[0] == 2:
+    import cStringIO as sio
+else:
+    import io as sio
 
 class Loader(core.SimpleLoader):
     """The loader to store unit_coordinates data.
@@ -69,9 +74,9 @@ class Loader(core.SimpleLoader):
 
         # make the given residue into a structure
         structure = Structure([residue], pdb=pdb)
-        sio = StringIO()
         writer = CifAtom(sio, unit_ids=False, protect_lists_of_lists=True)
         writer(structure)
+        sio = sio.StringIO()
         raw = sio.getvalue()
         coords = []
         for line in raw.split('\n'):

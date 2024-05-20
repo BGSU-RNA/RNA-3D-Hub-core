@@ -7,9 +7,16 @@ import copy
 import gzip
 import hashlib
 import operator as op
-import cStringIO as sio
 import collections as coll
 import xml.etree.ElementTree as ET
+
+import sys
+
+# safe for python 2 and 3
+if sys.version_info[0] == 2:
+    import cStringIO as sio
+else:
+    import io as sio
 
 from pymotifs import core
 from pymotifs import utils as ut

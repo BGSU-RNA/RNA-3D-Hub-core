@@ -7,9 +7,16 @@ import hashlib
 import operator as op
 import itertools as it
 import functools as ft
-import cStringIO as sio
 import collections as coll
 import xml.etree.ElementTree as ET
+
+import sys
+
+# safe for python 2 and 3
+if sys.version_info[0] == 2:
+    import cStringIO as sio
+else:
+    import io as sio
 
 try:
     from elementtree import SimpleXMLTreeBuilder
