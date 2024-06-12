@@ -58,3 +58,4 @@ default.nix
 
 # temporary files
 pymotifs/export/pairFileParsing.py
+pymotifs/loops/add_new_sequence.py
