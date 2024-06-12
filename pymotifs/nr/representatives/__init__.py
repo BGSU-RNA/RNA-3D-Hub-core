@@ -52,7 +52,7 @@ def fetch(name):
             # end_time = time.time()
             fetch.call_count += 1
             # fetch.total_time += (end_time - start_time)
-            logger.info("Updated representative set number %d" % (fetch.call_count)
+            # logger.info("Updated representative set number %d" % (fetch.call_count))
             # logger.info("show the name of the representative set: %s", name)
             # logger.info("show the representative info: %s", value)
             return value
