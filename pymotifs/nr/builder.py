@@ -84,7 +84,7 @@ class Known(core.Base):
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
-            self.logger.info("finish the query of the class functionin the nr/builder.py")
+            self.logger.info("finish the query of the class function in the nr/builder.py")
             results = coll.defaultdict(empty)
             for result in query:
                 member = as_member(result)
@@ -513,7 +513,7 @@ class Builder(core.Base):
             ## make two log info messages and show what is old and what is new.
             # if not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS and group['comment'] == 'Exact match':
             if (group['name']['full'] in nr_class_name_list) and (not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS):
-                self.logger.info("Already have ranking and representative for %s", group['name']['full'])
+                # self.logger.info("Already have ranking and representative for %s", group['name']['full'])
                 group['representative'] = None
                 group['members'] = []
             else:
