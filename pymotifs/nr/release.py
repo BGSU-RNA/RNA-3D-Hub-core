@@ -17,7 +17,7 @@ from pymotifs.utils import releases as rel
 from pymotifs.nr.builder import Builder
 
 from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.chains.species import Loader as ChainSpeciesLoader
+# from pymotifs.chains.species import Loader as ChainSpeciesLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 from pymotifs.ife.loader import Loader as IfeLoader
 from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
@@ -27,7 +27,7 @@ from pymotifs.units.loader import Loader as UnitsLoader
 
 
 class Loader(core.MassLoader):
-    dependencies = set([ChainLoader, ChainSpeciesLoader, InteractionLoader,
+    dependencies = set([ChainLoader, InteractionLoader,
                         IfeLoader, CorrespondenceLoader, ChainChainLoader,
                         QualityLoader, UnitsLoader])
     update_gap = dt.timedelta(7)
