@@ -12,7 +12,9 @@ from pymotifs import utils as ut
 
 from pymotifs.models import ExpSeqInfo
 from pymotifs.models import ExpSeqPdb
-from pymotifs.models import ChainSpecies
+# from pymotifs.models import ChainSpecies
+from pymotifs.models import TaxidSpeciesDomain
+from pymotifs.models import ChainInfo
 from pymotifs.models import CorrespondenceInfo
 
 from pymotifs.constants import SYNTHENIC_SPECIES_ID
@@ -21,7 +23,7 @@ from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
 
 from pymotifs.exp_seq.loader import Loader as ExpSeqLoader
 from pymotifs.chains.info import Loader as ChainInfoLoader
-from pymotifs.chains.species import Loader as ChainSpeciesLoader
+# from pymotifs.chains.species import Loader as ChainSpeciesLoader
 
 
 class Loader(core.MassLoader):
@@ -31,7 +33,7 @@ class Loader(core.MassLoader):
     pair, inserting or storing each pair as needed.
     """
 
-    dependencies = set([ChainSpeciesLoader, ExpSeqLoader, ChainInfoLoader])
+    dependencies = set([ExpSeqLoader, ChainInfoLoader])
     allow_no_data = True
     table = CorrespondenceInfo
 
@@ -52,14 +54,27 @@ class Loader(core.MassLoader):
         :returns: A list of dictionaries of unique sequences.
         """
 
+        # with self.session() as session:
+        #     query = session.query(ExpSeqPdb.exp_seq_id.label('id'),
+        #                           ExpSeqInfo.normalized_length.label('length'),
+        #                           ChainSpecies.species_id.label('species')).\
+        #         join(ExpSeqInfo,
+        #              ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
+        #         outerjoin(ChainSpecies,
+        #                   ChainSpecies.chain_id == ExpSeqPdb.chain_id).\
+        #         filter(ExpSeqPdb.pdb_id == pdb).\
+        #         filter(ExpSeqInfo.was_normalized).\
+        #         distinct()
         with self.session() as session:
             query = session.query(ExpSeqPdb.exp_seq_id.label('id'),
                                   ExpSeqInfo.normalized_length.label('length'),
-                                  ChainSpecies.species_id.label('species')).\
+                                  TaxidSpeciesDomain.species_taxid.label('species')).\
                 join(ExpSeqInfo,
                      ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
-                outerjoin(ChainSpecies,
-                          ChainSpecies.chain_id == ExpSeqPdb.chain_id).\
+                join(ChainInfo,
+                     ChainInfo.chain_id == ExpSeqPdb.chain_id).\
+                outerjoin(TaxidSpeciesDomain,
+                          TaxidSpeciesDomain.taxonomy_id == ChainInfo.taxonomy_id).\
                 filter(ExpSeqPdb.pdb_id == pdb).\
                 filter(ExpSeqInfo.was_normalized).\
                 distinct()
