@@ -127,6 +127,7 @@ def cli(ctx, **options):
     setup.logs(options)
     ctx.objs = options
     config = conf.load(options['config'])
+    print('config: %s' % config)
     ctx.objs.update({
         'config_filename': options['config'],
         'config': config,
