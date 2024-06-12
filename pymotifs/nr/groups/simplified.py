@@ -75,7 +75,7 @@ class Grouper(core.Base):
 
         if ife['length']:
             return True
-        self.logger.warning("Invalid ife %s, 0 length", ife['id'])
+        self.logger.warning("Invalid ife %s, 0 length" % ife['id'])
         return False
 
     def ifes(self, pdb):
@@ -99,7 +99,7 @@ class Grouper(core.Base):
                                   mod.IfeInfo.length,
                                   mod.PdbInfo.resolution,
                                   mod.PdbInfo.experimental_technique.label('method'),
-                                  mod.ChainSpecies.species_id.label('species')).\
+                                  mod.TaxidSpeciesDomain.species_taxid.label('species')).\
                 join(mod.IfeInfo,
                      mod.IfeInfo.pdb_id == mod.ChainInfo.pdb_id).\
                 join(mod.IfeChains,
@@ -107,8 +107,8 @@ class Grouper(core.Base):
                      (mod.IfeChains.chain_id == mod.ChainInfo.chain_id)).\
                 join(mod.PdbInfo,
                      mod.PdbInfo.pdb_id == mod.ChainInfo.pdb_id).\
-                join(mod.ChainSpecies,
-                     mod.ChainSpecies.chain_id == mod.ChainInfo.chain_id).\
+                outerjoin(mod.TaxidSpeciesDomain,
+                     mod.TaxidSpeciesDomain.taxonomy_id == mod.ChainInfo.taxonomy_id).\
                 join(mod.ExpSeqPdb,
                      mod.ExpSeqPdb.chain_id == mod.ChainInfo.chain_id).\
                 join(mod.ExpSeqInfo,
@@ -143,7 +143,7 @@ class Grouper(core.Base):
         if not groups:
             raise core.InvalidState("No stored ifes for %s", pdb)
 
-        self.logger.info("Found %i ifes for %s", len(groups), pdb)
+        self.logger.info("Found %i ifes for %s" % (len(groups), pdb))
         return groups
 
     def discrepancies(self, groups):
@@ -213,22 +213,22 @@ class Grouper(core.Base):
         db_id1 = group1['db_id']
         db_id2 = group2['db_id']
         if db_id1 not in all_alignments:
-            self.logger.debug("Splitting %s %s: No alignments for %s",
-                              group1['id'], group2['id'], group1['id'])
+            self.logger.debug("Splitting %s %s: No alignments for %s" %
+                              (group1['id'], group2['id'], group1['id']))
             return False
 
         alignments = all_alignments[db_id1]
         if db_id2 not in alignments:
-            self.logger.debug("Splitting %s %s: No alignment between them",
-                              group1['id'], group2['id'])
+            self.logger.debug("Splitting %s %s: No alignment between them" %
+                              (group1['id'], group2['id']))
             return False
 
         if not alignments[db_id2]:
-            self.logger.debug("Splitting %s %s: Bad alignment",
-                              group1['id'], group2['id'])
+            self.logger.debug("Splitting %s %s: Bad alignment" %
+                              (group1['id'], group2['id']))
             return False
 
-        self.logger.debug("Good alignment: %s, %s", group1['id'], group2['id'])
+        self.logger.debug("Good alignment: %s, %s" % (group1['id'], group2['id']))
         return True
 
     def are_similar_species(self, group1, group2):
@@ -251,11 +251,11 @@ class Grouper(core.Base):
         if species1 != SYNTHEIC[0] and species2 != SYNTHEIC[0] and \
                 species1 is not None and species2 is not None \
                 and species1 != species2:
-            self.logger.debug("Splitting %s, %s: Different species (%i, %i)",
-                              group1['id'], group2['id'], species1, species2)
+            self.logger.debug("Splitting %s, %s: Different species (%i, %i)" %
+                              (group1['id'], group2['id'], species1, species2))
             return False
 
-        self.logger.debug("Good species: %s, %s", group1['id'], group2['id'])
+        self.logger.debug("Good species: %s, %s" % (group1['id'], group2['id']))
         return True
 
     def has_good_discrepancy(self, all_discrepancy, group1, group2):
@@ -296,21 +296,21 @@ class Grouper(core.Base):
             return True
 
         if db_id1 not in all_discrepancy:
-            self.logger.warning("No computed discrepancy for %s, %s", (group1['id'],group2['id']))
+            self.logger.warning("No computed discrepancy for %s, %s" % (group1['id'],group2['id']))
             return True
 
         discrepancy = all_discrepancy[db_id1]
         if db_id2 not in discrepancy:
-            self.logger.debug("Splitting %s %s: No discrepancy between them",
-                              group1['id'], group2['id'])
+            self.logger.debug("Splitting %s %s: No discrepancy between them" %
+                              (group1['id'], group2['id']))
             return False
 
         if discrepancy[db_id2] > NR_DISCREPANCY_CUTOFF or discrepancy[db_id2] < 0:
-            self.logger.debug("Splitting %s %s: Too large discrepancy %f",
-                              group1['id'], group2['id'], discrepancy[db_id2])
+            self.logger.debug("Splitting %s %s: Too large discrepancy %f" %
+                              (group1['id'], group2['id'], discrepancy[db_id2]))
             return False
 
-        self.logger.debug("Good discrepancy %s %s", group1['id'], group2['id'])
+        self.logger.debug("Good discrepancy %s %s" % (group1['id'], group2['id']))
         return True
 
     def is_hard_coded_join(self, group1, group2):
@@ -367,8 +367,8 @@ class Grouper(core.Base):
         pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)
         pairs = list(pairs)
         for pair in pairs:
-            self.logger.debug("Pair %s, %s not connected", *pair)
-        self.logger.debug("%i pairs are not connected", len(pairs))
+            self.logger.debug("Pair %s, %s not connected" % (pair[0], pair[1]))
+        self.logger.debug("%i pairs are not connected" % (len(pairs)))
 
     def split_by_species(self, group):
         """Split a group by species. This will put all members with the same
@@ -386,8 +386,8 @@ class Grouper(core.Base):
                 name = SYNTHENIC_SPECIES_ID
             species[name].append(entry)
 
-        self.logger.debug("Found groups based on species: %s",
-                          ', '.join(str(s) for s in species.keys()))
+        self.logger.debug("Found groups based on species: %s" %
+                          (', '.join(str(s) for s in species.keys())))
         species = dict(species)
         unknown = species.pop(SYNTHENIC_SPECIES_ID, [])
         if not species:
@@ -398,8 +398,8 @@ class Grouper(core.Base):
         species[largest_group].extend(unknown)
 
         merge = lambda group: ', '.join(g['id'] for g in group)
-        self.logger.debug("Produced %i groups: %s", len(species),
-                          '; '.join(merge(g) for g in species.values()))
+        self.logger.debug("Produced %i groups: %s" % (len(species),
+                          '; '.join(merge(g) for g in species.values())))
 
         return species.values()
 
@@ -423,8 +423,8 @@ class Grouper(core.Base):
         if max_length < NR_MIN_HOMOGENEOUS_SIZE or len(group) == 1:
             return [group]
 
-        self.logger.debug("Enforcing species splitting of %s",
-                          ', '.join(c['id'] for c in group))
+        self.logger.debug("Enforcing species splitting of %s" %
+                          (', '.join(c['id'] for c in group)))
         return self.split_by_species(group)
 
     def missing_ifes(self, matrix, ifes):
