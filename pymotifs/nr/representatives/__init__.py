@@ -48,13 +48,13 @@ def fetch(name):
         if inspect.isclass(value) and issubclass(value, Representative) and \
                 getattr(value, 'method', None) == name:
 
-            # Record the end time
-            end_time = time.time()
+            # Record the end time ... but it doesn't really work right
+            # end_time = time.time()
             fetch.call_count += 1
-            fetch.total_time += (end_time - start_time)
-            logger.info("Record the current running times and time for searching representatives. Running %s times, and cost %s",fetch.call_count,fetch.total_time)
-            logger.info("show the name of the representative set: %s", name)
-            logger.info("show the representative info: %s", value)
+            # fetch.total_time += (end_time - start_time)
+            logger.info("Updated representative set number %d" % (fetch.call_count)
+            # logger.info("show the name of the representative set: %s", name)
+            # logger.info("show the representative info: %s", value)
             return value
 
     # # Record the end time
