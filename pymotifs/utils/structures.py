@@ -116,6 +116,7 @@ class Structure(Base):
                 if return_id:
                     entry = (result.chain_name, result.chain_id)
                 data.append(entry)
+
             return data
 
     def longest_chain(self, pdb, model=1):
@@ -206,10 +207,14 @@ class Structure(Base):
 
             tax_ids = [int(tax_id) for tax_id in tax_ids.split(',')]
 
+        # with self.session() as session:
+        #     query = session.query(mod.SpeciesMapping.species_id).\
+        #         filter(mod.SpeciesMapping.species_mapping_id.in_(tax_ids))
+        #     species_ids = [result.species_id for result in query]
         with self.session() as session:
-            query = session.query(mod.SpeciesMapping.species_id).\
-                filter(mod.SpeciesMapping.species_mapping_id.in_(tax_ids))
-            species_ids = [result.species_id for result in query]
+            query = session.query(mod.TaxidSpeciesDomain.species_taxid).\
+            filter(mod.TaxidSpeciesDomain.taxonomy_id.in_(tax_ids))
+            species_ids = [result.species_taxid for result in query]
 
             if simplify:
                 if len(species_ids) > 1:
