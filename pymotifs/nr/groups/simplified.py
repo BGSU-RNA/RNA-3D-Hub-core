@@ -302,27 +302,36 @@ class Grouper(core.Base):
             self.logger.debug("Chains not valid for discrepancy")
             self.logger.info("Chains not valid for discrepancy, if statement:(%s,%s), length:(%s,%s), resolution:(%s,%s)"%(disc.valid_chain(group1),disc.valid_chain(group2),group1['length'],group2['length'],group1['resolution'],group2['resolution']))
             self.logger.info("discrepancy value: %s, %s"%(dis_test.get(db_id1,'null'),dis_test.get(db_id2,'null')))
-            self.logger.info("Chains not valid for discrepancy for %s, %s", (group1['id'],group2['id']))
+            self.logger.info("Chains not valid for discrepancy for %s, %s"%(group1['id'],group2['id']))
             return True
 
         if not all_discrepancy:
             self.logger.debug("No discrepancies, so ignoring")
             # self.logger.info("No discrepancies, so ignoring")
-            self.logger.info("No discrepancies, so ignoring for %s, %s", (group1['id'],group2['id']))
-            return True
+            self.logger.info("No discrepancies, so ignoring for %s, %s"%(group1['id'],group2['id']))
+            return False
 
         if db_id1 not in all_discrepancy:
-            self.logger.warning("No computed discrepancy for %s, %s", (group1['id'],group2['id']))
-            self.logger.info("No computed discrepancy for %s, %s", (group1['id'],group2['id']))
-            return True
+            self.logger.warning("No computed discrepancy for %s, %s"%(group1['id'],group2['id']))
+            self.logger.info("No computed discrepancy for %s, %s"%(group1['id'],group2['id']))
+            return False
+            # return True
 
         discrepancy = all_discrepancy[db_id1]
         if db_id2 not in discrepancy:
             self.logger.debug("Splitting %s %s: No discrepancy between them",
                               group1['id'], group2['id'])
-            # self.logger.info("Splitting %s %s: No discrepancy between them",
-            #                   group1['id'], group2['id'])
+            self.logger.info("Splitting %s %s: No discrepancy between them"%(group1['id'], group2['id']))
             return False
+
+
+        # #####change the order of if statement to see what will happen#################
+        # if db_id1 not in all_discrepancy:
+        #     self.logger.warning("No computed discrepancy for %s, %s"%(group1['id'],group2['id']))
+        #     self.logger.info("No computed discrepancy for %s, %s"%(group1['id'],group2['id']))
+        #     return True
+        # discrepancy = all_discrepancy[db_id1]
+        # ######################ending change#############################################
 
         if discrepancy[db_id2] > NR_DISCREPANCY_CUTOFF or discrepancy[db_id2] < 0:
             self.logger.debug("Splitting %s %s: Too large discrepancy %f",
@@ -520,22 +529,22 @@ class Grouper(core.Base):
         :param dict discrepancies: The loaded discrepancies.
         :returns: A list of lists of the connected components.
         """
-
+        self.logger.info("nr_timing group start")
         mapping = {}
         for chain in chains:
             mapping[chain['id']] = chain            ## actually this is ife ids here. Not sure why it calls chain here. very confusing
 
         groups = []
         graph = self.connections(chains, alignments, discrepancies) ## not sure what is here. It will return valid pairs about ife ids.
-        self.logger.info("connection found, building groups")
+        self.logger.info("nr_timing connection found, building groups")
         all_groups = self.build_groups(graph)
-        self.logger.info("processing all groups")
+        self.logger.info("nr_timing processing all groups")
         for ids in all_groups:                        ##
             # self.validate(graph, list(ids))                         ## I though this function was doing some specific works, but it just writes log info. Not important at all.
             group = [mapping[id] for id in ids]                     ##
             for subgroup in self.enforce_species_splitting(group):
                 groups.append(subgroup)
-
+        self.logger.info("nr_timing processed all groups")
         return groups
 
     def all_ifes(self, pdbs):
@@ -559,20 +568,20 @@ class Grouper(core.Base):
         'rank' which indicates the rank of the chain.
         """
 
-        self.logger.info("Will group %i pdbs", len(pdbs))
+        self.logger.info("nr_timing Will group %i pdbs", len(pdbs))
         ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
-        self.logger.info("retrieving alignments to cluster")
+        self.logger.info("nr_timing retrieving alignments to cluster")
         print("retrieving alignments to cluster")
 
         alignments = self.alignments(ifes)
-        self.logger.info("retrieving discrepancies to cluster")
+        self.logger.info("nr_timing retrieving discrepancies to cluster")
         print("retrieving discrepancies to cluster")
         discrepancy = self.discrepancies(ifes)
 
         grouped = set()
         groups = []
-        self.logger.info("forming groups")
+        self.logger.info("nr_timing forming groups")
         print("forming groups")
         for group in self.group(ifes, alignments, discrepancy):
             members = []
