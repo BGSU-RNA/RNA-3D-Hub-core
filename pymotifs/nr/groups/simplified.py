@@ -34,6 +34,8 @@ def ranking_key(chain):
     :chain: The chain to produce a key for.
     :returns: A value that can be used to sort the chains in descending
     order of quality.
+
+    The keys indicated here are old; we switched to using CQS with release 3.0
     """
 
     bp_nt = 0.0
@@ -251,8 +253,8 @@ class Grouper(core.Base):
         if species1 != SYNTHEIC[0] and species2 != SYNTHEIC[0] and \
                 species1 is not None and species2 is not None \
                 and species1 != species2:
-            self.logger.debug("Splitting %s, %s: Different species (%i, %i)" %
-                              (group1['id'], group2['id'], species1, species2))
+            self.logger.debug("Splitting %s, %s: Different species (%s, %s)" %
+                              (group1['id'], group2['id'], str(species1), str(species2)))
             return False
 
         self.logger.debug("Good species: %s, %s" % (group1['id'], group2['id']))
@@ -454,6 +456,11 @@ class Grouper(core.Base):
         # greatly (I think to ~30 min). For some reason this produces the
         # incorrect results though. This is likely been due to bugs that have
         # been fixed now.
+
+        # Set up iterables to go over every pair of chains.
+        # This code runs slowly, partly because there are so many pairs to consider
+        # It seems to consider every single pair, rather than being smart about
+        # only considering pairs that have alignments between them.
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
         pairs = it.combinations(chains, 2)
         return it.ifilter(lambda p: equiv(*p), pairs)
@@ -471,7 +478,13 @@ class Grouper(core.Base):
         for chain in chains:
             graph[chain['id']].add(chain['id'])
 
-        for chain1, chain2 in self.pairs(chains, alignments, discrepancies):
+        # next line is fast because it simply sets up an iterable
+        all_pairs = self.pairs(chains, alignments, discrepancies)
+
+        self.logger.info('Creating connections between chains')
+
+        # this loop takes maybe 12 minutes
+        for chain1, chain2 in all_pairs:
             self.logger.debug("Equivalent: %s %s", chain1['id'], chain2['id'])
             graph[chain1['id']].add(chain2['id'])
             graph[chain2['id']].add(chain1['id'])

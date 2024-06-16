@@ -36,7 +36,7 @@ class Loader(BaseLoader):
                         'nr_class_parent_id': parent['name']['class_id']
                     })
                 else:
-                    self.logger.info('Exact match for %s, no need to generate new' % group['name']['full'])
+                    # self.logger.info('Exact match for %s, no need to generate new' % group['name']['full'])
                     pass
         return data
 

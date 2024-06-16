@@ -32,5 +32,9 @@ from pymotifs.nr.cleanup import Cleanup
 from pymotifs.nr.class_rank import Loader as ClassRankLoader
 
 class Loader(core.StageContainer):
+    # Temporarily skip the ordering stage because it is slow
+    # stages = [ReleaseLoader, IdLoader, ClassLoader, ParentLoader,
+    #           CountLoader, NrQualityLoader, Cleanup,ClassRankLoader]
+
     stages = [ReleaseLoader, IdLoader, ClassLoader, ParentLoader,
               CountLoader, NrQualityLoader, Cleanup,ClassRankLoader,OrderingLoader]
