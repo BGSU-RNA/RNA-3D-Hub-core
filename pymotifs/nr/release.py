@@ -25,12 +25,13 @@ from pymotifs.chain_chain.loader import Loader as ChainChainLoader
 from pymotifs.quality.loader import Loader as QualityLoader
 from pymotifs.units.loader import Loader as UnitsLoader
 from pymotifs.constants import RESOLUTION_GROUPS
+from pymotifs.export.ife_discrepancy import Exporter as IFEDiscrepancyExporter
 
 
 class Loader(core.MassLoader):
     dependencies = set([ChainLoader, ChainSpeciesLoader, InteractionLoader,
                         IfeLoader, CorrespondenceLoader, ChainChainLoader,
-                        QualityLoader, UnitsLoader])
+                        QualityLoader, UnitsLoader, IFEDiscrepancyExporter])
     # dependencies = set([])
     update_gap = dt.timedelta(7)
     ## I think this is not safe, the following variable is just for testing purposes.
