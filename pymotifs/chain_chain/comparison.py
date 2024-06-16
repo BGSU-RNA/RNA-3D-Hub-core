@@ -156,11 +156,12 @@ class Loader(core.SimpleLoader):
         pairs : list
             A list of (first, seconds) pairs of chain ids to compare.
         """
+
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
         GeneratePickleFiles = True    # must be used in production, to update the files each week
 
-        # temporarily knock this out on rnatest
         if GeneratePickleFiles:
+            self.logger.info('Getting the unit_id to experimental sequence position table')
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
             # takes about 2 1/3 minutes on production in December 2020
             # self.logger.info('Getting the unit_id to experimental sequence position table')
@@ -168,36 +169,88 @@ class Loader(core.SimpleLoader):
             with self.session() as session:
                 EM = mod.ExpSeqUnitMapping
                 # query = session.query(EM.unit_id,EM.exp_seq_position_id).select_from(EM)
-                query = session.query(EM.unit_id,EM.exp_seq_position_id).\
+                # get correspondences between unit ids and experimental sequence positions
+                # but only for unit ids with symmetry operator 1_555
+
+                # only get unit ids that have a glycosidic center, so we can compute discrepancies
+                # sort to put no alt_id before A before B before C, etc.
+                query = session.query(EM.unit_id,EM.exp_seq_position_id,mod.UnitInfo.sym_op).\
                     join(mod.UnitInfo, mod.UnitInfo.unit_id == EM.unit_id).\
-                        filter(mod.UnitInfo.pdb_id.in_(pdbs))
+                    join(mod.UnitCenters, mod.UnitCenters.unit_id == EM.unit_id).\
+                    filter(mod.UnitCenters.name == 'glycosidic').\
+                    filter(mod.UnitInfo.pdb_id.in_(pdbs)).\
+                    order_by(mod.UnitInfo.pdb_id,mod.UnitInfo.chain,mod.UnitInfo.alt_id.is_(None).desc(),mod.UnitInfo.alt_id)
+
+                chain_to_symmetries = defaultdict(set)
                 count = 0
                 for r in query:
                     count += 1
-                self.logger.info('Got %d unit to position mappings' % count)
-                unit_to_position = {}      # will be a dictionary of dictionaries
-                count = 0
-                for r in query:
                     if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
                         if len(fields) > 3:
                             ## skip unexpected pdbs
                             if not fields[0] in pdbs_set:
                                 continue
-                            key = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
-                            if not key in unit_to_position:
-                                unit_to_position[key] = {}
-                            unit_to_position[key][r.unit_id] = r.exp_seq_position_id
-                            count += 1
-                self.logger.info('Got %d unit to position mappings' % count)
-                pickle.dump(unit_to_position, open("unit_to_position.pickle", "wb" ), 2)                        ## store the object unit_to_position in the unit_to_position.pickle file. "wb" means write-binary. Not sure why we have the number "2" here.
+                            chain = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
+                            chain_to_symmetries[chain].add(r.sym_op)
+                self.logger.info('Got %d raw unit to position mappings' % count)
+
+                for chain, symmetries in chain_to_symmetries.items():
+                    if '1_555' in symmetries:
+                        # use the default symmetry when available
+                        symmetry = '1_555'
+                    elif len(symmetries) >= 1:
+                        # otherwise use the lowest numbered one, whatever that means
+                        symmetry = sorted(symmetries)[0]
+                    else:
+                        symmetry = ''
+                        self.logger.info('No symmetry operators for %s' % chain)
+                    # record the symmetry to use for this chain
+                    chain_to_symmetries[chain] = symmetry
+
+                chain_unit_to_position = defaultdict(dict)
+                chain_to_simple_unit_id = defaultdict(set)
+                count = 0
+                for r in query:
+                    if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
+                        fields = r.unit_id.split("|")
+                        if len(fields) >= 5:
+                            ## skip unexpected pdbs, just in case
+                            if not fields[0] in pdbs_set:
+                                continue
+
+                            chain = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
+                            # only store unit ids from the one designated symmetry operator
+                            if r.sym_op == chain_to_symmetries[chain]:
+                                lf = len(fields)
+                                if lf in [5,6,7]:
+                                    # plain or just an alt id
+                                    simple_unit_id = "|".join([fields[0],fields[1],fields[2],'',fields[4]])  # remove sequence
+                                elif lf == 8:
+                                    # insertion code, possibly with alt_id
+                                    # remove sequence and alt_id
+                                    simple_unit_id = "|".join([fields[0],fields[1],fields[2],'',fields[4],fields[5],'',fields[7]])
+                                else:
+                                    # symmetry, possibly with insertion code, possibly with alt_id
+                                    # remove sequence and alt_id
+                                    simple_unit_id = "|".join([fields[0],fields[1],fields[2],'',fields[4],fields[5],'',fields[7],fields[8]])
+
+                                # only store one version of each unit id
+                                if not simple_unit_id in chain_to_simple_unit_id[chain]:
+                                    chain_to_simple_unit_id[chain].add(simple_unit_id)
+                                    chain_unit_to_position[chain][r.unit_id] = r.exp_seq_position_id
+                                    count += 1
+                                else:
+                                    self.logger.info('Unit id %s duplicates earlier %s' % (r.unit_id,simple_unit_id))
+
+                self.logger.info('Got %d final unit to position mappings' % count)
+                pickle.dump(chain_unit_to_position, open("unit_to_position.pickle", "wb" ), 2)
                 self.logger.info('Wrote pickle file unit_to_position.pickle')
 
-            unit_to_position = {}     # hopefully clear this from memory
+            chain_unit_to_position = {}     # hopefully clear this from memory
 
         if GeneratePickleFiles:
-            # takes about 6.5 minutes on production in December 2020
-            # getting killed on rnatest when we try to do DNA structures
+            # took about 6.5 minutes on production in December 2020
             self.logger.info('Getting the position to position mappings')
 
             position_to_position = defaultdict(list)                                                            ## A dictionary-like object. It will not raise error. It will provides a default value for the key does not exist. In this case, it will return a empty list object if the key does not exist.
@@ -352,40 +405,45 @@ class Loader(core.SimpleLoader):
         chain2 = info2['ife_id'].split('+')[0]
 
         # number of resolved nucleotides
-        length1 = len(unit_to_position[chain1])
-        length2 = len(unit_to_position[chain2])
+        length1 = len(unit_to_position.get(chain1,[]))
+        length2 = len(unit_to_position.get(chain2,[]))
 
-        if length1/length2 > 10 or length2/length1 > 10:
+        if length1 == 0:
+            self.logger.warning("No unit to position mapping for %s" % chain1)
+        elif length2 == 0:
+            self.logger.warning("No unit to position mapping for %s" % chain2)
+        elif length1/length2 > 10 or length2/length1 > 10:
             self.logger.warning("Dramatically different number of resolved nucleotides, using discrepancy -1")
             self.logger.info("Chain %s length %d, chain %s length %d" % (chain1,length1,chain2,length2))
         else:
-
             # Map units in chain2 to their experimental sequence position ids.
             # These are not experimental sequence positions; different sequences
             # have different ids for the same position
-            positions2 = []              # list of all positions in chain2
+            positions2 = set()           # all positions in chain2
             positions2_to_unit2 = {}     # map those positions back to units
             for unit,position in unit_to_position[chain2].items():
-                positions2.append(position)
+                positions2.add(position)
                 positions2_to_unit2[position] = unit
-            positions2 = set(positions2) # for faster intersections, I think                            ## I think this is for cleaning part of memory
 
             # Loop over units in chain1, map to positions, and intersect with
             # the positions that go with units in chain2
             for unit1,position1 in unit_to_position[chain1].items():
                 positions1 = set(position_to_position[position1])
-                intersection = positions1 & positions2                                                  ## unclear about &
+                intersection = positions1 & positions2  # intersect positions from 1 and from 2
                 positions2 = positions2 - intersection
                 if len(intersection) > 1:
+                    # could happen because one nucleotide has both A and B alt ids
+                    # But I don't see evidence of it happening, which is strange
                     self.logger.info("Trouble: Found multiple matches:")
                     for c in intersection:
                         self.logger.info("Matched %s and %s" % (unit1,positions2_to_unit2[c]))
+
                 elif len(intersection) == 1:
                     for c in intersection:
                         unit2 = positions2_to_unit2[c]
                         matching_pairs.append((unit1,unit2))
                 else:
-                    self.logger.info("No match for %s" % unit1)
+                    self.logger.info("No match for %s position %s" % (unit1,position1))
 
             self.logger.info("get_unit_correspondences_intersect: query found %d matching pairs" % len(matching_pairs))
 
