@@ -11,6 +11,9 @@
 *.swp
 *.vi
 *~
+*.gz
+*.sh
+*.pickle
 
 # OS or Editor folders
 .DS_Store
