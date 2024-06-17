@@ -123,36 +123,67 @@ class Grouper(core.Base):
                 return []
 
             grouped = it.imap(result2dict, query)                       ## This is confusing. The result2dict function returns "A dictionary with the keys from the query". I am not sure what is the keys for a joined query.
+
             # self.logger.info('show the value of the "grouped" variable%s'%grouped)
             ## example ('d:', {u'is_accompanying': 0, u'is_integral': 1, 'name': 'A', u'sequence': 'CAAAGAAAAG', 'pdb': '7OOO', 'method': 'X-RAY DIFFRACTION', u'length': 10L, 'db_id': 139555L, 'bp': 0L, 'species': 32630L, u'resolution': 2.57, 'id': '7OOO|1|A+7OOO|1|B'})
             ## this is an example for the result2dict, and the "grouped" variable is a iterative varibale stotes the previous dictionary variables.
+
             grouped = it.groupby(grouped, op.itemgetter('id'))
+
             ## it.grouped: this function will generate the result like: {'7OOO|1|A+7OOO|1|B':[(***dict variable with clolumn names and values***),(***dict***)]}
             ## the output are not necessary have the same type with my example.
             ## the general idea is that ife_id and chains pairs were stored in grouped
-            ##
+
             groups = []
-            for ife_id, chains in grouped:
-                chains = list(chains)
-                ## print("show the chains variable in simplified.py:",chains)
-                ## result: ('show the chains variable in simplified.py:', [{u'is_accompanying': 0, u'is_integral': 1, 'name': 'D', u'sequence': 'CAAAGAAAAG', 'pdb': '7OOO', 'method': 'X-RAY DIFFRACTION', u'length': 11L, 'db_id': 139556L, 'bp': 0L, 'species': 32630L, u'resolution': 2.57, 'id': '7OOO|1|D+7OOO|1|E'}])
+            for ife_id, chain_set in grouped:
+                # chains = list(chain_set)        # old code essentially was just this
+                # chain_set might not have the chains in the same order as in the ife id!
+                # especially a problem when a chain is completely missing for some strange reason
+
+                self.logger.info("Processing ife %s" % ife_id)
+
+                chain_name_to_chain = {}
+                for chain in chain_set:
+                    # self.logger.info("chain info: %s" % str(chain))
+                    chain_name_to_chain[chain['name']] = chain
+
+                chain_triples = ife_id.split('+')
+                chain_names = [x.split('|')[2] for x in chain_triples]
+                chains = []
+
+                for name in chain_names:
+                    if name in chain_name_to_chain:
+                        chains.append(chain_name_to_chain[name])
+                    elif len(chains) > 0:
+                        self.logger.warn("No chain found for %s in %s" % (name, ife_id))
+                    else:
+                        # cannot find first chain at all, simply return
+                        self.logger.warn("No chain found for %s in %s" % (name, ife_id))
+                        return []
+
+
+                if len(chains) == 0:
+                    self.logger.warn("No chains found for %s with chain_set %s" % (ife_id,str(list(chain_set))))
+                    return []
+
                 groups.append({
                     'id':  ife_id,
                     'pdb': chains[0]['pdb'],
                     'bp': chains[0]['bp'],
-                    'name': chains[0]['name'],
+                    'name': chains[0]['name'],              # like A, B, etc.
                     'length': chains[0]['length'],
                     'species': chains[0]['species'],
                     'chains': chains,
-                    'db_id': chains[0]['db_id'],
+                    'db_id': chains[0]['db_id'],            # this is the chain_id in the database, a number
                     'resolution': chains[0]['resolution'],
                     'method': chains[0]['method'],
                 })
 
         if not groups:
-            raise core.InvalidState("No stored ifes for %s", pdb)
+            raise core.InvalidState("No stored ifes for %s" % pdb)
 
-        self.logger.info("Found %i ifes for %s", len(groups), pdb)
+        self.logger.info("Found %i ifes for %s, namely %s" % (len(groups), pdb, ",".join([i['id'] for i in groups])))
+
         return groups
 
     def discrepancies(self, groups):
@@ -171,7 +202,7 @@ class Grouper(core.Base):
 
         chain_ids = []
         for group in groups:
-            chain_ids.append(group['db_id'])            ## db_id is the chain id, not sure why it calls db_id here.
+            chain_ids.append(group['db_id'])            ## db_id is the chain_id
 
         with self.session() as session:
             sim = mod.ChainChainSimilarity
