@@ -81,7 +81,8 @@ class Grouper(core.Base):
         return False
 
     def ifes(self, pdb):
-        """Load all ife chains from a given pdb. This will get the RNA chains as
+        """
+        Load all ife chains from a given pdb. This will get the RNA chains as
         well as load some interaction data about the chains.
 
         :pdb: A pdb to get the chains for.
@@ -127,8 +128,37 @@ class Grouper(core.Base):
             grouped = it.imap(result2dict, query)
             grouped = it.groupby(grouped, op.itemgetter('id'))
             groups = []
-            for ife_id, chains in grouped:
-                chains = list(chains)
+            for ife_id, chain_set in grouped:
+
+                # chains = list(chain_set)        # old code essentially was just this
+                # chain_set might not have the chains in the same order as in the ife id!
+                # especially a problem when a chain is completely missing for some strange reason
+
+                chain_name_to_chain = {}
+                for chain in chain_set:
+                    # self.logger.info("chain info: %s" % str(chain))
+                    chain_name_to_chain[chain['name']] = chain
+
+                chain_triples = ife_id.split('+')
+                chain_names = [x.split('|')[2] for x in chain_triples]
+                chains = []
+
+                for name in chain_names:
+                    if name in chain_name_to_chain:
+                        chains.append(chain_name_to_chain[name])
+                    elif len(chains) > 0:
+                        self.logger.warn("No chain found for %s in %s" % (name, ife_id))
+                    else:
+                        # cannot find first chain at all, simply return
+                        self.logger.warn("No chain found for %s in %s" % (name, ife_id))
+                        return []
+
+
+                if len(chains) == 0:
+                    self.logger.warn("No chains found for %s with chain_set %s" % (ife_id,str(list(chain_set))))
+                    return []
+
+
                 groups.append({
                     'id':  ife_id,
                     'pdb': chains[0]['pdb'],
