@@ -582,7 +582,12 @@ class Loader(core.SimpleLoader):
         Filter matching pairs to check that they have the desired
         model and symmetry operator and alt_id.
         Not sure how often the symmetry and alt_id are used.
+
+        This type of checking is superseded by changes on 6/16/2024
+        to how the unit_to_position mapping is made.
+        This logic does not look very good.
         """
+
         OK_pairs = []
         for (unit1,unit2) in matching_pairs:
             fields1 = unit1.split("|")
@@ -1119,10 +1124,10 @@ class Loader(core.SimpleLoader):
 
                     # new method
                     self.logger.info("data: Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
-                    new_unit_pairs = self.get_unit_correspondences_intersect(info1,info2,unit_to_position,position_to_position)
+                    unit_pairs = self.get_unit_correspondences_intersect(info1,info2,unit_to_position,position_to_position)
 
                     # filter out units with wrong symmetry or alt id
-                    unit_pairs = self.filter_unit_correspondences(new_unit_pairs,info1,info2)
+                    # unit_pairs = self.filter_unit_correspondences(new_unit_pairs,info1,info2)
 
                     # show some matched units to build confidence
                     if len(unit_pairs) > 0:
