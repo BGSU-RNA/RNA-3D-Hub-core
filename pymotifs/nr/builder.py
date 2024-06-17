@@ -17,7 +17,7 @@ from pymotifs.utils.naming import ChangeCounter
 from pymotifs.nr.groups.simplified import Grouper
 from pymotifs.nr.groups.simplified import ranking_key
 
-from pymotifs.constants import NR_REPRESENTATIVE_METHOD
+from pymotifs.constants import NR_REPRESENTATIVE_METHOD  # could be "compscore"
 from pymotifs.constants import RESOLUTION_GROUPS
 from pymotifs.constants import NR_CLASS_NAME
 from sqlalchemy import desc
@@ -255,10 +255,16 @@ class Builder(core.Base):
         return grouper(pdbs, **kwargs)
 
     def name_groups(self, groups, parents):
-        """Compute the naming and parents of all groups. Note that this will
+        """
+        Compute the naming and parents of all groups. Note that this will
         assign parent entries to all groups. However, these parent entries will
         be incorrect when the group is filtered to only those entries within
         a resolution cutoff. This can be corrected by `assign_parents`.
+
+        In other words, each group in groups is a set of ifes from the current release.
+        In the previous release, some of these ifes may have been in more than one group.
+        Any group an ife was preiously in is called a parent of group.
+        Each parent has a handle like 38294 and a version.
 
         Parameters
         ----------
@@ -294,7 +300,13 @@ class Builder(core.Base):
         return named
 
     def counts(self, parents, current):
-        """Compare two releases and count the number of changes.
+        """
+        Compare two releases and count the number of changes.
+
+        This seems to be pretty fragile since any number of things we
+        have tried to speed up this code leads to very high change counts.
+
+
         """
 
         data = []
@@ -306,7 +318,8 @@ class Builder(core.Base):
         return data
 
     def cutoff_counts(self, parents, groups):
-        """Compute the counts of changes to relative to the parent class. The
+        """
+        Compute the counts of changes to relative to the parent class. The
         groups should be from the named method, while parents should be as from
         Known.motifs.
 
@@ -371,7 +384,8 @@ class Builder(core.Base):
         )
 
     def filter_groups(self, groups, resolutions):
-        """This will filter each group so that it contains only the members
+        """
+        This will filter each group so that it contains only the members
         with that pass the given resolution cutoff. The cutoffs should be
         be values that are accepted by within_cutoff. In addition, the groups
         will have their group['name']['full'] and group['name']['cutoff']
@@ -391,7 +405,12 @@ class Builder(core.Base):
             requested members.
         """
 
+        # put 'all' first and then decreasing order of resolution; might not work
+        # resolutions = sorted(resolutions, key=lambda x: float(x) if x != 'all' else 999.0, reverse=True)
+
         data = []
+        # sort group by handle so they clearly run from 00000 to 99999; might not work
+        # for entry in sorted(copy.deepcopy(groups), key=lambda x: x['name']['handle']):
         for entry in copy.deepcopy(groups):
             for resolution in resolutions:
                 filtered = self.within_cutoff(entry, resolution)
@@ -400,10 +419,19 @@ class Builder(core.Base):
                 filtered['name']['full'] = self.class_name(resolution, entry)
                 filtered['name']['cutoff'] = resolution
                 data.append(filtered)
-        return sorted(data, key=lambda g: g['name']['cutoff'])
+
+        # it seems to be very important to keep groups together by cutoff
+        # maybe because later they will be grouped by cutoff
+
+        # sort in order 1.5, 2.0, 2.5, up to all
+        # return sorted(data, key=lambda g: g['name']['cutoff'])
+
+        # but maybe we can start with the "all" group and save some time that way
+        return sorted(data, key=lambda g: g['name']['cutoff'], reverse=True)
 
     def attach_parents(self, groups, parents):
-        """Load all parents of the given representatives. These groups should
+        """
+        Load all parents of the given representatives. These groups should
         already be named and thus have a parent assignment. However, we need to
         load the parent information for all resolution cutoffs, as well as load
         the representative of the parents, which are not already loaded.
@@ -421,23 +449,26 @@ class Builder(core.Base):
             List of groups with the 'parents' entries set correctly.
         """
 
+        # return a tuple of cutoff like 3.5 and group handle like 31482
         def as_key(group, cutoff=None):
             if cutoff:
                 return (cutoff, group['name']['handle'])
             return (group['name']['cutoff'], group['name']['handle'])
 
         flattened = it.chain.from_iterable(parents.values())
+
+        # map (cutoff, handle) to parent group, which is a dictionary
         mapping = {as_key(p): p for p in flattened}
 
         data = []
         for group in copy.deepcopy(groups):
             cutoff = group['name']['cutoff']
-            parents = []
+            known_parents = []
             for parent in group['parents']:
                 key = as_key(parent, cutoff=cutoff)
                 if key in mapping:
-                    parents.append(mapping[key])
-            group['parents'] = parents
+                    known_parents.append(mapping[key])
+            group['parents'] = known_parents
             data.append(group)
         return data
 
@@ -465,7 +496,8 @@ class Builder(core.Base):
         return old_rank
 
     def find_representatives(self, groups, sorting_key=ranking_key):
-        """Compute the representative for each group. This will modify the
+        """
+        Compute the representative for each group. This will modify the
         group to now have a 'representative' entry containing the
         representative entry. In addition, the members will be sorted and
         assigned a rank based upon the sorting. The representative will always
@@ -487,15 +519,19 @@ class Builder(core.Base):
         """
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
-        class_id_to_ranking = {}
-        ## nr_class_name_checking
 
         with self.session() as session:
             query = session.query(mod.NrClassRank.nr_class_name).distinct()
         nr_class_name_list = [row.nr_class_name for row in query]
 
+        handle_to_ranking = {}
         # self.logger.info("Found groups[0] %s", groups[0])
+        # must process groups in the same order as given, apparently order is important
         for group in copy.deepcopy(groups):
+            handle = group['name']['handle']
+
+            # in order from all, 4.0, 3.5, 3.0, 20.0, etc.
+
             # old_rank = self.using_old_rank(group)
             # self.logger.info("Found old_rank %s", old_rank)
             # self.logger.info("Found group %s", group)
@@ -514,15 +550,44 @@ class Builder(core.Base):
             # if not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS and group['comment'] == 'Exact match':
             if (group['name']['full'] in nr_class_name_list) and (not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS):
                 # self.logger.info("Already have ranking and representative for %s", group['name']['full'])
+                # The lines below signal that we should retrieve the previous ranking and rep
+                # from the database
                 group['representative'] = None
                 group['members'] = []
+            elif handle in handle_to_ranking:
+                # You would think this code would work, but it seems to scramble the
+                # connection to the parents and the counts of changes all get off
+                self.logger.info("Using new ranking for %s", group['name']['full'])
+                keep_members = []
+                for mem in handle_to_ranking[handle]:
+                    # if mem has resolution less than equal to the current cutoff, keep it
+                    # convert the resolution to float in a way that will work even if value is 'all'
+                    try:
+                        res = float(mem['resolution'])
+                    except:
+                        res = 999999.0
+                    if res <= float(group['name']['cutoff']):
+                        keep_members.append(mem)
+
+                group['representative'] = keep_members[0]
+                group['members'] = keep_members
+                for index, member in enumerate(group['members']):
+                    member['rank'] = index
+                    self.logger.info("rank %3d ife %s" % (index, member['id']))
             else:
+                # do the work to look up CQS and rank the members
+                # This should be able to be done faster, but it just takes time
                 self.logger.info("Ranking and selecting representative for %s", group['name']['full'])
                 ordered_members = rep_finder(group)
                 group['representative'] = ordered_members[0]
+                self.logger.info('Representative %s' % str(group['representative']))
                 group['members'] = ordered_members
                 for index, member in enumerate(group['members']):
                     member['rank'] = index
+
+                # uncomment the next line to use the elif statement above and save some time
+                # but maybe this scrambles the connection to the parents and thus backfires
+                handle_to_ranking[handle] = ordered_members
             data.append(group)
         return data
 
@@ -543,14 +608,26 @@ class Builder(core.Base):
         self.logger.info("Building nr release with %i pdbs", len(pdbs))
 
         groups = self.group(pdbs, **kwargs)
+
+        self.logger.info(str(groups[0]))
+
+        # nice try, but you simply cannot sort the groups here
+        # also cannot sort groups or parents later because they apparently need to stay in the same order
+        # groups = sorted(groups, key=lambda x: x.get('resolution',"zzz"), reverse=True)
+
         # self.logger.info("Found pdbs %s", pdbs)
         # self.logger.info("Found groups %s", groups)
         parents = self.load_parents(parent_release, cutoffs)
         # self.logger.info("Found parents %s", parents)
 
+        # next line seems to match up 'all' groups with their nearest parent
         named = self.name_groups(groups, parents['all'])
+
+        # next line makes different versions of the groups at different cutoffs
         filtered = self.filter_groups(named, cutoffs)
+
         with_parents = self.attach_parents(filtered, parents)
+
         # self.logger.info("Found with_parents %s", with_parents)
         with_reps = self.find_representatives(with_parents)
         # self.logger.info("Found find_representatives %s", with_reps)
@@ -623,8 +700,8 @@ class RepresentativeFinder(core.Base):
             raise core.InvalidState("Unknown method %s" % method)
 
         finder = self.method(method)
-        # self.logger.info("Found group in findrepresentative class: %s", group)
+        # self.logger.info("Found group in RepresentativeFinder class: %s", group)
         new_data=finder(group)
-        # self.logger.info("Found finder(group) in findrepresentative class: %s", new_data)
+        # self.logger.info("Found finder(group) in RepresentativeFinder class: %s", new_data)
         return new_data
         return finder(group)
