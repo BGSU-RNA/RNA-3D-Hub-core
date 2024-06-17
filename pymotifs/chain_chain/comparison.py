@@ -443,7 +443,7 @@ class Loader(core.SimpleLoader):
                         unit2 = positions2_to_unit2[c]
                         matching_pairs.append((unit1,unit2))
                 else:
-                    self.logger.info("No match for %s position %s" % (unit1,position1))
+                    self.logger.info("No match for %s position %s to %s" % (unit1,position1,chain2))
 
             self.logger.info("get_unit_correspondences_intersect: query found %d matching pairs" % len(matching_pairs))
 
@@ -1010,8 +1010,8 @@ class Loader(core.SimpleLoader):
         """
 
         L = len(chain_ids)
-        self.logger.info("data: Computing discrepancies for a group of %d chains" % L)
-        self.logger.info("data: %d discrepancies needed in this group" % (L*(L-1)/2))
+        self.logger.info("Computing discrepancies for a group of %d chains" % L)
+        self.logger.info("%d discrepancies needed in this group" % (L*(L-1)/2))
 
         # from the list of chain_ids, find all pairs that already have a discrepancy computed
         already_computed = []
@@ -1025,7 +1025,7 @@ class Loader(core.SimpleLoader):
                 if r.chain_id_1 != r.chain_id_2:
                     already_computed.append((r.chain_id_1,r.chain_id_2))
                     already_computed_discrepancy.append((r.chain_id_1,r.chain_id_2,r.discrepancy))
-        self.logger.info("data: Found %d discrepancy values already calculated" % (len(already_computed)/2))
+        self.logger.info("Found %d discrepancy values already calculated" % (len(already_computed)/2))
 
         # debugging
         # figure out why more discrepancies are computed than are needed in some cases
@@ -1042,7 +1042,7 @@ class Loader(core.SimpleLoader):
         # loop over pairs of chain ids in this group, skipping those that already have discrepancy calculated, look up corr_id
         check_pairs = sorted(list(set(it.combinations(chain_ids, 2)) - set(already_computed)))
         if len(check_pairs) > 0:
-            self.logger.info("data: Looking up correspondence ids for %d pairs of chains that need to be computed" % len(check_pairs))
+            self.logger.info("Looking up correspondence ids for %d pairs of chains that need to be computed" % len(check_pairs))
 
         required_pairs = []
         log_count = 0
@@ -1059,14 +1059,14 @@ class Loader(core.SimpleLoader):
                     info1 = chain_info[chain1_id]
                     info2 = chain_info[chain2_id]
 
-                    self.logger.info("data: No correspondence id between chains %s %s and %s %s" % (info1['ife_id'],chain1_id,info2['ife_id'],chain2_id))
+                    self.logger.info("No correspondence id between chains %s %s and %s %s" % (info1['ife_id'],chain1_id,info2['ife_id'],chain2_id))
                     log_count = log_count + 1
                 else:
-                    self.logger.info("data: No correspondence id between chains %s and %s" % (chain1_id,chain2_id))
+                    self.logger.info("No correspondence id between chains %s and %s" % (chain1_id,chain2_id))
                 # Note: cannot store a discrepancy with a null correspondence id
             else:
                 required_pairs.append((corr_id,chain1_id,chain2_id))
-        self.logger.info("data: Found %d discrepancy values needing to be calculated" % len(required_pairs))
+        self.logger.info("Found %d discrepancy values needing to be calculated" % len(required_pairs))
 
 
 
@@ -1081,7 +1081,7 @@ class Loader(core.SimpleLoader):
             # retrieve chain information for all chains once and store the data
             # 50 seconds for T.th. SSU on rnatest in December 2020
 
-            self.logger.info("data: Retrieving chain information once for each chain")
+            self.logger.info("Retrieving chain information once for each chain")
             chain_info = {}
             for chain_id in chain_ids:
                 chain_info[chain_id] = self.get_chain_info(chain_id)
@@ -1111,7 +1111,7 @@ class Loader(core.SimpleLoader):
                 # make sure not to repeat any pairings in different order
                 if chain1_id < chain2_id:
 
-                    self.logger.info("data: Re-computing discrepancy %d for this group" % (current))
+                    self.logger.info("Re-computing discrepancy %d for this group" % (current))
                     current += 1
 
                     chain1_seen.add(chain1_id)
@@ -1123,7 +1123,7 @@ class Loader(core.SimpleLoader):
                     info2 = chain_info[chain2_id]
 
                     # new method
-                    self.logger.info("data: Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
+                    self.logger.info("Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
                     unit_pairs = self.get_unit_correspondences_intersect(info1,info2,unit_to_position,position_to_position)
 
                     # filter out units with wrong symmetry or alt id
@@ -1132,7 +1132,7 @@ class Loader(core.SimpleLoader):
                     # show some matched units to build confidence
                     if len(unit_pairs) > 0:
                         for i in range(0,min(5,len(unit_pairs))):
-                            self.logger.info("data: Matched %s and %s" % unit_pairs[i])
+                            self.logger.info("Matched unit ids %s and %s" % unit_pairs[i])
 
                         # load center and rotation data for the current ifes, if not already loaded
                         allunitdictionary = self.load_centers_rotations_pickle(info1,allunitdictionary)
@@ -1141,7 +1141,7 @@ class Loader(core.SimpleLoader):
 
                     # gather matching centers and rotations for these chains
                     [c1, c2, r1, r2] = self.gather_matching_centers_rotations(unit_pairs,allunitdictionary)
-                    self.logger.info("data: Got matching centers and rotations")
+                    self.logger.info("Got matching centers and rotations")
 
                     # compute the discrepancy between these IFEs
                     # if wrong numbers of matched nucleotides, discrepancy will be -1
@@ -1182,7 +1182,7 @@ class Loader(core.SimpleLoader):
             for (corr_id,chain1_id,chain2_id) in required_pairs:
 
                 current += 1
-                self.logger.info("data: Computing discrepancy %d of %d for this group" % (current,len(required_pairs)))
+                self.logger.info("Computing discrepancy %d of %d for this group" % (current,len(required_pairs)))
 
                 chain1_seen.add(chain1_id)
                 if len(chain1_seen) > 20:
@@ -1206,7 +1206,7 @@ class Loader(core.SimpleLoader):
                 # Recognize multiple chains for IFEs made of more than one chain; currently only 1st chain is used
 
                 # new method
-                self.logger.info("data: Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
+                self.logger.info("Intersect for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
                 unit_pairs = self.get_unit_correspondences_intersect(info1,info2,unit_to_position,position_to_position)
 
                 # filter out units with wrong symmetry or alt id
@@ -1216,12 +1216,12 @@ class Loader(core.SimpleLoader):
 
                 """
                 # old method for getting correspondences
-                self.logger.info("data: Query for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
+                self.logger.info("Query for matching units for chain %s, chain %s" % (info1['ife_id'],info2['ife_id']))
                 old_unit_pairs = self.get_unit_correspondences(corr_id,info1,info2)
 
                 # filter out units with wrong symmetry or alt id
                 old_unit_pairs = self.filter_unit_correspondences(old_unit_pairs,info1,info2)
-                self.logger.info("data: Found %d unit id pairs for chain %s chain %s" % (len(unit_pairs),info1['ife_id'],info2['ife_id']))
+                self.logger.info("Found %d unit id pairs for chain %s chain %s" % (len(unit_pairs),info1['ife_id'],info2['ife_id']))
 
                 self.compare_list_of_pairs(old_unit_pairs,unit_pairs)
                 """
@@ -1230,7 +1230,7 @@ class Loader(core.SimpleLoader):
                 # show some matched units to build confidence
                 if len(unit_pairs) > 0:
                     for i in range(0,min(5,len(unit_pairs))):
-                        self.logger.info("data: Matched %s and %s" % unit_pairs[i])
+                        self.logger.info("Matched unit ids %s and %s" % unit_pairs[i])
 
                     # load center and rotation data for the current ifes, if not already loaded
                     allunitdictionary = self.load_centers_rotations_pickle(info1,allunitdictionary)
@@ -1238,12 +1238,12 @@ class Loader(core.SimpleLoader):
 
                 # gather matching centers and rotations for these chains
                 [c1, c2, r1, r2] = self.gather_matching_centers_rotations(unit_pairs,allunitdictionary)
-                self.logger.info("data: Gathered %d matching centers and rotations for %s and %s, %d of %d in this group" % (len(c1),info1['ife_id'],info2['ife_id'],current,len(required_pairs)))
+                self.logger.info("Gathered %d matching centers and rotations for %s and %s, %d of %d in this group" % (len(c1),info1['ife_id'],info2['ife_id'],current,len(required_pairs)))
 
                 # compute the discrepancy between these IFEs
                 # if wrong numbers of matched nucleotides, discrepancy will be -1
                 discrepancies = self.calculate_discrepancy(info1, info2, corr_id, c1, c2, r1, r2)
 
-                self.logger.info("data: Discrepancy to load: %s" % discrepancies[0])
+                self.logger.info("Discrepancy to load: %s" % discrepancies[0])
                 for d in discrepancies:
                     yield mod.ChainChainSimilarity(**d)
