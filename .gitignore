@@ -12,6 +12,11 @@
 *.vi
 *~
 
+*.gz
+*.sh
+*.jar
+*.pickle
+
 # OS or Editor folders
 .DS_Store
 .cache
