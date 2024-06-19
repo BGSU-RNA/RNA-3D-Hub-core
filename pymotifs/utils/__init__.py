@@ -397,8 +397,8 @@ class GzipFetchHelper(WebRequestHelper):
         super(GzipFetchHelper, self).__init__(parser=self.parser)
 
     def parser(self, response):
-        logger.info('response is %s', response)
-        logger.info('response content is %s', response.content)
+        # logger.info('response is %s', response)
+        # logger.info('response content is %s', response.content)  # prints binary data from .cif.gz!
         # logger.info('response is %s', response)
 
         fileobj = sio.StringIO(response.content)
