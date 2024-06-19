@@ -208,6 +208,10 @@ class Loader(core.SimpleLoader):
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
         GeneratePickleFiles = True    # must be used in production, to update the files each week
 
+        if len(pdbs) < 500:
+            GeneratePickleFiles = False
+            self.logger.info('Not generating pickle files for small number of pdbs')
+
         if GeneratePickleFiles:
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
             # takes about 2 1/3 minutes on production in December 2020
