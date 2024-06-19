@@ -1,5 +1,5 @@
 """This module contains the logic to create IFE-level CQS
-(Composite Quality Scoring) data for subsequent import 
+(Composite Quality Scoring) data for subsequent import
 into the database.
 """
 
@@ -23,7 +23,7 @@ from pymotifs.utils import row2dict
 
 
 class IfeQualityLoader(core.SimpleLoader):
-    """Loader to store non-release-dependent (i.e., IFE-based) 
+    """Loader to store non-release-dependent (i.e., IFE-based)
     quality data for an input equivalence class in table
     ife_cqs.
     """
@@ -73,7 +73,7 @@ class IfeQualityLoader(core.SimpleLoader):
         """
 
         ife = dict([('index', 0), ('id', entry)])
-        ife = self.member_info(ife) 
+        ife = self.member_info(ife)
         ife['length'] = self.observed_length(ife)
 
         nr_class = []
@@ -121,7 +121,7 @@ class IfeQualityLoader(core.SimpleLoader):
         return data
 
     # comment this out on 10/13/2023
-    # we cannot find anywhere that uses the following functions. 
+    # we cannot find anywhere that uses the following functions.
     # If these two functions need to be used in the future, make the query works corrently with NrChains table/release_id.
     # def nr_classes(self, release, resolution):
     #     return self.load_nr_classes(release, resolution)
@@ -219,7 +219,8 @@ class IfeQualityLoader(core.SimpleLoader):
             return query.count()
 
     def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFEs to process.  Ignores the pdbs input.
+        """
+        Look up the list of IFEs to process, from among pdb ids in pdbs
 
         Parameters
         ----------
@@ -235,23 +236,31 @@ class IfeQualityLoader(core.SimpleLoader):
         resolution = 'all'
         release = None
 
-        
+        pdbs_set = set(pdbs)
+        ife_list = []
+
         if False and kwargs.get('manual', {}).get('nr_release_id', False):
-            # This query would not need to rewiten to get the release id from nr_classes and join with this nr_chains table
-            release = kwargs['manual']['nr_release_id'] 
-            self.logger.info("IQL: to_process: release: %s" % release) 
+            # This query would not need to rewritten to get the release id
+            # from nr_classes and join with this nr_chains table
+            release = kwargs['manual']['nr_release_id']
+            self.logger.info("IQL: to_process: release: %s" % release)
             with self.session() as session:
                 query = session.query(mod.NrChains.ife_id).\
                     join(mod.NrClasses,
                          mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
                     filter(mod.NrClasses.nr_release_id == release).\
                     filter(mod.NrClasses.resolution == resolution)
-                return [r.ife_id for r in query] 
+                return [r.ife_id for r in query]
         else:
             with self.session() as session:
                 query = session.query(mod.IfeInfo.ife_id).\
                     filter(mod.IfeInfo.model.isnot(None))
-                return [r.ife_id for r in query] 
+                for r in query:
+                    pdb_id = r.ife_id.split('|')[0]
+                    if pdb_id in pdbs_set:
+                        ife_list.append(r.ife_id)
+                return ife_list
+                # return [r.ife_id for r in query]
 
         pass
 
