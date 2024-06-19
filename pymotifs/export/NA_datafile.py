@@ -103,7 +103,7 @@ class Exporter(core.Loader):
 
     def data(self, pdb, **kwargs):
         """
-        Look up all the existed pdbs to process.  Ignores the pdb input.
+        Look up all the existing pdbs to process.  Ignores the input pdb variable.
         """
 
         # map PDB id to models
@@ -177,7 +177,7 @@ class Exporter(core.Loader):
                     result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
                     result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
 
-        print(result)
+        # print(result)
 
         return result
 
