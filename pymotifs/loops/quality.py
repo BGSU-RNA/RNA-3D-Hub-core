@@ -322,6 +322,10 @@ class Loader(core.SimpleLoader):
 
         start = self.position_info(unit1)
         stop = self.position_info(unit2)
+
+        # self.logger.info('Units are %s and %s' % (unit1, unit2))
+
+
         with self.session() as session:
             units = mod.UnitInfo
             mapping = mod.ExpSeqUnitMapping
