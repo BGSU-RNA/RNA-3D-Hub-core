@@ -160,6 +160,51 @@ class Loader(core.SimpleLoader):
             A list of (first, seconds) pairs of chain ids to compare.
         """
 
+        # Group PDB ids by species and sequence
+        # groups is a list of lists of integer chain identifiers
+        # grouper is part of the nr stage, so it appears that way in the log file
+        grouper = Grouper(self.config, self.session)
+        grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False.
+        grouper.must_enforce_single_species = False   # use False with DNA
+        grouper.must_enforce_single_species = True    # use True on production
+        groups = grouper(pdbs)                                                                                               ## Grouped PDB ids by sequence and species. How this class works
+        if not groups:
+            raise core.InvalidState("No groups produced")
+
+
+        # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
+        # or we could just wait and look that up later
+        has_rotations = ft.partial(self.is_member,
+                                   self.known_unit_entries(mod.UnitCenters))                                                  ## modify `is_member` function
+        has_centers = ft.partial(self.is_member,
+                                 self.known_unit_entries(mod.UnitRotations))
+
+        # create lists of chain ids from each group, then data method will loop over all groups of chain ids
+        groups_of_chain_ids = []
+
+        for group in groups:
+            chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
+            chains = it.ifilter(has_rotations, chains)
+            chains = it.ifilter(has_centers, chains)
+            chains = it.imap(op.itemgetter('db_id'), chains)
+            # convert chains from iterator to list of chain ids and append to list
+            # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
+            chain_list = sorted(set(chains))
+            if len(chain_list) > 1:
+                groups_of_chain_ids.append(chain_list)
+
+        # Note how many groups are left now that we filtered as above
+        self.logger.info("Found %d groups with at least two chains" % len(groups_of_chain_ids))
+
+        # start with the smallest group
+        # groups_of_chain_ids.sort(key=len)
+
+        # start with the largest group
+        groups_of_chain_ids.sort(key=len,reverse=True)
+
+        if len(groups_of_chain_ids) == 0:
+            raise core.Skip("No groups of chains to compare")
+
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
         GeneratePickleFiles = True    # must be used in production, to update the files each week
 
@@ -180,10 +225,6 @@ class Loader(core.SimpleLoader):
                 self.logger.info('Read mappings for %d pdb files from unit_to_position.pickle' % len(known_pdbs))
 
             needed_pdbs = set(pdbs) - known_pdbs
-
-            needed_pdbs.add('3GLP')  # for testing
-            needed_pdbs.add('3HL2')
-            needed_pdbs.add('1DUH')
 
             self.logger.info('Updating unit_to_position.pickle for %d pdbs' % len(needed_pdbs))
             # get correspondences between unit ids and experimental sequence positions
@@ -265,7 +306,7 @@ class Loader(core.SimpleLoader):
                 pickle.dump(chain_unit_to_position, open("unit_to_position.pickle", "wb" ), 2)
                 self.logger.info('Wrote pickle file unit_to_position.pickle')
 
-            chain_unit_to_position = {}     # hopefully clear this from memory
+            del chain_unit_to_position     # clear this from memory
 
         if GeneratePickleFiles:
             # took about 6.5 minutes on production in December 2020
@@ -314,50 +355,7 @@ class Loader(core.SimpleLoader):
             self.logger.info('Wrote pickle file position_to_position.pickle')
             self.logger.info('Maximum exp_seq_position_id_1 is %d' % max(position_to_position.keys()))
 
-            position_to_position = {}   # hopefully clear the memory
-
-
-        # Group PDB ids by species and sequence
-        # groups is a list of lists of integer chain identifiers
-        # grouper is part of the nr stage, so it appears that way in the log file
-        grouper = Grouper(self.config, self.session)
-        grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False.
-        grouper.must_enforce_single_species = True
-        grouper.must_enforce_single_species = False
-        groups = grouper(pdbs)                                                                                               ## Grouped PDB ids by sequence and species. How this class works
-        if not groups:
-            raise core.InvalidState("No groups produced")
-
-
-        # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
-        # or we could just wait and look that up later
-        has_rotations = ft.partial(self.is_member,
-                                   self.known_unit_entries(mod.UnitCenters))                                                  ## modify `is_member` function
-        has_centers = ft.partial(self.is_member,
-                                 self.known_unit_entries(mod.UnitRotations))
-
-        # create lists of chain ids from each group, then data method will loop over all groups of chain ids
-        groups_of_chain_ids = []
-
-        for group in groups:
-            chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
-            chains = it.ifilter(has_rotations, chains)
-            chains = it.ifilter(has_centers, chains)
-            chains = it.imap(op.itemgetter('db_id'), chains)
-            # convert chains from iterator to list of chain ids and append to list
-            # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
-            chain_list = sorted(set(chains))
-            if len(chain_list) > 1:
-                groups_of_chain_ids.append(chain_list)
-
-        # Note how many groups are left now that we filtered as above
-        self.logger.info("Found %d groups with at least two chains" % len(groups_of_chain_ids))
-
-        # start with the smallest group
-        groups_of_chain_ids.sort(key=len)
-
-        # start with the largest group
-        groups_of_chain_ids.sort(key=len,reverse=True)
+            del position_to_position   # clear the memory
 
         return groups_of_chain_ids
 
