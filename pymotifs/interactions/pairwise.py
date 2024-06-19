@@ -1,6 +1,7 @@
-"""Import all pairwise interactions.
+"""
+Import all pairwise interactions.
 
-Runs fr3d on the given files to determine all interactions and then imports
+Runs Matlab fr3d on the given files to determine all interactions and then imports
 them into the database.
 """
 
@@ -61,8 +62,13 @@ class Loader(core.SimpleLoader):
         for result in query:
             d.add(result.pdb_id)
 
+        needed = sorted(list(set(pdbs)-d))
+
+        if len(needed) == 0:
+            raise core.Skip("All pdbs have been processed for pairwise interactions")
+
         # remove the pdb ids just found from the list of those that need to be processed
-        return sorted(list(set(pdbs)-d))
+        return needed
 
     def interaction_type(self, family):
         """Determine the interaction type of the given interaction. This will
