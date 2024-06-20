@@ -26,6 +26,10 @@ class Exporter(core.Exporter):
 
     def to_process(self, pdbs, **kwargs):
 
+        if len(pdbs) < 500:
+            raise core.Skip("Too few pdb files being processed to need to write discrepancies")
+
+        # return a list of length 1, so it only writes out once
         return ["pretend_PDB_ID"]
 
 
