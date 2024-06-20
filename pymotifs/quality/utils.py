@@ -127,7 +127,7 @@ class Utils(core.Base):
     def unit_mapping(self, pdb):
         """
         Create a dictionary that maps from data produced by `as_key` to unit
-        ids that are in the database. This will lookup all unit ids in the
+        ids that are in the database. This will look up all unit ids in the
         database and create the required mapping.
 
         Parameters
