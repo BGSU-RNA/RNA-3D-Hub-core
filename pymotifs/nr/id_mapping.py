@@ -93,14 +93,15 @@ class Loader(core.MassLoader):
         return transformed
 
     def data(self, *args, **kwargs):
-        """Modify the cached data to include database ids. This will load the
+        """
+        Modify the cached data to include database ids. This will load the
         cached NR data and modify it to include the database ids. This will
         never return any data because it is then cached after modification.
         """
 
         data = self.cached(NR_CACHE_NAME)
         if not data:
-            raise core.InvalidState("No grouping loaded")
+            raise core.Skip("Nothing to do here, maybe too few files, maybe an earlier stage failed")
 
         mapping = self.mapping(data['release'], data['groups'])
         data['groups'] = self.transform(data['groups'], mapping)

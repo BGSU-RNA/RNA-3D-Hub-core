@@ -22,7 +22,7 @@ class Cleanup(core.MassLoader):
     def has_data(self, *args, **kwargs):
         grouping = self.cached(NR_CACHE_NAME)
         if not grouping:
-            raise core.Skip("No precomputed grouping to cleanup")
+            raise core.Skip("No precomputed grouping to clean up")
         return False
 
     def remove(self, *args, **kwargs):

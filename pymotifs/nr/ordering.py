@@ -13,15 +13,11 @@ from collections import defaultdict
 import numpy as np
 import time
 
-from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
-from orderEquivalenceClass import orderEquivalenceClassWithOLO
 from orderEquivalenceClass import orderEquivalenceClassWithPathLength
 from orderBySimilarity import imputeNANValues
 from orderBySimilarity import treePenalizedPathLength
-
-from pprint import pprint
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -48,7 +44,8 @@ class Loader(core.SimpleLoader):
     dependencies = set([NrClassRankLoader, NrClassLoader, NrQualityLoader, SimilarityLoader])
 
     def to_process(self, pdbs, **kwargs):
-        """Look up all NR classes. This ignores the given PDBs and just creates
+        """
+        Look up all NR classes. This ignores the given PDBs and just creates
         a list of all NR class ids.
 
         Parameters
@@ -61,6 +58,9 @@ class Loader(core.SimpleLoader):
         classes : list
             A list of all NR class ids.
         """
+
+        if len(pdbs) < 500:
+            raise core.Skip("Too few pdb files being processed to order NR classes")
 
         # determine desired release or retrieve most recent release
         # Removed 2022-05-26 since latest is not used, nor is data
@@ -647,7 +647,7 @@ class Loader(core.SimpleLoader):
                 nr_class_name=nr_class_name,
                 # we do not need the nr_chain_id now
                 # nr_chain_id=nr_chain_id,
-                # nr_chain_id is equal to the nr_class_rank_id now. 
+                # nr_chain_id is equal to the nr_class_rank_id now.
                 ife_id=ife_id,
                 class_order=index,
             ))

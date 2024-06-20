@@ -59,7 +59,7 @@ class Loader(BaseLoader):
     def nr_class_name_checking(self):
         """
         Look for all existing nr_class_names in the nr_class_rank table.
-        
+
         """
         with self.session() as session:
             query = session.query(mod.NrClassRank.nr_class_name).distinct()
@@ -81,5 +81,5 @@ class Loader(BaseLoader):
 
         data = self.cached(NR_CACHE_NAME)
         if not data:
-            raise core.InvalidState("No grouping loaded")
+            raise core.Skip("Nothing to do here, maybe too few files, maybe an earlier stage failed")
         return self.chains(data['groups'])

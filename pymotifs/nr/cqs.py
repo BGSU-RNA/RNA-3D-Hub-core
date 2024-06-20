@@ -82,7 +82,7 @@ class NrQualityLoader(core.SimpleLoader):
         else:
             data = self.cached(NR_CACHE_NAME)
             if not data:
-                raise core.InvalidState("No precomputed grouping to store")
+                raise core.Skip("Nothing to do here, maybe too few files, maybe an earlier stage failed")
             latest = data['release']
 
         classlist = self.list_nr_classes(latest, resolution)
@@ -109,7 +109,7 @@ class NrQualityLoader(core.SimpleLoader):
 
             max_exp_len = 0
 
-            for result in query: 
+            for result in query:
                 entry = row2dict(result)
                 ii = entry['ife_id']
                 entry['nr_name'] = nr_name
@@ -177,7 +177,7 @@ class NrQualityLoader(core.SimpleLoader):
 
             for result in query:
                 ife_list.append(result[0])
-    
+
         data = self.load_ife_cqs_data(ife_list, nr_name)
 
         for ife_output in data:

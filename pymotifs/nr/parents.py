@@ -48,7 +48,7 @@ class Loader(BaseLoader):
     def data(self, release, **kwargs):
         data = self.cached(NR_CACHE_NAME)
         if not data:
-            raise core.InvalidState("No grouping loaded")
+            raise core.Skip("Nothing to do here, maybe too few files, maybe an earlier stage failed")
         if data['parent'] == data['release']:
             raise core.Skip("First release has no parents")
         if self.no_parents(data):
