@@ -16,13 +16,13 @@ from os import path
 
 
 class Exporter(core.Loader):
-    """Export unit data in pickle format, one file per 
+    """Export unit data in pickle format, one file per
     IFE-chain.
     """
 
     # General Setup
-    compressed = False 
-    mark = False 
+    compressed = False
+    mark = False
     dependencies = set([OrientationLoader])
 
     def has_data(self, entry, *args, **kwargs):
@@ -51,8 +51,8 @@ class Exporter(core.Loader):
         Parameters
         ----------
         ichain : tuple
-            The components (PDB ID, model, and chain) of the 
-            IFE-chain name (hyphen-deliminted concatenation) 
+            The components (PDB ID, model, and chain) of the
+            IFE-chain name (hyphen-deliminted concatenation)
             for which to create a file.
 
         Returns
@@ -75,7 +75,8 @@ class Exporter(core.Loader):
 
 
     def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFE chains to process.
+        """
+        Look up the list of chains to process.
 
         Parameters
         ----------
@@ -87,14 +88,17 @@ class Exporter(core.Loader):
             The components of the IFE-chains to be processed.
         """
 
+        molecule_types = ['rna','dna']
+
+        # speed up the query by limiting to pdb_id in pdbs
         with self.session() as session:
             query = session.query(
                        mod.UnitInfo.pdb_id,
                        mod.UnitInfo.model,
-                       mod.UnitInfo.chain
-                   ).\
+                       mod.UnitInfo.chain).\
                    distinct().\
-                   filter(mod.UnitInfo.unit_type_id == 'rna')
+                   filter(mod.UnitInfo.unit_type_id.in_(molecule_types)).\
+                   filter(mod.UnitInfo.pdb_id.in_(pdbs))
 
             return [(r.pdb_id, str(r.model), r.chain) for r in query if r.pdb_id in pdbs]
 
