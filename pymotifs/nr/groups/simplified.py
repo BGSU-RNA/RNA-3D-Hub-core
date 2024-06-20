@@ -581,17 +581,14 @@ class Grouper(core.Base):
         ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
         self.logger.info("retrieving alignments to cluster")
-        print("retrieving alignments to cluster")
 
         alignments = self.alignments(ifes)
         self.logger.info("retrieving discrepancies to cluster")
-        print("retrieving discrepancies to cluster")
         discrepancy = self.discrepancies(ifes)
 
         grouped = set()
         groups = []
         self.logger.info("forming groups")
-        print("forming groups")
         for group in self.group(ifes, alignments, discrepancy):
             members = []
             sorted_group = sorted(group, key=ranking_key)
