@@ -171,6 +171,14 @@ class Loader(core.SimpleLoader):
         if not groups:
             raise core.InvalidState("No groups produced")
 
+        self.logger.info('Found %d groups of IFEs' % len(groups))
+        found_non_singleton_group = False
+        for group in groups:
+            if len(group) > 1:
+                found_non_singleton_group = True
+                break
+        if not found_non_singleton_group:
+            raise core.Skip("No groups of chains to compare")
 
         # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
         # or we could just wait and look that up later
@@ -447,7 +455,8 @@ class Loader(core.SimpleLoader):
 
             # Loop over units in chain1, map to positions, and intersect with
             # the positions that go with units in chain2
-            for unit1,position1 in unit_to_position[chain1].items():
+            # sort by position so it's easier to read and understand
+            for unit1,position1 in sorted(unit_to_position[chain1].items(), key=lambda x: x[1]):
                 positions1 = set(position_to_position[position1])
                 intersection = positions1 & positions2  # intersect positions from 1 and from 2
                 positions2 = positions2 - intersection
