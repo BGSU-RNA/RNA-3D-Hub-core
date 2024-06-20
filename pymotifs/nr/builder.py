@@ -242,6 +242,10 @@ class Builder(core.Base):
         groups : list
             List of grouped IFE's.
         """
+
+        if len(pdbs) < 500:
+            raise core.Skip("Too few pdb files being processed to run the nr stage and make a representative set: %i" % len(pdbs))
+
         grouper = Grouper(self.config, self.session)
         conf = self.config['nr']
         self.logger.warning("conf: %s" % str(conf))

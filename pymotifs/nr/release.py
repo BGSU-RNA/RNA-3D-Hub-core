@@ -32,6 +32,17 @@ class Loader(core.MassLoader):
                         QualityLoader, UnitsLoader])
     update_gap = dt.timedelta(7)
 
+    def to_process(self, pdbs, **kwargs):
+        """
+        Only run when there are enough pdbs that it makes sense to build an nr set.
+        The cutoff here is just a guess.
+        """
+
+        if len(pdbs) < 500:
+            raise core.Skip("Too few pdb files being processed to write NR release")
+
+        return pdbs
+
     def has_data(self, *args, **kwargs):
         """This will always return True because we only want to update if the time
         difference has been large enough.

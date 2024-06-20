@@ -14,7 +14,10 @@ class BaseLoader(core.Loader):
     def to_process(self, args, **kwargs):
         data = self.cached(NR_CACHE_NAME)
         if not data:
-            raise core.InvalidState("No precomputed grouping to store")
+            if len(args) < 10:
+                raise core.Skip("Too few pdb files being processed to have nr groups to store")
+            else:
+                raise core.InvalidState("No precomputed grouping to store")
         return [data['release']]
 
     def has_data(self, release, **kwargs):
