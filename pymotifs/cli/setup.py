@@ -9,8 +9,14 @@ def logs(options):
     log_args = {
         'level': getattr(logging, options['log_level'].upper()),
         'filemode': options['log_mode'],
-        'format': '%(levelname)s:%(name)s:%(asctime)s:%(message)s',
+        'format': '%(levelname)s:%(asctime)s:%(name)s:%(message)s',
     }
+
+    # log_args = {
+    #     'level': getattr(logging, options['log_level'].upper()),
+    #     'filemode': options['log_mode'],
+    #     'format': '%(levelname)s:%(name)s:%(asctime)s:%(message)s',
+    # }
 
     if 'log_file' in options:
         log_args['filename'] = options['log_file']
