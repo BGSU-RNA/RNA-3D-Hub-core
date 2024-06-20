@@ -13,8 +13,6 @@ from pymotifs.utils import row2dict
 
 
 class Exporter(core.Exporter):
-    """The actual exporter.
-    """
 
     headers = ['unit_id1', 'unit_id2', 'FR3D basepair (f_lwbp)',
                'FR3D stacking (f_stacks)', 'FR3D base phosphate (f_bphs)']
@@ -82,6 +80,9 @@ class Exporter(core.Exporter):
         interactions : iterable
             An iterable over all interactions in all the given structures.
         """
+
+        if len(pdbs) < 500:
+            raise core.Skip('Too few pdb files being processed to export interactions')
 
         interactions = it.imap(self.interactions, pdbs)
         interactions = it.chain.from_iterable(interactions)
