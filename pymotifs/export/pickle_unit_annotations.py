@@ -88,7 +88,7 @@ class Exporter(core.Loader):
             The components of the IFE-chains to be processed.
         """
 
-        molecule_types = ['rna','dna']
+        molecule_types = ['rna','dna','hybrid']
 
         # speed up the query by limiting to pdb_id in pdbs
         with self.session() as session:
