@@ -178,7 +178,7 @@ class Loader(core.SimpleLoader):
                 found_non_singleton_group = True
                 break
         if not found_non_singleton_group:
-            raise core.Skip("No groups of chains to compare")
+            raise core.Skip("No groups of multiple chains to compare")
 
         # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
         # or we could just wait and look that up later
