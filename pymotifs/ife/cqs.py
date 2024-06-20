@@ -259,8 +259,11 @@ class IfeQualityLoader(core.SimpleLoader):
                     pdb_id = r.ife_id.split('|')[0]
                     if pdb_id in pdbs_set:
                         ife_list.append(r.ife_id)
+
+                if len(ife_list) == 0:
+                    raise core.Skip("No IFEs to process for CQS")
+
                 return ife_list
-                # return [r.ife_id for r in query]
 
         pass
 
