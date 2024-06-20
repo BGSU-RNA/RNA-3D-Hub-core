@@ -79,7 +79,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
     logging.info(sorted((SKIP & set(ids))))
 
     logging.info("The following files in skip_files.py are not current PDB files")
-    logging.info(SKIP - set(ids))
+    logging.info(sorted(SKIP - set(ids)))
 
     # remove files from skip_files.py from the list of PDB IDs to process
     ids = sorted(set(ids) - SKIP)
