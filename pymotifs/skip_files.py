@@ -8,6 +8,11 @@
 # Shorthand notations:
 # IPL0 = fails interactions.pairwise; error "Line 0 did not include both units"
 #
+
+
+#       '7PJS' # failing exp_sep.mapping as on 2024-06-20 because it does not have unit_info for chains v,w,z
+
+
 SKIP = {
       '4V3P'
     , '4V4G'
@@ -63,24 +68,8 @@ SKIP = {
     , '4WWT' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
     , '4Z3Q' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
     , '4Z3R' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
-#    , '2H0S' # failing loops.quality as of 2018-01-11 (JJC) # works 3/7/2020 CLZ
-    , '2H0Z' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3BO4' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain D (CLZ)
-    , '3CQS' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3CR1' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3I2Q' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3I2R' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3I2S' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3I2U' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3IIN' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain C (CLZ)
-    , '3OLA' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZD4' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZD5' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZP8' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZVO' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain V (CLZ)
-    , '4K4Y' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '5IT7' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain 2 (CLZ)
-    , '5J4D' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
+
+
     , '1VQL' # failing quality.units as of 2018-02-09 (JJC)
     , '1VQM' # failing quality.units as of 2018-02-09 (JJC)
     , '1YJW' # failing quality.units as of 2018-02-09 (JJC)
@@ -106,6 +95,30 @@ SKIP = {
     , '6SAE' # failing export.cifatom as of 2019-12-04 (CLZ)
     , '6WLN' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
     , '6WLO' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
+
+}
+
+#    , '2H0S' # failing loops.quality as of 2018-01-11 (JJC) # works 3/7/2020 CLZ
+
+    # This block of files may work now that exp_seq.mapping is revised to fill in missing chains
+    # , '2H0Z' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '3BO4' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain D (CLZ)
+    # , '3CQS' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '3CR1' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '3I2Q' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
+    # , '3I2R' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
+    # , '3I2S' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
+    # , '3I2U' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
+    # , '3IIN' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain C (CLZ)
+    # , '3OLA' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '3ZD4' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '3ZD5' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '3ZP8' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '3ZVO' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain V (CLZ)
+    # , '4K4Y' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
+    # , '5IT7' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain 2 (CLZ)
+    # , '5J4D' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
+
 #    , '1QZA' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
 #    , '1QZB' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
 #    , '1T1O' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
@@ -123,4 +136,4 @@ SKIP = {
         #, '5Z57' # failing ife.info as of 2018-10-03 (JJC)
         #, '5Z58' # failing ife.info as of 2018-10-03 (JJC)
         #, '6DZK' # failing ife.info as of 2018-10-03 (JJC)
-}
+
