@@ -1,4 +1,4 @@
-"""Module for export of unit center/rotation data 
+"""Module for export of unit center/rotation data
 in pickle format for FR3D.
 """
 
@@ -20,15 +20,15 @@ from os import path
 
 
 class Exporter(core.Loader):
-    """Export unit data in pickle format, one file per 
+    """Export unit data in pickle format, one file per
     IFE-chain.
     """
 
 
     # General Setup
-    compressed = False 
-    mark = False 
-    dependencies = set([ChainLoader, CentersLoader, RotationsLoader, 
+    compressed = False
+    mark = False
+    dependencies = set([ChainLoader, CentersLoader, RotationsLoader,
                         PositionLoader, IfeInfoLoader, MappingLoader])
 
 
@@ -53,8 +53,8 @@ class Exporter(core.Loader):
         Parameters
         ----------
         ichain : tuple
-            The components (PDB ID, model, and chain) of the 
-            IFE-chain name (hyphen-deliminted concatenation) 
+            The components (PDB ID, model, and chain) of the
+            IFE-chain name (hyphen-deliminted concatenation)
             for which to create a file.
 
         Returns
@@ -77,7 +77,10 @@ class Exporter(core.Loader):
 
 
     def to_process(self, pdbs, **kwargs):
-        """Look up the list of IFE-chains to process.  Ignores the pdbs input.
+        """
+        Look up the list of chains to process.
+        Only process pdbs in the given list.
+        If you want to produce *all* such files, remove the filter line temporarily.
 
         Parameters
         ----------
@@ -97,7 +100,8 @@ class Exporter(core.Loader):
                        mod.UnitInfo.chain
                    ).\
                    distinct().\
-                   filter(mod.UnitInfo.unit_type_id == 'rna')
+                   filter(mod.UnitInfo.unit_type_id == 'rna').\
+                   filter(mod.UnitInfo.pdb_id.in_(pdbs))
 
             return [(r.pdb_id, r.model, r.chain) for r in query]
 
@@ -155,7 +159,7 @@ class Exporter(core.Loader):
             units = []
             order = []
             cntrs = []
-            rttns = [] 
+            rttns = []
             rsset = []
 
             for row in query:
@@ -165,7 +169,7 @@ class Exporter(core.Loader):
                 rttns.append(np.asarray([np.asarray([row.cell_0_0, row.cell_0_1, row.cell_0_2]),
                              np.asarray([row.cell_1_0, row.cell_1_1, row.cell_1_2]),
                              np.asarray([row.cell_2_0, row.cell_2_1, row.cell_2_2])]))
-                
+
             rsset = [ units, order, cntrs, rttns ]
 
             self.logger.debug("cenrot: units: %s" % str(units))
