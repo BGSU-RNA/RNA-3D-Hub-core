@@ -14,7 +14,7 @@ from pymotifs.interactions import loader as interactions
 from pymotifs.exp_seq import loader as exp_seq
 from pymotifs.correspondence import loader as correspondence
 from pymotifs.ife import loader as ife
-from pymotifs.chain_chain import loader as cc
+from pymotifs.chain_chain import loader as chain_chain
 from pymotifs.export import loader as export
 from pymotifs.nr import loader as nr
 from pymotifs.quality import loader as quality
@@ -33,7 +33,7 @@ class Loader(core.StageContainer):
         exp_seq.Loader,
         correspondence.Loader,
         ife.Loader,
-        cc.Loader,
+        chain_chain.Loader,
         export.Exporter,
         nr.Loader
     ])
