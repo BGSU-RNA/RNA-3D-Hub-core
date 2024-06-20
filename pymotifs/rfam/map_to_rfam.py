@@ -541,6 +541,8 @@ class Loader(core.Loader):
         print('Writing mappings to pdb_chain_to_rfam.txt')
         self.logger.info('chain_to_range_to_mapping has %i chains' % len(chain_to_range_to_mapping.keys()))
         self.write_mapping(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'pdb_chain_to_rfam.txt'),chain_to_range_to_mapping)
+        # write a copy to the web server
+        self.write_mapping(os.path.join('/var/www/html/data/alignments/rfam/','pdb_chain_to_rfam.txt'),chain_to_range_to_mapping)
 
         # when you need to re-align everything, you can use this list
         if False:
