@@ -38,7 +38,7 @@ class Loader(core.Loader):
             query = session.query(mod.CorrespondenceInfo.correspondence_id).\
                 filter(mod.CorrespondenceInfo.length == None)
             if not query.count():
-                raise core.Skip("Skipping positions, no new correspondences")
+                raise core.Skip("No new correspondences")
             return [result.correspondence_id for result in query]
 
 
