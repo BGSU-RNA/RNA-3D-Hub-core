@@ -34,7 +34,13 @@ class Loader(core.SimpleLoader):
             List of PDB's that have validation data to process.
         """
         known = set(self._create(qual.Utils).known(has_data=True))
-        return sorted(known.intersection(pdbs))
+
+        pdbs_to_process = sorted(known.intersection(pdbs))
+
+        if len(pdbs_to_process) == 0:
+            raise core.Skip("No PDBs to process for quality")
+
+        return pdbs_to_process
 
     def filename(self, pdb):
         """Get the filename where the validation report of the PDB is stored.

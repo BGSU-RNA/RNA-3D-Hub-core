@@ -20,7 +20,8 @@ class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader, Downloader])
 
     def to_process(self, pdbs, **kwrags):
-        """Compute the PDBs to process. These are only the PDB's that have
+        """
+        Compute the PDBs to process. These are only the PDB's that have
         stored validation files and have validation data.
 
         Parameters
@@ -34,10 +35,17 @@ class Loader(core.SimpleLoader):
             List of PDB's that have validation data to process.
         """
         known = set(self._create(qual.Utils).known(has_data=True))
-        return sorted(known.intersection(pdbs))
+
+        pdbs_to_process = sorted(known.intersection(pdbs))
+
+        if len(pdbs_to_process) == 0:
+            raise core.Skip("No PDBs to process for clashes")
+
+        return pdbs_to_process
 
     def query(self, session, pdb):
-        """Generate a query to find all entries in unit_clashes for the given
+        """
+        Generate a query to find all entries in unit_clashes for the given
         PDB id.
 
         Attributes
@@ -60,7 +68,8 @@ class Loader(core.SimpleLoader):
             filter(mod.UnitInfo.pdb_id == pdb)
 
     def filename(self, pdb):
-        """Get the filename where the validation report of the PDB is stored.
+        """
+        Get the filename where the validation report of the PDB is stored.
 
         Parameters
         ----------
@@ -74,11 +83,13 @@ class Loader(core.SimpleLoader):
         """
         return self._create(qual.Utils).filename(pdb)
 
+
     def compatabile_units(self, unit_id1, unit_id2):
         unit1 = decode(unit_id1)
         unit2 = decode(unit_id2)
         return unit1['model'] == unit2['model'] and \
             unit1['symmetry'] == unit2['symmetry']
+
 
     def as_clash(self, data):
         for unit_id1, unit_id2 in zip(*data['unit_ids']):
@@ -96,7 +107,8 @@ class Loader(core.SimpleLoader):
             )
 
     def parse(self, filename, mapping):
-        """Actually the parse the file and map quality data to unit ids.
+        """
+        Actually parse the file and map quality data to unit ids.
 
         Parameters
         ----------
@@ -125,6 +137,14 @@ class Loader(core.SimpleLoader):
                 raise core.Skip("Could not load clashes for %s" % filename)
 
     def data(self, pdb, **kwargs):
+
         util = qual.Utils(self.config, self.session)
+
         mapping = util.unit_mapping(pdb)
-        return self.parse(self.filename(pdb), mapping)
+
+        data = self.parse(self.filename(pdb), mapping)
+
+        if not data:
+            raise core.Skip("No clash data found for %s" % pdb)
+
+        return data
