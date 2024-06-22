@@ -1,5 +1,5 @@
 """String to use when joining to IFE ids to build a new ID"""
-IFE_SEPERATOR = '+'
+IFE_SEPARATOR = '+'
 
 """Min number of base pairs for a chain to be structured."""
 STRUCTURED_BP_COUNT = 5
