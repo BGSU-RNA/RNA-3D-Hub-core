@@ -344,8 +344,9 @@ class CompScore(QualityBase):
         with self.session() as session:
             info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
                                  mod.IfeInfo.model).\
-                filter_by(ife_id=member['id']).\
-                one()
+                            filter_by(ife_id=member['id']).\
+                            filter(mod.IfeInfo.new_style == True).\
+                            one()
             info = row2dict(info)
             info.update(member)
 

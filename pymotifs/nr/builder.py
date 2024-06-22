@@ -83,6 +83,7 @@ class Known(core.Base):
                      mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
+                filter(mod.IfeInfo.new_style == True).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
             self.logger.info("finish the query of the class function in the nr/builder.py")
             results = coll.defaultdict(empty)
@@ -155,6 +156,7 @@ class Known(core.Base):
                     mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
+                filter(mod.IfeInfo.new_style == True).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrChains.rank)
 
             results = coll.defaultdict(empty)

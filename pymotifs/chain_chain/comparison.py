@@ -749,7 +749,7 @@ class Loader(core.SimpleLoader):
                      mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
                 join(mod.IfeInfo,
                      mod.IfeInfo.ife_id == mod.IfeChains.ife_id).\
-                filter(mod.IfeInfo.new_style == 1).\
+                filter(mod.IfeInfo.new_style == True).\
                 filter(mod.ChainInfo.chain_id == chain_id)
 
             # the following lines were not indented this much, changed 2022-05-18
