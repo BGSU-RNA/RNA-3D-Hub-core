@@ -254,7 +254,8 @@ class IfeQualityLoader(core.SimpleLoader):
         else:
             with self.session() as session:
                 query = session.query(mod.IfeInfo.ife_id).\
-                    filter(mod.IfeInfo.model.isnot(None))
+                    filter(mod.IfeInfo.model.isnot(None)).\
+                    filter(mod.IfeInfo.new_style == True)
                 for r in query:
                     pdb_id = r.ife_id.split('|')[0]
                     if pdb_id in pdbs_set:
