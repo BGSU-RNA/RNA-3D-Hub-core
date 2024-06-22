@@ -3,10 +3,7 @@
 into the database.
 """
 
-import abc
-import collections as coll
 import operator as op
-import pprint
 
 from sqlalchemy import func
 from sqlalchemy.orm import aliased
