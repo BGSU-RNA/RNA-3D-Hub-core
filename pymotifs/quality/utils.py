@@ -307,16 +307,19 @@ class Parser(object):
             uid = as_key(self.unit_id_renamer(residue.attrib))
 
             if uid not in mapping:
-                print(residue)
-                print(data)
-                # give up on this file but do not crash the pipeline
-                # this file will get checked every week
-                # it *should* download a new data file every week, then the problem may resolve itself
-                raise core.Skip("Could not find unit id for %s" % str(uid))
+                # The validation file envisions a unit that does not map cleanly
+                # to a unit id.  That can happen because they don't list a base sequence.
+                # Rather than crash the whole pipeline, just skip this entry.
+                # Yes, that may result in unit ids with no validation information,
+                # but that has to be common enough that we can deal with it.
 
-                # crash the pipeline
+                # self.logger.info does not work here
+
+                print("Could not find unit id for %s which is %s" % (str(uid),residue.attrib))
+                continue
+
+                # in the past, we would crash the pipeline
                 # raise core.InvalidState("Could not find unit id for %s" % str(uid))
-
 
             if not mapping[uid]:
                 raise core.InvalidState("No unit ids known for %s", uid)
@@ -339,8 +342,18 @@ class Parser(object):
         for residue in self.root.findall("ModelledSubgroup"):
             uid = as_key(self.unit_id_renamer(residue.attrib))
             if uid not in mapping:
-                raise core.InvalidState("Could not find unit id for %s" %
-                                        str(uid))
+                # The validation file envisions a unit that does not map cleanly
+                # to a unit id.  That can happen because they don't list a base sequence.
+                # Rather than crash the whole pipeline, just skip this entry.
+                # Yes, that may result in unit ids with no validation information,
+                # but that has to be common enough that we can deal with it.
+
+                print("Could not find unit id for %s which is %s" % (str(uid),residue.attrib))
+                continue
+
+                # in the past, we would crash the pipeline
+                # raise core.InvalidState("Could not find unit id for %s which is %s" %
+                #                         (str(uid),residue.attrib))
 
             if not mapping[uid]:
                 raise core.InvalidState("No unit ids known for %s", uid)
