@@ -8,7 +8,7 @@ from sqlalchemy.sql.expression import func
 from pymotifs import core
 from pymotifs import utils as ut
 from pymotifs import models as mod
-from pymotifs.constants import IFE_SEPERATOR
+from pymotifs.constants import IFE_SEPARATOR
 from pymotifs.constants import STRUCTURED_BP_COUNT
 from pymotifs.utils import structures as st
 from pymotifs.utils.sorting import total_ordering
@@ -17,7 +17,8 @@ from pymotifs.utils.sorting import total_ordering
 class IfeLoader(core.Base):
 
     def best_model(self, pdb, sym_op):
-        """Determine what model to use for ifes. We will use the model with the
+        """
+        Determine what model to use for ifes. We will use the model with the
         most basepairs. It tiebreaks on model number, lower is better.
 
         :pdb: The pdb id to use.
@@ -31,7 +32,7 @@ class IfeLoader(core.Base):
                 distinct()
             models = [result.model for result in query]
             if not models:
-                raise core.InvalidState("No models found for %s", pdb)
+                raise core.InvalidState("No models found for %s" % pdb)
             if len(models) == 1:
                 return models[0]
 
@@ -42,10 +43,11 @@ class IfeLoader(core.Base):
         return -1 * max(models)[1]
 
     def sym_op(self, pdb):
-        """Pick a symmetry operator to work with. It doesn't really matter
+        """
+        Pick a symmetry operator to work with. It doesn't really matter
         which one we use since they all have the same interactions by
-        definition. So we just get all distinct and take the first. That is
-        good enough.
+        definition. So we just get all distinct and take the first.
+        That is good enough.
 
         :param str pdb: The pdb id to use.
         :returns: The name of the symmetry operator.
@@ -60,8 +62,9 @@ class IfeLoader(core.Base):
                 sym_op
 
     def load(self, pdb, chain, model=1, sym_op='1_555'):
-        """This loads all information about a chain into a dictionary. This
-        will load generic information about a chain, such as resolved, length,
+        """
+        This loads all information about a chain into a dictionary.
+        This will load generic information about a chain, such as resolved, length,
         database id, the source and information about basepairing. The
         basepairing information is loaded from `bps`.
 
@@ -107,7 +110,8 @@ class IfeLoader(core.Base):
         return IfeChain(**data)
 
     def cross_chain_interactions(self, ifes, sym_op='1_555'):
-        """Create a dictionary of the interactions between the listed chains.
+        """
+        Create a dictionary of the interactions between the listed chains.
         This will get only the counts.
 
         :chains: A list of chain dictionaries.
@@ -130,6 +134,7 @@ class IfeLoader(core.Base):
             interactions[name1][name2] = count
 
         return dict(interactions)
+
 
     def __call__(self, pdb):
         helper = st.Structure(self.session.maker)
@@ -179,6 +184,7 @@ class IfeChain(object):
         return not self == other
 
     def __lt__(self, other):
+        # this is how chains are sorted to decide which is listed first in the IFE
         if other is None:
             return False
         fn = self.__comp_attrs__()
@@ -196,6 +202,7 @@ class IfeChain(object):
         return hash(self.id)
 
     def __repr__(self):
+        # this is the to-string method for IfeChain
         return '<IfeChain: %r (%r)>' % (self.id, self.internal)
 
 
@@ -210,13 +217,38 @@ class IfeGroup(object):
 
     @property
     def id(self):
+        # group id is where the ife id is stored
+        # before 2024-06-20, the group in the "rest" case did not list all chains
         if self.is_structured:
+            # originally a group is not structured
+            # when you add a structured chain, it becomes structured
+            # but then the list of chains is only the structured chains!
+            # tRNA-mRNA is one use case; tRNA is structured, mRNA is not, don't make an IFE
+            # however, 2OEU is a different case, A is structured, B is not, but make an IFE
             chains = self.chains(structured=True)
         else:
             chains = self.chains()
-        return IFE_SEPERATOR.join(c.id for c in chains)
+
+        # new code to cover the structured-structured case, the un-un case,
+        # and some new structured-unstructured cases but not tRNA-mRNA
+        all_chains = self.chains()
+        if len(all_chains) == len(chains):
+            # all chains are structured, or all are unstructured, or just one chain
+            return IFE_SEPARATOR.join(c.id for c in chains)
+        else:
+            ife_id = IFE_SEPARATOR.join(c.id for c in all_chains)
+            # pdb_id = ife_id.split('|')[0]
+            # # cannot use self.logger.info here, using print instead
+            # print("#### struct+unstruct new ife %s http://rna.bgsu.edu/rna3dhub/pdb/%s/2d" % (ife_id,pdb_id))
+
+            # temporarily make code to remove old chains as being IFEs of their own
+            # for c in all_chains:
+            #     print("UPDATE ife_info SET new_style = 0 WHERE ife_id = '%s';" % (c.id))
+
+            return ife_id
 
     def chains(self, structured=None):
+        # return the chains ordered by the __lt__ method
         fn = lambda c: True
         if structured is not None:
             fn = lambda c: c.is_structured == structured
@@ -255,4 +287,5 @@ class IfeGroup(object):
         return other and self.id < other.id
 
     def __repr__(self):
-        return '<IfeGroup %r (%r)>' % (self.id, self.integral)
+        # to-string method
+        return '<IfeGroup: id %r (integral %r)>' % (self.id, self.integral)
