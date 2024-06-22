@@ -95,7 +95,7 @@ class Loader(core.SimpleLoader):
         for unit_id1, unit_id2 in zip(*data['unit_ids']):
             if not self.compatabile_units(unit_id1, unit_id2):
                 raise core.InvalidState("Incompatible unit pair %s, %s" %
-                                        unit_id1, unit_id2)
+                                        (unit_id1, unit_id2))
 
             yield mod.UnitClashes(
                 unit_id_1=unit_id1,
@@ -134,7 +134,7 @@ class Loader(core.SimpleLoader):
                         yield clash
             except Exception as err:
                 self.logger.exception(err)
-                raise core.Skip("Could not load clashes for %s" % filename)
+                raise core.Skip("Could not load clashes")
 
     def data(self, pdb, **kwargs):
 
