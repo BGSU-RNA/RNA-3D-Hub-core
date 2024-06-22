@@ -1,5 +1,6 @@
-"""Load IFE data. This will load all IFE data for a given set of pdbs into the
-database.
+"""
+Load all IFE data for a given set of pdbs into the database.
+For each PDB id, it groups chains together into IFEs.
 """
 
 import itertools as it
@@ -19,9 +20,24 @@ class Loader(core.SimpleLoader):
     merge_data = True
 
     def query(self, session, pdb_id):
-        return session.query(mod.IfeInfo).filter_by(pdb_id=pdb_id)
+
+        return session.query(mod.IfeInfo).\
+            filter(mod.IfeInfo.pdb_id == pdb_id).\
+            filter(mod.IfeInfo.new_style == True)
 
     def as_group(self, group):
+
+        # print("group.id               %s" % group.id)
+        # print("group.pdb              %s" % group.pdb)
+        # print("group.model            %s" % group.model)
+        # print("chain_count            %s" % len(group))
+        # print("has_structured         %s" % bool(group.is_structured))
+        # print("has_integral           %s" % bool(group.integral))
+        # print("has_accompanying       %s" % (len(group.chains()) > 1))
+        # print("structured_chain_count %s" % len(group.chains(structured=True)))
+        # print("length                 %s" % group.length)
+        # print("bp_count               %s" % group.bps)
+
         yield mod.IfeInfo(
             ife_id=group.id,
             pdb_id=group.pdb,
@@ -39,6 +55,16 @@ class Loader(core.SimpleLoader):
             reference = (index == 0)
             integral = (reference or chain.is_structured)
             accompanying = not integral
+
+            # print("  chain.id               %s" % chain.id)
+            # print("  chain.model            %s" % chain.model)
+            # print("  chain.is_structured    %s" % chain.is_structured)
+            # # print("  group.id               %s" % group.id)
+            # print("  integral               %s" % integral)
+            # print("  accompanying           %s" % accompanying)
+            # print("  index                  %s" % index)
+            # print("")
+
             yield mod.IfeChains(
                 chain_id=chain.db_id,
                 model=chain.model,
@@ -53,4 +79,6 @@ class Loader(core.SimpleLoader):
         groups = grouper(pdb_id)
         groups = it.imap(self.as_group, groups)
         groups = it.chain.from_iterable(groups)
-        return list(groups)
+        groups = list(groups)
+
+        return groups
