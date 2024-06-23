@@ -25,10 +25,6 @@ from pymotifs.core import savers
 # Files that should be skipped.  Add others as necessary, and note reason
 # for exclusion when known.
 #
-# This is a very large virus file that should be skipped.
-# (JJC, 2017-02-09:  no idea what this old comment refers to.  Neither 4V3P
-#   nor 4V4G.)
-#
 # Shorthand notations:
 # IPL0 = fails interactions.pairwise; error "Line 0 did not include both units"
 #
