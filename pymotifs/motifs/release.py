@@ -203,7 +203,9 @@ class Loader(core.MassLoader):
                 filter(mod.NrClasses.resolution == MOTIF_RESOLUTION_CUTOFF).\
                 filter(mod.PdbInfo.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
                 order_by(mod.NrClassRank.ife_id)
-                
+
+                # omitted this for now to run the motif atlas release with old ifes
+                # filter(mod.IfeInfo.new_style == True).\
 
 
 
