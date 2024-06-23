@@ -88,9 +88,12 @@ def levels(data):
 
 
 def toposort(data, by=None):
-    """Returns a single list of dependencies. For any set returned by
+    """
+    Returns a single list of dependencies. For any set returned by
     toposort(), those items are sorted and appended to the result (just to
     make the results deterministic).
+
+    Not sure that this runs when you run the pipeline.
     """
 
     result = []
