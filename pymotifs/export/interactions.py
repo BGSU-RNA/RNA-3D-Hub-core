@@ -33,7 +33,7 @@ class Exporter(core.Exporter):
         return self.config['locations']['interactions_gz']
 
     def interactions(self, pdb):
-        """Lookup all interactions for the given structure. This gets all
+        """Look up all interactions for the given structure. This gets all
         interaction entries. If there are none this returns an empty list. The
         entries in the list are dictonaries with the same names as in
         `Exporter.headers`.
@@ -59,10 +59,7 @@ class Exporter(core.Exporter):
             ).filter_by(pdb_id=pdb)
 
             count = query.count()
-            if not count:
-                self.logger.warning("No interactions found for %s", pdb)
-            else:
-                self.logger.info("Found %s interactions for %s", count, pdb)
+            self.logger.info("Found %5d interactions for %s" % (count, pdb))
 
             return [row2dict(result) for result in query]
 
