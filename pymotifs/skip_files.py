@@ -12,14 +12,22 @@
 # try running unit_info on this file to see if it can be fixed
 
 SKIP = {
-      '4V3P'
-    , '4V4G'
-    , '4ZPY' # failing units.info as of 2017-05-26 (JJC)
-    , '5O58' # IPLO 2017-10-25 trial dry run (JJC)
-    , '5W3V' # IPLO 2017-10-25 trial dry run (JJC)
-    , '6AWB' # IPLO 2017-10-25 trial dry run (JJC)
-    , '6AWC' # IPLO 2017-10-25 trial dry run (JJC)
-    , '6B0B' # IPLO 2017-10-25 trial dry run (JJC)
+      '4V3P' # killed 2024-06-22 (CLZ), export.cifatom:Writing cifatom file for 4V3P
+    , '4V4G' # Matlab out of memory 2024-06-22 (CLZ)
+    , '4ZPY' # exp_seq.info:Nothing to process, virus, maybe no RNA 2024-06-22 (CLZ)
+    , '5O58' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    , '5W3V' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    , '6AWB' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    , '6AWC' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    , '6B0B' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    # after we replace Matlab with python code, we can try these again
+    , '6WLN' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
+    , '6WLO' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
+
+    , '5O61' # failing loops.extractor as of 2018-01-10 (JJC) # still failing 2019-01-15 (JJC)
+    , '2X2Q' # failing quality.units as of 2018-02-09 (JJC)   # still failing 2024-06-20 (CLZ)
+
+    # The ones below all failed on 2024-06-22, generally something deep about pdbx
     , '1CK5' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1CK8' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1CN8' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
@@ -48,16 +56,19 @@ SKIP = {
     , '104D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '169D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '170D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '1DHH' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '1DRN' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '1FC8' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '1GTC' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '1HO6' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '1HOQ' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '1OKA' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+}
 
+    # These worked on 2024-06-22 (CLZ)  Not sure what changed
+    # , '1DHH' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '1DRN' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+
+    # These worked on 2024-06-22 (CLZ)  Not sure what changed
     # , '1UTV' # failing loops.extractor as of 2018-01-10 (JJC) # still failing 2019-01-15 (JJC)
-    # , '5O61' # failing loops.extractor as of 2018-01-10 (JJC) # still failing 2019-01-15 (JJC)
     # , '3U5F' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
     # , '4WUS' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
     # , '4WWE' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
@@ -65,12 +76,6 @@ SKIP = {
     # , '4Z3Q' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
     # , '4Z3R' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
 
-    , '2X2Q' # failing quality.units as of 2018-02-09 (JJC) # still failing 2024-06-20 (CLZ)
-
-    # after we replace Matlab with python code, we can try these again
-    , '6WLN' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
-    , '6WLO' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
-}
 
     # working as of 2024-06-20 (CLZ)
     # , '1VQL' # failing quality.units as of 2018-02-09 (JJC)
