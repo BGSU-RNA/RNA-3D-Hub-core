@@ -115,6 +115,7 @@ class Loader(core.SimpleLoader):
                     #else:
                     #    self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
 
+            # pairs are already sorted by release and then by class_id
             return pairs_to_process
 
 #        return [(latest, r.nr_class_id) for r in query]
@@ -249,7 +250,7 @@ class Loader(core.SimpleLoader):
             members of the class.
         """
 
-        self.logger.info("members_revised:  class_id: %s" % class_id)
+        # self.logger.info("members_revised:  class_id: %s" % class_id)
 
         with self.session() as session:
             # nch = aliased(mod.NrChains)
@@ -284,7 +285,7 @@ class Loader(core.SimpleLoader):
             ife_id is like 2A43|1|A and nr_chain_id is like 11890928
         """
 
-        self.logger.info("members: class_id: %s" % class_id)
+        # self.logger.info("members: class_id: %s" % class_id)
 
         with self.session() as session:
             query = session.query(mod.NrChains.ife_id,
@@ -326,7 +327,7 @@ class Loader(core.SimpleLoader):
             of IFEs.
         """
 
-        self.logger.info("distances_revised: class_id (%s) has %s members including %s" % (class_id, len(members), members[0]))
+        # self.logger.info("distances_revised: class_id (%s) has %s members including %s" % (class_id, len(members), members[0]))
 
         with self.session() as session:
             chains1 = aliased(mod.IfeChains)
@@ -356,14 +357,14 @@ class Loader(core.SimpleLoader):
 
             ifes = set(m[0] for m in members)
 
-            self.logger.info("distances_revised: starting loop")
+            # self.logger.info("distances_revised: starting loop")
 
             for result in query:
                 if result.ife1 not in ifes or result.ife2 not in ifes:
                     continue
                 distances_revised[result.ife1][result.ife2] = result.discrepancy
 
-            self.logger.info("distances_revised: finished loop")
+            # self.logger.info("distances_revised: finished loop")
 
             if not distances_revised:
                 self.logger.info('Listing distances between ifes, if any:')
@@ -458,7 +459,7 @@ class Loader(core.SimpleLoader):
             be skipped.)
         """
 
-        self.logger.info("ordered_revised: %s members" % len(members))
+        # self.logger.info("ordered_revised: %s members" % len(members))
 
         dist = np.zeros((len(members), len(members)))
 
@@ -495,7 +496,7 @@ class Loader(core.SimpleLoader):
             as those things without distances will be skipped.
         """
 
-        self.logger.info("Calculating ordering")
+        # self.logger.info("Calculating ordering")
 
         if len(members) == 2:
             ordering = [0,1]
@@ -557,18 +558,21 @@ class Loader(core.SimpleLoader):
         get_nr_class_name = self.get_nrclassname(class_id)
         nr_class_name = get_nr_class_name[0]
 
-        self.logger.info("data: INPUT: nr_release_id: %s, class_id: %s, nr_class_name: %s" % (nr_release_id, class_id, nr_class_name))
+        # self.logger.info("data: INPUT: nr_release_id: %s, class_id: %s, nr_class_name: %s" % (nr_release_id, class_id, nr_class_name))
 
         # look up release_id and class_id when this class was first created, based on its name
         # that way we can just focus on one class_id instead of keeping all of them in play
         orig_release_id, orig_class_id = self.get_original_info(nr_class_name)
-        self.logger.info("data: USING: orig_release_id %s and orig_class_id %s for nr_class_name %s for class_id %s"
-                         % (orig_release_id, orig_class_id, nr_class_name, class_id))
+        # self.logger.info("data: USING: orig_release_id %s and orig_class_id %s for nr_class_name %s for class_id %s"
+                        #  % (orig_release_id, orig_class_id, nr_class_name, class_id))
 
         # members = self.members(class_id)
         # self.logger.info("data: members: %s (class_id %s)" % (str(members), class_id))
 
         members_revised = self.members_revised(orig_class_id, orig_release_id)
+
+        self.logger.info("nr_release_id %s nr_class_name %s length %3d" % (nr_release_id,nr_class_name,len(members_revised)))
+
         self.logger.debug("data: members_revised: %s (class_id %s)" % (str(members_revised), orig_class_id))
 
         if len(members_revised) <= 2:
@@ -582,12 +586,16 @@ class Loader(core.SimpleLoader):
             # before reading the flat file, it could take hours to look up discrepancies from the database for large groups
             # On 5/25/2022, E.c., T.th., S.c. groups of size 150 to 220 took up to 55 minutes to read
             # from the database.  Reduced the cutoff to 140.
+            # On 6/22/2024, reading the flat file took 5 seconds, no matter the size of the group
+            # On 6/22/2024, reading from the database took 0.14 seconds for groups of size 120
+            # Size cutoff 140 is still ok
+
 
             starttime = time.clock()
             #distances = self.distances(nr_release_id, class_id, members)
             distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
 
-            self.logger.info("data: time to read a group of size %d from database was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
+            self.logger.info("data: time to read a group of size %3d from database was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
 
             #self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
             #self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
@@ -596,7 +604,7 @@ class Loader(core.SimpleLoader):
             ordered_revised = self.ordered_revised(members_revised, distances_revised)
 
         else:
-            self.logger.info("large group %s:  reading flat file of discrepancies" % nr_class_name)
+            # self.logger.info("large group %s:  reading flat file of discrepancies" % nr_class_name)
             discDict = defaultdict(lambda: None)
             # put discrepancy information into a dictionary
             starttime = time.clock()
@@ -610,8 +618,8 @@ class Loader(core.SimpleLoader):
                     discDict[(ife1,ife2)] = discrepancy
                     discDict[(ife2,ife1)] = discrepancy
 
-            self.logger.info("large group:  read flat file of discrepancies")
-            self.logger.info("data: time to read a group of size %d from flat file was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
+            # self.logger.info("large group:  read flat file of discrepancies")
+            self.logger.info("data: time to read a group of size %3d from flat file was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
 
             dist = np.zeros((len(members_revised), len(members_revised)))
 
@@ -641,7 +649,7 @@ class Loader(core.SimpleLoader):
 
         data_revised = []
         for index, (ife_id, nr_chain_id) in enumerate(ordered_revised):
-            self.logger.info("data: data_revised: nr_class_id %s / index %s / nr_chain_id %s / nr_class_name %s / ife_id %s " % (orig_class_id, index, nr_chain_id, nr_class_name, ife_id))
+            # self.logger.info("data: nr_class_id %s / index %3s / nr_chain_id %s / nr_class_name %s / ife_id %s " % (orig_class_id, index, nr_chain_id, nr_class_name, ife_id))
             data_revised.append(mod.NrOrderingTest(
                 nr_class_id=orig_class_id,
                 nr_class_name=nr_class_name,
