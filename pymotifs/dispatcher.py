@@ -123,7 +123,12 @@ class Dispatcher(object):
                     self.logger.error("Failed building stage %s", k)
                     raise
 
+            # self.logger.info("Level %s" % level)
+
             for stage in sorted(stages, key=lambda c: c.name):
+
+                # self.logger.info("Stage %s" % (stage))
+
                 name = stage.name
                 if exclude is True or name in exclude:
                     is_allowed = name in allowed or stage in allowed
