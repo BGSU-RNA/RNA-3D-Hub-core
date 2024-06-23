@@ -74,11 +74,11 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
         ids = setup.pdbs(config, kwargs)
 
     logging.info("There are %d files listed to skip in skip_files.py" % len(SKIP))
-    logging.info("There are %d files from skip_files.py that are also current PDB ids" % len(SKIP & set(ids)))
+    logging.info("There are %d files in skip_files.py that are also current PDB ids" % len(SKIP & set(ids)))
 
     logging.info(sorted((SKIP & set(ids))))
 
-    logging.info("The following files in skip_files.py are not current PDB files")
+    logging.info("There are %d files in skip_files.py that are not current PDB files" % len(SKIP - set(ids)))
     logging.info(sorted(SKIP - set(ids)))
 
     # remove files from skip_files.py from the list of PDB IDs to process
