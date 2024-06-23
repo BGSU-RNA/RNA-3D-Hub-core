@@ -32,6 +32,7 @@ class Known(core.Base):
             query = session.query(mod.NrClasses.handle).distinct()
             return set(result.handle for result in query)
 
+
     def classes(self, release_id, cutoff):
         """Get all classes with the given resolution cutoff in the given
         release. If nothing is below the cutoff then an empty dictonary will be
@@ -105,6 +106,7 @@ class Known(core.Base):
 
         return results.values()
 
+
     def Old_classes(self, release_id, cutoff):
         """Get all classes with the given resolution cutoff in the given
         release. If nothing is below the cutoff then an empty dictonary will be
@@ -175,8 +177,6 @@ class Known(core.Base):
                 }
 
         return results.values()
-
-
 
 
     def mapping(self, release_id, names):
@@ -260,6 +260,7 @@ class Builder(core.Base):
             grouper.must_enforce_single_species = enforce
         return grouper(pdbs, **kwargs)
 
+
     def name_groups(self, groups, parents):
         """
         Compute the naming and parents of all groups. Note that this will
@@ -305,14 +306,13 @@ class Builder(core.Base):
 
         return named
 
+
     def counts(self, parents, current):
         """
         Compare two releases and count the number of changes.
 
         This seems to be pretty fragile since any number of things we
         have tried to speed up this code leads to very high change counts.
-
-
         """
 
         data = []
@@ -347,8 +347,10 @@ class Builder(core.Base):
         counts['classes'] = counts.pop('groups')
         return counts
 
+
     def within_cutoff(self, group, cutoff):
-        """Filter the group to produce a new one where all members of the group
+        """
+        Filter the group to produce a new one where all members of the group
         are within the resolution cutoff. This will update the rank of the
         members so that they indicate the new rank.
 
@@ -375,6 +377,7 @@ class Builder(core.Base):
         updated['members'] = filtered
         return updated
 
+
     def class_name(self, resolution, entry):
         """Create the name of the class given the class and resolution.
 
@@ -388,6 +391,7 @@ class Builder(core.Base):
             handle=entry['name']['handle'],
             version=entry['name']['version']
         )
+
 
     def filter_groups(self, groups, resolutions):
         """
@@ -427,13 +431,13 @@ class Builder(core.Base):
                 data.append(filtered)
 
         # it seems to be very important to keep groups together by cutoff
-        # maybe because later they will be grouped by cutoff
-
-        # sort in order 1.5, 2.0, 2.5, up to all
-        # return sorted(data, key=lambda g: g['name']['cutoff'])
-
-        # but maybe we can start with the "all" group and save some time that way
+        # maybe because later they will be grouped by cutoff when being recorded
+        # still, we can sort from "all" down to 1.5
+        # that way, we can use the ranking in the "all" category to determine the
+        # ranking in the categories with fewer structures
+        # try to also sort by handle ... does not seem to work! Causes all new EC names.
         return sorted(data, key=lambda g: g['name']['cutoff'], reverse=True)
+
 
     def attach_parents(self, groups, parents):
         """
@@ -478,6 +482,7 @@ class Builder(core.Base):
             data.append(group)
         return data
 
+
     def using_old_rank(self, group):
         ife_id_list = []
         for parent in group['parents']:
@@ -500,6 +505,7 @@ class Builder(core.Base):
         old_rank = {ife_id: rank for rank, (ife_id, _) in enumerate(sorted_last_cqs_values)}
         ### will return a dict, key is the ife_id and value is the rank of cqs {'ife_id1':0,'ife_id2':1,.....}
         return old_rank
+
 
     def find_representatives(self, groups, sorting_key=ranking_key):
         """
@@ -526,11 +532,12 @@ class Builder(core.Base):
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
 
+        # get the list of all nr_class_name values that are already ranked
         with self.session() as session:
             query = session.query(mod.NrClassRank.nr_class_name).distinct()
         nr_class_name_list = [row.nr_class_name for row in query]
 
-        handle_to_ranking = {}
+        handle_to_ordered_members = {}
         # self.logger.info("Found groups[0] %s", groups[0])
         # must process groups in the same order as given, apparently order is important
         for group in copy.deepcopy(groups):
@@ -560,42 +567,49 @@ class Builder(core.Base):
                 # from the database
                 group['representative'] = None
                 group['members'] = []
-            elif handle in handle_to_ranking:
-                # You would think this code would work, but it seems to scramble the
-                # connection to the parents and the counts of changes all get off
+            elif handle in handle_to_ordered_members:
+                # Use the ranking from equivalence classes at a higher resolution cutoff
+                # Saves time because you don't have to compute CQS all over again
                 self.logger.info("Using new ranking for %s", group['name']['full'])
                 keep_members = []
-                for mem in handle_to_ranking[handle]:
+                for member in handle_to_ordered_members[handle]:
                     # if mem has resolution less than equal to the current cutoff, keep it
                     # convert the resolution to float in a way that will work even if value is 'all'
                     try:
-                        res = float(mem['resolution'])
+                        res = float(member['resolution'])
                     except:
                         res = 999999.0
                     if res <= float(group['name']['cutoff']):
-                        keep_members.append(mem)
+                        # use deepcopy to avoid changing the member from previous cutoff
+                        keep_members.append(copy.deepcopy(member))
 
                 group['representative'] = keep_members[0]
+
+                self.logger.info('Representative chain %s' % str(group['representative']['id']))
+
                 group['members'] = keep_members
                 for index, member in enumerate(group['members']):
                     member['rank'] = index
                     self.logger.info("rank %3d ife %s" % (index, member['id']))
             else:
-                # do the work to look up CQS and rank the members
-                # This should be able to be done faster, but it just takes time
+                # Look up data, calculate CQS, and rank the members
+                #
                 self.logger.info("Ranking and selecting representative for %s", group['name']['full'])
                 ordered_members = rep_finder(group)
                 group['representative'] = ordered_members[0]
-                self.logger.info('Representative %s' % str(group['representative']))
+
+                self.logger.info('Representative chain %s' % str(group['representative']['id']))
+
                 group['members'] = ordered_members
                 for index, member in enumerate(group['members']):
                     member['rank'] = index
 
                 # uncomment the next line to use the elif statement above and save some time
                 # but maybe this scrambles the connection to the parents and thus backfires
-                handle_to_ranking[handle] = ordered_members
+                handle_to_ordered_members[handle] = ordered_members
             data.append(group)
         return data
+
 
     def __call__(self, pdbs, parent_release, current_release,
                  cutoffs=RESOLUTION_GROUPS, **kwargs):
@@ -647,7 +661,8 @@ class Builder(core.Base):
 
 
 class RepresentativeFinder(core.Base):
-    """A class to find the representative for a group of ifes.
+    """
+    A class to find the representative for a group of ifes.
     This will find the best in terms of the criterion
     NR_REPRESENTATIVE_METHOD.
 
@@ -664,6 +679,7 @@ class RepresentativeFinder(core.Base):
         if not hasattr(self, '_methods'):
             self._methods = set(n for n, k in reps.known())
         return self._methods
+
 
     def method(self, name):
         """Get the method with the given name.
@@ -683,6 +699,7 @@ class RepresentativeFinder(core.Base):
         ## Actually, the return info is equal to CompSocre(self.config, self.session)
         ## We normally rename a class or initial a class in this way, finder = CompScore(self.config, self.session)
         return finder(self.config, self.session)
+
 
     def __call__(self, group, method=NR_REPRESENTATIVE_METHOD):
         """Find the representative for the group.
@@ -710,4 +727,3 @@ class RepresentativeFinder(core.Base):
         new_data=finder(group)
         # self.logger.info("Found finder(group) in RepresentativeFinder class: %s", new_data)
         return new_data
-        return finder(group)
