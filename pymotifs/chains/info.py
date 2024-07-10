@@ -1,4 +1,5 @@
-"""Query PDB for chain level information.
+"""
+Query PDB for chain level information.
 
 This asks PDB for the chain level information like sequence and compound for
 the database. This works across several structures at once. This will merge the
@@ -182,6 +183,14 @@ class Loader(core.SimpleLoader):
 
             # some polymer_entities have more than one auth_asym_ids, which have different coords, see 7C7A
             for chain_id in chain_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"]:
+
+              if not "ybrid" in chain_data["entity_poly"]["type"]:
+                if "U" in chain_data["entity_poly"]["pdbx_seq_one_letter_code_can"]:
+                    if "deoxy" in chain_data["entity_poly"]["type"]:
+                      self.logger.info('DNA chain has U in it, type could be wrong')
+                elif "T" in chain_data["entity_poly"]["pdbx_seq_one_letter_code_can"]:
+                    if "olyribo" in chain_data["entity_poly"]["type"]:
+                      self.logger.info('RNA chain has T in it, type could be wrong')
 
               renamed = {}
               renamed["pdb_id"]             = pdb
