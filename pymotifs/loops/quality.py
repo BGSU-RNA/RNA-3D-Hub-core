@@ -261,11 +261,12 @@ class Loader(core.SimpleLoader):
             return sorted(loops, key=op.itemgetter('id'))
 
     def position_info(self, unit):
-        """Get the information about a position in an experimental sequence
+        """
+        Get the information about a position in an experimental sequence
         using a unit id.
         """
 
-        self.logger.debug("Finding position for %s", unit)
+        # self.logger.info("Finding position for %s" % unit)
         try:
             with self.session() as session:
                 pos = mod.ExpSeqPosition
