@@ -53,8 +53,11 @@ class Session(object):
         except Skip:
             session.rollback()
             raise
-        except Exception:
+        except Exception as e:
+            # get more detailed error message
             self.logger.error("Transaction failed. Rolling back.")
+            self.logger.error("Error message: %s" % str(e))
+
             session.rollback()
             raise
         finally:
