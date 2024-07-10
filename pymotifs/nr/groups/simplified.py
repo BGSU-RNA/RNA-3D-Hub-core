@@ -22,7 +22,7 @@ from pymotifs.constants import NR_MIN_HOMOGENEOUS_SIZE
 
 from pymotifs.utils import connectedsets as cs
 from pymotifs.utils import correspondence as cr
-from pymotifs.utils.structures import SYNTHEIC
+from pymotifs.utils.structures import SYNTHETIC
 
 
 def ranking_key(chain):
@@ -280,7 +280,7 @@ class Grouper(core.Base):
 
         species1 = group1['species']
         species2 = group2['species']
-        if species1 != SYNTHEIC[0] and species2 != SYNTHEIC[0] and \
+        if species1 != SYNTHETIC[0] and species2 != SYNTHETIC[0] and \
                 species1 is not None and species2 is not None \
                 and species1 != species2:
             self.logger.debug("Splitting %s, %s: Different species (%s, %s)" %

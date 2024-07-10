@@ -1,4 +1,5 @@
-"""Some queries that are useful in accessing stuff in the database.
+"""
+Some queries that are useful in accessing stuff in the database.
 """
 
 import itertools as it
@@ -10,7 +11,7 @@ from pymotifs import core
 from pymotifs import utils as ut
 from pymotifs import models as mod
 
-SYNTHEIC = (32630, 'synthetic construct')
+SYNTHETIC = (32630, 'synthetic construct')
 
 LONG_RANGE_CUTOFF = 4
 
@@ -65,7 +66,8 @@ class NR(Base):
 
 class Structure(Base):
     def rna_chains(self, pdb, return_id=False, strict=False, extended=True):
-        """This will get all chains labeled as RNA for a given structure or
+        """
+        This will get all chains labeled as RNA for a given structure or
         structures. This has a strict mode which can filter out chains which
         are not standard RNA, however, this may also filter out chains where
         are RNA incorrectly. For example, things with modified bases listed in
@@ -77,9 +79,9 @@ class Structure(Base):
         chain_id, chain_name or just chain_name.
         :strict: A flag that will exclude any chains that are not composed of
         only ACGUN.
-	:extended: A flag that sets the allowed macromolecule types for
-	processing.  False = "Polyribonucleotide (RNA)" only; True allows
-	additional values.
+        :extended: A flag that sets the allowed macromolecule types for
+        processing.  False = "Polyribonucleotide (RNA)" only; True allows
+        additional values.
         :returns: A list of the names or a tuple of the ids and names.
         """
 
@@ -92,8 +94,6 @@ class Structure(Base):
         macromolecule_types.add('DNA/RNA Hybrid')
         macromolecule_types.add('NA-hybrid')
         macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
-
-
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name,
@@ -218,7 +218,7 @@ class Structure(Base):
 
             if simplify:
                 if len(species_ids) > 1:
-                    return SYNTHEIC[0]
+                    return SYNTHETIC[0]
                 if not species_ids:
                     return None
                 return species_ids[0]
