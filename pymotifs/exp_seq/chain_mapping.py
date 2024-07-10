@@ -1,4 +1,5 @@
-"""Map chains to experimental sequences. This will only process RNA chains and
+"""
+Map chains to experimental sequences. This will only process RNA chains and
 will not map protein chains to to experimental sequences as we only compute
 experimental sequence data for RNA chains.
 """
@@ -21,7 +22,8 @@ class Loader(core.SimpleLoader):
     dependencies = set([ChainLoader, InfoLoader])
 
     def to_process(self, pdbs, **kwargs):
-        """Compute all chain ids to process. This will extract all rna chain
+        """
+        Compute all chain ids to process. This will extract all rna chain
         ids in the given list of pdbs.
 
         Parameters
@@ -43,7 +45,8 @@ class Loader(core.SimpleLoader):
         return sorted(set(chains))
 
     def query(self, session, chain_id):
-        """Create a query to find all mapped chains. This will produce a query
+        """
+        Create a query to find all mapped chains. This will produce a query
         to find all entries in ``exp_seq_chain_mappings``.
 
         Parameters
@@ -62,7 +65,8 @@ class Loader(core.SimpleLoader):
             filter_by(chain_id=chain_id)
 
     def exp_id(self, chain_id):
-        """Compute the experimetnal sequence id for the given chain id. This
+        """
+        Compute the experimental sequence id for the given chain id. This
         will look up all experimental sequences with the same sequence as the
         given chain id.
 
@@ -90,7 +94,8 @@ class Loader(core.SimpleLoader):
             return query.one().exp_seq_id
 
     def data(self, chain_id, **kwargs):
-        """Compute the mapping between the chain and an experimental sequence.
+        """
+        Compute the mapping between the chain and an experimental sequence.
 
         Parameters
         ----------
