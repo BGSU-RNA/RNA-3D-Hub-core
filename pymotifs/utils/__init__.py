@@ -276,7 +276,8 @@ class RetryHelper(object):
 
 
 class WebRequestHelper(RetryHelper):
-    """A class to help with making web requests. This deals with the retrying
+    """
+    A class to help with making web requests. This deals with the retrying
     and making sure the response body is not empty. If the max number of
     retries is reached we raise an exception. In addition, all steps are
     logged.
