@@ -795,7 +795,8 @@ class Loader(core.Loader):
                 alignment_temp = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_rfam_sequences_temp.sto' % rfam_family)
 
             # run infernal; default mxsize is 128, 1200 covers most big alignments
-            command = '%s --mxsize 1200 --noprob --outformat Pfam %s %s > %s' % (cmalign_location,model_file,sequence_temp,alignment_temp)
+            # mxsize 1000 worked better for LSU_PDB_chains on 2024-07-08
+            command = '%s --mxsize 1000 --noprob --outformat Pfam %s %s > %s' % (cmalign_location,model_file,sequence_temp,alignment_temp)
             self.logger.info('Start %5d last %5d running command: %s' % (start_index,last_index,command))
             print('Start %5d last %5d running command: %s' % (start_index,last_index,command))
             os.system(command)
@@ -911,7 +912,7 @@ class Loader(core.Loader):
                     for rf in sorted(rfam_sequence_file_needed):
                         f.write('%s\n' % rf)
 
-                self.logger.info('No sequence file found for %s' % rfam_family)
+                self.logger.info('No sequence file %s found for %s' % (sequence_file,rfam_family))
                 print('No sequence file found for %s' % rfam_family)
                 raise core.Skip("Rfam sequence file for %s is not found; check again on the next run" % (rfam_family))
 
