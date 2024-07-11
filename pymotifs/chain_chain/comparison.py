@@ -174,7 +174,7 @@ class Loader(core.SimpleLoader):
         self.logger.info('Found %d groups of IFEs' % len(groups))
         found_non_singleton_group = False
         for group in groups:
-            if len(group) > 1:
+            if 'members' in group and len(group['members']) > 1:
                 found_non_singleton_group = True
                 break
         if not found_non_singleton_group:
