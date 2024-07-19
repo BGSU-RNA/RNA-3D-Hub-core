@@ -114,6 +114,8 @@ class Loader(core.SimpleLoader):
                 interaction['unit_id_2'] = row[1]
                 interaction['f_crossing'] = int(row[3])
                 interaction['pdb_id'] = pdb
+                # added 2024-07-19 to distinguish old matlab annotations from new python ones
+                interaction['program'] = 'matlab'
 
                 family = row[2].strip()
                 inter_type = self.interaction_type(family)
