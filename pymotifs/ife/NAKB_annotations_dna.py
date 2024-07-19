@@ -37,7 +37,7 @@ class Loader(core.SimpleLoader):
     def get_nakb_annotations(self):
         # table_list = []
         table = []
-        with open("/usr/local/pipeline/hub-core/NAKB_annotations_dna.csv", "r") as annotations:
+        with open("https://www.nakb.org/node/solr/nakb/select?fl=id,pdbid,NAKBnaList,NAKBprotList&q=NAKBna:*%20OR%20NAKBprot:*&wt=csv&rows=200000", "r") as annotations:
             nakb_csv = csv.reader(annotations, delimiter=',')
             
             for row in nakb_csv:
