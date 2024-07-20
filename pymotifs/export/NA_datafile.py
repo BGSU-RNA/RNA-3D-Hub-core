@@ -70,6 +70,10 @@ class Exporter(core.Loader):
         The return value is just a list value.
         We do this because we only want to run this script one time even if we have a lot of pdbs.
         """
+
+        if len(pdbs) <= 100:
+            raise core.Skip("Too few pdbs to write NA_datafile.pickle")
+
         return ['1']
 
 
