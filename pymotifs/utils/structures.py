@@ -180,7 +180,18 @@ class Structure(Base):
                 join(c1, c1.id == mod.UnitPairsInteractions.unit_id_1).\
                 join(c2, c2.id == mod.UnitPairsInteractions.unit_id_2).\
                 filter(mod.UnitPairsInteractions.pdb_id == pdb).\
+                filter(mod.UnitPairsInteractions.program == 'matlab').\
                 filter(c1.chain == c2.chain, c1.chain == chain)
+
+            if query.count() == 0:
+                # look for python pairs instead, until we switch completely over to python pairs
+                query = session.query(mod.UnitPairsInteractions).\
+                    join(c1, c1.id == mod.UnitPairsInteractions.unit_id_1).\
+                    join(c2, c2.id == mod.UnitPairsInteractions.unit_id_2).\
+                    filter(mod.UnitPairsInteractions.pdb_id == pdb).\
+                    filter(mod.UnitPairsInteractions.program == 'python').\
+                    filter(c1.chain == c2.chain, c1.chain == chain)
+
 
             for result in query:
                 data = ut.row2dict(result)
@@ -287,7 +298,7 @@ class BasePairQueries(Base):
         :count: If we should return the count or the interactions.
         :near: Should we count nears.
         :family: The family to limit to.
-        :returns: A count or the interactions themself.
+        :returns: A count or the interactions themselves
         """
         inter = mod.UnitPairsInteractions
 
@@ -296,10 +307,17 @@ class BasePairQueries(Base):
                                           family=family, model=model,
                                           sym_op=sym_op)
 
-            query = query.filter(u1.chain == u2.chain)
-
             if range_cutoff is not None:
-                query = query.filter(inter.f_crossing >= range_cutoff)
+                query = query.filter(inter.f_crossing >= range_cutoff).filter(inter.program == 'matlab')
+            else:
+                query = query.filter(u1.chain == u2.chain,inter.program == 'matlab')
+
+            # look for python pairs instead, until we switch completely over to python pairs
+            if query.count() == 0:
+                if range_cutoff is not None:
+                    query = query.filter(inter.f_crossing >= range_cutoff).filter(inter.program == 'python')
+                else:
+                    query = query.filter(u1.chain == u2.chain,inter.program == 'python')
 
             if count:
                 return query.count()
@@ -387,10 +405,28 @@ class BasePairQueries(Base):
             filter(bp.is_forward == True).\
             filter(u1.model == u2.model).\
             filter(inter.pdb_id == pdb).\
+            filter(inter.program == 'matlab').\
             filter(u1.sym_op == u2.sym_op).\
             filter(u1.model == u2.model).\
             filter(u1.model == model).\
             filter(u1.sym_op == sym_op)
+
+        if query.count() == 0:
+            # re-do query to look for python pairs instead, until we switch completely over to python pairs
+            query = session.query(inter.unit_id_1, inter.unit_id_2, inter.f_lwbp).\
+                join(u1, u1.unit_id == inter.unit_id_1).\
+                join(u2, u2.unit_id == inter.unit_id_2).\
+                join(bp, bp.bp_family_id == inter.f_lwbp).\
+                filter(bp.is_forward == True).\
+                filter(u1.model == u2.model).\
+                filter(inter.pdb_id == pdb).\
+                filter(inter.program == 'python').\
+                filter(u1.sym_op == u2.sym_op).\
+                filter(u1.model == u2.model).\
+                filter(u1.model == model).\
+                filter(u1.sym_op == sym_op)
+
+
 
         if symmetry:
             query = query.filter((bp.is_symmetric == False) |

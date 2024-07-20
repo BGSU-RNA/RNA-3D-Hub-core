@@ -44,12 +44,14 @@ class Loader(core.SimpleLoader):
         ## stopped using the quey function to check if we have reords for this table.
         ## we added to_process function to do the same job.
         # return 0
-        return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb)
-    
+        # filter by program='matlab' because that is what this program is about
+        return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb,program='matlab')
+
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
             query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.unit_id_1).\
-                filter(mod.UnitPairsInteractions.unit_id_1 == 'placeholder')
+                filter(mod.UnitPairsInteractions.unit_id_1 == 'placeholder').\
+                filter(mod.UnitPairsInteractions.program == 'matlab')
             if not query.count():
                 raise core.Skip("Skipping interactions.pairwise, no new interactions")
 
@@ -102,6 +104,7 @@ class Loader(core.SimpleLoader):
                 interaction['unit_id_2'] = row[1]
                 interaction['f_crossing'] = int(row[3])
                 interaction['pdb_id'] = pdb
+                interaction['program'] = 'matlab'
 
                 family = row[2].strip()
                 inter_type = self.interaction_type(family)
@@ -128,7 +131,7 @@ class Loader(core.SimpleLoader):
             os.remove(ifn)
             if len(data) == 0:
                 data = {}
-                data['pdb_id'] = pdb                         
+                data['pdb_id'] = pdb
                 data['unit_id_1'] = 'placeholder'
                 data['unit_id_2'] = 'placeholder'
                 self.logger.info('Pdb file %s has no interactions, save a placeholder' % pdb)

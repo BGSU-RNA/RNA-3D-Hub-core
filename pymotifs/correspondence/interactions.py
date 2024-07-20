@@ -15,7 +15,8 @@ class Loader(core.Loader):
     def interactions(self, pdb):
         with self.session() as session:
             query = session.query(Ints.unit_pairs_interactions_id, Ints.unit_id_1, Ints.unit_id_2).\
-                filter(Ints.pdb_id == pdb)
+                filter(Ints.pdb_id == pdb).\
+                filter(Ints.program == 'matlab')
 
             data = []
             for result in query:
@@ -30,14 +31,16 @@ class Loader(core.Loader):
         with self.session() as session:
             query = session.query(CorrInts).\
                 join(Ints, Ints.id == CorrInts.interaction_id_1).\
-                filter(Ints.pdb_id == pdb)
+                filter(Ints.pdb_id == pdb).\
+                filter(Ints.program == 'matlab')
 
             return bool(query.count())
 
     def remove(self, pdb, **kwargs):
         with self.session() as session:
             query = session.query(Ints).\
-                filter(Ints.pdb_id == pdb)
+                filter(Ints.pdb_id == pdb).\
+                filter(Ints.program == 'matlab')
             ids = [result.id for result in query]
 
         with self.session() as session:
