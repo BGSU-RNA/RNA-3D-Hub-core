@@ -146,7 +146,12 @@ class Loader(core.SimpleLoader):
         md5 : str
             The md5 hash as a hex digest.
         """
-        return hashlib.md5(sequence).hexdigest()
+        """String Encoding: In Python 3, strings are Unicode by default, 
+        and hashlib.md5() requires a byte-like object. 
+        Therefore, you need to encode the string to bytes."""
+
+        # return hashlib.md5(sequence).hexdigest()
+        return hashlib.md5(sequence.encode('utf-8')).hexdigest()
 
     @property
     def translation(self):

@@ -60,7 +60,7 @@ tags
 .opengrok/
 cache/
 ss-diagrams/
-
+pickle-FR3D/
 docs/build/*
 default.nix
 

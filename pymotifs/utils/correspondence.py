@@ -173,15 +173,17 @@ class Helper(core.Base):
                 is_good = bool(result.good_alignment)
                 pairs = it.product(exp_mapping[result.exp_seq_id_1],
                                    exp_mapping[result.exp_seq_id_2])
-                pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs) ## if they are not equal (n1 != n2). If the two numbers are not equal, the lambda function returns True, so ifilter() keeps that pair in the filtered output.
+                # pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
+                pairs = it.ifilter(lambda pair: pair[0] != pair[1], pairs)
                 for name1, name2 in pairs:
                     mapping[name1][name2] = is_good
                     mapping[name2][name1] = is_good
 
         if good is None:
-            ids = it.chain.from_iterable(exp_mapping.values())      ## exp_mapping.values() is the chain ids
-            pairs = it.product(ids, repeat=2)                       ## generate all possible combinations
-            pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)    ## filter when n1 != n2
+            ids = it.chain.from_iterable(exp_mapping.values())
+            pairs = it.product(ids, repeat=2)
+            # pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
+            pairs = it.ifilter(lambda pair: pair[0] != pair[1], pairs)
             pairs = list(pairs)
             for name1, name2 in pairs:
                 if name2 not in mapping[name1]:

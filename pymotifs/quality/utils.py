@@ -248,7 +248,7 @@ class Parser(object):
         gz_content : str
             A gzip'ed string of the file to parse.
         """
-        filehandle = sio.StringIO(gz_content)
+        filehandle = sio.BytesIO(gz_content)
         content = gzip.GzipFile(fileobj=filehandle).read()
         md5 = hashlib.md5()
         md5.update(content)
@@ -380,7 +380,7 @@ class Parser(object):
                     if len(entry['unit_ids'][1]) != len(entry['unit_ids'][0]):
                         if len(entry['unit_ids'][0]) == 1:
                             fill = entry['unit_ids'][0] * len(entry['unit_ids'][1])
-                            entry['unit_ids']= (fill, entry['unit_ids'][1])
+                            entry['unit_ids'] = (fill, entry['unit_ids'][1])
                         else:
                             raise core.InvalidState("Clash lengths do not align: %s, %s" %
                                                     (residue.attrib, clash.attrib))

@@ -10,6 +10,8 @@ import pickle
 import datetime
 from contextlib import contextmanager
 
+import io as sio
+
 from fr3d.data import Structure
 from fr3d.cif.reader import Cif
 from fr3d.cif.reader import ComplexOperatorException
@@ -153,7 +155,18 @@ class Stage(base.Base):
 
         try:
             with open(self._cif(pdb), 'rb') as raw:
-                return Cif(raw)
+                # raw_content = raw.read()
+                # bytes_io_raw = sio.BytesIO(raw_content)
+                # Read the content of the file and wrap it in a BytesIO object
+                raw_content = raw.read()
+                bytes_io_raw = sio.BytesIO(raw_content)
+                
+                # Decode the content from bytes to str
+                decoded_content = bytes_io_raw.read().decode('utf-8')
+                
+                # Wrap the decoded content in a StringIO object to pass to Cif
+                string_io_raw = sio.StringIO(decoded_content)
+                return Cif(string_io_raw)
         except ComplexOperatorException as err:
             if self.skip_complex:
                 self.logger.warning("Got a complex operator for %s, skipping",
@@ -551,6 +564,9 @@ class Loader(Stage):
         :dry_run: A flag to indicate if this should perform a dry run.
         :kwargs: Keyword arguments.
         """
+        # self.logger.info("In store method Stored data for pdb %s", pdb)
+        # self.logger.info("In store method Stored data for data %s", data)
+        # self.logger.info("In store method Stored data for kwargs %s", kwargs)
         saver = self.saver(self.config, self.session, stage=self)
         saver(pdb, data, **kwargs)
 
@@ -579,7 +595,9 @@ class Loader(Stage):
             else:
                 self.logger.warning("No data produced for %s", str(entry))
                 return
-
+        # self.logger.info("In process method Stored data for pdb %s", entry)
+        # self.logger.info("In process method Stored data for data %s", data)
+        # self.logger.info("In process method Stored data for kwargs %s", kwargs)
         self.store(entry, data, **kwargs)
 
 

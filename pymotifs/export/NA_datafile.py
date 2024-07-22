@@ -212,8 +212,6 @@ class Exporter(core.Loader):
                     result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
                     result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
 
-        # print(result)
-
         return result
 
 
@@ -228,26 +226,17 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
 
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/"
-
-        filename = self.filename()
-        copy_file = os.path.join("pickle-FR3D",'NA_datafile.pickle')
+        copy_file = os.path.join("data",'NA_datafile.pickle') #change name?
 
         pinfo = self.data(pdb)
-
-
-        with open(filename, 'wb') as fh:
-            self.logger.info("process: filename open: %s" % filename)
-            # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
-            pickle.dump(pinfo, fh, 2)
-
-        os.system("rsync -u %s %s" % (filename, webroot))
 
         with open(copy_file, 'wb') as fh:
             self.logger.info("process: filename open: %s" % copy_file)
             pickle.dump(pinfo, fh, 2)
 
-        os.system("rsync -u %s %s" % (copy_file, webroot))
+        filename = os.path.join("/var/www/html",'NA_datafile.pickle')
+
+        os.system("ln -s %s %s" % (copy_file, filename))
 
 
         pass

@@ -7,6 +7,7 @@ import os
 import json
 import collections
 from copy import deepcopy
+from six import iteritems, string_types
 
 
 def merge(a, b):
@@ -35,12 +36,12 @@ def merge(a, b):
         return b
 
     result = deepcopy(a)
-    for k, v in b.iteritems():
+    for k, v in iteritems(b):
         if k in result and isinstance(result[k], dict):
             result[k] = merge(result[k], v)
         else:
             new_v = deepcopy(v)
-            if isinstance(new_v, basestring):
+            if isinstance(new_v, string_types):
                 new_v = str(new_v)
             result[k] = new_v
 

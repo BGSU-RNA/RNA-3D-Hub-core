@@ -437,8 +437,12 @@ class Grouper(core.Base):
         """
 
         pairs = it.product(group, group)
-        pairs = it.ifilter(lambda (a, b): a != b, pairs)
-        pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)           ## who will give us the flag about the connections???
+        # pairs = it.ifilter(lambda (a, b): a != b, pairs)
+        # pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)
+        # above lines were for python2
+        # coming lines are for python2 and 3
+        pairs = it.ifilter(lambda pair: pair[0] != pair[1], pairs)
+        pairs = it.ifilter(lambda pair: pair[1] not in connections[pair[0]], pairs)
         pairs = list(pairs)
         for pair in pairs:
             self.logger.debug("Pair %s, %s not connected" % (pair[0], pair[1]))

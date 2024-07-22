@@ -15,6 +15,7 @@ import gzip
 import shutil
 import collections as coll
 from contextlib import contextmanager
+import sys 
 
 from pymotifs import utils as ut
 
@@ -100,17 +101,31 @@ class Saver(Base):
         """
 
         to_save = data
+        with open('/usr/local/pipeline/hub-core/logs/quality_download.logs', 'w') as f:
+            f.write(str(to_save))
         if not isinstance(to_save, coll.Iterable) or isinstance(to_save, dict):
             to_save = [data]
-
         saved = False
-        for index, chunk in enumerate(ut.grouper(self.insert_max, to_save)):
-            chunk = list(chunk)
-            kwargs['index'] = index
+        if type(data) == bytes:
             with self._writer(pdb, **kwargs) as writer:
-                for entry in chunk:
-                    writer(entry)
-                    saved = True
+                writer(data)
+                saved = True
+        else:
+            for index, chunk in enumerate(ut.grouper(self.insert_max, to_save)):
+                chunk = list(chunk)
+                kwargs['index'] = index
+                with self._writer(pdb, **kwargs) as writer:
+                    for entry in chunk:
+                        # if sys.version_info[0] == 3 and isinstance(entry, (str, int)):
+                        #     entry = entry.encode('utf-8')
+                        # writer(entry)
+                        # try:
+                        #     writer(entry)
+                        # except AttributeError:
+                        #     entry = entry.encode('utf-8')
+                        #     writer(entry)
+                        writer(entry)
+                        saved = True
 
         if not saved:
             if not self.allow_no_data:

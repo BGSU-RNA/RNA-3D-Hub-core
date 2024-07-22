@@ -3,6 +3,7 @@ Some queries that are useful in accessing stuff in the database.
 """
 
 import itertools as it
+import sys
 
 from sqlalchemy.orm import aliased
 
@@ -100,7 +101,7 @@ class Structure(Base):
                      mod.ChainInfo.chain_id).\
                 filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
 
-            if isinstance(pdb, basestring):
+            if isinstance(pdb, str):
                 query = query.filter_by(pdb_id=pdb)
             else:
                 query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
@@ -169,7 +170,7 @@ class Structure(Base):
                 order_by(mod.UnitInfo.chain)
 
         grouped = it.groupby(query, lambda a: a.chain)
-        max_pair = max(grouped, key=lambda (k, v): len(list(v)))
+        max_pair = max(grouped, key=lambda kv: len(list(kv[1])))
         return max_pair[0]
 
     def interactions(self, pdb, chain):

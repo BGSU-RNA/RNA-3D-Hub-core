@@ -4,7 +4,7 @@ pdb_quality table.
 """
 import os
 
-import os
+import chardet
 
 import pymotifs.core as core
 from pymotifs import models as mod

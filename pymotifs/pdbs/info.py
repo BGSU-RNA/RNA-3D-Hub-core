@@ -128,11 +128,6 @@ class Loader(core.SimpleLoader):
         helper = CustomReportHelper(fields=self.names.keys())
         data = helper(pdbs)
 
-        print("pymotifs/pdbs/info.py gets this data:")
-        print(data)
-        print("for these pdb ids:")
-        print(pdbs)
-
         if not data:
             raise core.StageFailed("Could not load data for all pdbs %s" %
                                    str(pdbs))

@@ -127,7 +127,10 @@ class Loader(core.SimpleLoader):
         """
         with open(filename, 'rb') as raw:
             parser = qual.Parser(raw.read())
-            return it.imap(self.as_quality, parser.nts(mapping))
+            try :
+                return it.imap(self.as_quality, parser.nts(mapping))
+            except AttributeError:
+                return map(self.as_quality, parser.nts(mapping))
 
     def data(self, pdb, **kwargs):
         """Compute the quality assignments for residues in the structure. This

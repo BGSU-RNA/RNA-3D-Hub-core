@@ -100,17 +100,7 @@ class Loader(core.SimpleLoader):
         """
 
         structure = self.structure(pdb)
-        # for i in it.imap(self.as_unit, structure.residues(polymeric=None)):
-        #     print(dir(i))
-        #     print(i.sym_op)
-        #     print(type(i))
-        # print("list or not: ",type(it.imap(self.as_unit, structure.residues(polymeric=None))))
-        # ### fixing process ###
-        # new_6xbu = it.imap(self.as_unit, structure.residues(polymeric=None))
-        # new_return = []
-        # for obj in new_6xbu:
-        #     if obj.sym_op != '1_555':
-        #         new_return.append(obj)
-        # print([i.unit_id for i in new_return])
-        # return new_return
-        return it.imap(self.as_unit, structure.residues(polymeric=None))
+        try :
+            return it.imap(self.as_unit, structure.residues())  
+        except AttributeError:
+            return map(self.as_unit, structure.residues())

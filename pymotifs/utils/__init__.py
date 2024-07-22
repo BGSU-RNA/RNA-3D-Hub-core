@@ -14,9 +14,15 @@ import sys
 
 # safe for python 2 and 3
 if sys.version_info[0] == 2:
-    import cStringIO as sio
+    from cStringIO import StringIO
 else:
-    import io as sio
+    py_ver3 = True
+    from io import BytesIO as StringIO
+
+try: # python2
+    xrange
+except NameError:  # python3
+    xrange = range
 
 
 """Generic logger for all utilities."""
@@ -388,7 +394,7 @@ class FTPFetchHelper(RetryHelper):
 
     def action(self, filename, **kwargs):
         logger.info("Attempting to get %s", filename)
-        out = sio.StringIO()
+        out = StringIO()
         self.ftp.retrbinary("RETR %s" % filename, out.write)
         logger.info("Fetched %s", filename)
         text = out.getvalue()
@@ -407,10 +413,8 @@ class GzipFetchHelper(WebRequestHelper):
         super(GzipFetchHelper, self).__init__(parser=self.parser)
 
     def parser(self, response):
-        # logger.info('response is %s', response)
-        # logger.info('response content is %s', response.content)  # prints binary data from .cif.gz!
-        # logger.info('response is %s', response)
-
-        fileobj = sio.StringIO(response.content)
+        fileobj = StringIO(response.content)
         unzipped = gzip.GzipFile(fileobj=fileobj)
+        # if py_ver3:
+        #     return unzipped.read().decode('utf-8')
         return unzipped.read()
