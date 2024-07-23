@@ -61,77 +61,8 @@ SKIP = {
     , '1HO6' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '1HOQ' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
     , '1OKA' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '4XK0' # failing quality.units (missing clashes in validation) as of 2018-01-09 (JJC)
-    , '5FCI' # failing quality.units (missing clashes in validation) as of 2018-01-09 (JJC)
-    , '5JEA' # failing quality.units (missing clashes in validation) as of 2018-01-09 (JJC)
-    , '1UTV' # failing loops.extractor as of 2018-01-10 (JJC) # still failing 2019-01-15 (JJC)
-    , '5O61' # failing loops.extractor as of 2018-01-10 (JJC) # still failing 2019-01-15 (JJC)
-    , '3U5F' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
-    , '4WUS' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
-    , '4WWE' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
-    , '4WWT' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
-    , '4Z3Q' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
-    , '4Z3R' # failing loops.positions as of 2018-01-10 (JJC) # still failing 2019-01-16 (JJC)
-#    , '2H0S' # failing loops.quality as of 2018-01-11 (JJC) # works 3/7/2020 CLZ
-    , '2H0Z' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3BO4' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain D (CLZ)
-    , '3CQS' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3CR1' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3I2Q' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3I2R' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3I2S' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3I2U' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '3IIN' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain C (CLZ)
-    , '3OLA' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZD4' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZD5' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZP8' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '3ZVO' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain V (CLZ)
-    , '4K4Y' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain B (CLZ)
-    , '5IT7' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain 2 (CLZ)
-    , '5J4D' # failing loops.quality as of 2018-01-11 (JJC) # no exp seq pos for chain A (CLZ)
-    , '1VQL' # failing quality.units as of 2018-02-09 (JJC)
-    , '1VQM' # failing quality.units as of 2018-02-09 (JJC)
-    , '1YJW' # failing quality.units as of 2018-02-09 (JJC)
-    , '2UU9' # failing quality.units as of 2018-02-09 (JJC)
-    , '2UUA' # failing quality.units as of 2018-02-09 (JJC)
-    , '2UUB' # failing quality.units as of 2018-02-09 (JJC)
-    , '2UUC' # failing quality.units as of 2018-02-09 (JJC)
-    , '2VQE' # failing quality.units as of 2018-02-09 (JJC)
-    , '2VQF' # failing quality.units as of 2018-02-09 (JJC)
-    , '2X2Q' # failing quality.units as of 2018-02-09 (JJC)
-    , '2XO0' # failing quality.units as of 2018-02-09 (JJC)
-    , '2XZO' # failing quality.units as of 2018-02-09 (JJC)
-    , '4Q9Q' # failing quality.units as of 2018-02-09 (JJC)
-    , '4Q9R' # failing quality.units as of 2018-02-09 (JJC)
-    , '4WZD' # failing quality.units as of 2018-02-09 (JJC)
-    , '4YHH' # failing quality.units as of 2018-02-09 (JJC)
-    , '5DDQ' # failing quality.units as of 2018-02-09 (JJC)
-    , '5FCJ' # failing quality.units as of 2018-02-09 (JJC)
-    , '5I8Q' # failing quality.units as of 2018-02-09 (JJC)
-    , '5IP2' # failing quality.units as of 2018-02-09 (JJC)
-    , '5VP2' # failing quality.units as of 2018-02-09 (JJC)
-    , '6C6K' # failing species.mapping as of 2018-05-25 (JJC)
-    , '6SAE' # failing export.cifatom as of 2019-12-04 (CLZ)
-    , '6WLN' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
-    , '6WLO' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
-#    , '1QZA' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '1QZB' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '1T1O' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '2AGN' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '3DG0' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '3DG2' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '3DG4' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '3DG5' # failing units.distances as of 2017-03-18 (JJC) # still failing 2018-01-23 (JJC)
-#    , '3J64' # failing units.distances as of 2017-11-27 (JJC) # still failing 2018-01-23 (JJC)
-#    , '6EM3' # failing units.distances (No data saved) as of 2018-02-28 (JJC)
-#    , '6EM4' # failing units.distances (No data saved) as of 2018-02-28 (JJC)
-#    , '6EM5' # failing units.distances (No data saved) as of 2018-02-28 (JJC)
-#    , '5ZZM' # failing units.distances (No data saved) as of 2018-07-02 (JJC)
-        #, '5Z56' # failing ife.info as of 2018-10-03 (JJC)
-        #, '5Z57' # failing ife.info as of 2018-10-03 (JJC)
-        #, '5Z58' # failing ife.info as of 2018-10-03 (JJC)
-        #, '6DZK' # failing ife.info as of 2018-10-03 (JJC)
+
+
     ########## The following pdb files are DNA files. Ding got the premission to skipped the following files on 12/17/2021
     ########## The following files will be fixed and removed in the future.
     , '103D', '105D', '106D', '107D', '108D', '132D', '135D', '136D', '139D', '140D', '141D', '142D'
@@ -158,6 +89,9 @@ SKIP = {
     , '1UQG', '1WAN', '1XUE', '1YUI', '1YUJ', '1ZHU', '201D', '202D', '203D', '204D', '214D', '225D'
     , '226D', '229D', '230D', '2ARG', '2DAU', '2EZD', '2EZE', '2EZF', '2EZG', '2GAT', '2HDC', '2KBD'
     , '2NEO', '2STT', '2STW', '3GAT', '3KBD', '3REC', '4GAT', '4KBD', '5GAT'
+
+
+
 }
 
     # These worked on 2024-06-22 (CLZ)  Not sure what changed
@@ -242,4 +176,3 @@ SKIP = {
     #, '5Z57' # failing ife.info as of 2018-10-03 (JJC)
     #, '5Z58' # failing ife.info as of 2018-10-03 (JJC)
     #, '6DZK' # failing ife.info as of 2018-10-03 (JJC)
-
