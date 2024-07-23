@@ -45,7 +45,8 @@ class Loader(core.SimpleLoader):
         ## stopped using the query function to check if we have reords for this table.
         ## we added to_process function to do the same job.
         # return 0
-        return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb)
+        # filter by program='matlab' because that is what this program is about
+        return session.query(mod.UnitPairsInteractions).filter_by(pdb_id=pdb,program='matlab')
 
     def to_process(self, pdbs, **kwargs):
         """
@@ -56,7 +57,10 @@ class Loader(core.SimpleLoader):
 
         # find all unique pdb ids that have been processed and have a pairwise interaction or have a placeholder
         with self.session() as session:
-            query = session.query(mod.UnitPairsInteractions.pdb_id).distinct()
+            query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.unit_id_1).\
+                filter(mod.UnitPairsInteractions.program == 'matlab')
+            if not query.count():
+                raise core.Skip("Skipping interactions.pairwise, no new interactions")
 
         d = set()
         for result in query:

@@ -40,9 +40,9 @@ except:
     inputPath = ""
     outputNAPairwiseInteractions = ""
 
-from NA_pairwise_interactions import load_structure
-from NA_pairwise_interactions import get_parent
-from NA_pairwise_interactions import myTimer
+from fr3d.classifiers.NA_pairwise_interactions import load_structure
+from fr3d.classifiers.NA_pairwise_interactions import get_parent
+from fr3d.classifiers.NA_pairwise_interactions import myTimer
 
 def annotate_bond_orientation(structure,pipeline=False):
 

@@ -41,6 +41,7 @@ class Loader(core.SimpleLoader):
     Instead we process a whole file at once.
     """
 
+
     dependencies = set([InfoLoader, PositionLoader, ChainMappingLoader,
                         UnitLoader])
 
@@ -264,6 +265,16 @@ class Loader(core.SimpleLoader):
         """
 
         trans = {m.name: m for m in mapped_chains}
+        # in November 2020, the type for RNA comes back as polyribonucleotide
+        # note:  this is for entity_macromolecule_type, see below
+        # note:  it would be really helpful to find a less fragile way to do this!
+        # also set in structures.py
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
+        macromolecule_types.add('polydeoxyribonucleotide')
 
         for mapping in cif.experimental_sequence_mapping(trans.keys()):
             unit_id = mapping['unit_id']

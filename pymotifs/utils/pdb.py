@@ -60,7 +60,9 @@ class RnaPdbsHelper(object):
         logger.info('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
         print('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
 
-        polytypes = ["RNA","NA-hybrid"]
+        polytypes = ["RNA","NA-hybrid","DNA"]
+        # we only keep DNA structures here at 2/1/2023
+        polytypes = ["DNA"]
         resultIDs = []
 
         # converted to regular text, we can try this sometime
@@ -79,6 +81,7 @@ class RnaPdbsHelper(object):
         try:
             for polytype in polytypes:
                 currenturl = url.replace("RNA",polytype)
+                # print("Trying current url %s" % currenturl)
                 response = requests.get(currenturl)
                 jsonR = response.json()
 

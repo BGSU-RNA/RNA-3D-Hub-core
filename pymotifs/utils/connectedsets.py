@@ -5,7 +5,7 @@
 # Note that connections[i] may contain j without connections[j] containing i; the program adds i to connections[j]; it assumes symmetry.
 
 
-def find_connected(connections):
+def find_connected(connections):                ## pass in valid pairs
 
     considered = {}
     for i in connections.keys():

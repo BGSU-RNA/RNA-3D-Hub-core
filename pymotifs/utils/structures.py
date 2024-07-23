@@ -119,6 +119,48 @@ class Structure(Base):
 
             return data
 
+    ############### Ding start ####################################
+    def na_chains(self, pdb, return_id=False, strict=False, extended=True):
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
+#        if extended:
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+
+        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
+        macromolecule_types.add('polydeoxyribonucleotide')
+
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.chain_name,
+                     mod.ChainInfo.chain_id).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
+
+            if isinstance(pdb, basestring):
+                query = query.filter_by(pdb_id=pdb)
+            else:
+                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
+
+            # look specifically for A, C, G, U, N but not modified nts
+            if strict:
+                func = mod.ChainInfo.sequence.op('regexp')
+                query = query.filter(func('^[ACGUN]$'))
+
+            data = []
+            for result in query:
+                entry = result.chain_name
+                if return_id:
+                    entry = (result.chain_name, result.chain_id)
+                data.append(entry)
+            return data
+
+    ############## Ding end   #####################################
+
+
+
+
+
+
+
     def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
@@ -139,7 +181,18 @@ class Structure(Base):
                 join(c1, c1.id == mod.UnitPairsInteractions.unit_id_1).\
                 join(c2, c2.id == mod.UnitPairsInteractions.unit_id_2).\
                 filter(mod.UnitPairsInteractions.pdb_id == pdb).\
+                filter(mod.UnitPairsInteractions.program == 'matlab').\
                 filter(c1.chain == c2.chain, c1.chain == chain)
+
+            if query.count() == 0:
+                # look for python pairs instead, until we switch completely over to python pairs
+                query = session.query(mod.UnitPairsInteractions).\
+                    join(c1, c1.id == mod.UnitPairsInteractions.unit_id_1).\
+                    join(c2, c2.id == mod.UnitPairsInteractions.unit_id_2).\
+                    filter(mod.UnitPairsInteractions.pdb_id == pdb).\
+                    filter(mod.UnitPairsInteractions.program == 'python').\
+                    filter(c1.chain == c2.chain, c1.chain == chain)
+
 
             for result in query:
                 data = ut.row2dict(result)
@@ -250,7 +303,7 @@ class BasePairQueries(Base):
         :count: If we should return the count or the interactions.
         :near: Should we count nears.
         :family: The family to limit to.
-        :returns: A count or the interactions themself.
+        :returns: A count or the interactions themselves
         """
         inter = mod.UnitPairsInteractions
 
@@ -259,10 +312,17 @@ class BasePairQueries(Base):
                                           family=family, model=model,
                                           sym_op=sym_op)
 
-            query = query.filter(u1.chain == u2.chain)
-
             if range_cutoff is not None:
-                query = query.filter(inter.f_crossing >= range_cutoff)
+                query = query.filter(inter.f_crossing >= range_cutoff).filter(inter.program == 'matlab')
+            else:
+                query = query.filter(u1.chain == u2.chain,inter.program == 'matlab')
+
+            # look for python pairs instead, until we switch completely over to python pairs
+            if query.count() == 0:
+                if range_cutoff is not None:
+                    query = query.filter(inter.f_crossing >= range_cutoff).filter(inter.program == 'python')
+                else:
+                    query = query.filter(u1.chain == u2.chain,inter.program == 'python')
 
             if count:
                 return query.count()
@@ -350,10 +410,28 @@ class BasePairQueries(Base):
             filter(bp.is_forward == True).\
             filter(u1.model == u2.model).\
             filter(inter.pdb_id == pdb).\
+            filter(inter.program == 'matlab').\
             filter(u1.sym_op == u2.sym_op).\
             filter(u1.model == u2.model).\
             filter(u1.model == model).\
             filter(u1.sym_op == sym_op)
+
+        if query.count() == 0:
+            # re-do query to look for python pairs instead, until we switch completely over to python pairs
+            query = session.query(inter.unit_id_1, inter.unit_id_2, inter.f_lwbp).\
+                join(u1, u1.unit_id == inter.unit_id_1).\
+                join(u2, u2.unit_id == inter.unit_id_2).\
+                join(bp, bp.bp_family_id == inter.f_lwbp).\
+                filter(bp.is_forward == True).\
+                filter(u1.model == u2.model).\
+                filter(inter.pdb_id == pdb).\
+                filter(inter.program == 'python').\
+                filter(u1.sym_op == u2.sym_op).\
+                filter(u1.model == u2.model).\
+                filter(u1.model == model).\
+                filter(u1.sym_op == sym_op)
+
+
 
         if symmetry:
             query = query.filter((bp.is_symmetric == False) |

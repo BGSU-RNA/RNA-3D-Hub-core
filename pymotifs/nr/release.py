@@ -25,13 +25,18 @@ from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
 from pymotifs.chain_chain.loader import Loader as ChainChainLoader
 from pymotifs.quality.loader import Loader as QualityLoader
 from pymotifs.units.loader import Loader as UnitsLoader
+from pymotifs.constants import RESOLUTION_GROUPS
+from pymotifs.export.ife_discrepancy import Exporter as IFEDiscrepancyExporter
 
 
 class Loader(core.MassLoader):
     dependencies = set([ChainLoader, InteractionLoader,
                         IfeLoader, CorrespondenceLoader, ChainChainLoader,
-                        QualityLoader, UnitsLoader])
+                        QualityLoader, UnitsLoader, IFEDiscrepancyExporter])
+    # dependencies = set([])
     update_gap = dt.timedelta(7)
+    ## I think this is not safe, the following variable is just for testing purposes.
+    allow_no_data = True
 
     def has_data(self, *args, **kwargs):
         """This will always return True because we only want to update if the time
@@ -45,7 +50,7 @@ class Loader(core.MassLoader):
 
     def build(self, pdbs, current_release, next_release, **kwargs):
         builder = Builder(self.config, self.session)
-        self.cache(NR_CACHE_NAME, builder(pdbs, current_release, next_release))
+        self.cache(NR_CACHE_NAME, builder(pdbs, current_release, next_release, cutoffs=RESOLUTION_GROUPS, **kwargs))
 
     def next_id(self, current):
         return rel.next_id(current, mode=self.config['release_mode']['nrlist'])
@@ -63,30 +68,63 @@ class Loader(core.MassLoader):
             current = query.one()
             return current.nr_release_id, current.index
 
+    # let's not make separate code for DNA
+    # instead, let's pass in the parent and the next release number
+    # we also want to make clear what type of molecule we are running on
+    # def current_dna_version(self):
+    #     with self.session() as session:
+    #         query = session.query(mod.NrReleases.nr_release_id,
+    #                               mod.NrReleases.index).\
+    #             order_by(desc(mod.NrReleases.index)).\
+    #             limit(1)
+
+    #         if query.count() == 0:
+    #             return '0.0', 0
+
+    #         current = query.one()
+    #         return current.nr_release_id, current.index
+
     def data(self, pdbs, **kwargs):
 
         now = kwargs.get('before_date', dt.datetime.strftime(dt.datetime.now(), '%Y-%m-%d %H:%M:%S'))
+        # DNA_checking = kwargs.get('DNA-release','')
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+        print("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
 
         if ":" in now:
             nowstring = dt.datetime.strftime(dt.datetime.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
         else:
-#            nowstring = now.strftime("%Y%m%d"),
             nowstring = now.replace("-","")
 
-        current, index = self.current_id()
-        next = self.next_id(current)
-        parent = current
-        if current == '0.0':
-            parent = next
+        if len(nr_molecule_parent_current) > 0:
+            # manually set the molecule, parent release, current release
+            fields = nr_molecule_parent_current.split(",")
+            molecule = fields[0]   # DNA or RNA
+            parent = fields[1]     # like 0.3
+            next = fields[2]       # like 0.4
+            if parent == '0.0':
+                parent = next
+            pass
+        else:
+            current, index = self.current_id()
+            next = self.next_id(current)
+            parent = current
+            if current == '0.0':
+                parent = next
 
         self.logger.info('Building NR release %s with parent %s' % (next, parent))
 
         # build the current release
         self.build(pdbs, parent, next, **kwargs)
 
-        # store the release id information
-        return mod.NrReleases(nr_release_id=next,
-                              date=now,
-                              parent_nr_release_id=parent,
-                              description = nowstring,
-                              index=index + 1)
+        if len(nr_molecule_parent_current) == 0:
+            return mod.NrReleases(nr_release_id=next,
+                                date=now,
+                                parent_nr_release_id=parent,
+                                description = nowstring,
+                                index=index + 1)
+        else:
+            pass
+

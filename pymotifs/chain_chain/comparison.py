@@ -22,7 +22,7 @@ from collections import defaultdict
 from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy.orm import aliased
-from sqlalchemy.sql import union_all
+# from sqlalchemy.sql import union_all
 
 from fr3d.geometry.discrepancy import matrix_discrepancy
 
@@ -160,58 +160,69 @@ class Loader(core.SimpleLoader):
             A list of (first, seconds) pairs of chain ids to compare.
         """
 
-        # Group PDB ids by species and sequence
-        # groups is a list of lists of integer chain identifiers
-        # grouper is part of the nr stage, so it appears that way in the log file
-        grouper = Grouper(self.config, self.session)
-        grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False.
-        grouper.must_enforce_single_species = False   # use False with DNA
-        grouper.must_enforce_single_species = True    # use True on production
-        groups = grouper(pdbs)                                                                                               ## Grouped PDB ids by sequence and species. How this class works
-        if not groups:
-            raise core.InvalidState("No groups produced")
+        # while developing DNA equivalence classes, run those manually
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        if 'dna' in nr_molecule_parent_current.lower() > 0:
+            molecule_types = ['DNA']
+        else:
+            molecule_types = ['RNA']
 
-        self.logger.info('Found %d groups of IFEs' % len(groups))
-        found_non_singleton_group = False
-        for group in groups:
-            if 'members' in group and len(group['members']) > 1:
-                found_non_singleton_group = True
-                break
-        if not found_non_singleton_group:
-            raise core.Skip("No groups of multiple chains to compare")
+        for molecule_type in molecule_types:
+            # Group PDB ids by species and sequence
+            # groups is a list of lists of integer chain identifiers
+            # grouper is part of the nr stage, so it appears that way in the log file
+            grouper = Grouper(self.config, self.session)
+            grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False.
+            grouper.must_enforce_single_species = False   # use False with DNA
+            grouper.must_enforce_single_species = True    # use True on production
+            grouper.molecule_type = molecule_type
+            groups = grouper(pdbs)                                                                                               ## Grouped PDB ids by sequence and species. How this class works
+            if not groups:
+                raise core.InvalidState("No groups produced")
 
-        # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
-        # or we could just wait and look that up later
-        has_rotations = ft.partial(self.is_member,
-                                   self.known_unit_entries(mod.UnitCenters))                                                  ## modify `is_member` function
-        has_centers = ft.partial(self.is_member,
-                                 self.known_unit_entries(mod.UnitRotations))
+            self.logger.info('Found %d groups of IFEs' % len(groups))
+            found_non_singleton_group = False
+            for group in groups:
+                if 'members' in group and len(group['members']) > 1:
+                    found_non_singleton_group = True
+                    break
+            if not found_non_singleton_group:
+                raise core.Skip("No groups of multiple chains to compare")
 
-        # create lists of chain ids from each group, then data method will loop over all groups of chain ids
-        groups_of_chain_ids = []
+            # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
+            # or we could just wait and look that up later
+            has_rotations = ft.partial(self.is_member,
+                                    self.known_unit_entries(mod.UnitCenters))                                                  ## modify `is_member` function
+            has_centers = ft.partial(self.is_member,
+                                    self.known_unit_entries(mod.UnitRotations))
 
-        for group in groups:
-            chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
-            chains = it.ifilter(has_rotations, chains)
-            chains = it.ifilter(has_centers, chains)
-            chains = it.imap(op.itemgetter('db_id'), chains)
-            # convert chains from iterator to list of chain ids and append to list
-            # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
-            chain_list = sorted(set(chains))
-            if len(chain_list) > 1:
-                groups_of_chain_ids.append(chain_list)
+            # create lists of chain ids from each group, then data method will loop over all groups of chain ids
+            groups_of_chain_ids = []
 
-        # Note how many groups are left now that we filtered as above
-        self.logger.info("Found %d groups with at least two chains" % len(groups_of_chain_ids))
+            for group in groups:
+                chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
+                chains = it.ifilter(has_rotations, chains)
+                chains = it.ifilter(has_centers, chains)
+                chains = it.imap(op.itemgetter('db_id'), chains)
+                # convert chains from iterator to list of chain ids and append to list
+                # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
+                chain_list = sorted(set(chains))
+                if len(chain_list) > 1:
+                    groups_of_chain_ids.append(chain_list)
 
-        # start with the smallest group
-        # groups_of_chain_ids.sort(key=len)
+            # Note how many groups are left now that we filtered as above
+            self.logger.info("Found %d groups with at least two chains" % len(groups_of_chain_ids))
 
-        # start with the largest group
-        groups_of_chain_ids.sort(key=len,reverse=True)
+            # start with the smallest group
+            # groups_of_chain_ids.sort(key=len)
 
-        if len(groups_of_chain_ids) == 0:
-            raise core.Skip("No groups of chains to compare")
+            # start with the largest group
+            groups_of_chain_ids.sort(key=len,reverse=True)
+
+            if len(groups_of_chain_ids) == 0:
+                raise core.Skip("No groups of chains to compare")
+
+
 
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
         GeneratePickleFiles = True    # must be used in production, to update the files each week
@@ -221,6 +232,7 @@ class Loader(core.SimpleLoader):
             self.logger.info('Not generating pickle files for small number of pdbs')
 
         if GeneratePickleFiles:
+            self.logger.info('Getting the unit_id to experimental sequence position table')
             # query and write to disk unit correspondence data once per run of chain_chain/comparison.py
             # takes about 2 1/3 minutes on production in December 2020
             # takes over 15 minutes when re-written to check sym_op, alt_id, glycosidic center
@@ -257,7 +269,7 @@ class Loader(core.SimpleLoader):
                 for r in query:
                     self.logger.info('Unit id %s, position %s, sym_op %s' % (r.unit_id,r.exp_seq_position_id,r.sym_op))
                     count += 1
-                    if r.unit_id and "|" in r.unit_id:
+                    if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
                         if len(fields) > 3:
                             ## skip unexpected pdbs
@@ -280,14 +292,15 @@ class Loader(core.SimpleLoader):
                     # record the symmetry to use for this chain
                     chain_to_symmetries[chain] = symmetry
 
+                chain_unit_to_position = defaultdict(dict)
                 chain_to_simple_unit_id = defaultdict(set)
                 count = 0
                 for r in query:
-                    if r.unit_id and "|" in r.unit_id:
+                    if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
                         if len(fields) >= 5:
                             ## skip unexpected pdbs, just in case
-                            if not fields[0] in needed_pdbs:
+                            if not fields[0] in pdbs_set:
                                 continue
 
                             chain = "|".join(fields[0:3])   # pdb id, model, chain is the top level key
@@ -488,7 +501,7 @@ class Loader(core.SimpleLoader):
         Parameters
         ----------
         corr_id : int
-            The correspondence id.
+            The correspondence id.                                                                                 ## we need fill in more correspondence_id of dna pairs
         info1 : dict
             The result of `info` for the first chain to compare.
         info2 : dict

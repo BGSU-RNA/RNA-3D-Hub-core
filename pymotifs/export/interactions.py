@@ -56,7 +56,7 @@ class Exporter(core.Exporter):
                 mod.UnitPairsInteractions.f_lwbp.label(self.headers[2]),
                 mod.UnitPairsInteractions.f_stacks.label(self.headers[3]),
                 mod.UnitPairsInteractions.f_bphs.label(self.headers[4])
-            ).filter_by(pdb_id=pdb)
+            ).filter_by(pdb_id=pdb,program='matlab')
 
             count = query.count()
             self.logger.info("Found %5d interactions for %s" % (count, pdb))

@@ -11,6 +11,9 @@
 *.swp
 *.vi
 *~
+*.gz
+*.sh
+*.pickle
 
 *.gz
 *.sh

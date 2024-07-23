@@ -201,8 +201,12 @@ class Loader(core.SimpleLoader):
               renamed["sequence"]           = chain_data["entity_poly"]["pdbx_seq_one_letter_code_can"]
               renamed["chain_length"]       = chain_data["entity_poly"]["rcsb_sample_sequence_length"]
               renamed["entity_macromolecule_type"] = chain_data["entity_poly"]["type"]
+              ######
+              if chain_data["rcsb_entity_source_organism"] == None:
+                chain_data["rcsb_entity_source_organism"] = [{'ncbi_scientific_name': None, 'ncbi_taxonomy_id': None}]
               renamed["taxonomy_id"]        = chain_data["rcsb_entity_source_organism"][0]["ncbi_taxonomy_id"]
-              renamed["source"]             = chain_data["rcsb_entity_source_organism"][0]["ncbi_scientific_name"]
+              renamed["source"]             = chain_data["rcsb_entity_source_organism"][0]["ncbi_scientific_name"]              
+              ######
               renamed["compound"]           = chain_data["rcsb_polymer_entity"]["pdbx_description"]
 
               data.append(renamed)

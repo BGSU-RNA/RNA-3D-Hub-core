@@ -61,12 +61,14 @@ class Loader(core.SimpleLoader):
 
         helper = Structure(self.session.maker)
         data = []
-        rna_chains = helper.rna_chains(pdb, return_id=True)
+        na_chains = helper.na_chains(pdb, return_id=True)
 
-        if not rna_chains:
-            raise core.InvalidState("Structure %s contains no RNA" % pdb)
+        if not na_chains:
+            raise core.InvalidState("Structure %s contains no RNA or DNA" % pdb)
 
-        for chain_name, chain_id in rna_chains:
+        for chain_name, chain_id in na_chains:
+            self.logger.info('show chain_name and chain_id')
+            self.logger.info('chain_name: %s, chain_id %s'%(chain_name,chain_id))
             species = None
             try:
                 species = helper.source(pdb, chain_name, simplify=True)

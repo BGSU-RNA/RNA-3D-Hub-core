@@ -125,6 +125,9 @@ RESOLUTION_GROUPS = [
 """The pattern to use for naming nr classes"""
 NR_CLASS_NAME = 'NR_{resolution}_{handle}.{version}'
 
+"""The pattern to use for naming dna classes"""
+DNA_CLASS_NAME = 'DNA_{resolution}_{handle}.{version}'
+
 """The pattern to use for naming motif groups"""
 MOTIF_GROUP_NAME = '{type}_{handle}.{version}'
 

@@ -156,6 +156,7 @@ class Loader(core.SimpleLoader):
                 join(pos2, pos2.unit_id == interactions.unit_id_2).\
                 join(info, info.bp_family_id == interactions.f_lwbp).\
                 filter(interactions.pdb_id == pdb).\
+                filter(interactions.program == 'matlab').\
                 filter(pos1.loop_id == pos2.loop_id).\
                 filter(info.is_near == 0)
 
@@ -388,6 +389,7 @@ class Loader(core.SimpleLoader):
                 join(bps, bps.bp_family_id == inters.f_lwbp).\
                 filter(inters.unit_id_1.in_(loop['nts'])).\
                 filter(inters.unit_id_2.in_(loop['nts'])).\
+                filter(inters.program == 'matlab').\
                 filter(bps.is_near == 0).\
                 filter(bps.bp_family_id != 'cWW')
 

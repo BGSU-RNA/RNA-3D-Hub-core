@@ -52,19 +52,22 @@ class Loader(core.SimpleLoader):
             new_style=True)
 
         for index, chain in enumerate(group.chains()):
+            print(group.id)
             reference = (index == 0)
             integral = (reference or chain.is_structured)
             accompanying = not integral
-
-            # print("  chain.id               %s" % chain.id)
-            # print("  chain.model            %s" % chain.model)
-            # print("  chain.is_structured    %s" % chain.is_structured)
-            # # print("  group.id               %s" % group.id)
-            # print("  integral               %s" % integral)
-            # print("  accompanying           %s" % accompanying)
-            # print("  index                  %s" % index)
-            # print("")
-
+            # # print(group.id)
+            # # print(333333)
+            # with self.session() as session:
+            #     query = session.query(mod.IfeChains.ife_id).\
+            #             filter(mod.IfeChains.ife_id == group.id) 
+            # # print(222222222222)
+            # # for row in query:
+            # #     print(row.ife_id)
+            # # print(not query.count())
+            # if not query.count():
+            #     # print(1111111111)
+            #     # print(group.id)
             yield mod.IfeChains(
                 chain_id=chain.db_id,
                 model=chain.model,

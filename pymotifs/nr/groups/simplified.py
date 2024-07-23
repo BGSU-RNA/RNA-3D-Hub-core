@@ -63,13 +63,14 @@ class Grouper(core.Base):
     """A flag to force groups to have distinct species"""
     must_enforce_single_species = True
 
+    """A flag to tell what molecule type to work on"""
+    molecule_type = 'RNA'
+
     def valid_ife(self, ife):
-        """Check if the given ife is valid. If not a warning statement will be
+        """
+        Check if the given ife is valid. If not a warning statement will be
         produced and false returned. Ifes are valid if they have a non zero
-        length. This constraint exists because some structures contain only
-        modified RNA bases. These cannot be grouped (or really processed) by
-        our nr set. So we remove them as to not get a series of 0 length groups
-        in our nr clustering.
+        length.
 
         :param dict ife: An ife as loaded by `self.ifes`.
         :returns: A flag to indicate if the ife is valid.
@@ -82,13 +83,24 @@ class Grouper(core.Base):
 
     def ifes(self, pdb):
         """
-        Load all ife chains from a given pdb. This will get the RNA chains as
+        Load all ife chains from a given pdb. This will get the RNA/DNA chains as
         well as load some interaction data about the chains.
 
         :pdb: A pdb to get the chains for.
         :returns: A list of dictionaries with data about all chains. The data
         is that which is provided by the info method.
         """
+
+        if self.molecule_type == 'RNA':
+            nucleic_acid_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
+            nucleic_acid_types.add('DNA/RNA Hybrid')
+            nucleic_acid_types.add('NA-hybrid')
+            nucleic_acid_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+        else:
+            nucleic_acid_types = set(['Polydeoxyribonucleotide (DNA)','polydeoxyribonucleotide'])
+            nucleic_acid_types.add('DNA/RNA Hybrid')
+            nucleic_acid_types.add('NA-hybrid')
+            nucleic_acid_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.sequence,
@@ -119,20 +131,32 @@ class Grouper(core.Base):
                 filter(mod.IfeInfo.pdb_id == pdb).\
                 filter(mod.IfeInfo.new_style == True).\
                 filter(mod.ExpSeqInfo.was_normalized == 1).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(nucleic_acid_types)).\
                 order_by(mod.IfeChains.ife_id, mod.IfeChains.index)
 
             if query.count() == 0:
                 self.logger.warn("No ifes found for %s" % pdb)
                 return []
 
-            grouped = it.imap(result2dict, query)
+            grouped = it.imap(result2dict, query)    ## This is confusing. The result2dict function returns "A dictionary with the keys from the query". I am not sure what is the keys for a joined query.
+
+            # self.logger.info('show the value of the "grouped" variable%s'%grouped)
+            ## example ('d:', {u'is_accompanying': 0, u'is_integral': 1, 'name': 'A', u'sequence': 'CAAAGAAAAG', 'pdb': '7OOO', 'method': 'X-RAY DIFFRACTION', u'length': 10L, 'db_id': 139555L, 'bp': 0L, 'species': 32630L, u'resolution': 2.57, 'id': '7OOO|1|A+7OOO|1|B'})
+            ## this is an example for the result2dict, and the "grouped" variable is a iterative varibale stotes the previous dictionary variables.
+
             grouped = it.groupby(grouped, op.itemgetter('id'))
+
+            ## it.grouped: this function will generate the result like: {'7OOO|1|A+7OOO|1|B':[(***dict variable with clolumn names and values***),(***dict***)]}
+            ## the output are not necessary have the same type with my example.
+            ## the general idea is that ife_id and chains pairs were stored in grouped
+
             groups = []
             for ife_id, chain_set in grouped:
-
                 # chains = list(chain_set)        # old code essentially was just this
                 # chain_set might not have the chains in the same order as in the ife id!
                 # especially a problem when a chain is completely missing for some strange reason
+
+                self.logger.info("Processing ife %s" % ife_id)
 
                 chain_name_to_chain = {}
                 for chain in chain_set:
@@ -158,16 +182,16 @@ class Grouper(core.Base):
                     self.logger.warn("No chains found for %s with chain_set %s" % (ife_id,str(list(chain_set))))
                     return []
 
-
+                # use just the first chain for the data here, that's what [0] does
                 groups.append({
                     'id':  ife_id,
                     'pdb': chains[0]['pdb'],
                     'bp': chains[0]['bp'],
-                    'name': chains[0]['name'],
+                    'name': chains[0]['name'],              # like A, B, etc.
                     'length': chains[0]['length'],
                     'species': chains[0]['species'],
                     'chains': chains,
-                    'db_id': chains[0]['db_id'],
+                    'db_id': chains[0]['db_id'],            # this is the chain_id in the database, a number
                     'resolution': chains[0]['resolution'],
                     'method': chains[0]['method'],
                 })
@@ -175,7 +199,8 @@ class Grouper(core.Base):
         if not groups:
             raise core.InvalidState("No stored ifes for %s" % pdb)
 
-        self.logger.info("Found %i ifes for %s" % (len(groups), pdb))
+        self.logger.info("Found %i ifes for %s, namely %s" % (len(groups), pdb, ",".join([i['id'] for i in groups])))
+
         return groups
 
     def discrepancies(self, groups):
@@ -194,7 +219,7 @@ class Grouper(core.Base):
 
         chain_ids = []
         for group in groups:
-            chain_ids.append(group['db_id'])
+            chain_ids.append(group['db_id'])            ## db_id is the chain_id
 
         with self.session() as session:
             sim = mod.ChainChainSimilarity
@@ -315,17 +340,24 @@ class Grouper(core.Base):
         """
 
         if not self.use_discrepancy:
+            # self.logger.info("deflaut value of use_discrepancy: %s, group1_2(%s, %s)"%(self.use_discrepancy,group1['id'],group2['id']))
             return True
 
         db_id1 = group1['db_id']
         db_id2 = group2['db_id']
+        dis_test = all_discrepancy.get(db_id1,{db_id1:'discrepancy not found:'+str(db_id1)})
         if not disc.valid_chain(group1) or not disc.valid_chain(group2):
             self.logger.debug("Chains not valid for discrepancy")
+            self.logger.info("Chains not valid for discrepancy, if statement:(%s,%s), length:(%s,%s), resolution:(%s,%s)"%(disc.valid_chain(group1),disc.valid_chain(group2),group1['length'],group2['length'],group1['resolution'],group2['resolution']))
+            self.logger.info("discrepancy value: %s, %s"%(dis_test.get(db_id1,'null'),dis_test.get(db_id2,'null')))
+            self.logger.info("Chains not valid for discrepancy for %s, %s"%(group1['id'],group2['id']))
             return True
 
         if not all_discrepancy:
             self.logger.debug("No discrepancies, so ignoring")
-            return True
+            # self.logger.info("No discrepancies, so ignoring")
+            self.logger.info("No discrepancies, so ignoring for %s, %s"%(group1['id'],group2['id']))
+            return False
 
         if db_id1 not in all_discrepancy:
             self.logger.warning("No computed discrepancy for %s, %s" % (group1['id'],group2['id']))
@@ -336,6 +368,15 @@ class Grouper(core.Base):
             self.logger.debug("Splitting %s %s: No discrepancy between them" %
                               (group1['id'], group2['id']))
             return False
+
+
+        # #####change the order of if statement to see what will happen#################
+        # if db_id1 not in all_discrepancy:
+        #     self.logger.warning("No computed discrepancy for %s, %s"%(group1['id'],group2['id']))
+        #     self.logger.info("No computed discrepancy for %s, %s"%(group1['id'],group2['id']))
+        #     return True
+        # discrepancy = all_discrepancy[db_id1]
+        # ######################ending change#############################################
 
         if discrepancy[db_id2] > NR_DISCREPANCY_CUTOFF or discrepancy[db_id2] < 0:
             self.logger.debug("Splitting %s %s: Too large discrepancy %f" %
@@ -396,7 +437,7 @@ class Grouper(core.Base):
 
         pairs = it.product(group, group)
         pairs = it.ifilter(lambda (a, b): a != b, pairs)
-        pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)
+        pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)           ## who will give us the flag about the connections???
         pairs = list(pairs)
         for pair in pairs:
             self.logger.debug("Pair %s, %s not connected" % (pair[0], pair[1]))
@@ -493,7 +534,7 @@ class Grouper(core.Base):
         # only considering pairs that have alignments between them.
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
         pairs = it.combinations(chains, 2)
-        return it.ifilter(lambda p: equiv(*p), pairs)
+        return it.ifilter(lambda p: equiv(*p), pairs)                       ## I see. the pairs varibale will provide the group1 and group2. What is the valid pairs here?
 
     def connections(self, chains, alignments, discrepancies):
         """Create a graph connections between all chains.
@@ -506,7 +547,7 @@ class Grouper(core.Base):
 
         graph = coll.defaultdict(set)
         for chain in chains:
-            graph[chain['id']].add(chain['id'])
+            graph[chain['id']].add(chain['id'])                 ## also ife ids
 
         # next line is fast because it simply sets up an iterable
         all_pairs = self.pairs(chains, alignments, discrepancies)
@@ -520,7 +561,7 @@ class Grouper(core.Base):
             graph[chain2['id']].add(chain1['id'])
 
         self.logger.info("Created %i connections", len(graph))
-        return graph
+        return graph                                                    ## it seems like we are making the combination again, but this time will be valid pairs.
 
     def build_groups(self, graph):
         """Group the ifes based upon the given graph. This will group the ifes
@@ -541,25 +582,28 @@ class Grouper(core.Base):
         :param dict discrepancies: The loaded discrepancies.
         :returns: A list of lists of the connected components.
         """
-
+        self.logger.info("nr_timing group start")
         mapping = {}
         for chain in chains:
-            mapping[chain['id']] = chain
+            mapping[chain['id']] = chain            ## actually this is ife ids here. Not sure why it calls chain here. very confusing
 
         groups = []
-        graph = self.connections(chains, alignments, discrepancies)
-        for ids in self.build_groups(graph):
-            self.validate(graph, list(ids))
-            group = [mapping[id] for id in ids]
+        graph = self.connections(chains, alignments, discrepancies) ## not sure what is here. It will return valid pairs about ife ids.
+        self.logger.info("nr_timing connection found, building groups")
+        all_groups = self.build_groups(graph)
+        self.logger.info("nr_timing processing all groups")
+        for ids in all_groups:                        ##
+            # self.validate(graph, list(ids))                         ## I though this function was doing some specific works, but it just writes log info. Not important at all.
+            group = [mapping[id] for id in ids]                     ##
             for subgroup in self.enforce_species_splitting(group):
                 groups.append(subgroup)
-
+        self.logger.info("nr_timing processed all groups")
         return groups
 
     def all_ifes(self, pdbs):
-        ifes = it.imap(self.ifes, pdbs)
-        ifes = it.chain.from_iterable(ifes)
-        ifes = it.ifilter(self.valid_ife, ifes)
+        ifes = it.imap(self.ifes, pdbs)                         ## pass in pdbs one by one to the self.ifes function, and generated a iterable output.
+        ifes = it.chain.from_iterable(ifes)                     ## not sure what happens here but one element of this output must be a dict type. However, I do not understand why it is a dict type.
+        ifes = it.ifilter(self.valid_ife, ifes)                 ## not sure what happens here.
         ifes = list(ifes)
         if not ifes:
             raise core.InvalidState("No ifes found in given pdbs")
@@ -577,27 +621,31 @@ class Grouper(core.Base):
         'rank' which indicates the rank of the chain.
         """
 
-        self.logger.info("Will group %i pdbs", len(pdbs))
+        self.logger.info("nr_timing Will group %i pdbs", len(pdbs))
         ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
-        self.logger.info("retrieving alignments to cluster")
+        self.logger.info("nr_timing retrieving alignments to cluster")
+        print("retrieving alignments to cluster")
 
         alignments = self.alignments(ifes)
-        self.logger.info("retrieving discrepancies to cluster")
+        self.logger.info("nr_timing retrieving discrepancies to cluster")
+        print("retrieving discrepancies to cluster")
         discrepancy = self.discrepancies(ifes)
 
         grouped = set()
         groups = []
         self.logger.info("forming groups")
+        self.logger.info("nr_timing forming groups")
+        # print("forming groups")
         for group in self.group(ifes, alignments, discrepancy):
             members = []
             sorted_group = sorted(group, key=ranking_key)
-            for index, member in enumerate(sorted_group):
+            for index, member in enumerate(sorted_group):       ## sorted_group variable is the key point here.
                 grouped.add(member['id'])
-                member['rank'] = index
+                member['rank'] = index                          ## not sure why we want the index vairbale because the following code do not call the variable.
                 members.append(member)
 
-            groups.append({'members': members})
+            groups.append({'members': members})  ##
 
         ife_ids = set(ife['id'] for ife in ifes)
         if ife_ids != grouped:

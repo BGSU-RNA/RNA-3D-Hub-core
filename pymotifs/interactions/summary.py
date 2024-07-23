@@ -33,6 +33,7 @@ class Loader(core.SimpleLoader):
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
             query = session.query(mod.UnitPairsInteractions.pdb_id).\
+                filter(mod.UnitPairsInteractions.program == 'matlab').\
                 distinct()
             known = set(r.pdb_id for r in query)
 
@@ -178,9 +179,11 @@ class Loader(core.SimpleLoader):
                                   ).\
                 outerjoin(mod.UnitPairsInteractions,
                           mod.UnitInfo.unit_id == mod.UnitPairsInteractions.unit_id_1).\
-                filter(mod.UnitInfo.pdb_id == pdb_id).\
-                filter(mod.UnitInfo.unit_type_id == 'rna').\
-                filter(mod.UnitInfo.unit.in_(('A','C','G','U')))
+                filter(mod.UnitPairsInteractions.program == 'matlab').\
+                filter(mod.UnitInfo.pdb_id == pdb_id)
+                # removed on 3/15 for for adding dna structures
+                # filter(mod.UnitInfo.unit_type_id == 'rna').\
+                # filter(mod.UnitInfo.unit.in_(('A','C','G','U')))
 
             data = coll.defaultdict(lambda: coll.defaultdict(int))
             for result in query:

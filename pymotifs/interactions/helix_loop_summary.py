@@ -38,7 +38,7 @@ class Loader(core.SimpleLoader):
     dependencies = set([InterLoader])
 
     def has_data(self, pdb, **kwargs):                  # Check if we have already stored data for this pdb file in the database
-        return True                                     # not sure why we have True values here, 
+        return True                                     # not sure why we have True values here,
 
     def query(self, session, pdb):                              # this function does similar work with the has_data function
         return session.query(Summary).filter_by(pdb_id=pdb)
@@ -48,9 +48,9 @@ class Loader(core.SimpleLoader):
             return 'nt_helix_view'
         if element == 'loop':
             return 'nt_loop_view'
-        raise ValueError("Unknown element type %s" % element)  
+        raise ValueError("Unknown element type %s" % element)
 
-    def build(self, element1, element2, range_type):    # 
+    def build(self, element1, element2, range_type):    #
         if range_type == 'sr':
             operator = '<'
         elif range_type == 'lr':
@@ -90,6 +90,7 @@ class Loader(core.SimpleLoader):
                 join(UnitPairsInteractions,
                      UnitPairsInteractions.unit_id_1 == UnitInfo.unit_id).\
                 filter(UnitInfo.pdb_id == pdb).\
+                filter(UnitPairsInteractions.program == 'matlab').\
                 distinct()
             return [result.chain for result in query]
 

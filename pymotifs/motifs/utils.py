@@ -46,7 +46,7 @@ class BaseLoader(core.SimpleLoader):
             cached = self.cached(loop_type)
             if not cached:
                 raise core.InvalidState("No cached data")
-
+            self.logger.info('debug in secondary_structure, the loop_type: %s, cached release: %s, and current:%s' % (loop_type, cached['release'], current))
             if cached['release'] != current:
                 raise core.InvalidState("Caching does not match excepted ID")
             data.append((loop_type, current))

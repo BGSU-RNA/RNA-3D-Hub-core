@@ -36,6 +36,7 @@ class Loader(core.SimpleLoader):
         query : sqlalchemy.orm.query.Query
             A query to find all units from the given structure.
         """
+        # return session.query(mod.UnitInfo).filter_by(pdb_id='6X')
         return session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
 
     def type(self, unit):
@@ -67,6 +68,8 @@ class Loader(core.SimpleLoader):
         unit : UnitInfo
             The `Component` as a `UnitInfo`
         """
+        # self.logger.info("unit_id: %s, pdb: %s, model: %s, chain: %s, unit: %s, number: %s, alt_id: %s, ins_code: %s, sym_op: %s, chain_index: %s, unit_type_id: %s" % (nt.unit_id(), nt.pdb, nt.model, nt.chain, nt.sequence, nt.number, getattr(nt, 'alt_id', None), nt.insertion_code, nt.symmetry, nt.index, self.type(nt)))
+
 
         return mod.UnitInfo(unit_id=nt.unit_id(),
                             pdb_id=nt.pdb,
@@ -97,4 +100,17 @@ class Loader(core.SimpleLoader):
         """
 
         structure = self.structure(pdb)
+        # for i in it.imap(self.as_unit, structure.residues(polymeric=None)):
+        #     print(dir(i))
+        #     print(i.sym_op)
+        #     print(type(i))
+        # print("list or not: ",type(it.imap(self.as_unit, structure.residues(polymeric=None))))
+        # ### fixing process ###
+        # new_6xbu = it.imap(self.as_unit, structure.residues(polymeric=None))
+        # new_return = []
+        # for obj in new_6xbu:
+        #     if obj.sym_op != '1_555':
+        #         new_return.append(obj)
+        # print([i.unit_id for i in new_return])
+        # return new_return
         return it.imap(self.as_unit, structure.residues(polymeric=None))

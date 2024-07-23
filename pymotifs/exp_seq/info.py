@@ -14,24 +14,20 @@ from pymotifs.chains.info import Loader as ChainLoader
 
 class Loader(core.SimpleLoader):
     """The actual loader for this stage."""
-
     dependencies = set([ChainLoader])
     mark = False
-
     @property
     def table(self):
         return mod.ExpSeqInfo
 
-    def to_process(self, pdbs, **kwargs):
+    def to_process_old(self, pdbs, **kwargs):
         """Fetch the sequences to process . This will use the given pdbs to
         extract all sequences come from RNA chains in those structures. This
         will then get all the unique sequences.
-
         Parameters
         ----------
         pdbs : list
             The list of pdb ids to use.
-
         Returns
         -------
         sequences : list
@@ -51,7 +47,78 @@ class Loader(core.SimpleLoader):
 
         return sorted(sequences, key=lambda s: (len(s), s))
 
-    def query(self, session, sequence):
+    def to_process(self, pdbs, **kwargs):
+        """Fetch the (sequence,type) pairs to process . This will use the given pdbs to
+        extract all sequences come from nucleic acid chains in those structures. This
+        will then get all the unique sequences paired with the macromolecule type.
+
+        Parameters
+        ----------
+        pdbs : list
+            The list of pdb ids to use.
+
+        Returns
+        -------
+        seq_type_pairs : list
+            A list of (sequence,type) pairs to process.
+            For example, ('AGAACAUUC','rna')
+        """
+
+        # print("info.py to_process method")
+        self.logger.info("to_process method")
+
+        simplify_type = {}
+        simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
+        simplify_type['Polyribonucleotide (RNA)'] = 'rna'
+        simplify_type['polyribonucleotide'] = 'rna'
+        simplify_type['polydeoxyribonucleotide'] = 'dna'
+        simplify_type['polydeoxyribonucleotide/polyribonucleotide hybrid'] = 'hybrid'
+        simplify_type['DNA/RNA Hybrid'] = 'hybrid'
+
+        macromolecule_types = simplify_type.keys()
+
+        print("info.py to_process method")
+        data = set([])   # set so we get unique (sequence,type) pairs
+
+        with self.session() as session:
+            print("running the query")
+
+            query = session.query(mod.ChainInfo.sequence,
+                                  mod.ChainInfo.entity_macromolecule_type).\
+                filter(mod.ChainInfo.pdb_id.in_(pdbs)).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
+            ################################# query all existed hybrid sequences start #####################################
+            self.logger.info(self.identify_hybrid_sequences())
+            ################################ query all existed hybrid sequences end   #####################################           
+            print("ran the query")
+            # for result in query:
+            #    chain_type = simplify_type[result.entity_macromolecule_type]
+            #    self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
+            #    data.update((result.sequence,chain_type))   # add this tuple to the set
+            data.update((result.sequence,simplify_type[result.entity_macromolecule_type]) for result in query)
+        # sort the set of pairs into a list, first by sequence length, then by sequence, then by type
+        return sorted(data, key=lambda p: (len(p[0]), p[0], p[1]))  # return a list of pairs
+
+    def identify_hybrid_sequences(self):
+        """
+            This function is trying to get all sequences whose entity_macromolecule_type is hybrid
+        """
+        """
+        Returns
+        -------
+            A list of sequences
+        """
+        hybrid_sequences = []
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.sequence).\
+                                  filter(mod.ChainInfo.entity_macromolecule_type.in_(['polydeoxyribonucleotide/polyribonucleotide hybrid',\
+                                  'DNA/RNA Hybrid'])).distinct()
+            for i in query:
+                hybrid_sequences.append(i[0])
+
+        return(hybrid_sequences)
+
+    def query(self, session, seq_type):
         """The query to find and remove all exp seq info entries for a given
         sequence.
 
@@ -59,10 +126,14 @@ class Loader(core.SimpleLoader):
         ----------
         session : pymotifs.core.session.Session
             The session object to use.
-        sequence : str
-            The sequence to lookup.
+        seq_type : tuple
+            The (sequence,entity_type) to look up.
         """
-        return session.query(mod.ExpSeqInfo).filter_by(md5=self.md5(sequence))
+
+        sequence = seq_type[0]
+        entity_type = seq_type[1]
+
+        return session.query(mod.ExpSeqInfo).filter_by(md5=self.md5(sequence)).filter_by(entity_type=entity_type)
 
     def md5(self, sequence):
         """Compute the md5 hash of a sequence.
@@ -92,6 +163,7 @@ class Loader(core.SimpleLoader):
             A dictonary that maps from non standard units to standard units.
         """
 
+        # There may be a more sophisticated translation method available, then use that
         if hasattr(self, '_translation'):
             return self._translation
 
@@ -122,18 +194,22 @@ class Loader(core.SimpleLoader):
         translated : str
             The translated character.
         """
-        if character in set(['A', 'C', 'G', 'U', 'N']):
+
+        # New on 10/13/2021, treat T as an acceptable character, store rna/dna/hybrid
+        if character in set(['A', 'C', 'G', 'T', 'U', 'N']):
             return character
         return self.translation.get(character, None)
 
-    def normalize(self, sequence):
+    def normalize(self, sequence, entity_type):
         """Normalize a sequence. This will translate all characters in the
-        sequence so that
+        sequence so that ...
 
         Parameters
         ----------
         sequence : str
             The sequence to normalize
+        entity_type : str
+            rna, dna, or hybrid
 
         Returns
         -------
@@ -154,29 +230,40 @@ class Loader(core.SimpleLoader):
 
         return ''.join(normalized)
 
-    def data(self, seq, **kwargs):
+    def data(self, seq_type, **kwargs):
         """Compute data to store for the given sequence. This will compute what
         is needed to store, including the md5 hash which should be unique
         across all sequences.
 
         Parameters
         ----------
-        seq : str
-            The sequence to store.
+        seq_type = (seq,type) : pair of strings
+            The sequence to store, RNA/DNA/hybrid entity type
 
         Returns
         -------
         data : dict
             A dictonary with 'sequence', 'md5', 'normalized', 'length',
-            'normalized_length' and 'was_normalized' entries.
+            'normalized_length', 'was_normalized', 'entity_type' entries.
         """
 
-        normalized = self.normalize(seq)
+        # split pair into sequence and type
+        seq = seq_type[0]
+        entity_type = seq_type[1]
+
+        self.logger.info("Sequence is %s" % seq)
+        self.logger.info("Entity type is %s" % entity_type)
+
+        # convert unusual letters
+        normalized = self.normalize(seq, entity_type)
+
+
         return {
             'sequence': seq,
             'md5': self.md5(seq),
             'normalized': normalized,
             'length': len(seq),
             'normalized_length': len(normalized) if normalized else 0,
-            'was_normalized': normalized is not None
+            'was_normalized': normalized is not None,
+            'entity_type': entity_type
         }

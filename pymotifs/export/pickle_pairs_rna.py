@@ -120,6 +120,7 @@ class Exporter(core.Loader):
                               iupi.pdb_id == iupf.pdb_id)).\
                     filter(iupi.unit_id_1.isnot(None)).\
                     filter(iupi.unit_id_2.isnot(None)).\
+                    filter(iupi.program == 'matlab').\
                     filter(iui1.unit_type_id == 'rna').\
                     filter(iui2.unit_type_id == 'rna').\
                     filter(iupi.pdb_id == pdb)
@@ -149,6 +150,7 @@ class Exporter(core.Loader):
                               fupi.pdb_id == fupf.pdb_id)).\
                     filter(fupf.unit_id_1.isnot(None)).\
                     filter(fupf.unit_id_2.isnot(None)).\
+                    filter(fupi.program == 'matlab').\
                     filter(fui1.unit_type_id == 'rna').\
                     filter(fui2.unit_type_id == 'rna').\
                     filter(fupf.pdb_id == pdb)

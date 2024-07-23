@@ -171,6 +171,10 @@ def result2dict(result):
     d = {}
     for name in result.keys():
         d[name] = getattr(result, name)
+    #     print("name:",name)
+    #     print("result:",result)
+    # print("result.keys():",result.keys())
+    # print("d:",d)
     return d
 
 
