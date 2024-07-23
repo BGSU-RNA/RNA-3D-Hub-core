@@ -162,10 +162,14 @@ class Loader(core.SimpleLoader):
 
         # while developing DNA equivalence classes, run those manually
         nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
-        if 'dna' in nr_molecule_parent_current.lower() > 0:
+
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
             molecule_types = ['DNA']
         else:
             molecule_types = ['RNA']
+
+        # create lists of chain ids from each group, then data method will loop over all groups of chain ids
+        groups_of_chain_ids = []
 
         for molecule_type in molecule_types:
             # Group PDB ids by species and sequence
@@ -196,9 +200,6 @@ class Loader(core.SimpleLoader):
             has_centers = ft.partial(self.is_member,
                                     self.known_unit_entries(mod.UnitRotations))
 
-            # create lists of chain ids from each group, then data method will loop over all groups of chain ids
-            groups_of_chain_ids = []
-
             for group in groups:
                 chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
                 chains = it.ifilter(has_rotations, chains)
@@ -210,19 +211,18 @@ class Loader(core.SimpleLoader):
                 if len(chain_list) > 1:
                     groups_of_chain_ids.append(chain_list)
 
-            # Note how many groups are left now that we filtered as above
-            self.logger.info("Found %d groups with at least two chains" % len(groups_of_chain_ids))
 
-            # start with the smallest group
-            # groups_of_chain_ids.sort(key=len)
+        # Note how many groups are left now that we filtered as above
+        self.logger.info("Found %d groups with at least two chains" % len(groups_of_chain_ids))
 
-            # start with the largest group
-            groups_of_chain_ids.sort(key=len,reverse=True)
+        # start with the smallest group
+        # groups_of_chain_ids.sort(key=len)
 
-            if len(groups_of_chain_ids) == 0:
-                raise core.Skip("No groups of chains to compare")
+        # start with the largest group
+        groups_of_chain_ids.sort(key=len,reverse=True)
 
-
+        if len(groups_of_chain_ids) == 0:
+            raise core.Skip("No groups of chains to compare")
 
         GeneratePickleFiles = False   # appropriate to use when debugging the rest of the program
         GeneratePickleFiles = True    # must be used in production, to update the files each week
