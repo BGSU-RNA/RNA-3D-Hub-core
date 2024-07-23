@@ -605,8 +605,11 @@ class Grouper(core.Base):
         ifes = it.chain.from_iterable(ifes)                     ## not sure what happens here but one element of this output must be a dict type. However, I do not understand why it is a dict type.
         ifes = it.ifilter(self.valid_ife, ifes)                 ## not sure what happens here.
         ifes = list(ifes)
-        if not ifes:
-            raise core.InvalidState("No ifes found in given pdbs")
+
+        # OK to run one one pdb, OK to not have any IFEs, calling function needs to deal with it
+        # if not ifes:
+        #     raise core.InvalidState("No ifes found in given pdbs")
+
         return ifes
 
     def __call__(self, pdbs, **kwargs):
