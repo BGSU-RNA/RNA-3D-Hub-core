@@ -77,11 +77,10 @@ class Loader(core.SimpleLoader):
 
         macromolecule_types = simplify_type.keys()
 
-        print("info.py to_process method")
+    
         data = set([])   # set so we get unique (sequence,type) pairs
 
         with self.session() as session:
-            print("running the query")
 
             query = session.query(mod.ChainInfo.sequence,
                                   mod.ChainInfo.entity_macromolecule_type).\
@@ -90,7 +89,6 @@ class Loader(core.SimpleLoader):
             ################################# query all existed hybrid sequences start #####################################
             self.logger.info(self.identify_hybrid_sequences())
             ################################ query all existed hybrid sequences end   #####################################           
-            print("ran the query")
             # for result in query:
             #    chain_type = simplify_type[result.entity_macromolecule_type]
             #    self.logger.info("Chain type is %s" % chain_type)    # print this to the log file
