@@ -100,7 +100,7 @@ class Loader(core.MassLoader):
         with self.session() as session:
             query = session.query(ExpSeqPdb.exp_seq_id.label('id'),                 ## There are some label functions, they are here for rename the column to "id", "length", and "species"
                                   ExpSeqInfo.normalized_length.label('length'),
-                                  TaxidSpeciesDomain.species_taxid.label('species'),
+                                  TaxidSpeciesDomain.species_taxid.label('taxonomy_id'),
                                   ExpSeqInfo.entity_type.label('entity_type')).\
                 join(ExpSeqInfo,
                      ExpSeqInfo.exp_seq_id == ExpSeqPdb.exp_seq_id).\
