@@ -30,6 +30,16 @@ class Exporter(core.Exporter):
         """
         return self.config['locations']['loops_gz']
 
+    def to_process(self, pdbs, **kwargs):
+        """
+
+        """
+
+        if len(pdbs) < 100:
+            raise core.Skip("Too few pdb files being processed to write all interactions")
+
+        return pdbs
+
     def current_ml_release(self):
         """Fetch the current ml release. If there is no ml_release_id then we
         will return 0.0.
