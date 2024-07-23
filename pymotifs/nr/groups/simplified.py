@@ -606,9 +606,8 @@ class Grouper(core.Base):
         ifes = it.ifilter(self.valid_ife, ifes)                 ## not sure what happens here.
         ifes = list(ifes)
 
-        # OK to run one one pdb, OK to not have any IFEs, calling function needs to deal with it
-        # if not ifes:
-        #     raise core.InvalidState("No ifes found in given pdbs")
+        if not ifes:
+            raise core.InvalidState("No ifes found in given pdbs")
 
         return ifes
 
