@@ -37,7 +37,7 @@ class Exporter(core.Exporter):
 
         """
 
-        if len(pdbs) < 500:
+        if len(pdbs) < 100:
             raise core.Skip("Too few pdb files being processed to write all interactions")
 
         return pdbs
@@ -73,7 +73,7 @@ class Exporter(core.Exporter):
 
             return [row2dict(result) for result in query]
 
-    def data(self, pdbs, **kwargs):
+    def data(self, pdb, **kwargs):
         """Load all interactions for the given structure. This returns a
         generator over all interactions.
 
@@ -88,9 +88,6 @@ class Exporter(core.Exporter):
             An iterable over all interactions in all the given structures.
         """
 
-        if len(pdbs) < 500:
-            raise core.Skip('Too few pdb files being processed to export interactions')
-
-        interactions = it.imap(self.interactions, pdbs)
+        interactions = it.imap(self.interactions, pdb)
         interactions = it.chain.from_iterable(interactions)
         return interactions
