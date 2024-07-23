@@ -87,18 +87,17 @@ class Loader(core.MassLoader):
     def data(self, pdbs, **kwargs):
 
         now = kwargs.get('before_date', dt.datetime.strftime(dt.datetime.now(), '%Y-%m-%d %H:%M:%S'))
-        # DNA_checking = kwargs.get('DNA-release','')
-        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
-
-        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
-        print("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
 
         if ":" in now:
             nowstring = dt.datetime.strftime(dt.datetime.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
         else:
             nowstring = now.replace("-","")
 
-        if len(nr_molecule_parent_current) > 0:
+        # DNA_checking = kwargs.get('DNA-release','')
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+
+        if nr_molecule_parent_current:
             # manually set the molecule, parent release, current release
             fields = nr_molecule_parent_current.split(",")
             molecule = fields[0]   # DNA or RNA
@@ -119,7 +118,7 @@ class Loader(core.MassLoader):
         # build the current release
         self.build(pdbs, parent, next, **kwargs)
 
-        if len(nr_molecule_parent_current) == 0:
+        if nr_molecule_parent_current:
             return mod.NrReleases(nr_release_id=next,
                                 date=now,
                                 parent_nr_release_id=parent,
