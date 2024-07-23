@@ -17,7 +17,7 @@ from pymotifs.utils import result2dict
 from pymotifs.utils import discrepancy as disc
 from pymotifs.constants import NR_DISCREPANCY_CUTOFF
 from pymotifs.constants import EQUIVALENT_PAIRS
-from pymotifs.constants import SYNTHENIC_SPECIES_ID
+from pymotifs.constants import SYNTHETIC_SPECIES_ID
 from pymotifs.constants import NR_MIN_HOMOGENEOUS_SIZE
 
 from pymotifs.utils import connectedsets as cs
@@ -455,14 +455,14 @@ class Grouper(core.Base):
         species = coll.defaultdict(list)
         for entry in group:
             name = entry['species']
-            if name is None or name == SYNTHENIC_SPECIES_ID:
-                name = SYNTHENIC_SPECIES_ID
+            if name is None or name == SYNTHETIC_SPECIES_ID:
+                name = SYNTHETIC_SPECIES_ID
             species[name].append(entry)
 
         self.logger.debug("Found groups based on species: %s" %
                           (', '.join(str(s) for s in species.keys())))
         species = dict(species)
-        unknown = species.pop(SYNTHENIC_SPECIES_ID, [])
+        unknown = species.pop(SYNTHETIC_SPECIES_ID, [])
         if not species:
             return [group]
 

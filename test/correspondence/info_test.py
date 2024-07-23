@@ -3,7 +3,7 @@ import pytest
 from test import StageTest
 
 from pymotifs import models as mod
-from pymotifs.constants import SYNTHENIC_SPECIES_ID
+from pymotifs.constants import SYNTHETIC_SPECIES_ID
 from pymotifs.correspondence.info import Loader
 
 
@@ -16,7 +16,7 @@ class LoadingSequencesTest(StageTest):
 
     def test_can_load_with_synthetic(self):
         val = self.loader.lookup_sequences('1GID')
-        assert val == [{'id': 40, 'length': 158, 'species': SYNTHENIC_SPECIES_ID}]
+        assert val == [{'id': 40, 'length': 158, 'species': SYNTHETIC_SPECIES_ID}]
 
     @pytest.mark.skip(reason="No data yet")
     def test_it_will_not_load_non_normalized(self):
@@ -85,7 +85,7 @@ class SpeciesTest(StageTest):
         self.assertTrue(self.loader.species_matches(pair))
 
     def test_matches_if_one_species_has_synenthic(self):
-        pair = [{'species': set([1, SYNTHENIC_SPECIES_ID])},
+        pair = [{'species': set([1, SYNTHETIC_SPECIES_ID])},
                 {'species': set([2])}]
         self.assertTrue(self.loader.species_matches(pair))
 
@@ -112,7 +112,7 @@ class MatchTest(StageTest):
     loader_class = Loader
 
     def test_matches_good_length_and_species(self):
-        pair = [{'id': -1, 'species': set([1, SYNTHENIC_SPECIES_ID]), 'length': 53},
+        pair = [{'id': -1, 'species': set([1, SYNTHETIC_SPECIES_ID]), 'length': 53},
                 {'id': -2, 'species': set([None]), 'length': 55}]
         assert self.loader.is_match(pair) is True
 

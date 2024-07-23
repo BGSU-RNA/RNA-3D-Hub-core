@@ -20,7 +20,7 @@ from pymotifs.models import TaxidSpeciesDomain
 from pymotifs.models import ChainInfo
 from pymotifs.models import CorrespondenceInfo
 
-from pymotifs.constants import SYNTHENIC_SPECIES_ID
+from pymotifs.constants import SYNTHETIC_SPECIES_ID
 from pymotifs.constants import CORRESPONDENCE_HUGE_CUTOFF
 from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
 
@@ -181,7 +181,7 @@ class Loader(core.MassLoader):
         for seq in pair:
             # species.update(seq['species'])
             species.update(seq['taxonomy_id'])
-        return len(species) <= 1 or None in species or SYNTHENIC_SPECIES_ID in species ## note: should be based on taxonmy id
+        return len(species) <= 1 or None in species or SYNTHETIC_SPECIES_ID in species ## note: should be based on taxonmy id
 
     @property
     def known(self):
