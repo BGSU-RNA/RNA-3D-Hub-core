@@ -19,7 +19,7 @@ class Loader(core.SimpleLoader):
     allow_no_data = True
     dependencies = set([InfoLoader, Downloader])
 
-    def to_process(self, pdbs, **kwrags):
+    def to_process(self, pdbs, **kwargs):
         """
         Compute the PDBs to process. These are only the PDB's that have
         stored validation files and have validation data.

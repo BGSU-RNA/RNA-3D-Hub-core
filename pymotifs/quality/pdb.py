@@ -21,7 +21,7 @@ class Loader(core.SimpleLoader):
 
     dependencies = set([PdbLoader, Downloader])
 
-    def to_process(self, pdbs, **kwrags):
+    def to_process(self, pdbs, **kwargs):
         """Get the pdbs to process. These will be the structures that have an
         non-empty validation report downloaded.
 

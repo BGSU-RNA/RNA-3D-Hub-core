@@ -15,7 +15,7 @@ class Loader(core.SimpleLoader):
         return mod.LoopAnnotations
     """
 
-    def to_process(self, pdbs, **kwrags):
+    def to_process(self, pdbs, **kwargs):
         """ return the different loop types to process
         """
         return ["IL","HL"]

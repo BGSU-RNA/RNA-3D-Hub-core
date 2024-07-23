@@ -201,7 +201,7 @@ class Loader(core.SimpleLoader):
 
     dependencies = set([InfoLoader, Downloader])
 
-    def to_process(self, pdbs, **kwrags):
+    def to_process(self, pdbs, **kwargs):
         empty = set(f for f in self.known() if os.stat(f).st_size == 0)
         return sorted(set(pdbs) - empty)
 
