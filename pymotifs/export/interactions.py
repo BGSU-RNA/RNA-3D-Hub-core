@@ -32,6 +32,16 @@ class Exporter(core.Exporter):
         """
         return self.config['locations']['interactions_gz']
 
+    def to_process(self, pdbs, **kwargs):
+        """
+
+        """
+
+        if len(pdbs) < 500:
+            raise core.Skip("Too few pdb files being processed to write all interactions")
+
+        return pdbs
+
     def interactions(self, pdb):
         """Look up all interactions for the given structure. This gets all
         interaction entries. If there are none this returns an empty list. The
