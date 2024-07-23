@@ -628,11 +628,11 @@ class Grouper(core.Base):
         ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
         self.logger.info("nr_timing retrieving alignments to cluster")
-        print("retrieving alignments to cluster")
+        # print("retrieving alignments to cluster")
 
         alignments = self.alignments(ifes)
         self.logger.info("nr_timing retrieving discrepancies to cluster")
-        print("retrieving discrepancies to cluster")
+        # print("retrieving discrepancies to cluster")
         discrepancy = self.discrepancies(ifes)
 
         grouped = set()
