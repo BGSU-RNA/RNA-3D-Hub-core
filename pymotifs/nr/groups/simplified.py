@@ -63,8 +63,8 @@ class Grouper(core.Base):
     """A flag to force groups to have distinct species"""
     must_enforce_single_species = True
 
-    """A flag to tell what molecule type to work on"""
-    molecule_type = 'RNA'
+    """A flag to tell what molecule type to work on; must be set outside of this class"""
+    molecule_type = None
 
     def valid_ife(self, ife):
         """
@@ -90,6 +90,8 @@ class Grouper(core.Base):
         :returns: A list of dictionaries with data about all chains. The data
         is that which is provided by the info method.
         """
+
+        self.logger.info("Loading ifes for %s with molecule_type %s" % (pdb,self.molecule_type))
 
         if self.molecule_type == 'RNA':
             nucleic_acid_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
