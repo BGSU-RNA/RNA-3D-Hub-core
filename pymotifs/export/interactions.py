@@ -2,6 +2,8 @@
 Export the interactions for all structures to a single .gz file.
 If given structures it will only export interactions from those
 pdbs but if given all it will export all interactions.
+
+Note: this code only exports basepairs, stacks, and base-phosphate interactions
 """
 
 import itertools as it
@@ -31,16 +33,6 @@ class Exporter(core.Exporter):
             The path to write to.
         """
         return self.config['locations']['interactions_gz']
-
-    def to_process(self, pdbs, **kwargs):
-        """
-
-        """
-
-        if len(pdbs) < 100:
-            raise core.Skip("Too few pdb files being processed to write all interactions")
-
-        return pdbs
 
     def interactions(self, pdb):
         """Look up all interactions for the given structure. This gets all
@@ -73,7 +65,7 @@ class Exporter(core.Exporter):
 
             return [row2dict(result) for result in query]
 
-    def data(self, pdb, **kwargs):
+    def data(self, pdbs, **kwargs):
         """Load all interactions for the given structure. This returns a
         generator over all interactions.
 
@@ -88,6 +80,9 @@ class Exporter(core.Exporter):
             An iterable over all interactions in all the given structures.
         """
 
-        interactions = it.imap(self.interactions, pdb)
+        if len(pdbs) < 100:
+            raise core.Skip("Too few pdb files being processed to write all interactions")
+
+        interactions = it.imap(self.interactions, pdbs)
         interactions = it.chain.from_iterable(interactions)
         return interactions
