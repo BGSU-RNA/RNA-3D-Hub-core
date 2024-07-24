@@ -149,7 +149,7 @@ class Loader(core.SimpleLoader):
                     u2 = triple[1]
                     pair = u1 + "+" + u2
 
-                    self.logger.info('Adding interaction %s between %s and %s in %s' % (interaction,u1,u2,pdb))
+                    # self.logger.info('Adding interaction %s between %s and %s in %s' % (interaction,u1,u2,pdb))
 
                     if not pair in pair_to_dictionary:
                         pair_to_dictionary[pair] = {}
