@@ -34,17 +34,28 @@ def pdbs(config, options):
     logger = logging.getLogger(__name__)
     helper = RnaPdbsHelper()
 
+    # this is the place to focus on RNA or DNA
+    print(options)
+
+    # while developing DNA equivalence classes, run RNA and DNA separately
+    nr_molecule_parent_current = config.get('nr_molecule_parent_current','')
+    if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+        molecule_types = ['DNA',"NA-hybrid"]
+    else:
+        molecule_types = ['RNA',"NA-hybrid"]
+    logger.info("Molecule types: %s" % molecule_types)
+
     # Note: before-date in the command line becomes before_date in options
     # Note: specifying a before-date or after-date overrides the -all option
     if 'before_date' in options or 'after_date' in options:
         dates = (options.get('after_date', None),
                  options.get('before_date', None))
         logger.info("Getting PDBs within dates %s, %s" % dates)
-        return helper(dates=dates)
+        return helper(dates=dates,molecule_types=molecule_types)
 
     if options.get('all', False):
         logger.info("Getting all PDBs")
-        return helper()
+        return helper(molecule_types=molecule_types)
 
     if options.pop('known', None):
         logger.info("Using known pdbs only")
