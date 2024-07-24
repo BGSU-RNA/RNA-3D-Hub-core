@@ -33,7 +33,7 @@ class Known(core.Base):
         if group_type == 'DNA':
             query_key = group_type
         else:
-            query_key = 'NR_' 
+            query_key = 'NR_'
         with self.session() as session:
             query = session.query(mod.NrClasses.handle).\
             filter(func.substr(mod.NrClasses.name, 1, 3) == query_key).\
@@ -75,7 +75,7 @@ class Known(core.Base):
         if group_type == 'DNA':
             query_key = group_type
         else:
-            query_key = 'NR_'   
+            query_key = 'NR_'
 
         with self.session() as session:
             query = session.query(mod.NrClassRank.ife_id.label('id'),
@@ -258,7 +258,7 @@ class Builder(core.Base):
             List of grouped IFE's.
         """
 
-        if len(pdbs) < 500:
+        if len(pdbs) < 100:
             raise core.Skip("Too few pdb files being processed to run the nr stage and make a representative set: %i" % len(pdbs))
 
         grouper = Grouper(self.config, self.session)
@@ -274,6 +274,7 @@ class Builder(core.Base):
             grouper.use_discrepancy = conf.get('use_discrepancy',
                                             grouper.use_discrepancy)
             grouper.use_species = conf.get('use_species', grouper.use_species)
+            grouper.molecule_type = 'RNA'
             if not grouper.use_species:
                 enforce = conf.get('enforce_species',
                                 grouper.must_enforce_single_species)
@@ -287,12 +288,13 @@ class Builder(core.Base):
                                             grouper.use_discrepancy)
             # grouper.use_species = conf.get('use_species', grouper.use_species)
             # try again to avoid using species
+            grouper.molecule_type = 'DNA'
             grouper.use_species = False
             # if not grouper.use_species:
             #     enforce = conf.get('enforce_species',
             #                     grouper.must_enforce_single_species)
             #     ## we do not want to build dna group by single species. Thus, change True to False
-            #     ## pipeline have been killed. 
+            #     ## pipeline have been killed.
             #     ## I think there is too much to group.
             #     ## Thus, Ekko thinks it is better to group by species for test runnings
             #     grouper.must_enforce_single_species = enforce
@@ -431,7 +433,7 @@ class Builder(core.Base):
                 resolution=resolution,
                 handle=entry['name']['handle'],
                 version=entry['name']['version']
-            )            
+            )
 
     def filter_groups(self, groups, resolutions, group_type):
         """This will filter each group so that it contains only the members
@@ -572,7 +574,7 @@ class Builder(core.Base):
         if group_type == 'DNA':
             query_key = group_type
         else:
-            query_key = 'NR_'   
+            query_key = 'NR_'
 
         with self.session() as session:
             query = session.query(mod.NrClassRank.nr_class_name).\
