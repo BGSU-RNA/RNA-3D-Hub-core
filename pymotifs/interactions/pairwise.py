@@ -57,16 +57,21 @@ class Loader(core.SimpleLoader):
 
         # find all unique pdb ids that have been processed and have a pairwise interaction or have a placeholder
         with self.session() as session:
-            query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.unit_id_1).\
-                filter(mod.UnitPairsInteractions.program == 'matlab')
-            if not query.count():
-                raise core.Skip("Skipping interactions.pairwise, no new interactions")
+            query = session.query(mod.UnitPairsInteractions.pdb_id).\
+                filter(mod.UnitPairsInteractions.program == 'matlab').\
+                distinct()
+            done = set()
+            for result in query:
+                done.add(result.pdb_id)
 
-        d = set()
-        for result in query:
-            d.add(result.pdb_id)
+        if len(done) == 0:
+            raise core.Skip("Skipping interactions.pairwise, no new interactions")
 
-        needed = sorted(list(set(pdbs)-d))
+        self.logger.info('Found %d pdbs with matlab pairwise interactions' % len(done))
+
+        needed = sorted(list(set(pdbs)-done))
+
+        self.logger.info('Found %d pdbs that need to be processed for pairwise interactions' % len(needed))
 
         if len(needed) == 0:
             raise core.Skip("All pdbs have been processed for pairwise interactions")
