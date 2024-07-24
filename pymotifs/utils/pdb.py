@@ -14,7 +14,9 @@ class GetAllRnaPdbsError(Exception):
 
 
 class RnaPdbsHelper(object):
-    """A helper class to get a list of all RNA containing PDBS
+    """
+    A helper class to get a list of all RNA containing PDBs.
+    Called by pymotifs/cli/setup.py
     """
 
     def within_date(self, dates, release):
@@ -37,8 +39,9 @@ class RnaPdbsHelper(object):
 
         return min_date <= release_date <= max_date
 
-    def __call__(self, dates=(None, None)):
-        """Get a list of all rna-containing pdb files, including hybrids. Raise
+    def __call__(self, dates=(None, None), molecule_types = ["RNA","NA-hybrid"]):
+        """
+        Get a list of all rna-containing pdb files, including hybrids. Raise
         a specific error if it fails.
 
         :kwargs: Keyword arguments to define additional properties, such as
@@ -60,9 +63,6 @@ class RnaPdbsHelper(object):
         logger.info('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
         print('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
 
-        polytypes = ["RNA","NA-hybrid","DNA"]
-        # we only keep DNA structures here at 2/1/2023
-        polytypes = ["DNA"]
         resultIDs = []
 
         # converted to regular text, we can try this sometime
@@ -79,26 +79,26 @@ class RnaPdbsHelper(object):
         logger.info("Trying url %s" % url)
 
         try:
-            for polytype in polytypes:
+            for polytype in molecule_types:
                 currenturl = url.replace("RNA",polytype)
                 # print("Trying current url %s" % currenturl)
                 response = requests.get(currenturl)
                 jsonR = response.json()
 
-                logger.info("Number of rows received is %d; limit is 10,000" % len(jsonR["result_set"]))
+                logger.info("Number of %s rows received is %d; limit is 10,000" % (polytype,len(jsonR["result_set"])))
 
                 for item in jsonR["result_set"]:
                     resultIDs.append(item["identifier"])
         except Exception as err:
-            print('Looping over polytopes')
+            print('Looping over molecule_types')
             for key in jsonR.keys():
                 print(key,jsonR[key])
 
             logger.exception(err)
             raise GetAllRnaPdbsError("Failed getting all PDBs")
 
-        print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
-        logger.info("Found %d distinct non-obsolete PDB ids of RNA and NA-hybrid" % len(set(resultIDs)))
+        print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),",".join(molecule_types)))
+        logger.info("Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),",".join(molecule_types)))
 
         return(sorted(resultIDs))
 
