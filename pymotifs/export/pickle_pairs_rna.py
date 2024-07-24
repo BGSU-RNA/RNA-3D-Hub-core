@@ -12,7 +12,7 @@ from pymotifs import models as mod
 from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
 from pymotifs.interactions.pairwise import Loader as InteractionLoader
-from pymotifs.interactions.annotate import Loader as AnnotationLoader
+# from pymotifs.interactions.annotate_python import Loader as AnnotationLoader
 
 from collections import defaultdict
 
@@ -31,8 +31,7 @@ class Exporter(core.Loader):
     # General Setup
     compressed = False
     mark = False
-    dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader, IfeInfoLoader])
-
+    # dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader, IfeInfoLoader])
     dependencies = set([ChainLoader, InteractionLoader, IfeInfoLoader])
 
     def has_data(self, pdb, *args, **kwargs):
