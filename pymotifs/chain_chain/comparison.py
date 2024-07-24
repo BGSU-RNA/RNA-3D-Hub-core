@@ -160,6 +160,10 @@ class Loader(core.SimpleLoader):
             A list of (first, seconds) pairs of chain ids to compare.
         """
 
+        if len(pdbs) < 100:
+            self.logger.info('Not running chain_chain.comparison for small number of pdbs')
+            raise core.Skip("Not enough pdbs to compare")
+
         # while developing DNA equivalence classes, run those manually
         nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
 
@@ -172,6 +176,9 @@ class Loader(core.SimpleLoader):
         groups_of_chain_ids = []
 
         for molecule_type in molecule_types:
+
+            self.logger.info('Processing molecule type %s' % molecule_type)
+
             # Group PDB ids by species and sequence
             # groups is a list of lists of integer chain identifiers
             # grouper is part of the nr stage, so it appears that way in the log file
