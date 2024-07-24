@@ -22,7 +22,8 @@ nucleic_acid_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
 nucleic_acid_types.add('DNA/RNA Hybrid')
 nucleic_acid_types.add('NA-hybrid')
 nucleic_acid_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
-
+nucleic_acid_types.add('Polydeoxyribonucleotide (DNA)')
+nucleic_acid_types.add('polydeoxyribonucleotide')
 
 class MappedChain(nt('MappedChain', ['id', 'chain_id', 'name'])):
     @classmethod
@@ -40,7 +41,6 @@ class Loader(core.SimpleLoader):
     a single chain at a time, which would be easier to process.
     Instead we process a whole file at once.
     """
-
 
     dependencies = set([InfoLoader, PositionLoader, ChainMappingLoader,
                         UnitLoader])
@@ -85,7 +85,7 @@ class Loader(core.SimpleLoader):
         This list will be processed one by one.
         """
 
-        # find all rna/dna chains in these pdbs that are already registered in
+        # find all rna/dna chains in the given pdbs that are already registered
         # query takes less than 1 second
         with self.session() as session:
             query = session.query(mod.ExpSeqPdb.pdb_id, mod.ExpSeqPdb.chain_name).\
@@ -171,11 +171,6 @@ class Loader(core.SimpleLoader):
         chains : list
             A list of lists containing 'id', 'chain_id', 'name'
         """
-
-        # in November 2020, the type for RNA comes back as polyribonucleotide
-        # note:  this is for entity_macromolecule_type, see below
-        # note:  it would be really helpful to find a less fragile way to do this!
-        # also set in structures.py
 
         with self.session() as session:
             query = session.query(mod.ChainInfo.chain_name.label('name'),
@@ -265,16 +260,6 @@ class Loader(core.SimpleLoader):
         """
 
         trans = {m.name: m for m in mapped_chains}
-        # in November 2020, the type for RNA comes back as polyribonucleotide
-        # note:  this is for entity_macromolecule_type, see below
-        # note:  it would be really helpful to find a less fragile way to do this!
-        # also set in structures.py
-        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
-        macromolecule_types.add('DNA/RNA Hybrid')
-        macromolecule_types.add('NA-hybrid')
-        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
-        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
-        macromolecule_types.add('polydeoxyribonucleotide')
 
         for mapping in cif.experimental_sequence_mapping(trans.keys()):
             unit_id = mapping['unit_id']
