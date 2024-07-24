@@ -10,7 +10,7 @@ from pymotifs import models as mod
 from pymotifs.units.info import Loader as InfoLoader
 
 from fr3d.modified_parent_mapping import modified_nucleotides
-from pymotifs.interactions.NA_unit_annotation import annotate_bond_orientation
+from fr3d.classifiers.NA_unit_annotation import annotate_bond_orientation
 
 class Loader(core.SimpleLoader):
     """A class to compute glycosidic bond orientations and load them into the database.
