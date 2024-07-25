@@ -86,6 +86,9 @@ class Loader(core.MassLoader):
 
     def data(self, pdbs, **kwargs):
 
+        if len(pdbs) < 100:
+            raise core.Skip("Not enough pdbs to build NR release")
+
         now = kwargs.get('before_date', dt.datetime.strftime(dt.datetime.now(), '%Y-%m-%d %H:%M:%S'))
 
         if ":" in now:
@@ -93,7 +96,7 @@ class Loader(core.MassLoader):
         else:
             nowstring = now.replace("-","")
 
-        # DNA_checking = kwargs.get('DNA-release','')
+        # check command-line arguments
         nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
         self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
 
@@ -115,15 +118,18 @@ class Loader(core.MassLoader):
 
         self.logger.info('Building NR release %s with parent %s' % (next, parent))
 
-        # build the current release
+        # build the current release; data must be cached and will be read in a later stage
         self.build(pdbs, parent, next, **kwargs)
 
+        self.logger.info('Built NR release %s, saving to nr_releases table' % next)
+
         if nr_molecule_parent_current:
+            raise core.Skip("Filling in DNA releases, no need to write to nr_releases table")
+        else:
+            # regular new release
             return mod.NrReleases(nr_release_id=next,
                                 date=now,
                                 parent_nr_release_id=parent,
                                 description = nowstring,
                                 index=index + 1)
-        else:
-            pass
 
