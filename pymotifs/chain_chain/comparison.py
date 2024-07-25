@@ -164,6 +164,8 @@ class Loader(core.SimpleLoader):
             self.logger.info('Not running chain_chain.comparison for small number of pdbs')
             raise core.Skip("Not enough pdbs to compare")
 
+        pdbs_set = set(pdbs)
+
         # while developing DNA equivalence classes, run those manually
         nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
 
@@ -257,6 +259,12 @@ class Loader(core.SimpleLoader):
 
             needed_pdbs = set(pdbs) - known_pdbs
 
+            # the query below is slow when being run on 8000 pdbs, which would happen
+            # if the .pickle file above is deleted or corrupted
+            # mysql show processlist indicates that mysql uses a temporary table on disk
+            # on 2024-07-24 it took 22 minutes
+            # the query below could be split to do 1000 pdbs at a time
+
             self.logger.info('Updating unit_to_position.pickle for %d pdbs' % len(needed_pdbs))
             # get correspondences between unit ids and experimental sequence positions
             # sort to put no alt_id before A before B before C, etc.
@@ -274,7 +282,7 @@ class Loader(core.SimpleLoader):
                 chain_to_symmetries = defaultdict(set)
                 count = 0
                 for r in query:
-                    self.logger.info('Unit id %s, position %s, sym_op %s' % (r.unit_id,r.exp_seq_position_id,r.sym_op))
+                    # self.logger.info('Unit id %s, position %s, sym_op %s' % (r.unit_id,r.exp_seq_position_id,r.sym_op))
                     count += 1
                     if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
@@ -302,6 +310,7 @@ class Loader(core.SimpleLoader):
                 chain_unit_to_position = defaultdict(dict)
                 chain_to_simple_unit_id = defaultdict(set)
                 count = 0
+                # looping over the query again may be just as slow as the first time
                 for r in query:
                     if r.unit_id and "|" in r.unit_id:    # not sure why, but some rows have None
                         fields = r.unit_id.split("|")
