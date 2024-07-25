@@ -34,11 +34,9 @@ def pdbs(config, options):
     logger = logging.getLogger(__name__)
     helper = RnaPdbsHelper()
 
-    # this is the place to focus on RNA or DNA
-    print(options)
-
+    # this is the place to decide whether to query PDB for RNA or DNA or both
     # while developing DNA equivalence classes, run RNA and DNA separately
-    nr_molecule_parent_current = config.get('nr_molecule_parent_current','')
+    nr_molecule_parent_current = options.get('nr_molecule_parent_current','')
     if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
         molecule_types = ['DNA',"NA-hybrid"]
     else:
