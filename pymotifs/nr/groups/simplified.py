@@ -349,10 +349,9 @@ class Grouper(core.Base):
         db_id2 = group2['db_id']
         dis_test = all_discrepancy.get(db_id1,{db_id1:'discrepancy not found:'+str(db_id1)})
         if not disc.valid_chain(group1) or not disc.valid_chain(group2):
-            self.logger.debug("Chains not valid for discrepancy")
-            self.logger.info("Chains not valid for discrepancy, if statement:(%s,%s), length:(%s,%s), resolution:(%s,%s)"%(disc.valid_chain(group1),disc.valid_chain(group2),group1['length'],group2['length'],group1['resolution'],group2['resolution']))
-            self.logger.info("discrepancy value: %s, %s"%(dis_test.get(db_id1,'null'),dis_test.get(db_id2,'null')))
             self.logger.info("Chains not valid for discrepancy for %s, %s"%(group1['id'],group2['id']))
+            self.logger.info("valid chain (%s,%s), length (%s,%s), resolution (%s,%s)" % (disc.valid_chain(group1),disc.valid_chain(group2),group1['length'],group2['length'],group1['resolution'],group2['resolution']))
+            # self.logger.info("discrepancy value: %s, %s"%(dis_test.get(db_id1,'null'),dis_test.get(db_id2,'null')))
             return True
 
         if not all_discrepancy:
@@ -534,9 +533,14 @@ class Grouper(core.Base):
         # This code runs slowly, partly because there are so many pairs to consider
         # It seems to consider every single pair, rather than being smart about
         # only considering pairs that have alignments between them.
+
+        # Running very slowly on 2024-07-24
+        # show processlist;
+        # SELECT exp_seq_unit_mapping.unit_id AS exp_seq_unit_mapping_unit_id, exp_seq_unit_mapping.exp_seq_po
+
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
         pairs = it.combinations(chains, 2)
-        return it.ifilter(lambda p: equiv(*p), pairs)                       ## I see. the pairs varibale will provide the group1 and group2. What is the valid pairs here?
+        return it.ifilter(lambda p: equiv(*p), pairs)
 
     def connections(self, chains, alignments, discrepancies):
         """Create a graph connections between all chains.
@@ -554,16 +558,20 @@ class Grouper(core.Base):
         # next line is fast because it simply sets up an iterable
         all_pairs = self.pairs(chains, alignments, discrepancies)
 
-        self.logger.info('Creating connections between chains')
+        self.logger.info('Creating connections between %d chains' % len(chains))
 
-        # this loop takes maybe 12 minutes
+        # this loop takes maybe 12 minutes ... or over 80 minutes
+        c = 0
         for chain1, chain2 in all_pairs:
             self.logger.debug("Equivalent: %s %s", chain1['id'], chain2['id'])
             graph[chain1['id']].add(chain2['id'])
             graph[chain2['id']].add(chain1['id'])
+            c += 1
+            if c % 10000 == 0:
+                self.logger.info("Created %d connections" % c)
 
-        self.logger.info("Created %i connections", len(graph))
-        return graph                                                    ## it seems like we are making the combination again, but this time will be valid pairs.
+        self.logger.info("Created %d connections" % len(graph))
+        return graph
 
     def build_groups(self, graph):
         """Group the ifes based upon the given graph. This will group the ifes
