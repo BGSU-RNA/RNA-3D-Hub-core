@@ -55,11 +55,11 @@ class Loader(core.SimpleLoader):
 
             pdbs_computed = set([r.pdb_id for r in query])
 
-        pdbs_to_compute = sorted(set(pdbs) - pdbs_computed,reverse=True)
+        pdbs_to_compute = sorted(set(pdbs) - pdbs_computed)
 
         # make sure to return at least one file name, o/w dispatcher complains
         if len(pdbs_to_compute) == 0:
-            pdbs_to_compute = [pdbs[0]]
+            raise core.Skip("All pdbs have bond orientations computed")
 
         self.logger.info("Found %d files to process" % len(pdbs_to_compute))
 
