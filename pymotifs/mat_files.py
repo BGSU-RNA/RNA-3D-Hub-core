@@ -27,6 +27,12 @@ class Loader(core.Loader):
             os.remove(filename)
 
     def data(self, pdb, **kwargs):
+
+        # prevent trying to create Matlab interactions when filling in DNA releases
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            raise core.Skip("no need to run Matlab on DNA structures")
+
         mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
         mlab.zAddNTData(pdb)
         return None

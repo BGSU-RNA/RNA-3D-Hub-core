@@ -55,6 +55,13 @@ class Loader(core.SimpleLoader):
         and now we can avoid checking again.
         """
 
+        # prevent trying to create Matlab interactions when filling in DNA releases
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            raise core.Skip("interactions.pairwise does not annotate DNA structures")
+
         # find all unique pdb ids that have been processed and have a pairwise interaction or have a placeholder
         with self.session() as session:
             query = session.query(mod.UnitPairsInteractions.pdb_id).\
@@ -63,9 +70,6 @@ class Loader(core.SimpleLoader):
             done = set()
             for result in query:
                 done.add(result.pdb_id)
-
-        if len(done) == 0:
-            raise core.Skip("Skipping interactions.pairwise, no new interactions")
 
         self.logger.info('Found %d pdbs with matlab pairwise interactions' % len(done))
 

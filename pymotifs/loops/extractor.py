@@ -25,6 +25,12 @@ class Loader(core.SimpleLoader):
 
     def to_process(self, pdbs, **kwargs):
 
+        # prevent trying to extract loops with Matlab when filling in DNA releases
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            raise core.Skip("loops.extractor does not annotate DNA structures")
+
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
                 distinct()
@@ -85,7 +91,7 @@ class Loader(core.SimpleLoader):
 
     def _get_loop_id(self, units, pdb_id, loop_type, mapping):
         """Compute the loop id to use for the given unit string. This will
-        build a string like IL_1S72_001 or IL_4V4Q_001000. In structures with
+        build a string like IL_1S72_001 or IL_4V4Q_001. In structures with
         over 999 loops, we will pad with zeros to 6 characters, but keep the
         stanadrd padding to 3 characters otherwise.
 
@@ -97,7 +103,7 @@ class Loader(core.SimpleLoader):
         :returns: A string of the new loop id.
         """
 
-        # format examples: IL_1S72_001, IL_4V4Q_001000
+        # format examples: IL_1S72_001, IL_4V4Q_001
         if units not in mapping:
             str_number = self._next_loop_number_string(len(mapping))
             loop_id = '%s_%s_%s' % (loop_type, pdb_id, str_number)

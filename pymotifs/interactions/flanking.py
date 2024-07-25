@@ -18,7 +18,8 @@ from pymotifs.pdbs.info import Loader as PdbLoader
 
 
 class Loader(core.SimpleLoader):
-    """A loader to generate and import the interaction annotations for
+    """
+    A loader to generate and import the interaction annotations for
     structures.
     """
 
@@ -43,6 +44,41 @@ class Loader(core.SimpleLoader):
         :returns: A query to get interaction data.
         """
         return session.query(mod.UnitPairsFlanking).filter_by(pdb_id=pdb)
+
+
+    def to_process(self, pdbs, **kwargs):
+        """
+        Query to find pdb ids with 'placeholder' unit ids, which means that the
+        structure was processed to find pairwise interactions, none were found,
+        and now we can avoid checking again.
+        """
+
+        # prevent trying to create Matlab annotations when filling in DNA releases
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            raise core.Skip("interactions.flanking does not annotate DNA structures")
+
+        # find all unique pdb ids that have been processed and have a flanking interaction or have a placeholder
+        with self.session() as session:
+            query = session.query(mod.UnitPairsFlanking.pdb_id).\
+                distinct()
+            done = set()
+            for result in query:
+                done.add(result.pdb_id)
+
+        self.logger.info('Found %d pdbs with matlab flanking interactions' % len(done))
+
+        needed = sorted(list(set(pdbs)-done))
+
+        self.logger.info('Found %d pdbs that need to be processed for flanking interactions' % len(needed))
+
+        if len(needed) == 0:
+            raise core.Skip("All pdbs have been processed for flanking interactions")
+
+        # remove the pdb ids just found from the list of those that need to be processed
+        return needed
 
 
     def parse(self, filename, pdb):

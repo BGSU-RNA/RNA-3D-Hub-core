@@ -24,6 +24,13 @@ class Loader(core.Loader):
         self.precomputed = self.config['locations']['loops_mat_files']
 
     def to_process(self, pdbs, **kwargs):
+
+        # prevent trying to extract loops with Matlab when filling in DNA releases
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            raise core.Skip("loops.positions does not annotate DNA structures")
+
         # make a list of pdb ids that don't yet have loop information in both
         # loop_info and loop_positions table
         with self.session() as session:
@@ -45,8 +52,8 @@ class Loader(core.Loader):
         #         filter(mod.LoopInfo.type == 'NA').\
         #         distinct()
         #     dn_process = [r.pdb_id for r in query] #list of pdbs with corresponding entries in loop_info and type='NA'
-        
-        # the previous query is too strict and it will never let some pdb ids to be processed when they have NA loops, and valid loops at the same time 
+
+        # the previous query is too strict and it will never let some pdb ids to be processed when they have NA loops, and valid loops at the same time
         with self.session() as session:
             # Subquery to find pdb_ids that have types other than 'NA'
             subquery = session.query(mod.LoopInfo.pdb_id).\
@@ -65,10 +72,10 @@ class Loader(core.Loader):
             dn_process = [r.pdb_id for r in query]
 
 
-        # problemtic pdbs for now, they are wasting so much time and do nothing 2023-10-04 
+        # problemtic pdbs for now, they are wasting so much time and do nothing 2023-10-04
         # these PDB files are being skipped because they have an HL in loop_info that has unit ids from different chains, which is not an HL, and so positions.py should stop trying to extract them.
         problemtic = ['1A34', '1BYX', '1ELH', '1G3A', '1H1K', '1MHK', '1N35', '1N38', '1TFW', '1TFY', '1UON', '2BGG', '2E9Z', '2F8S', '2F8T', '2G91', '2I91', '2M1O', '2M23', '2NUG', '2R92', '2RFK', '2VAL', '354D', '377D', '3AVU', '3AVV', '3AVW', '3AVX', '3AVY', '3BSN', '3BSO', '3H5X', '3H5Y', '3HTX', '3KNA', '3LRN', '3MQK', '3NCU', '3NMA', '3PLA', '3VNV', '3ZC0', '4E78', '4GV9', '4K4U', '4K4V', '4KTG', '4OQ8', '4W5O', '4W5Q', '4W5R', '4W5T', '1G2J', '1L3Z', '4NGB', '4NGC', '4NGD', '4NGG', '4NH3', '4NH5', '4NH6']
-        
+
         # Remove pdbs with no loops
         to_use = sorted(set(to_use).difference(dn_process))
 

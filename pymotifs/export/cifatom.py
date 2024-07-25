@@ -77,6 +77,13 @@ class Exporter(core.Loader):
             os.remove(filename)
 
     def data(self, pdb, **kwargs):
-        """Will load the structure for the given PDB id.
         """
+        Will load the structure for the given PDB id.
+        """
+
+        # do not create .cifatom files when filling in DNA releases
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            raise core.Skip("no need to run Matlab on DNA structures")
+
         return self.structure(pdb)
