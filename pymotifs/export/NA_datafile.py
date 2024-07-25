@@ -71,7 +71,7 @@ class Exporter(core.Loader):
         We do this because we only want to run this script one time even if we have a lot of pdbs.
         """
 
-        if len(pdbs) < 500:
+        if len(pdbs) < 100:
             raise core.Skip("Too few pdb files being processed to write NA_datafile.pickle")
 
         return ['1']
@@ -89,7 +89,8 @@ class Exporter(core.Loader):
                 result[row.pdb_id].add(int(str(row.model).replace('L','')))
             except:
                 result[row.pdb_id].add(str(row.model).replace('L',''))
-                self.logger.info('The database currently does not have the model type for %s ' % row.pdb_id)
+                if not row.pdb_id == 'XXXX':
+                    self.logger.info('The database does not have the model type for %s' % row.pdb_id)
         return result
 
 
@@ -104,6 +105,30 @@ class Exporter(core.Loader):
             result[str(row.pdb_id)+"_"+str(row.chain)].add(row.sym_op)
         return result
 
+    def model_sym_op_query(self, **kwargs):
+        """
+        Map PDB id and chain to models and symmetry operators
+        """
+
+        pdb_id_to_models = defaultdict(set)
+        pdb_chain_to_sym_op = defaultdict(set)
+
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.pdb_id,mod.UnitInfo.model,mod.UnitInfo.chain,mod.UnitInfo.sym_op).distinct()
+
+            for row in query:
+                try:
+                    model = int(str(row.model).replace('L',''))
+                    pdb_id_to_models[row.pdb_id].add(model)
+                except:
+                    if not row.pdb_id == 'XXXX':
+                        self.logger.info('The database does not have the model type for %s' % row.pdb_id)
+
+                pdb_chain_to_sym_op[str(row.pdb_id)+"_"+str(row.chain)].add(row.sym_op)
+
+
+        return pdb_id_to_models, pdb_chain_to_sym_op
+
 
     def data(self, pdb, **kwargs):
         """
@@ -111,12 +136,18 @@ class Exporter(core.Loader):
         """
 
         # map PDB id to models
-        model_list = self.model_query()
+        # self.logger.info("Starting model query")
+        # pdb_id_to_models = self.model_query()
 
         # map PDB id and chain to symmetry operators
-        sym_op_dict = self.sym_op()
+        # self.logger.info("Starting symmetry operator query")
+        # pdb_chain_to_sym_op = self.sym_op()
+
+        self.logger.info("Starting model and symmetry operator query")
+        pdb_id_to_models, pdb_chain_to_sym_op = self.model_sym_op_query()
 
         # get pdb ids, chains, molecule type, resolution, technique
+        self.logger.info("Starting pdb id, chain, molecule type query")
         with self.session() as session:
             query = session.query(mod.ChainInfo.pdb_id,
                             mod.ChainInfo.chain_name,
@@ -128,7 +159,7 @@ class Exporter(core.Loader):
         result = defaultdict(dict)
         dna_long = ['Polydeoxyribonucleotide (DNA)','polydeoxyribonucleotide']
         rna_long = ['Polyribonucleotide (RNA)','polyribonucleotide']
-        hybrid_long = ['polydeoxyribonucleotide/polyribonucleotide hybrid','DNA/RNA Hybrid']
+        hybrid_long = ['polydeoxyribonucleotide/polyribonucleotide hybrid','DNA/RNA Hybrid','NA-hybrid']
         entity_type_check = dna_long + rna_long + hybrid_long + ['Polypeptide(L)','Peptide nucleic acid']
 
         for row in query:
@@ -137,12 +168,12 @@ class Exporter(core.Loader):
             result[row.pdb_id]['resolution'] = row.resolution
             result[row.pdb_id]['method'] = row.experimental_technique
 
-            result[row.pdb_id]['model'] = sorted(model_list[row.pdb_id])
+            result[row.pdb_id]['model'] = sorted(pdb_id_to_models[row.pdb_id])
             if result[row.pdb_id].get('symmetry'):
-                result[row.pdb_id]['symmetry'][row.chain_name] = list(sym_op_dict[str(row.pdb_id)+"_"+str(row.chain_name)])
+                result[row.pdb_id]['symmetry'][row.chain_name] = list(pdb_chain_to_sym_op[str(row.pdb_id)+"_"+str(row.chain_name)])
             else:
                 result[row.pdb_id]['symmetry'] = {}
-                result[row.pdb_id]['symmetry'][row.chain_name] = list(sym_op_dict[str(row.pdb_id)+"_"+str(row.chain_name)])
+                result[row.pdb_id]['symmetry'][row.chain_name] = list(pdb_chain_to_sym_op[str(row.pdb_id)+"_"+str(row.chain_name)])
 
             if row.entity_macromolecule_type == 'Polypeptide(L)':
                 if result[row.pdb_id]['chains'].get('protein'):
