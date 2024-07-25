@@ -230,7 +230,7 @@ class CompScore(QualityBase):
                 count += current
 
             if not count:
-                self.logger.error("No atoms found for %s" % str(info))
+                # self.logger.error("No atoms found for %s" % str(info))
                 return 100.0
 
             return float(count)
