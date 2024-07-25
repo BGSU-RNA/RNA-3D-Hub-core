@@ -1,4 +1,5 @@
-"""Compute a linear ordering for members of an equivalence set.
+"""
+Compute a linear ordering for members of an equivalence set.
 
 This will go over all NR classes (equivalence sets) and compute an ordering for
 chains that are part of the class. This may skip some chains as we do not
@@ -59,102 +60,61 @@ class Loader(core.SimpleLoader):
             A list of all NR class ids.
         """
 
-        if len(pdbs) < 500:
+        if len(pdbs) < 100:
             raise core.Skip("Too few pdb files being processed to order NR classes")
 
-        # determine desired release or retrieve most recent release
-        # Removed 2022-05-26 since latest is not used, nor is data
-        if 0 > 1:
-            latest = None
-            if kwargs.get('manual', {}).get('nr_release_id', False):
-                latest = kwargs['manual']['nr_release_id']
-            else:
-                data = self.cached(NR_CACHE_NAME)
-                if not data:
-                    raise core.InvalidState("No precomputed grouping to store; specify a release")
-                latest = data['release']
+        # process command-line argument to determine molecule type
+        molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        if molecule_parent_current:
+            molecule_type = molecule_parent_current.split(",")[0]
+        else:
+            molecule_type = 'RNA'
 
-            self.logger.info("to_process: latest release is: %s" % latest)
+        # different molecule types have different prefixes like NR_ and DNA_
+        if molecule_type == 'RNA':
+            prefix = 'NR%'
+        else:
+            prefix = 'DNA%'
 
-        # find all nr_class_id values associated with this release
-        if 0 > 1:
-            with self.session() as session:
-                query = session.query(mod.NrClasses.nr_class_id).\
-                    filter_by(nr_release_id=latest)
-                return [(latest, r.nr_class_id) for r in query]
-        pdb_type = kwargs.get('nr_molecule_parent_current','').split(",")[0]
+        # find classes that are already ordered
+        with self.session() as session:
+            # get all triples of nr_release_id and nr_class_id and equivalence class name
+            query = session.query(mod.NrClasses.nr_release_id,mod.NrClasses.nr_class_id,mod.NrClasses.name).\
+                    filter(mod.NrClasses.name.like(prefix))
 
-        if pdb_type != 'DNA':
-            # fill in all orderings from release 2.* and 3.*
-            with self.session() as session:
-                # get all triples of nr_release_id and nr_class_id and equivalence class name
-                query = session.query(mod.NrClasses.nr_release_id,mod.NrClasses.nr_class_id,mod.NrClasses.name)
-
+            all_triples = []
+            if prefix == 'NR%':
                 # retrieve all nr_class_id values after releases 0.* and 1.*
-                all_triples = []
                 for r in query:
                     if not r.nr_release_id[0:2] == "0." and not r.nr_release_id[0:2] == "1.":
                         all_triples.append((r.nr_release_id,r.nr_class_id,r.name))
-
-                # sort by integer class id then by NR_###_#####.# class name
-                all_triples = sorted(all_triples, key = lambda r: (r[1], r[2]))
-
-                # get all nr_class_name values that have an ordering in nr_ordering_test
-                query = session.query(mod.NrOrderingTest.nr_class_name).distinct()
-                ordered_nr_class_name = [r.nr_class_name for r in query]
-
-                self.logger.info("to_process: found %d classes already ordered" % len(ordered_nr_class_name))
-
-                # loop through triples, save first class_id for each name, save pair if not already ordered
-                one_class_id_per_name = {}
-                pairs_to_process = []
-                for (nr_release,nr_class_id,nr_name) in all_triples:
-                    if not nr_name in one_class_id_per_name:
-                        one_class_id_per_name[nr_name] = (nr_release,nr_class_id)
-                        if not nr_name in ordered_nr_class_name:
-                            self.logger.info("to_process: need to order class %16s originally from release %5s" % (nr_name,nr_release))
-                            pairs_to_process.append((nr_release,nr_class_id))
-                        #else:
-                        #    self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
-
-                return pairs_to_process
-        else:
-            with self.session() as session:
-                query = session.query(mod.NrClasses.nr_release_id,mod.NrClasses.nr_class_id,mod.NrClasses.name).\
-                        filter(mod.NrClasses.name.like('%DNA%'))
-                all_triples = []
+            else:
                 for r in query:
                     all_triples.append((r.nr_release_id,r.nr_class_id,r.name))
 
-                all_triples = sorted(all_triples, key = lambda r: (r[1], r[2]))
+            # sort by integer class id then by NR_###_#####.# class name
+            all_triples = sorted(all_triples, key = lambda r: (r[1], r[2]))
 
-                query = session.query(mod.NrOrderingTest.nr_class_name).distinct()
-                ordered_nr_class_name = [r.nr_class_name for r in query]
+            # get all nr_class_name values that have an ordering in nr_ordering_test
+            query = session.query(mod.NrOrderingTest.nr_class_name).distinct()
+            ordered_nr_class_name = [r.nr_class_name for r in query]
 
-                self.logger.info("to_process: found %d classes already ordered" % len(ordered_nr_class_name))
+            self.logger.info("to_process: found %d classes already ordered" % len(ordered_nr_class_name))
 
-                one_class_id_per_name = {}
-                pairs_to_process = []
-                for (nr_release,nr_class_id,nr_name) in all_triples:
-                    if not nr_name in one_class_id_per_name:
-                        one_class_id_per_name[nr_name] = (nr_release,nr_class_id)
-                        if not nr_name in ordered_nr_class_name:
-                            self.logger.info("to_process: need to order class %16s originally from release %5s" % (nr_name,nr_release))
-                            pairs_to_process.append((nr_release,nr_class_id))
-                return pairs_to_process
+            # loop through triples, save first class_id for each name, save pair if not already ordered
+            one_class_id_per_name = {}
+            pairs_to_process = []
+            for (nr_release,nr_class_id,nr_name) in all_triples:
+                if not nr_name in one_class_id_per_name:
+                    one_class_id_per_name[nr_name] = (nr_release,nr_class_id)
+                    if not nr_name in ordered_nr_class_name:
+                        self.logger.info("to_process: need to order class %16s originally from release %5s" % (nr_name,nr_release))
+                        pairs_to_process.append((nr_release,nr_class_id))
+                    #else:
+                    #    self.logger.info("to_process: already ordered release %s class %s" % (nr_release,nr_name))
 
-#        return [(latest, r.nr_class_id) for r in query]
+            return pairs_to_process
 
-
-            # the pairs returned here will be passed to the data method one by one
-            # make sure to only pass each nr_class_id one time, not once for each release
-
-
-    #def is_missing(self, entry, **kwargs):
-    #    """Placeholder to see how to properly ID the classes that need
-    #    attention.
-    #    """
-    #    pass
 
     def has_data(self, entry, **kwargs):
         # for each equivalence class id, which is an integer,
