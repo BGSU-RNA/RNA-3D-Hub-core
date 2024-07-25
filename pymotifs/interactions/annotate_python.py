@@ -29,6 +29,9 @@ class Loader(core.SimpleLoader):
         """
         Return PDB ids which do not have python annotations in the table.
 
+        Until we want to annotate every RNA structure with Python annotations,
+        exclude those structures with Matlab annotations.
+
         :param list pdbs: The list of pdb ids of interest on this run.
         :param dict kwargs: The keyword arguments which are ignored.
         :returns: A list of pdb ids to process.
@@ -42,41 +45,30 @@ class Loader(core.SimpleLoader):
             filter(mod.UnitPairsInteractions.program == 'python').\
             filter(mod.UnitPairsInteractions.pdb_id.in_(pdbs)).\
             distinct()
+            annotated_python = set([result.pdb_id for result in query])
 
-            annotated = set([result.pdb_id for result in query])
+        self.logger.info('Found %d pdb ids already annotated by python' % len(annotated_python))
 
-        self.logger.info('Found %d pdb ids already annotated by python' % len(annotated))
+        DNA_types = set([])
+        DNA_types.add('DNA/RNA Hybrid')
+        DNA_types.add('NA-hybrid')
+        DNA_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+        DNA_types.add('Polydeoxyribonucleotide (DNA)')
+        DNA_types.add('polydeoxyribonucleotide')
 
-        # # temporary:  DNA-containing structures
-        # with self.session() as session:
-        #     query = session.query(mod.ChainInfo.pdb_id).\
-        #     filter(mod.ChainInfo.macromolecule_type == 'DNA').\
-        #     distinct()
+        # temporary:  annotate only DNA-containing structures with python code
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.pdb_id).\
+            filter(mod.ChainInfo.entity_macromolecule_type.in_(DNA_types)).\
+            distinct()
+            DNA_pdbs = set([result.pdb_id for result in query])
 
-        #     DNA = set([result.pdb_id for result in query])
-
-        # DNA_list = sorted(DNA - annotated)
-
-        need_to_annotate = set(pdbs) - annotated
+        need_to_annotate = set(pdbs) & DNA_pdbs - annotated_python
 
         if len(need_to_annotate) == 0:
-            raise core.Skip("No PDB files need pair interactions annotated")
+            raise core.Skip("No PDB files need pairwise interactions annotated with python")
         else:
             return sorted(need_to_annotate)
-
-
-
-        pdb_list = sorted(list(set(pdbs) - annotated))
-        #pdb_list = sorted(list(set(pdbs) - annotated), reverse = True)
-
-        # when adding a new category of annotations, you can process all PDBs
-        #pdb_list = pdbs
-
-        # if you need to run it twice, split the job roughly in half and run in different directions
-        #pdb_list = pdb_list[:3800]
-        #pdb_list = pdb_list[3800:]
-
-        return pdb_list
 
 
     def data(self, pdb, **kwargs):
