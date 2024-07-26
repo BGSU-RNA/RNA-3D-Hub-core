@@ -124,7 +124,8 @@ class Helper(core.Base):
         return mapping
 
     def aligned_chains(self, ids, good=None, use_names=False):
-        """Determine which chains a good alignment between them. This will
+        """
+        Determine which chains a good alignment between them. This will
         produce a dictionary of dictionaries where the final values are a
         boolean indicating a good alignment or not.
 
