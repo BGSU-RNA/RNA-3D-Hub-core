@@ -232,7 +232,7 @@ class Loader(core.SimpleLoader):
                     groups_of_chain_ids.append(chain_list)
 
                 if len(chain_list) < len(group['members']):
-                    self.logger.info('From %d to %d members in group' % (len(group['members']),len(chain_list)))
+                    self.logger.info('Dropped from %d to %d members in group' % (len(group['members']),len(chain_list)))
 
 
         # Note how many groups are left now that we filtered as above
