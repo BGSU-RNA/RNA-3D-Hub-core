@@ -10,7 +10,7 @@ import itertools as it
 
 from pymotifs import core
 from pymotifs import models as mod
-from pymotifs.interactions.pairwise import Loader as InterLoader
+from pymotifs.interactions.loader import Loader as InterLoader
 from pymotifs.utils import row2dict
 
 
