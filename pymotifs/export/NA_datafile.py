@@ -234,9 +234,10 @@ class Exporter(core.Loader):
             self.logger.info("process: filename open: %s" % copy_file)
             pickle.dump(pinfo, fh, 2)
 
-        filename = os.path.join("/var/www/html",'NA_datafile.pickle')
+        # if the file already exists, do not generate a new file
+        # filename = os.path.join("/var/www/html",'NA_datafile.pickle')
 
-        os.system("ln -s %s %s" % (copy_file, filename))
+        # os.system("ln -s %s %s" % (copy_file, filename))
 
 
         pass
