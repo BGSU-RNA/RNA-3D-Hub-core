@@ -10,8 +10,9 @@ from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.units.centers import Loader as CentersLoader
-from pymotifs.units.rotation import Loader as RotationsLoader
+# from pymotifs.units.centers import Loader as CentersLoader
+# from pymotifs.units.rotation import Loader as RotationsLoader
+from pymotifs.units.center_rotation import Loader as CenterRotationsLoader
 from pymotifs.exp_seq.mapping import Loader as MappingLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
@@ -28,7 +29,7 @@ class Exporter(core.Loader):
     # General Setup
     compressed = False
     mark = False
-    dependencies = set([ChainLoader, CentersLoader, RotationsLoader,
+    dependencies = set([ChainLoader, CenterRotationsLoader,
                         PositionLoader, IfeInfoLoader, MappingLoader])
     # dependencies = set()
 
