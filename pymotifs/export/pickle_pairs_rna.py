@@ -12,6 +12,7 @@ from pymotifs import models as mod
 from pymotifs.chains.info import Loader as ChainLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
 from pymotifs.interactions.pairwise import Loader as InteractionLoader
+from pymotifs.interactions.annotate_python import Loader as AnnotationLoader
 # from pymotifs.interactions.annotate_python import Loader as AnnotationLoader
 
 from collections import defaultdict
@@ -32,9 +33,18 @@ class Exporter(core.Loader):
     compressed = False
     mark = False
     # dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader, IfeInfoLoader])
-    dependencies = set([ChainLoader, InteractionLoader, IfeInfoLoader])
+    dependencies = set([ChainLoader, InteractionLoader, IfeInfoLoader, AnnotationLoader])
 
     def has_data(self, pdb, *args, **kwargs):
+
+        # no need to write _pairs_RNA.pickle files for DNA structures because they
+        # do not include DNA pairs anyway
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            # pretend that we already have the data
+            return True
+
         self.logger.debug("has_data: pdb: %s" % str(pdb))
         filename = self.filename(pdb)
 
@@ -67,7 +77,8 @@ class Exporter(core.Loader):
             The path to write to.
         """
 
-        # TO DO: change RNA to NA
+        # TODO: change RNA to NA
+        # TODO: write pairwise interactions between all RNA, DNA, hybrid; currently only RNA!
 
         filename = pdb + '_RNA_pairs.pickle'
 

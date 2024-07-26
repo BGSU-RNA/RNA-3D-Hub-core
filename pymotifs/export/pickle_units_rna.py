@@ -10,8 +10,9 @@ from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.chains.info import Loader as ChainLoader
-from pymotifs.units.centers import Loader as CentersLoader
-from pymotifs.units.rotation import Loader as RotationsLoader
+# from pymotifs.units.centers import Loader as CentersLoader
+# from pymotifs.units.rotation import Loader as RotationsLoader
+from pymotifs.units.center_rotation import Loader as CenterRotationsLoader
 from pymotifs.exp_seq.mapping import Loader as MappingLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
@@ -28,7 +29,7 @@ class Exporter(core.Loader):
     # General Setup
     compressed = False
     mark = False
-    dependencies = set([ChainLoader, CentersLoader, RotationsLoader,
+    dependencies = set([ChainLoader, CenterRotationsLoader,
                         PositionLoader, IfeInfoLoader, MappingLoader])
 
 
@@ -92,6 +93,13 @@ class Exporter(core.Loader):
         (pdb_id, model, chain) : tuple
             The components of the IFE-chains to be processed.
         """
+
+        # no need to write _RNA.pickle files for DNA structures
+        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
+
+        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
+            raise core.Skip("Do not run on DNA structures")
 
         with self.session() as session:
             query = session.query(
