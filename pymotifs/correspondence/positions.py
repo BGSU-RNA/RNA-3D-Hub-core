@@ -1,6 +1,6 @@
 """
-This is a stage to align two experimental sequences and store the alignment
-between each nucleotide.
+This is a stage to align pairs of experimental sequences from the
+correspondence_info table and store the alignment between each nucleotide.
 """
 
 from pymotifs import core
@@ -16,8 +16,7 @@ from pymotifs.utils.alignment import one_to_one_alignment
 
 class Loader(core.Loader):
     """
-    A loader for computing the position to position alignment and storing
-    it.
+    A loader for computing the position to position alignment and storing it.
     """
 
     mark = False
@@ -78,9 +77,10 @@ class Loader(core.Loader):
                 delete(synchronize_session=False)
 
     def sequence(self, exp_id):
-        """Load all information about the experimental sequence with the given
-        id. This will load both the ids and the sequence. The ids will be a
-        list of numbers, while the sequence is a string.
+        """
+        Load all information about the experimental sequence with the given
+        id. This will load both the ids and the sequence.
+        The ids will be a list of numbers, while the sequence is a string.
 
         :param int exp_id: The experimental sequence id.
         :returns: A dictionary of the ids and sequence for the given id.
@@ -105,7 +105,8 @@ class Loader(core.Loader):
         return {'ids': ids, 'sequence': ''.join(sequence)}
 
     def info(self, corr_id):
-        """Look up the sequences used in some correspondence.
+        """
+        Look up the sequences used in the given correspondence.
 
         :param int corr_id: The id of the correspondence to lookup.
         :returns: A tuple of experimental sequences used.
@@ -120,8 +121,9 @@ class Loader(core.Loader):
             result = query.one()
             return (result.exp_seq_id_1, result.exp_seq_id_2)
 
-    def align_sequences(self, corr_id, ref, target): ## rename !! align_sequences
-        """Run the alignment on two sequences. This will do an alignment are
+    def align_sequences(self, corr_id, ref, target):
+        """
+        Run the alignment on two sequences. This will do an alignment and
         return lists that contain the ids for aligned positions only.
 
         :param int corr_id: The correspondence id to use.
@@ -146,7 +148,7 @@ class Loader(core.Loader):
         entity_type_check = set()
         # this is a double check for entity types because we have checked sequence pairs when we are making sequence pairs.
         for result in query:
-            
+
             if result.entity_type == 'rna':
                 entity_type_check.add('rna')
             elif result.entity_type == 'dna':
@@ -154,15 +156,13 @@ class Loader(core.Loader):
             elif result.entity_type == 'hybrid':
                 entity_type_check.add('hybrid')
 
-        
+
         if len(entity_type_check) > 1:
             raise core.InvalidState('The entity types of the sequence pair are not identical')
         elif list(entity_type_check) == ['rna']:
             results = align([ref, target])
-
             data = []
             for index, result in enumerate(results):
-
                 data.append({
                     'exp_seq_position_id_1': result[0],
                     'exp_seq_position_id_2': result[1],
@@ -170,7 +170,7 @@ class Loader(core.Loader):
                     'index': index
                 })
             return data
-            
+
         elif list(entity_type_check) == ['dna']:
             results = one_to_one_alignment([ref, target])
             data = []
@@ -182,10 +182,10 @@ class Loader(core.Loader):
                     'index': index
                 })
             return data
-           
+
         elif list(entity_type_check) == ['hybrid']:
-            raise core.InvalidState('The hybrid pair alignments have not defined.')
-        
+            raise core.InvalidState('The hybrid pair alignments have not been defined.')
+
         # return data
 
 
