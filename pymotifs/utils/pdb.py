@@ -65,8 +65,6 @@ class RnaPdbsHelper(object):
 
         resultIDs = []
 
-        print("Trying regular text version of the PDB query")
-
         # change http to https, v1 to v2, pager to paginate on 2022-07-20
         # limit to 10,000 rows on 2023-08-09 when PDB imposed that limit
         # need to use the paginate option when the number of results exceeds 10,000
@@ -90,8 +88,8 @@ class RnaPdbsHelper(object):
             response = requests.get(currenturl)
             jsonR = response.json()
 
-            print("Number of %s rows received is %d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
-            logger.info("Number of %s rows received is %d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
+            print("Number of %-9s rows received is %5d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
+            logger.info("Number of %-9s rows received is %5d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
 
             for item in jsonR["result_set"]:
                 resultIDs.append(item["identifier"])
@@ -103,8 +101,8 @@ class RnaPdbsHelper(object):
         #     logger.exception(err)
         #     raise GetAllRnaPdbsError("Failed getting all PDBs")
 
-        print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),",".join(molecule_types)))
-        logger.info("Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),",".join(molecule_types)))
+        print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),", ".join(molecule_types)))
+        logger.info("Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),", ".join(molecule_types)))
 
         return(sorted(resultIDs))
 
