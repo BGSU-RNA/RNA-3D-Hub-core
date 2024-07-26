@@ -16,9 +16,9 @@ import time
 
 from sqlalchemy.orm import aliased
 
-from orderEquivalenceClass import orderEquivalenceClassWithPathLength
-from orderBySimilarity import imputeNANValues
-from orderBySimilarity import treePenalizedPathLength
+from pymotifs.nr.orderEquivalenceClass import orderEquivalenceClassWithPathLength
+from pymotifs.nr.orderBySimilarity import imputeNANValues
+from pymotifs.nr.orderBySimilarity import treePenalizedPathLength
 
 from pymotifs import core
 from pymotifs import models as mod
