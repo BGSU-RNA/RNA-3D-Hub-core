@@ -34,8 +34,9 @@ from pymotifs.utils import discrepancy as disc
 from pymotifs.correspondence.loader import Loader as CorrespondenceLoader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqUnitMappingLoader
 from pymotifs.ife.loader import Loader as IfeLoader
-from pymotifs.units.centers import Loader as CenterLoader
-from pymotifs.units.rotation import Loader as RotationLoader
+# from pymotifs.units.centers import Loader as CenterLoader
+# from pymotifs.units.rotation import Loader as RotationLoader
+from pymotifs.units.center_rotation import Loader as CenterRotationsLoader
 
 from pymotifs.nr.groups.simplified import Grouper
 
@@ -81,12 +82,13 @@ class Loader(core.SimpleLoader):
 
     """The dependencies for this stage"""
     dependencies = set([CorrespondenceLoader, ExpSeqUnitMappingLoader,
-                        IfeLoader, CenterLoader, RotationLoader])
+                        IfeLoader, CenterRotationsLoader])
     # dependencies = set([])
 
 
-    def known_unit_entries(self, table):
-        """Create a set of (pdb, chain) tuples for all chains that have entries
+    def known_unit_entries(self, table, molecule_type):
+        """
+        Create a set of (pdb, chain) tuples for all chains that have entries
         in the given table. This relies upon the table having a unit_id column
         that can be joined to unit_info.
 
@@ -101,9 +103,7 @@ class Loader(core.SimpleLoader):
             A set of tuples of (pdb, chain).
         """
 
-        # we need to develop code to pass in the desired unit type
-        unit_type = 'dna'
-        unit_type = 'rna'
+        # filtering by unit_type_id might make this much slower ... paradoxically
 
         with self.session() as session:
             info = mod.UnitInfo
@@ -111,7 +111,7 @@ class Loader(core.SimpleLoader):
                                   info.chain,
                                   ).\
                 join(table, table.unit_id == info.unit_id).\
-                filter(info.unit_type_id  == unit_type).\
+                filter(info.unit_type_id  == molecule_type).\
                 distinct()
             return set((r.pdb_id, r.chain) for r in query)
 
@@ -170,9 +170,9 @@ class Loader(core.SimpleLoader):
         nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
 
         if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
-            molecule_types = ['DNA']
+            molecule_types = ['dna']
         else:
-            molecule_types = ['RNA']
+            molecule_types = ['rna']
 
         # create lists of chain ids from each group, then data method will loop over all groups of chain ids
         groups_of_chain_ids = []
@@ -193,7 +193,8 @@ class Loader(core.SimpleLoader):
             if not groups:
                 raise core.InvalidState("No groups produced")
 
-            self.logger.info('Found %d groups of IFEs' % len(groups))
+            self.logger.info('Found %d groups of IFEs of type %s' % (len(groups),molecule_type))
+
             found_non_singleton_group = False
             for group in groups:
                 if 'members' in group and len(group['members']) > 1:
@@ -202,23 +203,36 @@ class Loader(core.SimpleLoader):
             if not found_non_singleton_group:
                 raise core.Skip("No groups of multiple chains to compare")
 
-            # only keep chain ids where the chain has at least one nucleotide with a base center and rotation matrix
-            # or we could just wait and look that up later
-            has_rotations = ft.partial(self.is_member,
-                                    self.known_unit_entries(mod.UnitCenters))                                                  ## modify `is_member` function
-            has_centers = ft.partial(self.is_member,
-                                    self.known_unit_entries(mod.UnitRotations))
+            self.logger.info('Setting up has_rotations for the given molecule type')
 
+            # only keep chain ids where the chain has at least one nucleotide with a
+            # base center and rotation matrix
+            # or we could just wait and look that up later
+            # this query is slow, it would be nice to avoid it
+            has_rotations = ft.partial(self.is_member,
+                                    self.known_unit_entries(mod.UnitRotations,molecule_type))                                                  ## modify `is_member` function
+
+            # it's enough to check for rotations; if no rotations, then no centers
+            # has_centers = ft.partial(self.is_member,
+            #                         self.known_unit_entries(mod.UnitCenters))
+
+            # the variable group['members'] is a list of dictionaries with tons of information
+
+            self.logger.info("Filtering out chains without centers and rotations")
             for group in groups:
+                self.logger.info('Checking a group of size %d' % len(group['members']))
                 chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
                 chains = it.ifilter(has_rotations, chains)
-                chains = it.ifilter(has_centers, chains)
+                # chains = it.ifilter(has_centers, chains)
                 chains = it.imap(op.itemgetter('db_id'), chains)
                 # convert chains from iterator to list of chain ids and append to list
                 # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
                 chain_list = sorted(set(chains))
                 if len(chain_list) > 1:
                     groups_of_chain_ids.append(chain_list)
+
+                if len(chain_list) < len(group['members']):
+                    self.logger.info('From %d to %d members in group' % (len(group['members']),len(chain_list)))
 
 
         # Note how many groups are left now that we filtered as above
@@ -307,7 +321,6 @@ class Loader(core.SimpleLoader):
                     # record the symmetry to use for this chain
                     chain_to_symmetries[chain] = symmetry
 
-                chain_unit_to_position = defaultdict(dict)
                 chain_to_simple_unit_id = defaultdict(set)
                 count = 0
                 # looping over the query again may be just as slow as the first time
