@@ -93,7 +93,7 @@ class Grouper(core.Base):
 
         self.logger.info("Loading ifes for %s with molecule_type %s" % (pdb,self.molecule_type))
 
-        if self.molecule_type == 'RNA':
+        if self.molecule_type == 'rna':
             nucleic_acid_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
             nucleic_acid_types.add('DNA/RNA Hybrid')
             nucleic_acid_types.add('NA-hybrid')
@@ -251,7 +251,7 @@ class Grouper(core.Base):
 
         pdbs = list(set(chain['pdb'] for chain in chains))
         helper = cr.Helper(self.config, self.session.maker)
-        alignments = helper.aligned_chains(pdbs, good=True)
+        alignments = helper.aligned_chains(pdbs, good=1)
         if not alignments:
             raise core.InvalidState("No alignments loaded")
         return alignments
@@ -570,7 +570,7 @@ class Grouper(core.Base):
             if c % 10000 == 0:
                 self.logger.info("Created %d connections" % c)
 
-        self.logger.info("Created %d connections" % len(graph))
+        self.logger.info("Created graph with %d vertices" % len(graph))
         return graph
 
     def build_groups(self, graph):
@@ -592,22 +592,22 @@ class Grouper(core.Base):
         :param dict discrepancies: The loaded discrepancies.
         :returns: A list of lists of the connected components.
         """
-        self.logger.info("nr_timing group start")
+        self.logger.info("group start")
         mapping = {}
         for chain in chains:
             mapping[chain['id']] = chain            ## actually this is ife ids here. Not sure why it calls chain here. very confusing
 
         groups = []
         graph = self.connections(chains, alignments, discrepancies) ## not sure what is here. It will return valid pairs about ife ids.
-        self.logger.info("nr_timing connection found, building groups")
+        self.logger.info("connection found, building groups")
         all_groups = self.build_groups(graph)
-        self.logger.info("nr_timing processing all groups")
+        self.logger.info("processing all groups")
         for ids in all_groups:                        ##
             # self.validate(graph, list(ids))                         ## I though this function was doing some specific works, but it just writes log info. Not important at all.
             group = [mapping[id] for id in ids]                     ##
             for subgroup in self.enforce_species_splitting(group):
                 groups.append(subgroup)
-        self.logger.info("nr_timing processed all groups")
+        self.logger.info("processed all groups")
         return groups
 
     def all_ifes(self, pdbs):
@@ -633,21 +633,20 @@ class Grouper(core.Base):
         'rank' which indicates the rank of the chain.
         """
 
-        self.logger.info("nr_timing Will group %i pdbs", len(pdbs))
+        self.logger.info("Will group %i pdbs", len(pdbs))
         ifes = self.all_ifes(pdbs)
         self.logger.info("Found %i ifes to cluster", len(ifes))
-        self.logger.info("nr_timing retrieving alignments to cluster")
+        self.logger.info("retrieving alignments to cluster")
         # print("retrieving alignments to cluster")
 
         alignments = self.alignments(ifes)
-        self.logger.info("nr_timing retrieving discrepancies to cluster")
+        self.logger.info("retrieving discrepancies to cluster")
         # print("retrieving discrepancies to cluster")
         discrepancy = self.discrepancies(ifes)
 
         grouped = set()
         groups = []
         self.logger.info("forming groups")
-        self.logger.info("nr_timing forming groups")
         # print("forming groups")
         for group in self.group(ifes, alignments, discrepancy):
             members = []
