@@ -8,7 +8,7 @@ import csv
 from pymotifs import core
 from pymotifs import utils
 from pymotifs import models as mod
-from pymotifs.utils import matlab
+# from pymotifs.utils import matlab
 from pymotifs.utils.correct_units import Correcter
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader

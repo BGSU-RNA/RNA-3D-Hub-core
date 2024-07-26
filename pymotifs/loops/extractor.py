@@ -7,20 +7,20 @@ import os
 import functools as ft
 
 from pymotifs import core
-from pymotifs.utils import matlab
+# from pymotifs.utils import matlab
 from pymotifs import models as mod
 from pymotifs.utils.correct_units import Correcter
 
 from pymotifs.pdbs.info import Loader as PdbLoader
 from pymotifs.units.info import Loader as UnitLoader
-from pymotifs.mat_files import Loader as MatLoader
+# from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 
 class Loader(core.SimpleLoader):
     loop_types = ['IL', 'HL', 'J3']
     merge_data = True
     allow_no_data = True
-    dependencies = set([PdbLoader, MatLoader, InteractionLoader, UnitLoader])
+    dependencies = set([PdbLoader, InteractionLoader, UnitLoader])
     save_loops = True
 
     def to_process(self, pdbs, **kwargs):
