@@ -6,15 +6,15 @@ and store them in unit_pairs_annotations, noting that program = 'python'
 from pymotifs import core
 from pymotifs import models as mod
 
-from pymotifs.units.info import Loader as UnitLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
+from pymotifs.units.info import Loader as UnitLoader
 
 # import these from the interactions directory; in the future, they'll be updated with fr3d-python
 from fr3d.classifiers.NA_pairwise_interactions import annotate_nt_nt_in_structure
 
 class Loader(core.SimpleLoader):
     allow_no_data = True
-    dependencies = set([UnitLoader, PdbLoader])
+    dependencies = set([PdbLoader, UnitLoader])
 
     @property
     def table(self):
