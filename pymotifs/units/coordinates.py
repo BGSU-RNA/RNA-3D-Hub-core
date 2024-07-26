@@ -18,9 +18,9 @@ import sys
 
 # safe for python 2 and 3
 if sys.version_info[0] == 2:
-    import cStringIO as sio
+    from cStringIO import StringIO
 else:
-    import io as sio
+    from io import StringIO
 
 class Loader(core.SimpleLoader):
     """The loader to store unit_coordinates data.
@@ -74,9 +74,9 @@ class Loader(core.SimpleLoader):
 
         # make the given residue into a structure
         structure = Structure([residue], pdb=pdb)
+        sio = StringIO()
         writer = CifAtom(sio, unit_ids=False, protect_lists_of_lists=True)
         writer(structure)
-        sio = sio.StringIO()
         raw = sio.getvalue()
         coords = []
         for line in raw.split('\n'):
