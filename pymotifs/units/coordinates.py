@@ -1,4 +1,5 @@
-"""A loader to store the coordinates for each residue in the database. This
+"""
+A loader to store the coordinates for each residue in the database. This
 will write one row per non-water residue into the unit_coordinates table in the
 database. Data is written in the CIF format. This will write only the ATOM
 level entries (atom_site in cif) but will not include the header lines like
@@ -46,9 +47,10 @@ class Loader(core.SimpleLoader):
             filter(mod.UnitInfo.pdb_id == pdb)
 
     def coordinates(self, pdb, residue):
-        """Compute a string of the coordinates in CIF format (the atom_site
+        """
+        Compute a string of the coordinates in CIF format (the atom_site
         block) for the given residue. Exclude the header and trailing lines
-        that are part of the atom_site entries, because these entries are meant 
+        that are part of the atom_site entries, because these entries are meant
         to be concatenated together for the coordinate server later.
 
         Parameters
@@ -65,6 +67,7 @@ class Loader(core.SimpleLoader):
             A string that represents CIF-formatted data for the given residue.
         """
 
+        # make the given residue into a structure
         structure = Structure([residue], pdb=pdb)
         sio = StringIO()
         writer = CifAtom(sio, unit_ids=False, protect_lists_of_lists=True)
@@ -72,7 +75,7 @@ class Loader(core.SimpleLoader):
         raw = sio.getvalue()
         coords = []
         for line in raw.split('\n'):
-            # Exclude header/comment lines that start with: 1) "data_", 
+            # Exclude header/comment lines that start with: 1) "data_",
             # 2) "loop_",  3) "_", or 4) "#".
             if not line or \
                     line.startswith('data_') or \
@@ -83,9 +86,10 @@ class Loader(core.SimpleLoader):
         return '\n'.join(coords)
 
     def data(self, pdb, **kwargs):
-        """Compute the coordinate entries for the given PDB. This will exclude
-        water molecules as those aren't generally worth displaying in the
-        coordinate server.
+        """
+        Compute the coordinate entries for the given PDB.
+        This will exclude water molecules as those aren't generally
+        worth displaying in the coordinate server.
 
         Parameters
         ----------
@@ -102,6 +106,7 @@ class Loader(core.SimpleLoader):
         for unit in structure.residues():
             if unit.sequence == 'HOH':
                 continue
+            # pass the pdb id and the entire unit to self.coordinates
             coord = self.coordinates(pdb, unit)
             self.logger.debug("data: PDB: %s" % pdb)
             self.logger.debug("data: unit: %s" % unit)
