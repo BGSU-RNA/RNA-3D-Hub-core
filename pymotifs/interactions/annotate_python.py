@@ -6,15 +6,16 @@ and store them in unit_pairs_annotations, noting that program = 'python'
 from pymotifs import core
 from pymotifs import models as mod
 
-from pymotifs.units.info import Loader as UnitLoader
 from pymotifs.pdbs.info import Loader as PdbLoader
+from pymotifs.units.info import Loader as UnitLoader
+from pymotifs.chains.info import Loader as ChainLoader
 
 # import these from the interactions directory; in the future, they'll be updated with fr3d-python
 from fr3d.classifiers.NA_pairwise_interactions import annotate_nt_nt_in_structure
 
 class Loader(core.SimpleLoader):
     allow_no_data = True
-    dependencies = set([UnitLoader, PdbLoader])
+    dependencies = set([PdbLoader, UnitLoader, ChainLoader])
 
     @property
     def table(self):
@@ -37,33 +38,39 @@ class Loader(core.SimpleLoader):
         :returns: A list of pdb ids to process.
         """
 
-        self.logger.info('Starting to_process query')
+        if len(pdbs) < 100:
+            # get (pdb_id,program) pairs in unit_pairs_interactions for these pdbs only; faster
+            with self.session() as session:
+                query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.program).\
+                filter(mod.UnitPairsInteractions.pdb_id.in_(pdbs)).\
+                distinct()
+                pdb_id_program_all = set([(result.pdb_id,result.program) for result in query])
+        else:
+            # get all (pdb_id,program) pairs in unit_pairs_interactions table
+            with self.session() as session:
+                query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.program).\
+                distinct()
+                pdb_id_program_all = set([(result.pdb_id,result.program) for result in query])
 
-        # structures that are already annotated by python
-        with self.session() as session:
-            query = session.query(mod.UnitPairsInteractions.pdb_id).\
-            filter(mod.UnitPairsInteractions.program == 'python').\
-            filter(mod.UnitPairsInteractions.pdb_id.in_(pdbs)).\
-            distinct()
-            annotated_python = set([result.pdb_id for result in query])
+        self.logger.info('Found %d pdb_id,program pairs' % len(pdb_id_program_all))
 
-        self.logger.info('Found %d pdb ids already annotated by python' % len(annotated_python))
+        pdbs_matlab = set([pdb_id for pdb_id,program in pdb_id_program_all if program == 'matlab'])
+        pdbs_python = set([pdb_id for pdb_id,program in pdb_id_program_all if program == 'python'])
 
+        # temporary:  annotate only DNA-containing structures with python code
         DNA_types = set([])
         DNA_types.add('DNA/RNA Hybrid')
         DNA_types.add('NA-hybrid')
         DNA_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
         DNA_types.add('Polydeoxyribonucleotide (DNA)')
         DNA_types.add('polydeoxyribonucleotide')
-
-        # temporary:  annotate only DNA-containing structures with python code
         with self.session() as session:
             query = session.query(mod.ChainInfo.pdb_id).\
             filter(mod.ChainInfo.entity_macromolecule_type.in_(DNA_types)).\
             distinct()
-            DNA_pdbs = set([result.pdb_id for result in query])
+            pdbs_DNA = set([result.pdb_id for result in query])
 
-        need_to_annotate = set(pdbs) & DNA_pdbs - annotated_python
+        need_to_annotate = set(pdbs) & pdbs_DNA - pdbs_python
 
         if len(need_to_annotate) == 0:
             raise core.Skip("No PDB files need pairwise interactions annotated with python")
