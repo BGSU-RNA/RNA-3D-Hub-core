@@ -227,7 +227,8 @@ class Loader(core.MassLoader):
         }
 
     def unique_sequences(self, sequences):
-        """Merge all sequences into unique sequences. It will merge all species
+        """
+        Merge all sequences into unique sequences. It will merge all species
         into a single set.
 
         :param list sequences: A list of the sequences loaded from
@@ -238,7 +239,7 @@ class Loader(core.MassLoader):
         mapping = {}
         for seq in sequences:
             sid = seq['id']
-            self.logger.info("show the seq info: %s %s %s %s" % (seq["id"], seq["length"],seq["taxonomy_id"],seq["entity_type"]))
+            self.logger.info("seq_id, length, taxid, type: %5s %4s %6s %9s" % (seq["id"], seq["length"],seq["taxonomy_id"],seq["entity_type"]))
             if sid not in mapping:
                 mapping[sid] = dict(seq)
                 # mapping[sid]['species'] = set([seq['species']])
