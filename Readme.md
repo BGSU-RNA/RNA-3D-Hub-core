@@ -20,7 +20,6 @@ Detailed documentation on this can be found at [readthedocs](http://rna-3d-hub-c
 * python 2.7 or newer (not tested with Python 3)
 * matlab R2007b or newer
 * MySQL server
-* [mlabwap](http://mlabwrap.sourceforge.net) for linking Matlab with Python
 * SQLAlchemy for connecting to the database
 * [fr3d.py](https://github.com/BGSU-RNA/fr3d-python)
 * _optional_: py.test for running Python unit tests

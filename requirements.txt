@@ -5,7 +5,6 @@ biopython==1.66
 click==6.2
 -e git+git@github.com:BGSU-RNA/fr3d-python.git@f79c7e21645bb0330dc0c207cce8fa44c90ee6a3#egg=fr3d-origin/develop
 mailer==0.8.1
-mlabwrap==1.1
 numpy==1.10.1
 py==1.4.31
 pytest==2.9.1
