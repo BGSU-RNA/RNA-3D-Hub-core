@@ -20,8 +20,7 @@ class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader, Downloader])
 
     allow_no_data = True  # don't recompute just because there is no data
-    mark = True           # note each pdb process, don't process again
-    update_gap = datetime.timedelta(365)  # Update every 365 days
+    mark = True           # note each pdb when it is processed
 
     def to_process(self, pdbs, **kwargs):
         """

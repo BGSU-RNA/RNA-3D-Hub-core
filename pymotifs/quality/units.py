@@ -20,9 +20,7 @@ class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader, Downloader])
 
     allow_no_data = True  # don't recompute just because there is no data
-    mark = True           # note each pdb process, don't process again
-    use_marks = True      # skip files that have been marked
-    update_gap = datetime.timedelta(365)  # Update every 365 days
+    mark = True           # note each pdb when it is processed
 
     def to_process(self, pdbs, **kwargs):
         """Compute the PDBs to process. These are only the PDB's that have
@@ -42,7 +40,6 @@ class Loader(core.SimpleLoader):
         # search filenames to see what pdbs have quality data
         # known = set(self._create(qual.Utils).known(has_data=True))
 
-        self.logger.info('Query pdb_analysis_status to see what pdbs have been processed')
         # query pdb_analysis_status to see what pdbs have been processed
         with self.session() as session:
             query = session.query(mod.PdbAnalysisStatus.pdb_id).\
