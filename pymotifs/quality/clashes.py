@@ -5,6 +5,7 @@ is simple enough to create them.
 Database table is unit_clashes
 """
 
+import datetime
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.quality import utils as qual
@@ -16,8 +17,12 @@ from fr3d.unit_ids import decode
 
 
 class Loader(core.SimpleLoader):
-    allow_no_data = True
     dependencies = set([InfoLoader, Downloader])
+
+    allow_no_data = True  # don't recompute just because there is no data
+    mark = True           # note each pdb process, don't process again
+    use_marks = True      # skip files that have been marked
+    update_gap = datetime.timedelta(365)  # Update every 365 days
 
     def to_process(self, pdbs, **kwargs):
         """
@@ -84,16 +89,20 @@ class Loader(core.SimpleLoader):
         return self._create(qual.Utils).filename(pdb)
 
 
-    def compatabile_units(self, unit_id1, unit_id2):
+    def compatible_units(self, unit_id1, unit_id2):
         unit1 = decode(unit_id1)
         unit2 = decode(unit_id2)
-        return unit1['model'] == unit2['model'] and \
-            unit1['symmetry'] == unit2['symmetry']
+        return unit1['model'] == unit2['model']
+
+        # Omit the line about symmetry; units with different
+        # symmetries can be in the same structure and can clash
+        # return unit1['model'] == unit2['model'] and \
+        #     unit1['symmetry'] == unit2['symmetry']
 
 
     def as_clash(self, data):
         for unit_id1, unit_id2 in zip(*data['unit_ids']):
-            if not self.compatabile_units(unit_id1, unit_id2):
+            if not self.compatible_units(unit_id1, unit_id2):
                 raise core.InvalidState("Incompatible unit pair %s, %s" %
                                         (unit_id1, unit_id2))
 
@@ -140,9 +149,15 @@ class Loader(core.SimpleLoader):
 
         util = qual.Utils(self.config, self.session)
 
+        # get a dictionary from simplified 5-element keys to unit ids
+        # it's basically chain,residue number getting mapped to unit id
+        # but it allows for model to be specified, or maybe alt id, insertion code
         mapping = util.unit_mapping(pdb)
 
         data = self.parse(self.filename(pdb), mapping)
+
+        # data is an iterable of unit_clashes objects
+        # those have two unit ids, atoms, distance, and magnitude
 
         if not data:
             raise core.Skip("No clash data found for %s" % pdb)
