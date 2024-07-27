@@ -381,7 +381,7 @@ class Stage(base.Base):
         """
         try:
             if entry in self.skip:
-                raise Skip("Forced skip of %s" % entry)
+                raise Skip("Forced skip of %s" % str(entry))
         except Skip as err:
             raise err
         except Exception:
@@ -392,7 +392,7 @@ class Stage(base.Base):
             return True
 
         if self.been_long_enough(entry, **kwargs):
-            self.logger.info("Time gap for %s too large, recomputing" % entry)
+            self.logger.info("Time gap for %s too large, recomputing" % str(entry))
             return True
 
         is_missing = self.is_missing(entry, **kwargs)
@@ -402,10 +402,10 @@ class Stage(base.Base):
                 return False
 
         if is_missing:
-            self.logger.info("Missing data from %s. Will compute" % entry)
+            self.logger.info("Missing data from %s. Will compute" % str(entry))
             return True
 
-        self.logger.info("No need to compute %s", entry)
+        self.logger.info("No need to compute %s" % str(entry))
         return False
 
     def to_process(self, pdbs, **kwargs):
