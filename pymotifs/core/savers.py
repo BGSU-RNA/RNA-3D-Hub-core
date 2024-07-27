@@ -15,7 +15,7 @@ import gzip
 import shutil
 import collections as coll
 from contextlib import contextmanager
-import sys 
+import sys
 
 from pymotifs import utils as ut
 
@@ -299,7 +299,7 @@ class CsvSaver(FileHandleSaver):
         options = {}
         for key, value in self.csv_options.items():
             options[key] = kwargs.get(key, value)
-            if isinstance(options[key], basestring):
+            if isinstance(options[key], str):
                 options[key] = str(options[key])
 
         with super(CsvSaver, self).writer(entry, **kwargs) as handle:
