@@ -24,6 +24,8 @@ from pymotifs import utils as ut
 from pymotifs import models as mod
 from pymotifs.core import savers
 
+from sqlalchemy import desc
+
 # Files that should be skipped.  Add others as necessary, and note reason
 # for exclusion when known.
 #
@@ -59,7 +61,7 @@ class Stage(base.Base):
 
     update_gap = None
     dependencies = set()
-    mark = True
+    mark = True              # record in that the item has been processed
     skip_complex = True
     skip = []
     saver = None
@@ -160,10 +162,10 @@ class Stage(base.Base):
                 # Read the content of the file and wrap it in a BytesIO object
                 raw_content = raw.read()
                 bytes_io_raw = sio.BytesIO(raw_content)
-                
+
                 # Decode the content from bytes to str
                 decoded_content = bytes_io_raw.read().decode('utf-8')
-                
+
                 # Wrap the decoded content in a StringIO object to pass to Cif
                 string_io_raw = sio.StringIO(decoded_content)
                 return Cif(string_io_raw)
@@ -332,12 +334,13 @@ class Stage(base.Base):
         with self.session() as session:
             current = session.query(mod.PdbAnalysisStatus).\
                 filter_by(pdb_id=pdb, stage=self.name).\
+                order_by(mod.PdbAnalysisStatus.time.desc()).\
                 first()
             if not current:
                 return True
             current = current.time
-        # If this has been marked as done in the far future do it anyway. That
-        # is a silly thing to do
+        # If this has been marked as done in the far future do it anyway.
+        # That is a silly thing to do
         diff = abs(datetime.datetime.now() - current)
         return diff > self.update_gap
 
@@ -378,7 +381,7 @@ class Stage(base.Base):
         """
         try:
             if entry in self.skip:
-                raise Skip("Forced skip of %s", entry)
+                raise Skip("Forced skip of %s" % entry)
         except Skip as err:
             raise err
         except Exception:
@@ -389,7 +392,7 @@ class Stage(base.Base):
             return True
 
         if self.been_long_enough(entry, **kwargs):
-            self.logger.info("Time gap for %s too large, recomputing", entry)
+            self.logger.info("Time gap for %s too large, recomputing" % entry)
             return True
 
         is_missing = self.is_missing(entry, **kwargs)
@@ -399,7 +402,7 @@ class Stage(base.Base):
                 return False
 
         if is_missing:
-            self.logger.info("Missing data from %s. Will compute", entry)
+            self.logger.info("Missing data from %s. Will compute" % entry)
             return True
 
         self.logger.info("No need to compute %s", entry)
