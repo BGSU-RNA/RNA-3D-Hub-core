@@ -21,7 +21,6 @@ class Loader(core.SimpleLoader):
 
     allow_no_data = True  # don't recompute just because there is no data
     mark = True           # note each pdb process, don't process again
-    use_marks = True      # skip files that have been marked
     update_gap = datetime.timedelta(365)  # Update every 365 days
 
     def to_process(self, pdbs, **kwargs):
@@ -39,14 +38,26 @@ class Loader(core.SimpleLoader):
         pdbs : list
             List of PDB's that have validation data to process.
         """
-        known = set(self._create(qual.Utils).known(has_data=True))
 
-        pdbs_to_process = sorted(known.intersection(pdbs))
+        # search filenames to see what pdbs have quality data
+        # known = set(self._create(qual.Utils).known(has_data=True))
+
+        # query pdb_analysis_status to see what pdbs have been processed
+        with self.session() as session:
+            query = session.query(mod.PdbAnalysisStatus.pdb_id).\
+                filter(mod.PdbAnalysisStatus.stage == 'quality.clashes').\
+                distinct()
+
+            pdbs_processed = set()
+            for result in query:
+                pdbs_processed.add(result.pdb_id)
+
+        pdbs_to_process = set(pdbs) - pdbs_processed
 
         if len(pdbs_to_process) == 0:
             raise core.Skip("No PDBs to process for clashes")
 
-        return pdbs_to_process
+        return sorted(pdbs_to_process)
 
     def query(self, session, pdb):
         """

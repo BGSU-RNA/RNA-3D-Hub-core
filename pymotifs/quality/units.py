@@ -38,14 +38,28 @@ class Loader(core.SimpleLoader):
         pdbs : list
             List of PDB's that have validation data to process.
         """
-        known = set(self._create(qual.Utils).known(has_data=True))
 
-        pdbs_to_process = sorted(known.intersection(pdbs))
+        # search filenames to see what pdbs have quality data
+        # known = set(self._create(qual.Utils).known(has_data=True))
+
+        self.logger.info('Query pdb_analysis_status to see what pdbs have been processed')
+        # query pdb_analysis_status to see what pdbs have been processed
+        with self.session() as session:
+            query = session.query(mod.PdbAnalysisStatus.pdb_id).\
+                filter(mod.PdbAnalysisStatus.stage == 'quality.clashes').\
+                distinct()
+
+            pdbs_processed = set()
+            for result in query:
+                pdbs_processed.add(result.pdb_id)
+
+        pdbs_to_process = set(pdbs) - pdbs_processed
 
         if len(pdbs_to_process) == 0:
-            raise core.Skip("No PDBs to process for quality")
+            raise core.Skip("No PDBs to process for quality.units")
 
-        return pdbs_to_process
+        return sorted(pdbs_to_process)
+
 
     def filename(self, pdb):
         """Get the filename where the validation report of the PDB is stored.
