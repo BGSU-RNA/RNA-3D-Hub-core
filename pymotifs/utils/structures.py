@@ -136,7 +136,7 @@ class Structure(Base):
                      mod.ChainInfo.chain_id).\
                 filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
 
-            if isinstance(pdb, basestring):
+            if isinstance(pdb, str):
                 query = query.filter_by(pdb_id=pdb)
             else:
                 query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
