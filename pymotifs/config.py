@@ -75,10 +75,9 @@ def defaults():
             "loops_search_dir": os.path.join(base, "MotifAtlas", "aAa"),
             "log_dir": os.path.join(base, "MotifAtlas", "logs"),
             "releases_dir": os.path.join(base, "MotifAtlas", "Releases"),
-            "fr3d_root": os.path.join(base, "FR3D"),
+            "fr3d_root": os.path.join(base, "FR3D"),      # where .cif files are saved
             'quality_reports': os.path.join(base, "MotifAtlas", 'quality',
                                             'validation-reports'),
-            "pickle_fr3d": os.path.join(base, "pickle-FR3D"),
         },
         'recaculate': collections.defaultdict(lambda: False)
     }

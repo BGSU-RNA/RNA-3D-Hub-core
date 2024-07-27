@@ -8,14 +8,13 @@ pipeline without actually saving anything which can be useful for debugging
 specific stages.
 """
 
-import os
 import abc
-import csv
-import gzip
-import shutil
 import collections as coll
 from contextlib import contextmanager
-import sys
+import csv
+import gzip
+import os
+import shutil
 
 from pymotifs import utils as ut
 

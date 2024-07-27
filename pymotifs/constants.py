@@ -199,3 +199,9 @@ COMPSCORE_COEFFICENTS = {
 Set this variable to True when you want to rank every single equivalence class and write those rankings to nr_chains, for example, when the ranking system is changed
 """
 WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS =  False
+
+"""
+Directory to write data files to
+"""
+
+DATA_FILE_DIRECTORY = '/usr/local/pipeline/hub-core/data'

@@ -8,21 +8,18 @@ import pickle
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import DATA_FILE_DIRECTORY
 
 from pymotifs.chains.info import Loader as ChainLoader
-# from pymotifs.units.centers import Loader as CentersLoader
-# from pymotifs.units.rotation import Loader as RotationsLoader
 from pymotifs.units.center_rotation import Loader as CenterRotationsLoader
 from pymotifs.exp_seq.mapping import Loader as MappingLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
 
-from os import path
-
 
 class Exporter(core.Loader):
-    """Export unit data in pickle format, one file per
-    IFE-chain.
+    """
+    Export unit data in pickle format, one file per IFE-chain.
     """
 
 
@@ -31,7 +28,6 @@ class Exporter(core.Loader):
     mark = False
     dependencies = set([ChainLoader, CenterRotationsLoader,
                         PositionLoader, IfeInfoLoader, MappingLoader])
-    # dependencies = set()
 
     def has_data(self, entry, *args, **kwargs):
         #self.logger.info("has_data: entry: %s" % str(entry))
@@ -72,9 +68,7 @@ class Exporter(core.Loader):
 
         chain_string = pdb + '-' + str(mdl) + '-' + chn
 
-        self.logger.debug("filename: chain_string: %s" % chain_string)
-
-        return os.path.join("pickle-FR3D",chain_string + "_NA.pickle")
+        return os.path.join(DATA_FILE_DIRECTORY,'units',chain_string + "_NA.pickle")
 
 
     def to_process(self, pdbs, **kwargs):
@@ -107,7 +101,8 @@ class Exporter(core.Loader):
 
 
     def data(self, ichain, **kwargs):
-        """Get all unit listings for the given IFE-chain, centers and
+        """
+        Get all unit listings for the given IFE-chain, centers and
         rotations, and format them for convenient use by FR3D.
 
         Parameters
@@ -124,41 +119,9 @@ class Exporter(core.Loader):
         mdl = ichain[1]
         chn = ichain[2]
 
-        # with self.session() as session:
-        #     self.logger.debug("cenrot: Inside data retrieval routine")
-        #     self.logger.debug("cenrot: building query")
-
-        #     query = session.query(mod.UnitInfo.unit_id,
-        #                        mod.ExpSeqPosition.index.label('position_order'),
-        #                        mod.UnitCenters.x,
-        #                        mod.UnitCenters.y,
-        #                        mod.UnitCenters.z,
-        #                        mod.UnitRotations.cell_0_0,
-        #                        mod.UnitRotations.cell_0_1,
-        #                        mod.UnitRotations.cell_0_2,
-        #                        mod.UnitRotations.cell_1_0,
-        #                        mod.UnitRotations.cell_1_1,
-        #                        mod.UnitRotations.cell_1_2,
-        #                        mod.UnitRotations.cell_2_0,
-        #                        mod.UnitRotations.cell_2_1,
-        #                        mod.UnitRotations.cell_2_2).\
-        #              distinct().\
-        #              join(mod.UnitCenters, mod.UnitInfo.unit_id == mod.UnitCenters.unit_id).\
-        #              join(mod.UnitRotations, mod.UnitInfo.unit_id == mod.UnitRotations.unit_id).\
-        #              join(mod.ExpSeqUnitMapping, mod.UnitInfo.unit_id == mod.ExpSeqUnitMapping.unit_id).\
-        #              join(mod.ExpSeqPosition, mod.ExpSeqUnitMapping.exp_seq_position_id == mod.ExpSeqPosition.exp_seq_position_id).\
-        #              filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
-        #              filter(mod.UnitCenters.name == 'glycosidic').\
-        #              filter(mod.UnitInfo.pdb_id == pdb).\
-        #              filter(mod.UnitInfo.model == str(mdl)).\
-        #              filter(mod.UnitInfo.chain == chn).\
-        #              order_by(mod.ExpSeqPosition.index)
-
-        ## new query is here, we stopped using the exp_seq_position table to get the index.
         with self.session() as session:
-
             query = session.query(mod.UnitInfo.unit_id,
-                               mod.UnitInfo.chain_index.label('position_order'),
+                               mod.UnitInfo.chain_index,
                                mod.UnitCenters.x,
                                mod.UnitCenters.y,
                                mod.UnitCenters.z,
@@ -192,7 +155,7 @@ class Exporter(core.Loader):
 
             for row in query:
                 units.append(row.unit_id)
-                order.append(row.position_order - 1)
+                order.append(row.chain_index - 1)
                 cntrs.append(np.asarray([row.x, row.y, row.z]))
                 rttns.append(np.asarray([np.asarray([row.cell_0_0, row.cell_0_1, row.cell_0_2]),
                              np.asarray([row.cell_1_0, row.cell_1_1, row.cell_1_2]),
@@ -207,10 +170,6 @@ class Exporter(core.Loader):
             self.logger.debug("cenrot: rsset: %s" % str(rsset))
 
             return rsset
-            # if len(rsset[0]) != 0:
-            #     return rsset
-            # else:
-            #     pass
 
 
     def process(self, entry, **kwargs):
@@ -229,19 +188,11 @@ class Exporter(core.Loader):
             # print(len(self.data(entry)[0]))
             # print(len(self.data(entry)[0]) != 0)
 
-            webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
-
             filename = self.filename(entry)
 
             uinfo = self.data(entry)
 
             with open(filename, 'wb') as fh:
-                self.logger.debug("process: filename open: %s" % filename)
                 # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
                 pickle.dump(uinfo, fh, 2)
 
-            os.system("rsync -u %s %s" % (filename, webroot))
-            self.logger.debug("rsync -u %s %s" % (filename, webroot))
-
-        else:
-            pass

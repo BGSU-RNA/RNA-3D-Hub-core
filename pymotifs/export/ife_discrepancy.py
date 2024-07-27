@@ -1,16 +1,21 @@
+
+import os
 from sqlalchemy.orm import aliased
+
+from pymotifs.constants import DATA_FILE_DIRECTORY
 from pymotifs import core
 from pymotifs import models as mod
-
 from pymotifs.chain_chain.comparison import Loader as ChainComparisons
 
 class Exporter(core.Exporter):
-    '''Export discrepancy values of every possible ife id combination.
+    '''
+    Export discrepancy values of every possible ife id combination.
     '''
 
     # General setup
 
     dependencies = set([ChainComparisons])
+    mark = False   # do not record the list from to_process in pdb_analysis_status
 
     def filename(self, *args, **kwargs):
         """This will always return the configured path at
@@ -24,6 +29,7 @@ class Exporter(core.Exporter):
         """
         return None
 
+
     def to_process(self, pdbs, **kwargs):
 
         if len(pdbs) < 500:
@@ -34,7 +40,8 @@ class Exporter(core.Exporter):
 
 
     def process(self, pdb, **kwargs):
-        """ override the process method to simply load data,
+        """
+        override the process method to simply load data,
         which takes care of the writing, and nothing else
         needs to be returned or written
         """
@@ -43,22 +50,18 @@ class Exporter(core.Exporter):
 
     def data(self, pdb, **kwargs):
 
-        '''This method dumps the discrepancy for every possible combination of ife ids into a file for later import.
+        '''
+        This method writes the discrepancy for every possible combination
+        of ife ids into a file for later import.
         The data is pickled for easy reading and writing in python.
 
             :results: list of lists of the the two ife ids and their corresponding discrepancy.
         '''
 
         with self.session() as session:
-            self.logger.info("ife_discrepancy_dump: Inside data retrieval routine")
-            self.logger.info("ife_discrepancy_dump: Setting aliases")
-
             IC1 = aliased(mod.IfeChains)
             IC2 = aliased(mod.IfeChains)
             CCS = mod.ChainChainSimilarity
-
-            self.logger.info("ife_discrepancy_dump: Building Query")
-
             query = session.query(CCS.discrepancy,
                                   IC1.ife_id.label('ife1'),
                                   IC2.ife_id.label('ife2')).\
@@ -71,8 +74,6 @@ class Exporter(core.Exporter):
                                   distinct()
 #            query.all()
 
-            self.logger.info("ife_discrepancy_dump: Query Built")
-
             count = query.count()
             if not count:
                 self.logger.warning("No discrepancies found.")
@@ -84,8 +85,8 @@ class Exporter(core.Exporter):
             results = [[r.ife1, r.ife2, r.discrepancy] for r in query]
 
             # write into a file
-            with open('/var/www/html/discrepancy/IFEdiscrepancy.txt', 'w') as f:
-                self.logger.info("ife_discrepancy_dump: File Open")
+            self.logger.info("Writing IFEdiscrepancy.txt")
+            with open(os.path.join(DATA_FILE_DIRECTORY,'IFEdiscrepancy.txt'), 'w') as f:
                 for r in results:
                     f.write('%s\t%s\t%s\n' % (r[0], r[1], r[2]))
 

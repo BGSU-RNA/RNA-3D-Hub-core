@@ -8,6 +8,7 @@ import pickle
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import DATA_FILE_DIRECTORY
 
 from pymotifs.pdbs.info import Loader as InfoLoader
 
@@ -62,7 +63,7 @@ class Exporter(core.Loader):
 
         self.logger.info("filename: %s" % filename)
 
-        return os.path.join("/var/www/html/units",filename)
+        return os.path.join(DATA_FILE_DIRECTORY,filename)
 
     def to_process(self, pdbs, **kwargs):
         """
@@ -226,18 +227,10 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
 
-        copy_file = os.path.join("data",'NA_datafile.pickle') #change name?
+        datafile_name = os.path.join(DATA_FILE_DIRECTORY,'NA_datafile.pickle')
 
         pinfo = self.data(pdb)
 
-        with open(copy_file, 'wb') as fh:
-            self.logger.info("process: filename open: %s" % copy_file)
+        with open(datafile_name, 'wb') as fh:
+            self.logger.info("Writing %s" % datafile_name)
             pickle.dump(pinfo, fh, 2)
-
-        # if the file already exists, do not generate a new file
-        # filename = os.path.join("/var/www/html",'NA_datafile.pickle')
-
-        # os.system("ln -s %s %s" % (copy_file, filename))
-
-
-        pass

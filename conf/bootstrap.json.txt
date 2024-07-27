@@ -31,7 +31,7 @@
         "fr3d_root": "/home/pipeline/hub-core/FR3D/",
         "2ds_destination":  "/home/pipeline/hub-core/MotifAtlas/2d",
         "mlab_app": "/usr/local/bin/matlab",
-        "interactions_gz": "/home/pipeline/hub-core/pymotifs/interactions.gz",
+        "interactions_gz": "/home/pipeline/hub-core/data/interactions.gz",
         "cache": "/home/pipeline/hub-core/cache",
         "loops_gz": "/home/pipeline/hub-core/MotifAtlas/loops.gz"
     }

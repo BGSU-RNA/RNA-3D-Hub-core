@@ -5,11 +5,12 @@ More.
 
 """
 
-# imports that we really need
 from collections import defaultdict
 import datetime
 import gzip
 import os
+
+from pymotifs.constants import DATA_FILE_DIRECTORY
 import pymotifs.core as core
 from pymotifs import models as mod
 from sqlalchemy import or_
@@ -541,8 +542,6 @@ class Loader(core.Loader):
         print('Writing mappings to pdb_chain_to_rfam.txt')
         self.logger.info('chain_to_range_to_mapping has %i chains' % len(chain_to_range_to_mapping.keys()))
         self.write_mapping(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'pdb_chain_to_rfam.txt'),chain_to_range_to_mapping)
-        # write a copy to the web server
-        self.write_mapping(os.path.join('/var/www/html/data/alignments/rfam/','pdb_chain_to_rfam.txt'),chain_to_range_to_mapping)
 
         # when you need to re-align everything, you can use this list
         if False:
@@ -890,10 +889,6 @@ class Loader(core.Loader):
             alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_PDB_chains.fa' % family_id)
             self.rectify_alignment_file(pdb_alignment_file_sto,alignment_file_fa+".gz")
 
-            # copy PDB chain alignment to web server
-            copy_command = "cp %s /var/www/html/data/alignments/rfam/." % (alignment_file_fa + ".gz")
-            os.system(copy_command)
-
             # check to see if sequences from Rfam full family are already collected; if not, note that
             sequence_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_rfam_sequences.fa' % rfam_family)
             sequence_file_gz = sequence_file + ".gz"
@@ -967,8 +962,6 @@ class Loader(core.Loader):
             print("Rectifying alignment")
             alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined.fa' % family_id)
             self.rectify_alignment_file(combined_sto,alignment_file_fa+".gz")
-            copy_command = "cp %s /var/www/html/data/alignments/rfam/." % (alignment_file_fa + ".gz")
-            os.system(copy_command)
 
             # remove rfam_family from the list of rfam families to align
             with open(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'rfam_families_to_align.txt'),'w') as f:

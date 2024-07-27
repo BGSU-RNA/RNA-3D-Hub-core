@@ -8,6 +8,7 @@ import pickle
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import DATA_FILE_DIRECTORY
 
 from pymotifs.chains.info import Loader as ChainLoader
 # from pymotifs.units.centers import Loader as CentersLoader
@@ -16,8 +17,6 @@ from pymotifs.units.center_rotation import Loader as CenterRotationsLoader
 from pymotifs.exp_seq.mapping import Loader as MappingLoader
 from pymotifs.exp_seq.positions import Loader as PositionLoader
 from pymotifs.ife.info import Loader as IfeInfoLoader
-
-from os import path
 
 
 class Exporter(core.Loader):
@@ -74,7 +73,7 @@ class Exporter(core.Loader):
 
         self.logger.debug("filename: chain_string: %s" % chain_string)
 
-        return os.path.join("pickle-FR3D",chain_string + "_RNA.pickle")
+        return os.path.join(DATA_FILE_DIRECTORY,'units',chain_string + "_RNA.pickle")
 
 
     def to_process(self, pdbs, **kwargs):
@@ -200,17 +199,11 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
 
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
-
         filename = self.filename(entry)
 
         uinfo = self.data(entry)
 
         with open(filename, 'wb') as fh:
-            self.logger.debug("process: filename open: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(uinfo, fh, 2)
-
-        os.system("rsync -u %s %s" % (filename, webroot))
-        self.logger.debug("rsync -u %s %s" % (filename, webroot))
 

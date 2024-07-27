@@ -8,9 +8,7 @@ have very poor resolution when computing discrepancies. In these cases the
 chains will not show up in the final ordering.
 """
 
-import collections as coll
 from collections import defaultdict
-
 import numpy as np
 import time
 
@@ -22,10 +20,8 @@ from pymotifs.nr.orderBySimilarity import treePenalizedPathLength
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import DATA_FILE_DIRECTORY
 
-from pymotifs.constants import NR_CACHE_NAME
-
-# from pymotifs.nr.chains import Loader as NrChainLoader
 from pymotifs.nr.class_rank import Loader as NrClassRankLoader
 from pymotifs.nr.classes import Loader as NrClassLoader
 from pymotifs.nr.cqs import NrQualityLoader
@@ -338,7 +334,7 @@ class Loader(core.SimpleLoader):
                 # filter(nr1.nr_release_id == nr2.nr_release_id).\
                 # filter(nr1.nr_release_id == release_id).\
 
-            distances_revised = coll.defaultdict(lambda: coll.defaultdict(int))
+            distances_revised = defaultdict(lambda: defaultdict(int))
 
             ifes = set(m[0] for m in members)
 
@@ -408,7 +404,7 @@ class Loader(core.SimpleLoader):
                 filter(nr1.nr_release_id == nr_release_id).\
                 order_by(nr1.ife_id, nr2.ife_id)
 
-            distances = coll.defaultdict(lambda: coll.defaultdict(int))
+            distances = defaultdict(lambda: defaultdict(int))
             ifes = set(m[0] for m in members)
             for result in query:
                 if result.ife1 not in ifes or result.ife2 not in ifes:
@@ -593,7 +589,7 @@ class Loader(core.SimpleLoader):
             discDict = defaultdict(lambda: None)
             # put discrepancy information into a dictionary
             starttime = time.clock()
-            infileNameWithPath = "/var/www/html/discrepancy/IFEdiscrepancy.txt"
+            infileNameWithPath = os.path.join(DATA_FILE_DIRECTORY,"IFEdiscrepancy.txt")
             with open(infileNameWithPath,"r") as infile:
                 for line in infile:
                     fields = line.replace("\n","").split("\t")
