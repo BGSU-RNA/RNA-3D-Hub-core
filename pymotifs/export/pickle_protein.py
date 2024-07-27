@@ -1,37 +1,26 @@
-"""Module for export of resolution and methods of existing pdb files
+"""
+Export .pickle file of protein unit centers
 """
 
 import numpy as np
 import os
 import pickle
+from sqlalchemy import or_
 
 from pymotifs import core
 from pymotifs import models as mod
-
-from pymotifs.pdbs.info import Loader as InfoLoader
-
-from collections import defaultdict
-
-from os import path
-
-from sqlalchemy import or_
-from sqlalchemy.orm import aliased
-from sqlalchemy.sql import select
-from sqlalchemy.sql import union
-
+from pymotifs.constants import DATA_FILE_DIRECTORY
+from pymotifs.units.center_rotation import Loader as CenterRotationLoader
 
 
 class Exporter(core.Loader):
-    """Export pairs data in pickle format.
+    """
     """
 
-
     # General Setup
-    compressed = False 
-    mark = False 
-    dependencies = set([InfoLoader])
-    #dependencies = set()
-
+    compressed = False
+    mark = False
+    dependencies = set([CenterRotationLoader])
 
 
     def has_data(self, pdb, *args, **kwargs):
@@ -54,7 +43,7 @@ class Exporter(core.Loader):
 
         Parameters
         ----------
-        pdb : 
+        pdb :
 
         Returns
         -------
@@ -62,12 +51,10 @@ class Exporter(core.Loader):
             The path to write to.
         """
 
-
-        # filename = 'PDB_resolution_method.pickle'
         filename = pdb + '_protein.pickle'
 
-        self.logger.info("filename: filename: %s" % filename)
-        return os.path.join("/usr/local/pipeline/hub-core/pickle-FR3D",filename)
+        return os.path.join(DATA_FILE_DIRECTORY,filename)
+
 
     def to_process(self, pdbs, **kwargs):
         with self.session() as session:
@@ -76,18 +63,17 @@ class Exporter(core.Loader):
         pdb_ids = []
         for row in query:
             pdb_ids.append(row.pdb_id)
-        # print(pdb_ids[0:500])
         return pdb_ids
 
 
     def data(self, pdb, **kwargs):
         """
-            Look up all the existed pdbs to process.  Ignores the pdb input.
+        Export .pickle file of protein unit centers
         """
         with self.session() as session:
             query = session.query(mod.UnitInfo.unit_id,
                             mod.UnitInfo.pdb_id,
-                            mod.UnitInfo.number,
+                            mod.UnitInfo.chain_index,
                             mod.UnitInfo.unit_type_id,
                             mod.UnitCenters.name,
                             mod.UnitCenters.x,
@@ -95,42 +81,60 @@ class Exporter(core.Loader):
                             mod.UnitCenters.z).\
                             join(mod.UnitCenters, mod.UnitInfo.unit_id == mod.UnitCenters.unit_id).\
                             filter(mod.UnitInfo.pdb_id==pdb).\
-                            filter(or_(mod.UnitCenters.name == 'aa_fg',mod.UnitCenters.name == 'aa_backbone'))
-        ids = []
-        chainIndice = []
+                            filter(or_(mod.UnitCenters.name == 'aa_fg',mod.UnitCenters.name == 'aa_backbone')).\
+                            order_by(mod.UnitInfo.chain_index)
+
+            unit_id_to_data = {}
+            for row in query:
+                if not row.unit_id in unit_id_to_data:
+                    unit_id_to_data[row.unit_id] = {}
+                    unit_id_to_data[row.unit_id]['chain_index'] = row.chain_index
+                if row.name == 'aa_fg':
+                    unit_id_to_data[row.unit_id]['aa_fg'] = np.asarray([row.x,row.y,row.z])
+                elif row.name == 'aa_backbone':
+                    unit_id_to_data[row.unit_id]['aa_backbone'] = np.asarray([row.x,row.y,row.z])
+
+        unit_ids = []
+        chain_indices = []
         aa_fg = []
         aa_backbone = []
-        for row in query:
-            # result['ids'].append(row.unit_id)
-            # result['chainIndices'].append(str(row.number).replace('L',''))
-            # result['centers'].append([row.x,row.y,row.z])
-            if row.unit_id not in ids:
-                ids.append(row.unit_id)
-                chainIndice.append(int(str(row.number).replace('L','')))
-                if row.name == 'aa_fg':
-                    aa_fg.append((np.asarray([row.x,row.y,row.z])))
-                    aa_backbone.append(np.asarray([np.NaN,np.NaN,np.NaN]))
-                elif row.name == 'aa_backbone':
-                    aa_backbone.append((np.asarray([row.x,row.y,row.z])))
-                    aa_fg.append(np.asarray([np.NaN,np.NaN,np.NaN]))
+
+        for unit_id, data in unit_id_to_data.items():
+            unit_ids.append(unit_id)
+            chain_indices.append(data['chain_index'])
+            if 'aa_fg' in data:
+                aa_fg.append(data['aa_fg'])
             else:
-                if row.name == 'aa_fg':
-                    aa_fg[len(aa_fg)-1]=(np.asarray([row.x,row.y,row.z]))
-                elif row.name == 'aa_backbone':
-                    aa_backbone[len(aa_fg)-1]=(np.asarray([row.x,row.y,row.z]))
+                aa_fg.append(np.asarray([np.NaN,np.NaN,np.NaN]))
+            if 'aa_backbone' in data:
+                aa_backbone.append(data['aa_backbone'])
+            else:
+                aa_backbone.append(np.asarray([np.NaN,np.NaN,np.NaN]))
+
+        # old method, which was fragile
+        # for row in query:
+        #     if row.unit_id not in ids:
+        #         ids.append(row.unit_id)
+        #         chain_indices.append(int(str(row.chain_index).replace('L','')))
+        #         if row.name == 'aa_fg':
+        #             aa_fg.append((np.asarray([row.x,row.y,row.z])))
+        #             aa_backbone.append(np.asarray([np.NaN,np.NaN,np.NaN]))
+        #         elif row.name == 'aa_backbone':
+        #             aa_backbone.append((np.asarray([row.x,row.y,row.z])))
+        #             aa_fg.append(np.asarray([np.NaN,np.NaN,np.NaN]))
+        #     else:
+        #         if row.name == 'aa_fg':
+        #             aa_fg[len(aa_fg)-1]=(np.asarray([row.x,row.y,row.z]))
+        #         elif row.name == 'aa_backbone':
+        #             aa_backbone[len(aa_fg)-1]=(np.asarray([row.x,row.y,row.z]))
 
 
-
-
-
-        # print(ids[:10],chainIndice[:10],aa_fg[:10],aa_backbone[:10])
-
-        return [ids,chainIndice,aa_fg,aa_backbone]
-
+        return [unit_ids,chain_indices,aa_fg,aa_backbone]
 
 
     def process(self, pdb, **kwargs):
-        """Load centers/rotations data for the given IFE-chain.
+        """
+        Write amino acid centers data for the given pdb file
 
         Parameters
         ----------
@@ -138,30 +142,11 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
 
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
-
         filename = self.filename(pdb)
 
         pinfo = self.data(pdb)
 
-
         with open(filename, 'wb') as fh:
-            self.logger.info("process: filename open: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(pinfo, fh, 2)
-
-        os.system("rsync -u %s %s" % (filename, webroot))
-
-        #copy to unit folder 
-        copy_file = os.path.join("/var/www/html/units/",pdb + '_protein.pickle')
-        with open(copy_file, 'wb') as fh:
-            self.logger.info("process: copy_file open: %s" % copy_file)
-            # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
-            pickle.dump(pinfo, fh, 2)
-
-        os.system("rsync -u %s %s" % (copy_file, webroot))
-
-
-        pass
-
 
