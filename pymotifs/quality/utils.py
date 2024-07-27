@@ -152,12 +152,18 @@ class Utils(core.Base):
             query = session.query(mod.UnitInfo).\
                 filter_by(pdb_id=pdb)
 
+            c = 0
             for result in query:
                 entry = ut.row2dict(result)
                 generic_key = as_key(entry, ignore_model=True)
                 model_key = as_key(entry)
                 mapping[generic_key].add(result.unit_id)
                 mapping[model_key].add(result.unit_id)
+
+                # if c < 5:
+                #     c += 1
+                #     self.logger.info("Generic Mapping %s to %s" % (generic_key, result.unit_id))
+                #     self.logger.info("Model   Mapping %s to %s" % (model_key, result.unit_id))
 
         return mapping
 
@@ -322,7 +328,8 @@ class Parser(object):
 
                 # self.logger.info does not work here
 
-                print("Could not find unit id for %s which is %s" % (str(uid),residue.attrib))
+                # print("Could not find unit id for %s which is %s" % (str(uid),residue.attrib))
+                # print("A Could not find unit id for %s" % (str(uid)))
                 continue
 
                 # in the past, we would crash the pipeline
@@ -355,37 +362,44 @@ class Parser(object):
                 # Yes, that may result in unit ids with no validation information,
                 # but that has to be common enough that we can deal with it.
 
-                print("Could not find unit id for %s which is %s" % (str(uid),residue.attrib))
+                # self.logger.info does not work here
+
+                # print("Could not find unit id for %s which is %s" % (str(uid),residue.attrib))
+                # self.logger.info("B Could not find unit id for %s" % (str(uid)))
                 continue
 
                 # in the past, we would crash the pipeline
                 # raise core.InvalidState("Could not find unit id for %s which is %s" %
                 #                         (str(uid),residue.attrib))
 
-            if not mapping[uid]:
-                raise core.InvalidState("No unit ids known for %s", uid)
+            # if not mapping[uid]:
+            #     raise core.InvalidState("No unit ids known for %s", uid)
 
-            unit_ids = sorted(mapping[uid])
-            for clash in residue.findall('clash'):
-                data = self.clash_renamer(clash.attrib)
-                entry = clashes[data['cid']]
-                entry['magnitude'] = data['clashmag']
-                entry['distance'] = data['dist']
-                if not entry['unit_ids'][0]:
-                    entry['unit_ids'][0].extend(unit_ids)
-                    entry['atoms'][0] = data['atom']
-                elif not entry['unit_ids'][1]:
-                    entry['unit_ids'][1].extend(unit_ids)
-                    entry['atoms'][1] = data['atom']
-                    if len(entry['unit_ids'][1]) != len(entry['unit_ids'][0]):
-                        if len(entry['unit_ids'][0]) == 1:
-                            fill = entry['unit_ids'][0] * len(entry['unit_ids'][1])
-                            entry['unit_ids'] = (fill, entry['unit_ids'][1])
-                        else:
-                            raise core.InvalidState("Clash lengths do not align: %s, %s" %
-                                                    (residue.attrib, clash.attrib))
-                else:
-                    raise core.InvalidState("Too many unit ids")
-                clashes[data['cid']] = entry
+            if mapping[uid]:
+                unit_ids = sorted(mapping[uid])
+                for clash in residue.findall('clash'):
+                    data = self.clash_renamer(clash.attrib)
+                    entry = clashes[data['cid']]
+                    entry['magnitude'] = data['clashmag']
+                    entry['distance'] = data['dist']
+                    if not entry['unit_ids'][0]:
+                        entry['unit_ids'][0].extend(unit_ids)
+                        entry['atoms'][0] = data['atom']
+                        clashes[data['cid']] = entry
+                    elif not entry['unit_ids'][1]:
+                        entry['unit_ids'][1].extend(unit_ids)
+                        entry['atoms'][1] = data['atom']
+                        if len(entry['unit_ids'][1]) != len(entry['unit_ids'][0]):
+                            if len(entry['unit_ids'][0]) == 1:
+                                fill = entry['unit_ids'][0] * len(entry['unit_ids'][1])
+                                entry['unit_ids'] = (fill, entry['unit_ids'][1])
+                                clashes[data['cid']] = entry
+                    # Just don't fuss so much about clashes that don't make sense 2024-07-27 CLZ
+                    #         else:
+                    #             raise core.InvalidState("Clash lengths do not align: %s, %s" %
+                    #                                     (residue.attrib, clash.attrib))
+                    # else:
+                    #     raise core.InvalidState("Too many unit ids")
+                    # clashes[data['cid']] = entry
 
         return clashes.values()
