@@ -3,6 +3,7 @@ process the downloaded validation reports and use them to populate the
 units_quality table.
 """
 
+import datetime
 import itertools as it
 
 import pymotifs.core as core
@@ -17,7 +18,11 @@ class Loader(core.SimpleLoader):
     """The loader to fetch and store quality data for structures.
     """
     dependencies = set([InfoLoader, Downloader])
-    allow_no_data = True
+
+    allow_no_data = True  # don't recompute just because there is no data
+    mark = True           # note each pdb process, don't process again
+    use_marks = True      # skip files that have been marked
+    update_gap = datetime.timedelta(365)  # Update every 365 days
 
     def to_process(self, pdbs, **kwargs):
         """Compute the PDBs to process. These are only the PDB's that have
@@ -127,10 +132,7 @@ class Loader(core.SimpleLoader):
         """
         with open(filename, 'rb') as raw:
             parser = qual.Parser(raw.read())
-            try :
-                return it.imap(self.as_quality, parser.nts(mapping))
-            except AttributeError:
-                return map(self.as_quality, parser.nts(mapping))
+            return map(self.as_quality, parser.nts(mapping))
 
     def data(self, pdb, **kwargs):
         """Compute the quality assignments for residues in the structure. This
