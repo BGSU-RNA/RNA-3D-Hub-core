@@ -113,7 +113,7 @@ class Groups(core.Reporter):
                 distinct()
 
             data = {}
-            grouped = it.imap(row2dict, query)
+            grouped = map(row2dict, query)
             grouped = it.groupby(grouped, op.itemgetter('pdb_id'))
             for pdb_id, results in grouped:
                 proteins = coll.defaultdict(list)

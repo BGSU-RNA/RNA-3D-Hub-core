@@ -321,7 +321,7 @@ class Loader(core.SimpleLoader):
 
         mapping = self.mapping(pdb)
         as_quality = ft.partial(self.as_quality, mapping)
-        data = it.imap(as_quality, parser.nts())
+        data = map(as_quality, parser.nts())
         data = it.chain.from_iterable(data)
-        return it.imap(lambda d: mod.UnitQuality(**d), data)
+        return map(lambda d: mod.UnitQuality(**d), data)
 

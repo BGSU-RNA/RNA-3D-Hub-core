@@ -60,7 +60,7 @@ class Loader(core.SimpleLoader):
             # # print(333333)
             # with self.session() as session:
             #     query = session.query(mod.IfeChains.ife_id).\
-            #             filter(mod.IfeChains.ife_id == group.id) 
+            #             filter(mod.IfeChains.ife_id == group.id)
             # # print(222222222222)
             # # for row in query:
             # #     print(row.ife_id)
@@ -80,7 +80,7 @@ class Loader(core.SimpleLoader):
     def data(self, pdb_id, **kwargs):
         grouper = Grouper(self.config, self.session.maker)
         groups = grouper(pdb_id)
-        groups = it.imap(self.as_group, groups)
+        groups = map(self.as_group, groups)
         groups = it.chain.from_iterable(groups)
         groups = list(groups)
 

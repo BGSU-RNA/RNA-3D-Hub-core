@@ -140,7 +140,7 @@ class Grouper(core.Base):
                 self.logger.warn("No ifes found for %s" % pdb)
                 return []
 
-            grouped = it.imap(result2dict, query)    ## This is confusing. The result2dict function returns "A dictionary with the keys from the query". I am not sure what is the keys for a joined query.
+            grouped = map(result2dict, query)
 
             # self.logger.info('show the value of the "grouped" variable%s'%grouped)
             ## example ('d:', {u'is_accompanying': 0, u'is_integral': 1, 'name': 'A', u'sequence': 'CAAAGAAAAG', 'pdb': '7OOO', 'method': 'X-RAY DIFFRACTION', u'length': 10L, 'db_id': 139555L, 'bp': 0L, 'species': 32630L, u'resolution': 2.57, 'id': '7OOO|1|A+7OOO|1|B'})
@@ -512,7 +512,7 @@ class Grouper(core.Base):
         :returns: The list of db_ids whic are not in the matrix.
         """
 
-        missing = it.imap(op.itemgetter('db_id'), ifes)
+        missing = map(op.itemgetter('db_id'), ifes)
         missing = it.ifilterfalse(lambda c: c in matrix, missing)
         return bool(list(missing))
 
@@ -615,7 +615,7 @@ class Grouper(core.Base):
         return groups
 
     def all_ifes(self, pdbs):
-        ifes = it.imap(self.ifes, pdbs)                         ## pass in pdbs one by one to the self.ifes function, and generated a iterable output.
+        ifes = map(self.ifes, pdbs)                         ## pass in pdbs one by one to the self.ifes function, and generated a iterable output.
         ifes = it.chain.from_iterable(ifes)                     ## not sure what happens here but one element of this output must be a dict type. However, I do not understand why it is a dict type.
         ifes = it.ifilter(self.valid_ife, ifes)                 ## not sure what happens here.
         ifes = list(ifes)

@@ -83,6 +83,6 @@ class Exporter(core.Exporter):
         if len(pdbs) < 100:
             raise core.Skip("Too few pdb files being processed to write all interactions")
 
-        interactions = it.imap(self.interactions, pdbs)
+        interactions = map(self.interactions, pdbs)
         interactions = it.chain.from_iterable(interactions)
         return interactions

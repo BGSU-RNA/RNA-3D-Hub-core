@@ -81,7 +81,7 @@ class Reporter(core.Reporter):
         pdbs = []
         for pdb, pairs in grouped:
             pdbs.append(pdb)
-            data.append((pdb, list(it.imap(op.itemgetter(1), pairs))))
+            data.append((pdb, list(map(op.itemgetter(1), pairs))))
         loop_release = self.guess_loop_release(pdbs, **kwargs)
         return [(loop_release, tuple(data))]
 

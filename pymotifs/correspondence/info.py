@@ -289,7 +289,7 @@ class Loader(core.MassLoader):
         """
 
         self.logger.info("Using %i pdbs", len(pdbs))
-        seqs = it.imap(self.look_up_sequences, pdbs)
+        seqs = map(self.look_up_sequences, pdbs)
         # self.logger.info("show the it.map's result: %s" % seqs)
         seqs = it.chain.from_iterable(seqs)
         seqs = self.unique_sequences(seqs)
@@ -343,7 +343,7 @@ class Loader(core.MassLoader):
         pairs = sorted(pairs, key=lambda p: (p[0]['id'], p[1]['id']))
 
         # convert the pairs into the database format
-        pairs = it.imap(self.ids_with_column_names, pairs)
+        pairs = map(self.ids_with_column_names, pairs)
 
         # convert to list to execute all the steps above
         self.logger.info("Converting pairs to list")

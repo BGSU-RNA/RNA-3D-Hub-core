@@ -100,7 +100,5 @@ class Loader(core.SimpleLoader):
         """
 
         structure = self.structure(pdb)
-        try :
-            return it.imap(self.as_unit, structure.residues())  
-        except AttributeError:
-            return map(self.as_unit, structure.residues())
+
+        return map(self.as_unit, structure.residues())

@@ -219,7 +219,7 @@ class Structure(Base):
                 filter(mod.LoopsAll.pdb_id == pdb).\
                 order_by(mod.LoopsAll.loop_id, mod.LoopPositions.position)
 
-            grouped = it.groupby(it.imap(ut.row2dict, query),
+            grouped = it.groupby(map(ut.row2dict, query),
                                  lambda a: a['loop_id'])
 
             for loop_id, positions in grouped:

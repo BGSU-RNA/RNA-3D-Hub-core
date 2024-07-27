@@ -332,7 +332,7 @@ class Builder(core.Base):
             List of groups with 'parents' entries and 'name' filled out.
         """
 
-        ife_count = it.imap(lambda g: len(g['members']), groups)
+        ife_count = map(lambda g: len(g['members']), groups)
         ife_count = sum(ife_count)
 
         self.logger.info("Naming %i groups with %i ifes",
@@ -342,7 +342,7 @@ class Builder(core.Base):
         known = Known(self.config, self.session)
         named = namer(groups, parents, known.handles(molecule_type))
 
-        named_count = it.imap(lambda g: len(g['members']), named)
+        named_count = map(lambda g: len(g['members']), named)
         named_count = sum(named_count)
         if named_count != ife_count:
             raise core.InvalidState("Missing named ifes")

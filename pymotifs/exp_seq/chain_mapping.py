@@ -41,9 +41,9 @@ class Loader(core.SimpleLoader):
 
         helper = Structure(self.session.maker)
         na_chains = ft.partial(helper.na_chains, return_id=True)
-        chains = it.imap(na_chains, pdbs)
+        chains = map(na_chains, pdbs)
         chains = it.chain.from_iterable(chains)
-        chains = it.imap(op.itemgetter(1), chains)
+        chains = map(op.itemgetter(1), chains)
 
         return sorted(set(chains))
 

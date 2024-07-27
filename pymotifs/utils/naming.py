@@ -188,7 +188,7 @@ class ChangeCounter(core.Base):
         """
 
         def as_set(entries):
-            mapped = it.imap(fn, entries)
+            mapped = map(fn, entries)
             return set(it.chain.from_iterable(mapped))
 
         current = as_set(groups)
