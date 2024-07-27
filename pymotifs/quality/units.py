@@ -3,9 +3,6 @@ process the downloaded validation reports and use them to populate the
 units_quality table.
 """
 
-import datetime
-import itertools as it
-
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.quality import utils as qual

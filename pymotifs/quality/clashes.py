@@ -5,7 +5,6 @@ is simple enough to create them.
 Database table is unit_clashes
 """
 
-import datetime
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.quality import utils as qual
