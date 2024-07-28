@@ -199,7 +199,7 @@ class FileHandleSaver(Saver):
             # change to w for Python 3 to not write binary
             mode = 'w'
 
-        print('savers.py line 199 is opening file %s with mode %s' % (filename, mode))
+        # print('savers.py line 199 is opening file %s with mode %s' % (filename, mode))
         with open(filename, mode) as raw:
             yield filename, raw
 
