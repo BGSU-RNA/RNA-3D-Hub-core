@@ -76,7 +76,8 @@ class Saver(Base):
 
     @contextmanager
     def _writer(self, pdb, **kwargs):
-        """Create the writer to use. If given the keyword argument 'dry_run' and
+        """
+        Create the writer to use. If given the keyword argument 'dry_run' and
         it is set to try then we will yield a function which simply logs the
         data given. Otherwise this calls the .writer method, which must be
         implemented by inheriting classes to create the writer.
@@ -165,7 +166,8 @@ class DatabaseSaver(Saver):
 
 
 class FileHandleSaver(Saver):
-    """A saver that produces a file handle as a writer. This is intended to be
+    """
+    A saver that produces a file handle as a writer. This is intended to be
     inherited from for creating new savers. This can't be used directly. It
     also has the ability to compress files after writing if needed. This will
     also check that the file is created and is not empty after writing. If that
@@ -189,8 +191,15 @@ class FileHandleSaver(Saver):
 
         filename = self.stage.filename(*args, **kwargs)
         mode = 'ab'
+        # change to w for Python 3 to not write binary
+        mode = 'a'
+
         if not self.merge and not kwargs.get('index'):
             mode = 'wb'
+            # change to w for Python 3 to not write binary
+            mode = 'w'
+
+        print('savers.py line 199 is opening file %s with mode %s' % (filename, mode))
         with open(filename, mode) as raw:
             yield filename, raw
 
