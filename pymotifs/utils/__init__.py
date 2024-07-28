@@ -1,5 +1,6 @@
-"""A module containing general utility functions. This are common utilities
-that show up across the pipeline.
+"""
+A module containing general utility functions.
+Thse are common utilities that show up across the pipeline.
 """
 
 import os
@@ -19,55 +20,57 @@ else:
     py_ver3 = True
     from io import BytesIO as StringIO
 
-try: # python2
-    xrange
-except NameError:  # python3
-    xrange = range
-
 
 """Generic logger for all utilities."""
 logger = logging.getLogger(__name__)
 
 
 class MissingFileException(Exception):
-    """This is raised when we can't find a file. For example a cif file for a
+    """
+    This is raised when we can't find a file. For example a cif file for a
     pdb does not exist.
     """
     pass
 
 
 class WebRequestFailed(Exception):
-    """Raised when we have failed all attempts at getting a url.
+    """
+    Raised when we have failed all attempts at getting a url.
     """
     pass
 
 
 class EmptyResponse(Exception):
-    """Raised when processing an empty response.
+    """
+    Raised when processing an empty response.
     """
     pass
 
 
 class RetryFailedException(Exception):
-    """Raised when all attempts at retrying something have failed.
+    """
+    Raised when all attempts at retrying something have failed.
     """
     pass
 
 
 class GetAllRnaPdbsError(Exception):
-    """Raised with we cannot get all RNA containing PDBS
+    """
+    Raised with we cannot get all RNA containing PDBS
     """
     pass
 
 
 class GetCustomReportError(Exception):
-    """Raised when we cannot get a custom report
+    """
+    Raised when we cannot get a custom report
     """
     pass
 
 
 def grouper(n, iterable):
-    """Group an iterable in chunks of a max size.
+    """
+    Group an iterable in chunks of a max size.
 
     Parameters
     ----------
@@ -273,7 +276,7 @@ class RetryHelper(object):
         """Attempt the action with the given number of retries.
         """
 
-        for index in xrange(self.retries):
+        for index in range(self.retries):
             try:
                 return self.action(*args, **kwargs)
             except Exception as err:
