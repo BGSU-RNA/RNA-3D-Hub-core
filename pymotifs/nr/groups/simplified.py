@@ -437,12 +437,8 @@ class Grouper(core.Base):
         """
 
         pairs = it.product(group, group)
-        # pairs = it.ifilter(lambda (a, b): a != b, pairs)
-        # pairs = it.ifilter(lambda (a, b): b not in connections[a], pairs)
-        # above lines were for python2
-        # coming lines are for python2 and 3
-        pairs = it.ifilter(lambda pair: pair[0] != pair[1], pairs)
-        pairs = it.ifilter(lambda pair: pair[1] not in connections[pair[0]], pairs)
+        pairs = filter(lambda pair: pair[0] != pair[1], pairs)
+        pairs = filter(lambda pair: pair[1] not in connections[pair[0]], pairs)
         pairs = list(pairs)
         for pair in pairs:
             self.logger.debug("Pair %s, %s not connected" % (pair[0], pair[1]))
@@ -513,7 +509,7 @@ class Grouper(core.Base):
         """
 
         missing = map(op.itemgetter('db_id'), ifes)
-        missing = it.ifilterfalse(lambda c: c in matrix, missing)
+        missing = it.filterfalse(lambda c: c in matrix, missing)
         return bool(list(missing))
 
     def pairs(self, chains, alignments, discrepancies):
@@ -544,7 +540,7 @@ class Grouper(core.Base):
 
         equiv = ft.partial(self.are_equivalent, alignments, discrepancies)
         pairs = it.combinations(chains, 2)
-        return it.ifilter(lambda p: equiv(*p), pairs)
+        return filter(lambda p: equiv(*p), pairs)
 
     def connections(self, chains, alignments, discrepancies):
         """Create a graph connections between all chains.
@@ -617,7 +613,7 @@ class Grouper(core.Base):
     def all_ifes(self, pdbs):
         ifes = map(self.ifes, pdbs)                         ## pass in pdbs one by one to the self.ifes function, and generated a iterable output.
         ifes = it.chain.from_iterable(ifes)                     ## not sure what happens here but one element of this output must be a dict type. However, I do not understand why it is a dict type.
-        ifes = it.ifilter(self.valid_ife, ifes)                 ## not sure what happens here.
+        ifes = filter(self.valid_ife, ifes)                 ## not sure what happens here.
         ifes = list(ifes)
 
         if not ifes:

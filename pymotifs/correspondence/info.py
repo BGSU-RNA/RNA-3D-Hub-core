@@ -7,15 +7,12 @@ It pairs rna with rna, dna with dna, hybrid with hybrid
 """
 
 import itertools as it
-# import functools as ft
-# from operator import itemgetter
 
 from pymotifs import core
 from pymotifs import utils as ut
 
 from pymotifs.models import ExpSeqInfo
 from pymotifs.models import ExpSeqPdb
-# from pymotifs.models import ChainSpecies
 from pymotifs.models import TaxidSpeciesDomain
 from pymotifs.models import ChainInfo
 from pymotifs.models import CorrespondenceInfo
@@ -26,9 +23,6 @@ from pymotifs.constants import CORRESPONDENCE_EXACT_CUTOFF
 
 from pymotifs.exp_seq.loader import Loader as ExpSeqLoader
 from pymotifs.chains.info import Loader as ChainInfoLoader
-# from pymotifs.chains.species import Loader as ChainSpeciesLoader
-
-from pymotifs import models as mod
 
 
 class Loader(core.MassLoader):
@@ -337,7 +331,7 @@ class Loader(core.MassLoader):
         pairs = self.pairs(pdbs)
 
         # keep only the ones that are close enough to align and not already in the table
-        pairs = it.ifilter(self.is_match, pairs)
+        pairs = filter(self.is_match, pairs)
 
         # sort the pairs by the sequence ids, only store them in that order
         pairs = sorted(pairs, key=lambda p: (p[0]['id'], p[1]['id']))

@@ -221,9 +221,9 @@ class Loader(core.SimpleLoader):
             self.logger.info("Filtering out chains without centers and rotations")
             for group in groups:
                 self.logger.info('Checking a group of size %d' % len(group['members']))
-                chains = it.ifilter(disc.valid_chain, group['members'])                                                           ##
-                chains = it.ifilter(has_rotations, chains)
-                # chains = it.ifilter(has_centers, chains)
+                chains = filter(disc.valid_chain, group['members'])                                                           ##
+                chains = filter(has_rotations, chains)
+                # chains = filter(has_centers, chains)
                 chains = it.imap(op.itemgetter('db_id'), chains)
                 # convert chains from iterator to list of chain ids and append to list
                 # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1

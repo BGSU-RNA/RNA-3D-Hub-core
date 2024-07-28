@@ -173,8 +173,7 @@ class Helper(core.Base):
                 is_good = bool(result.good_alignment)
                 pairs = it.product(exp_mapping[result.exp_seq_id_1],
                                    exp_mapping[result.exp_seq_id_2])
-                # pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
-                pairs = it.ifilter(lambda pair: pair[0] != pair[1], pairs)
+                pairs = filter(lambda pair: pair[0] != pair[1], pairs)
                 for name1, name2 in pairs:
                     mapping[name1][name2] = is_good
                     mapping[name2][name1] = is_good
@@ -182,8 +181,7 @@ class Helper(core.Base):
         if good is None:
             ids = it.chain.from_iterable(exp_mapping.values())
             pairs = it.product(ids, repeat=2)
-            # pairs = it.ifilter(lambda (n1, n2): n1 != n2, pairs)
-            pairs = it.ifilter(lambda pair: pair[0] != pair[1], pairs)
+            pairs = filter(lambda pair: pair[0] != pair[1], pairs)
             pairs = list(pairs)
             for name1, name2 in pairs:
                 if name2 not in mapping[name1]:

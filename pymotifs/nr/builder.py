@@ -6,7 +6,7 @@ that class.
 
 import copy
 import itertools as it
-import collections as coll
+from collections import defaultdict
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -100,7 +100,7 @@ class Known(core.Base):
                 filter(func.substr(mod.NrClasses.name, 1, 3) == query_key).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
             self.logger.info("finish the query of the class function in the nr/builder.py")
-            results = coll.defaultdict(empty)
+            results = defaultdict(empty)
             for result in query:
                 member = as_member(result)
                 results[result.class_id]['members'].append(member)
@@ -174,7 +174,7 @@ class Known(core.Base):
                 filter(mod.IfeInfo.new_style == True).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrChains.rank)
 
-            results = coll.defaultdict(empty)
+            results = defaultdict(empty)
             for result in query:
                 member = as_member(result)
                 results[result.class_id]['members'].append(member)
@@ -411,8 +411,8 @@ class Builder(core.Base):
         updated = copy.deepcopy(group)
 
         filtered = updated['members']
-        filtered = it.ifilter(lambda c: c['resolution'] is not None, filtered)
-        filtered = it.ifilter(lambda c: c['resolution'] <= cutoff, filtered)
+        filtered = filter(lambda c: c['resolution'] is not None, filtered)
+        filtered = filter(lambda c: c['resolution'] <= cutoff, filtered)
         filtered = list(filtered)
         if not filtered:
             return {}

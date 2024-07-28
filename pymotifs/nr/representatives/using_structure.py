@@ -81,9 +81,9 @@ class Increase(Representative):
         def same(chain):
             return bp(chain) == bp(best) and len(chain) == len(best)
 
-        possible = it.ifilter(lambda c: len(c) >= len(best), members)
-        possible = it.ifilter(lambda c: bp(c) >= bp(best), possible)
-        possible = it.ifilterfalse(same, possible)
+        possible = filter(lambda c: len(c) >= len(best), members)
+        possible = filter(lambda c: bp(c) >= bp(best), possible)
+        possible = it.filterfalse(same, possible)
         return sorted(possible, key=bp_per_nt, reverse=True)
 
     def increase(self, first, second, key):

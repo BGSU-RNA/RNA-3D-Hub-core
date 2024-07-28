@@ -45,7 +45,7 @@ class Reporter(core.Reporter):
             return []
         data = []
 
-        structured = it.ifilter(op.attrgetter('is_structured'), ifes)
+        structured = filter(op.attrgetter('is_structured'), ifes)
         for ife1, ife2 in it.combinations(structured, r=2):
             data.append({
                 'Pdb': pdb,
