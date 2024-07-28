@@ -1,65 +1,67 @@
-"""This is a module to extract loops from structures. It uses matlab to find
+"""
+This is a module to extract loops from structures.
+It uses matlab to find
 all loops and then will save them in the correct location as specificed by
 'locations'. It also stores the the loop information into the database.
 """
 
-import os
-import functools as ft
-
 from pymotifs import core
-# from pymotifs.utils import matlab
 from pymotifs import models as mod
 from pymotifs.utils.correct_units import Correcter
 
 from pymotifs.pdbs.info import Loader as PdbLoader
 from pymotifs.units.info import Loader as UnitLoader
-# from pymotifs.mat_files import Loader as MatLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 
+
 class Loader(core.SimpleLoader):
-    loop_types = ['IL', 'HL', 'J3']
+    loop_types = ['IL', 'HL', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'J9', 'J10']
     merge_data = True
     allow_no_data = True
-    dependencies = set([PdbLoader, InteractionLoader, UnitLoader])
+    dependencies = set([PdbLoader, UnitLoader, InteractionLoader])
     save_loops = True
 
     def to_process(self, pdbs, **kwargs):
 
-        # prevent trying to extract loops with Matlab when filling in DNA releases
-        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
-        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
-        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
-            raise core.Skip("loops.extractor does not annotate DNA structures")
-
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
                 distinct()
-            known = [r.pdb_id for r in query]
+            pdbs_with_loops = set([r.pdb_id for r in query])
 
-        to_use = sorted(set(pdbs).difference(known))  #We want to process ONLY the pdbs that are NOT in loop_info
+        pdbs_needed = sorted(set(pdbs) - set(pdbs_with_loops))
 
-        self.logger.info("Extracting loops from %s" % to_use)
+        if not pdbs_needed:
+            raise core.Skip("no new PDB ids need loops extracted")
 
-        if not to_use:
-            raise core.Skip("no new PDB ids that need loops extracted")
-        return to_use
+        return pdbs_needed
+
 
     def query(self, session, pdb):
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
+
     def remove(self, *args, **kwargs):
-        """Does not actually remove from the DB. We always want the loop ids to
+        """
+        Does not actually remove from the database.
+        We always want the loop ids to
         be consistent so we do not automatically remove loops.
+
+        However, it would be good to be able to mark loops as being obsolete.
         """
 
         self.logger.info("We don't actually remove data for loop extractor")
 
+
     def normalizer(self, pdb):
-        """Create a callable that will normalize a comma seperated string of
+        """
+        Create a callable that will normalize a comma separated string of
         unit ids for a particular structure.
 
+        Tries to correct unit ids.
+        Probably not needed with Python loop extraction!
+
         :param str pdb: The PDB id to use for normalization.
-        :returns: A callable that will translate a comma seperated string of
+        :returns: A callable that will translate a comma separated string of
         unit ids in the structure.
         """
 
@@ -75,8 +77,10 @@ class Loader(core.SimpleLoader):
 
         return fn
 
+
     def _next_loop_number_string(self, current):
-        """Compute the next loop number string. This will pad to either 3 or 6
+        """
+        Compute the next loop number string. This will pad to either 3 or 6
         characters with zeros. If the next number is over 999 we use 6,
         otherwise 3 as the length to pad to.
 
@@ -89,13 +93,15 @@ class Loader(core.SimpleLoader):
             return str(next_number).rjust(6, '0')
         return str(next_number).rjust(3, '0')
 
+
     def _get_loop_id(self, units, pdb_id, loop_type, mapping):
-        """Compute the loop id to use for the given unit string. This will
+        """
+        Compute the loop id to use for the given unit string. This will
         build a string like IL_1S72_001 or IL_4V4Q_001. In structures with
         over 999 loops, we will pad with zeros to 6 characters, but keep the
-        stanadrd padding to 3 characters otherwise.
+        standard padding to 3 characters otherwise.
 
-        :units: The concanated unit or nt id string.
+        :units: The concatenated unit or nt id string.
         :pdb_id: The pdb id to use.
         :loop_type: The type of loop.
         :mapping: A mapping from unit string to known loop_id.
@@ -103,7 +109,6 @@ class Loader(core.SimpleLoader):
         :returns: A string of the new loop id.
         """
 
-        # format examples: IL_1S72_001, IL_4V4Q_001
         if units not in mapping:
             str_number = self._next_loop_number_string(len(mapping))
             loop_id = '%s_%s_%s' % (loop_type, pdb_id, str_number)
@@ -113,15 +118,22 @@ class Loader(core.SimpleLoader):
 
         return mapping[units]
 
+
     def _get_fake_loop_id(self, pdb_id, loop_type):
+        """
+        Indicate that a structure has been checked for a certain type
+        of loop and none were found.
+        """
 
         loop_id = '%s_%s_%s' % (loop_type, pdb_id, '000')
         self.logger.info('Created new fake loop id %s for pdb_id %s', loop_id, pdb_id)
 
         return loop_id
 
+
     def _extract_loops(self, pdb, loop_type, mapping, normalize):
-        """Uses matlab to extract the loops for a given structure of a specific
+        """
+        Uses matlab to extract the loops for a given structure of a specific
         type. This will also save the loop files into the correct place.
 
         :param str pdb: PDB file to process
@@ -131,16 +143,22 @@ class Loader(core.SimpleLoader):
         :returns: The extracted loops.
         """
         try:
-            mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
-            [loops, count, err_msg] = mlab.extractLoops(pdb, loop_type, nout=3)
+            # mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
+            # [loops, count, err_msg] = mlab.extractLoops(pdb, loop_type, nout=3)
+            loops = []
+            count = 0
+            err_msg = ''
         except Exception as err:
             self.logger.exception(err)
             raise err
 
         if err_msg != '':
-            raise core.MatlabFailed(err_msg)
+            raise core.InvalidState(err_msg)
 
-        if loops == 0:
+        if count == 0:
+
+            raise core.Skip("No loops found for %s in %s" % (loop_type, pdb))
+
             self.logger.warning('No %s in %s', loop_type, pdb)
             loop_id = self._get_fake_loop_id(pdb, loop_type)
             return [mod.LoopInfo(loop_id=loop_id,
@@ -155,10 +173,10 @@ class Loader(core.SimpleLoader):
                 unit_ids='',
                 loop_name='')]
 
-        self.logger.info('Found %i %s loops', count, loop_type)
+        self.logger.info('Found %i %s loops' % (count, loop_type))
 
         data = []
-        for index in xrange(count):
+        for index in range(count):
             loop = loops[index].AllLoops_table
             full_id = normalize(loop.full_id)
             loop_id = self._get_loop_id(full_id, pdb, loop_type, mapping)
@@ -177,38 +195,44 @@ class Loader(core.SimpleLoader):
                 unit_ids=','.join(full_id),
                 loop_name=loop.loop_name))
 
-        if self.save_loops:
-            self.__save__(loops, self.config['locations']['loops_mat_files'])
+        # if self.save_loops:
+        #     self.__save__(loops, self.config['locations']['loops_mat_files'])
 
         return data
 
+
     def __save__(self, loops, location):
-        """Save the loops to a file.
+        """
+        Save the loops to a file.
 
         :loops: The loops matlab proxy object to save.
-        :param str location: The location to saave to.
+        :param str location: The location to save to.
         """
 
-        if not os.path.isdir(location):
-            os.makedirs(location)
+        # if not os.path.isdir(location):
+        #     os.makedirs(location)
 
         try:
-            mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
-            [status, err_msg] = mlab.aSaveLoops(loops, location, nout=2)
+            status = 0
+            pass
+            # mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
+            # [status, err_msg] = mlab.aSaveLoops(loops, location, nout=2)
         except Exception as err:
             self.logger.exception(err)
             raise err
 
-        if status != 0:
-            self.logger.error(mlab.last_stdout)
-            raise matlab.MatlabFailed("Could not save all loop mat files")
+        # if status != 0:
+        #     self.logger.error(mlab.last_stdout)
+        #     raise matlab.MatlabFailed("Could not save all loop mat files")
 
         self.logger.debug("Saved loop mat files")
 
+
     def _mapping(self, pdb_id, loop_type, normalizer):
-        """Compute a mapping from the nts to the loop id.  This is used
-        for setting ids by either looking up the old known id or creating a new
-        one if no one is found.
+        """
+        Compute a mapping from the nts to the loop id.
+        This is used for setting ids by either looking up the old
+        known id or creating a new one if no one is found.
 
         :pdb_id: The pdb id to search.
         :loop_type: The loop type.
@@ -228,16 +252,20 @@ class Loader(core.SimpleLoader):
                 mapping[unit_ids] = result.loop_id
         return mapping
 
+
     def data(self, pdb, **kwargs):
-        """Compute the loops in the given structure.
+        """
+        Compute the loops in the given structure.
 
         :param str pdb: The structure to get loops for.
         :returns: A list of all the loops.
         """
 
         data = []
-        normalizer = self.normalizer(pdb)
+        normalizer = self.normalizer(pdb)  # function to apply to each loop
         for loop_type in self.loop_types:
+            # map unit ids to loop ids
             mapping = self._mapping(pdb, loop_type, normalizer)
+            # and now finally extract the loops
             data.extend(self._extract_loops(pdb, loop_type, mapping, normalizer))
         return data

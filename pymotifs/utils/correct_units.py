@@ -1,4 +1,5 @@
-"""This package contains tools to try and correct poorly translated unit ids.
+"""
+This package contains tools to try and correct poorly translated unit ids.
 """
 
 import itertools as it
