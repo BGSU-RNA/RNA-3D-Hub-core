@@ -1,9 +1,7 @@
+from collections import defaultdict
 import itertools as it
 import functools as ft
-import collections as coll
 import operator as op
-
-from sqlalchemy.sql.expression import func
 
 from pymotifs import core
 from pymotifs import utils as ut
@@ -99,7 +97,7 @@ class IfeLoader(core.Base):
         #         data['length'] = result.count
         # data['length'] will also calculate water units, this query works for rna structures even if the rna has water units.
         # however, it is not work for dna structures for some unknown reason.
-        # thus, ekko directly make it equal to the 'full_length'. 
+        # thus, ekko directly make it equal to the 'full_length'.
         # Dr. Zirbel believes we should used the full_length insteal of making different lengths for hybrid chains
         data['length'] = data['full_length']
 
@@ -126,7 +124,7 @@ class IfeLoader(core.Base):
 
         pdb = ifes[0].pdb
         helper = st.BasePairQueries(self.session)
-        interactions = coll.defaultdict(dict)
+        interactions = defaultdict(dict)
         pairs = it.product((ife.chain for ife in ifes), repeat=2)
         counter = ft.partial(helper.cross_chain, pdb, count=True, family='cWW',
                              sym_op=sym_op)
@@ -214,12 +212,14 @@ class IfeGroup(object):
     def __init__(self, *chains):
         self.is_structured = False
         self._chains = set()
-        self.integral = None
+        self.integral = None        # starts off with no integral chain
         for chain in chains:
             self.add(chain)
 
-    @property
-    def id(self):
+    # @property
+    def group_id(self):
+        # as a property, you call it with group.id and not group.id()
+        # but then python 3 kept using the getattr method instead of this method
         # group id is where the ife id is stored
         # before 2024-06-20, the group in the "rest" case did not list all chains
         if self.is_structured:
@@ -256,16 +256,33 @@ class IfeGroup(object):
         if structured is not None:
             fn = lambda c: c.is_structured == structured
 
-        chains = it.ifilter(fn, self._chains)
+        chains = filter(fn, self._chains)
         return sorted(chains, reverse=True)
 
     def add(self, chain):
+
+        # print("A self.integral is    %s" % (self.integral))
+
         self._chains.add(chain)
-        self.integral = max(self.integral, chain)
+
+        # self.integral = max(self.integral, chain)
+        # previous line was confusing, replacing it with following 2024-07-27 CLZ
+        if not self.integral:
+            # print("New    integral chain %s" % (chain))
+            self.integral = chain
+        elif self.integral < chain:  # use the __lt__ method IFEChain
+            # print("Better integral chain %s" % (chain))
+            self.integral = chain
+
+        # print("B self.integral is    %s" % (self.integral))
+
         if chain.is_structured:
             self.is_structured = True
 
     def merge(self, group):
+        """
+        Merge IFEgroup group into the current IFEgroup
+        """
         for chain in group.chains():
             self.add(chain)
 
@@ -273,22 +290,33 @@ class IfeGroup(object):
         if key in set(['pdb', 'internal', 'full_length', 'length',
                        'completeness', 'bps', 'model']):
             if self.integral:
+                # it seems that self.integral identifies "the" integral chain
                 return getattr(self.integral, key)
             return None
+
+        # print('ife.helpers is being asked for key %s that is not in the list' % (key))
+        # print('That is a sign that some code is asking for the wrong thing')
         raise AttributeError(key)
 
     def __len__(self):
         return len(self._chains)
 
+    # the following comparison methods don't make sense to me because they use
+    # a field that is not part of IFEgroup
+    # Let's try commenting them out and see what goes wrong.
+
     def __ne__(self, other):
-        return not other or self.id != other.id
+        return not other or self.group_id() != other.group_id()
 
     def __eq__(self, other):
-        return other and self.id == other.id
+        return other and self.group_id() == other.group_id()
 
     def __lt__(self, other):
-        return other and self.id < other.id
+        return other and self.group_id() < other.group_id()
+
+    def __hash__(self):
+        return hash(self.group_id())
 
     def __repr__(self):
-        # to-string method
-        return '<IfeGroup: id %r (integral %r)>' % (self.id, self.integral)
+        # to-string method, but using self.id does not seem to work in Python 3
+        return '<IfeGroup: %s (integral %r)>' % (self.group_id(), self.integral)

@@ -4,7 +4,7 @@ elements (IFEs).
 These elements are the building blocks of equivalence classes and representative sets.
 Some chains make an IFE by themselves and that is OK.
 When two chains are internally structured, as with eukaryotic LSU and 5.8S, they are grouped together.
-When two chains are unstructured, as with two chains making a simple helix, they are grouped together.
+When two chains are individually unstructured, as with two chains making a simple helix, they are grouped together.
 tRNAs are structured but mRNAs generally are not in 3D structures, and it will be better not
 to make an IFE for a tRNA-mRNA pair.
 Hammerhead ribozymes sometimes have one structured chain and one unstructured.
@@ -72,7 +72,6 @@ class Grouper(core.Base):
         if not ife1.is_structured or not ife2.is_structured:
             return True
         count = float(count)  # avoid integer division
-
 
         # avoid division by zero in the next line
         return max(count/(0.001+ife1.internal), count/(0.001+ife2.internal)) >= CUTOFF
@@ -165,7 +164,7 @@ class Grouper(core.Base):
         interactions.
         """
 
-        # groups is a dictionary that maps chain.id like 1ABC|1|X to IfeGroup object
+        # groups is a dictionary that maps chain.id like 1ABC|1|X to IfeGroup objects
         groups = {}
         for chain in chains:
             groups[chain.id] = IfeGroup(chain)
@@ -214,9 +213,6 @@ class Grouper(core.Base):
         structured = [chain for chain in chains if chain.is_structured]
         unstructured = [chain for chain in chains if not chain.is_structured]
 
-        # self.logger.info('142   structured:', structured)
-        # self.logger.info('143 unstructured:', unstructured)
-
         strip = set()
         for chain1, chain2 in self.joinable_s_u(rest, structured, unstructured):
             # print('Differently structured joinable chains %s and %s' % (chain1, chain2))
@@ -235,12 +231,29 @@ class Grouper(core.Base):
             # plan to remove the unstructured chain from the groups
             # that is, do not create an IFE for the unstructured chain
             # now that it is added to an IFE
-            strip.add(groups[chain2.id].id)
-            # print('strip is now %s' % strip)
+
+            # maybe this is the right way to identify which chains to avoid
+            strip.add(chain2.id)
+
+            # strip.add(groups[chain2.id].id)
+            # print('ife.grouper variable strip is now %s' % strip)
+
+        # Avoid making an IFE whose key is an unstructured chain but
+        # which is linked to structured chains,
+        # because those could link together many structured chains,
+        # like when one mRNA binds to many tRNAs
+        group_list = []
+        for chain_id, group in groups.items():
+            if not chain_id in strip:
+                group_list.append(group)
+                # print('group type is %s' % type(group))
+                # print('adding group  %s' % group.group_id())
 
         # There will be duplicated groups so we must get only the unique ones.
         # We sort to ensure that the ordering is consistent.
-        groups = sorted(set(g for g in groups.values() if g.id not in strip))
+        group_set = set(group_list)
+
+        groups = sorted(group_set, key = lambda x: x.group_id())
 
         # Some times chains A and B form an IFE, and also A, B, and C form an IFE
         # Exclude the smaller IFE in favor of the larger IFE

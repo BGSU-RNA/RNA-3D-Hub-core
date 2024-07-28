@@ -1,6 +1,6 @@
 """
 Load all IFE data for a given set of pdbs into the database.
-For each PDB id, it groups chains together into IFEs.
+For each PDB id, group chains together into IFEs.
 """
 
 import itertools as it
@@ -39,7 +39,7 @@ class Loader(core.SimpleLoader):
         # print("bp_count               %s" % group.bps)
 
         yield mod.IfeInfo(
-            ife_id=group.id,
+            ife_id=group.group_id(),
             pdb_id=group.pdb,
             model=group.model,
             chain_count=len(group),
@@ -52,7 +52,7 @@ class Loader(core.SimpleLoader):
             new_style=True)
 
         for index, chain in enumerate(group.chains()):
-            print(group.id)
+            # print(group.group_id())
             reference = (index == 0)
             integral = (reference or chain.is_structured)
             accompanying = not integral
@@ -71,7 +71,7 @@ class Loader(core.SimpleLoader):
             yield mod.IfeChains(
                 chain_id=chain.db_id,
                 model=chain.model,
-                ife_id=group.id,
+                ife_id=group.group_id(),
                 is_integral=integral,
                 is_structured=chain.is_structured,
                 is_accompanying=accompanying,
