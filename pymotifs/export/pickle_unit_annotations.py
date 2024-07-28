@@ -3,12 +3,12 @@ Module for export of unit annotations like syn/anti
 in pickle format for FR3D.
 """
 
-import numpy as np
 import os
 import pickle
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import DATA_FILE_DIRECTORY
 
 from pymotifs.units.bond_orientation import Loader as OrientationLoader
 
@@ -69,9 +69,9 @@ class Exporter(core.Loader):
 
         chain_string = pdb + '-' + str(mdl) + '-' + chn
 
-        self.logger.debug("filename: chain_string: %s" % chain_string)
+        filename = chain_string + "_NA_unit_annotations.pickle"
 
-        return os.path.join("pickle-FR3D",chain_string + "_NA_unit_annotations.pickle")
+        return os.path.join(DATA_FILE_DIRECTORY, filename)
 
 
     def to_process(self, pdbs, **kwargs):
@@ -161,14 +161,5 @@ class Exporter(core.Loader):
         annotations = self.data(entry)
 
         with open(filename, 'wb') as fh:
-            self.logger.debug("process: filename open: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(annotations, fh, 2)
-
-        # location of files made available via the web server
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
-
-        # synchronize current file between hub-core and web server directories
-        os.system("rsync -u %s %s" % (filename, webroot))
-        self.logger.debug("rsync -u %s %s" % (filename, webroot))
-

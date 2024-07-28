@@ -7,6 +7,7 @@ import pickle
 
 from pymotifs import core
 from pymotifs import models as mod
+from pymotifs.constants import DATA_FILE_DIRECTORY
 
 from pymotifs.chains.info import Loader as ChainLoader
 # from pymotifs.units.centers import Loader as CentersLoader
@@ -71,10 +72,9 @@ class Exporter(core.Loader):
 
         chain_string = pdb + '-' + str(mdl) + '-' + chn
 
-        self.logger.debug("filename: chain_string: %s" % chain_string)
+        filename = chain_string + "_NA_phosphate_sugar.pickle"
 
-        # write directly to web directory, don't keep two copies of the file
-        return os.path.join(self.config['locations']['fr3d_pickle_base'],"units",chain_string + "_NA_phosphate_sugar.pickle")
+        return os.path.join(DATA_FILE_DIRECTORY, filename)
 
 
     def data(self, ichain, **kwargs):
@@ -199,17 +199,11 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
 
-        webroot = self.config['locations']['fr3d_pickle_base'] + "/units/"
-
         filename = self.filename(entry)
 
         uinfo = self.data(entry)
 
         with open(filename, 'wb') as fh:
-            self.logger.debug("process: filename open: %s" % filename)
             # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
             pickle.dump(uinfo, fh, 2)
-
-#        os.system("rsync -u %s %s" % (filename, webroot))
-#        self.logger.debug("rsync -u %s %s" % (filename, webroot))
 
