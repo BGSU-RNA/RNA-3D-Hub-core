@@ -1,14 +1,15 @@
-"""Load the loop positions into the database. This will run the matlab code to
+"""
+Load the loop positions into the database.
+This will run the matlab code to
 extract the loops and place them into the database.
 """
 
-import os
 import csv
 
 from pymotifs import core
 from pymotifs import utils
 from pymotifs import models as mod
-# from pymotifs.utils import matlab
+
 from pymotifs.utils.correct_units import Correcter
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
@@ -25,12 +26,6 @@ class Loader(core.Loader):
 
     def to_process(self, pdbs, **kwargs):
 
-        # prevent trying to extract loops with Matlab when filling in DNA releases
-        nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
-        self.logger.info("nr_molecule_parent_current: %s" % nr_molecule_parent_current)
-        if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
-            raise core.Skip("loops.positions does not annotate DNA structures")
-
         # make a list of pdb ids that don't yet have loop information in both
         # loop_info and loop_positions table
         with self.session() as session:
@@ -43,7 +38,7 @@ class Loader(core.Loader):
             dn_process = [r.pdb_id for r in query]
 
         # pdb ids that don't aleady have data in both loop_info and loop_positions
-        to_use = sorted(set(pdbs).difference(dn_process)) #Remove pdbs with entries in loop_positions
+        to_use = sorted(set(pdbs).difference(dn_process))
 
         # find pdb ids that have no loops at all
         # those are indicated by the presence of a 000 loop with type NA
@@ -72,15 +67,15 @@ class Loader(core.Loader):
             dn_process = [r.pdb_id for r in query]
 
 
-        # problemtic pdbs for now, they are wasting so much time and do nothing 2023-10-04
+        # problematic pdbs for now, they are wasting so much time and do nothing 2023-10-04
         # these PDB files are being skipped because they have an HL in loop_info that has unit ids from different chains, which is not an HL, and so positions.py should stop trying to extract them.
-        problemtic = ['1A34', '1BYX', '1ELH', '1G3A', '1H1K', '1MHK', '1N35', '1N38', '1TFW', '1TFY', '1UON', '2BGG', '2E9Z', '2F8S', '2F8T', '2G91', '2I91', '2M1O', '2M23', '2NUG', '2R92', '2RFK', '2VAL', '354D', '377D', '3AVU', '3AVV', '3AVW', '3AVX', '3AVY', '3BSN', '3BSO', '3H5X', '3H5Y', '3HTX', '3KNA', '3LRN', '3MQK', '3NCU', '3NMA', '3PLA', '3VNV', '3ZC0', '4E78', '4GV9', '4K4U', '4K4V', '4KTG', '4OQ8', '4W5O', '4W5Q', '4W5R', '4W5T', '1G2J', '1L3Z', '4NGB', '4NGC', '4NGD', '4NGG', '4NH3', '4NH5', '4NH6']
+        problematic = ['1A34', '1BYX', '1ELH', '1G3A', '1H1K', '1MHK', '1N35', '1N38', '1TFW', '1TFY', '1UON', '2BGG', '2E9Z', '2F8S', '2F8T', '2G91', '2I91', '2M1O', '2M23', '2NUG', '2R92', '2RFK', '2VAL', '354D', '377D', '3AVU', '3AVV', '3AVW', '3AVX', '3AVY', '3BSN', '3BSO', '3H5X', '3H5Y', '3HTX', '3KNA', '3LRN', '3MQK', '3NCU', '3NMA', '3PLA', '3VNV', '3ZC0', '4E78', '4GV9', '4K4U', '4K4V', '4KTG', '4OQ8', '4W5O', '4W5Q', '4W5R', '4W5T', '1G2J', '1L3Z', '4NGB', '4NGC', '4NGD', '4NGG', '4NH3', '4NH5', '4NH6']
 
         # Remove pdbs with no loops
         to_use = sorted(set(to_use).difference(dn_process))
 
-        # Remove problemtic pbds
-        to_use = sorted(set(to_use).difference(problemtic))
+        # Remove problematic pbds
+        to_use = sorted(set(to_use).difference(problematic))
 
         if not to_use:
             raise core.Skip("Nothing to process")
@@ -154,25 +149,17 @@ class Loader(core.Loader):
         :returns: The annotations produced by matlab.
         """
 
-        mlab = matlab.Matlab(self.config['locations']['fr3d_root'])
-        path = str(os.path.join(self.precomputed, pdb))
-        try:
-            if not os.path.exists(path):
-                os.mkdir(path)
-        except:
-            raise core.InvalidState("Could not create %s for matlab" % path)
+        # # run Matlab to get detailed data about each loop, save in output_file
+        # [output_file, err_msg] = mlab.loadLoopPositions(path, nout=2)
 
-        # run Matlab to get detailed data about each loop, save in output_file
-        [output_file, err_msg] = mlab.loadLoopPositions(path, nout=2)
-        if err_msg != '':
-            raise matlab.MatlabFailed(err_msg)
+        # # read output_file and parse
+        # data = self.parse(output_file)
 
-        # read output_file and parse
-        data = self.parse(output_file)
+        data = []
 
-        if remove:
-            # clean up the temporary output file
-            os.remove(output_file)
+        # if remove:
+        #     # clean up the temporary output file
+        #     os.remove(output_file)
 
         return data
 
