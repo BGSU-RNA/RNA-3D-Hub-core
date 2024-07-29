@@ -188,7 +188,7 @@ class Helper(core.Base):
                     mapping[name1][name2] = False
                     mapping[name2][name1] = False
         else:
-            for name in it.chain.from_iterable(exp_mapping.itervalues()):
+            for name in it.chain.from_iterable(exp_mapping.values()):
                 if name not in mapping:
                     mapping[name] = {}
 
