@@ -2,7 +2,7 @@ import os
 import logging
 import shutil
 import tempfile
-import itertools as it
+
 from pymotifs import core
 
 from Bio import SeqIO
@@ -93,7 +93,7 @@ def one_to_one_alignment(data): # one_to_one_alignemnt # name changed to same dn
     condition = len(data[0])<=20 and len(data[0])==len(data[1])
     condition = len(data[0])==len(data[1])
     if condition:
-        for i,j in it.izip(data[0]["ids"], data[1]["ids"]):
+        for i,j in zip(data[0]["ids"], data[1]["ids"]):
             mapping.append([i,j])
     else:
         raise core.Skip('aviod making alignments for more than 20 length of DNA sequences')

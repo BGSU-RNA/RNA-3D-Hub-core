@@ -312,8 +312,8 @@ class Loader(core.MassLoader):
         hybrid_pairs = it.combinations([f for f in seqs if f['entity_type']=='hybrid'],2)
         # pairs = list(rna_pairs)+list(dna_pairs)+list(hybrid_pairs)
         # self.logger.info("Found pairs %s", pairs)                           ## <itertools.combinations object at 0x7fb8f641dec0>
-        self_pairs = it.izip(seqs, seqs)                                    ## Ex. [({'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'}, {'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'})]
-        # self.logger.info("Found self_pairs %s" % (self_pairs))                 ## <itertools.izip object at 0x7fb8f6405bd8>
+        self_pairs = zip(seqs, seqs)                                    ## Ex. [({'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'}, {'species': {4932}, 'length': 76, 'id': 4177, 'entity_type': 'rna'})]
+        # self.logger.info("Found self_pairs %s" % (self_pairs))
         # return sorted(it.chain.from_iterable([self_pairs, pairs]),
         #               key=lambda p: (p[0]['id'], p[1]['id']))
 
