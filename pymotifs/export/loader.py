@@ -13,7 +13,7 @@ from pymotifs.core import StageContainer
 # from pymotifs.export.cifatom import Exporter as CifAtom
 from pymotifs.export.interactions import Exporter as InteractionExporter
 from pymotifs.export.loops import Exporter as LoopExporter
-from pymotifs.export.pickle_units_rna import Exporter as PickleURExporter
+# from pymotifs.export.pickle_units_rna import Exporter as PickleURExporter
 from pymotifs.export.pickle_pairs_rna import Exporter as PicklePRExporter
 from pymotifs.export.pickle_unit_annotations import Exporter as PickleUAExporter
 from pymotifs.export.ife_discrepancy import Exporter as IFEDiscrepancyExporter
@@ -25,4 +25,4 @@ class Exporter(StageContainer):
 
 #    stages = set([CifAtom, InteractionExporter, LoopExporter, PickleURExporter, PicklePRExporter])
 
-    stages = set([InteractionExporter, LoopExporter, PickleURExporter, PicklePRExporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter, NA_picklefileExporter])
+    stages = set([InteractionExporter, LoopExporter, PicklePRExporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter, NA_picklefileExporter])
