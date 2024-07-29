@@ -71,7 +71,7 @@ class Exporter(core.Loader):
 
         filename = chain_string + "_NA_unit_annotations.pickle"
 
-        return os.path.join(DATA_FILE_DIRECTORY, filename)
+        return os.path.join(DATA_FILE_DIRECTORY, 'units', filename)
 
 
     def to_process(self, pdbs, **kwargs):
