@@ -109,7 +109,7 @@ class Exporter(core.Loader):
 
             interactionToPair = defaultdict(list)
 
-            category_list = ['f_lwbp', 'f_stacks', 'f_bphs', 'f_brbs', 'f_so', 'f_coplanar', 'f_sugar_ribose', 'f_bss', 'f_covalent']
+            category_list = ['f_lwbp', 'f_stacks', 'f_bphs', 'f_brbs', 'f_so', 'f_coplanar', 'f_sugar_ribose', 'f_covalent', 'f_bss']
             for result in query:
                 unit_id_1 = result.unit_id_1
                 unit_id_2 = result.unit_id_2
@@ -119,26 +119,10 @@ class Exporter(core.Loader):
 
                 for category in category_list:
                     interaction = getattr(result, category)
-                    if interaction is not None and len(interaction) > 1:
-                       interactionToPair[interaction].append((unit_id_1, unit_id_2, result.f_crossing))
-                       self.logger.info("Recording: %s %s %s %s" % (unit_id_1, interaction, unit_id_2, result.f_crossing))
-
-                # if result.f_lwbp is not None and len(result.f_lwbp) > 2:
-                #     interactionToPair[result.f_lwbp].append((unit_id_1, unit_id_2, result.f_crossing))
-                #     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_lwbp, unit_id_1, unit_id_2, result.f_crossing))
-
-                # if result.f_stacks is not None and len(result.f_stacks) > 2:
-                #     interactionToPair[result.f_stacks].append((unit_id_1, unit_id_2, result.f_crossing))
-                #     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_stacks, unit_id_1, unit_id_2, result.f_crossing))
-
-                # if result.f_bphs is not None and len(result.f_bphs) > 2:
-                #     interactionToPair[result.f_bphs].append((unit_id_1, unit_id_2, result.f_crossing))
-                #     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_bphs, unit_id_1, unit_id_2, result.f_crossing))
-
-                # if result.f_brbs is not None and len(result.f_brbs) > 2:
-                #     interactionToPair[result.f_brbs].append((unit_id_1, unit_id_2, result.f_crossing))
-                #     self.logger.debug("type: units/constraint: %s : %s, %s / %s" % (result.f_brbs, unit_id_1, unit_id_2, result.f_crossing))
-
+                    if interaction is not None:
+                        interactionToPair[interaction].append((unit_id_1, unit_id_2, result.f_crossing))
+                        # self.logger.info("Recording: %s %s %s %s %s" % (category,unit_id_1, interaction, unit_id_2, result.f_crossing))
+                        # print("Recording: %s %s %s %s %s" % (category,unit_id_1, interaction, unit_id_2, result.f_crossing))
 
             return interactionToPair
 
