@@ -3,12 +3,13 @@ provided to NDB for information about all loops in all structures.
 """
 
 import itertools as it
+import os
 
 from pymotifs import core
 from pymotifs import models as mod
 
 from pymotifs.utils import row2dict
-
+from pymotifs.constants import DATA_FILE_DIRECTORY
 from pymotifs.loops.extractor import Loader as LoopLoader
 from pymotifs.loops.positions import Loader as PositionLoader
 
@@ -25,10 +26,13 @@ class Exporter(core.Exporter):
     mark = False
 
     def filename(self, *args, **kwargs):
-        """The filename to write to. It is always the configured
-        locations.loop_gz file.
         """
-        return self.config['locations']['loops_gz']
+        The filename to write to.
+        Should be available from /var/www/rna3dhub/data/loops.csv.gz
+        """
+
+        return os.path.join(DATA_FILE_DIRECTORY, 'loops.csv.gz')
+        # return self.config['locations']['loops_gz']
 
     def current_ml_release(self):
         """Fetch the current ml release. If there is no ml_release_id then we
