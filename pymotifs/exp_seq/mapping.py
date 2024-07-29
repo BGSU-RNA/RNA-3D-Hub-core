@@ -25,7 +25,13 @@ nucleic_acid_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
 nucleic_acid_types.add('Polydeoxyribonucleotide (DNA)')
 nucleic_acid_types.add('polydeoxyribonucleotide')
 
+
 class MappedChain(nt('MappedChain', ['id', 'chain_id', 'name'])):
+    """
+    id is exp_seq_chain_mapping_id
+    chain_id is chain_id
+    name is chain_name
+    """
     @classmethod
     def from_dict(cls, result):
         return cls(**row2dict(result))
@@ -40,52 +46,26 @@ class Loader(core.SimpleLoader):
     Since this can take a long time for large files we don't process
     a single chain at a time, which would be easier to process.
     Instead we process a whole file at once.
+
+    However, the to_process method identifies individual chains
+    that need to be mapped.
     """
 
     dependencies = set([InfoLoader, PositionLoader, ChainMappingLoader,
                         UnitLoader])
 
     mark = False  # OK for stages where to_process returns a list of pdb ids,
-                  # but this stage now works at the chain level
-
-    def query(self, session, pdb_chains):
-        """
-        Query the database for mappings for the given (PDB,chain_names) tuple.
-        This way, the new to_process method can identify individual chains
-        which did not get mapped.
-        For some reason, that happens, and then those chains never get into
-        the exp_seq_unit_mapping table.
-
-        Parameters
-        ----------
-        session : pymotifs.core.db.Session
-            The session to use.
-        pdb : str
-            The PDB id to use
-
-        Returns
-        -------
-        A query that will find mappings for the given structure.
-        """
-
-        pdb, chain_names = pdb_chains
-
-        return session.query(mod.ExpSeqUnitMapping).\
-            join(mod.ExpSeqChainMapping,
-                 mod.ExpSeqChainMapping.exp_seq_chain_mapping_id == mod.ExpSeqUnitMapping.exp_seq_chain_mapping_id).\
-            join(mod.ChainInfo,
-                 mod.ChainInfo.chain_id == mod.ExpSeqChainMapping.chain_id).\
-            filter(mod.ChainInfo.pdb_id == pdb).\
-            filter(mod.ChainInfo.chain_name.in_(chain_names))
+                  # but this stage works at the chain level; can't use this
 
 
     def to_process(self, pdbs, **kwargs):
         """
         Make a list of tuples of pdb ids and chains that are not already mapped
-        This list will be processed one by one.
+        This list will be processed one by one by the data method.
+        Example: ('4V9F',['0','9'])
         """
 
-        # find all rna/dna chains in the given pdbs that are already registered
+        # find all rna/dna chains in the given pdbs that are already in exp_seq_pdb
         # query takes less than 1 second
         with self.session() as session:
             query = session.query(mod.ExpSeqPdb.pdb_id, mod.ExpSeqPdb.chain_name).\
@@ -94,9 +74,9 @@ class Loader(core.SimpleLoader):
             for result in query:
                 pdb_id_to_chains[result.pdb_id].add(result.chain_name)
 
-        self.logger.info('Found %d pdb ids with chains' % len(pdb_id_to_chains))
+        self.logger.info('Found %d pdb ids with chains in exp_seq_pdb' % len(pdb_id_to_chains))
 
-        # find all chains that already have unit mappings
+        # find all chains in the given pdbs that already have unit mappings
         # query takes about 66 seconds for 8000 pdbs
         with self.session() as session:
             query = session.query(mod.ExpSeqPdb.pdb_id, mod.ExpSeqPdb.chain_name).\
@@ -153,6 +133,38 @@ class Loader(core.SimpleLoader):
         return all_pdb_chains
 
 
+    def query(self, session, pdb_chains):
+        """
+        Query the database for mappings for the given (PDB,chain_names) tuple.
+        This way, the new to_process method can identify individual chains
+        which did not get mapped.
+        For some reason, that happens, and then those chains never get into
+        the exp_seq_unit_mapping table.
+
+        Parameters
+        ----------
+        session : pymotifs.core.db.Session
+            The session to use.
+        pdb_chains : tuple of (pdb_id, chain_names)
+            pdb_id : string, The PDB id to use
+            chain_names : list of strings, The chain names to use
+
+        Returns
+        -------
+        A query that will find mappings for the given structure.
+        """
+
+        pdb, chain_names = pdb_chains
+
+        return session.query(mod.ExpSeqUnitMapping).\
+            join(mod.ExpSeqChainMapping,
+                 mod.ExpSeqChainMapping.exp_seq_chain_mapping_id == mod.ExpSeqUnitMapping.exp_seq_chain_mapping_id).\
+            join(mod.ChainInfo,
+                 mod.ChainInfo.chain_id == mod.ExpSeqChainMapping.chain_id).\
+            filter(mod.ChainInfo.pdb_id == pdb).\
+            filter(mod.ChainInfo.chain_name.in_(chain_names))
+
+
     def mapped_chains(self, pdb, chain_names, extended=True):
         """
         Get all desired mapped chains for the given pdb. This will look up all
@@ -205,9 +217,6 @@ class Loader(core.SimpleLoader):
             sequence id.
         """
 
-        # in the old code, c must have been a structured variable
-        # chain_names = [c.name for c in chains]
-
         chain_names = chains
         with self.session() as session:
             query = session.query(mod.ExpSeqPosition.index,
@@ -221,20 +230,22 @@ class Loader(core.SimpleLoader):
                 filter(mod.ChainInfo.chain_name.in_(chain_names))
 
             seen = set()
-            mapping = {}
+            chain_index_to_exp_seq_position_id = {}
             for result in query:
-                key = (result.chain_name, result.index)
-                mapping[key] = result.exp_seq_position_id
+                # key is chain_name like 'A' and index runs from 0 to length-1
+                # add 1 to this index so that it is the same as chain index in unit_info
+                key = (result.chain_name, result.index + 1)
+                chain_index_to_exp_seq_position_id[key] = result.exp_seq_position_id
                 seen.add(result.chain_name)
 
             if seen != set(chain_names):
                 msg = "Could not get mappings for all chains in %s, %s"
                 raise core.InvalidState(msg, pdb, ', '.join(chain_names))
 
-            return mapping
+            return chain_index_to_exp_seq_position_id
 
 
-    def chain_mapping(self, cif, mapped_chains, exp_mapping):
+    def chain_mapping(self, pdb, mapped_chains, exp_mapping):
         """
         Compute the mapping between experimental sequence position id and
         unit id.
@@ -259,36 +270,51 @@ class Loader(core.SimpleLoader):
             position to unit id.
         """
 
-        trans = {m.name: m for m in mapped_chains}
+        chains = []
+        for mapped_chain in mapped_chains:
+            chains.append(mapped_chain.name)
 
-        for mapping in cif.experimental_sequence_mapping(trans.keys()):
-            unit_id = mapping['unit_id']
-            index = mapping['index']
-            chain = mapping['chain']
-            key = (chain, index)
+        # new code to get the chain_index from unit_info and avoid reading the cif file
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.unit_id,mod.UnitInfo.chain,mod.UnitInfo.chain_index).\
+                filter(mod.UnitInfo.pdb_id == pdb).\
+                filter(mod.UnitInfo.chain.in_(chains)).\
+                order_by(mod.UnitInfo.chain,mod.UnitInfo.chain_index)
 
-            if key not in exp_mapping:
-                raise core.InvalidState("No position id for %s" % str(key))
+            chain_to_index_to_unit_id = {}
+            for result in query:
+                if result.chain_index is not None:
+                    if not result.chain in chain_to_index_to_unit_id:
+                        chain_to_index_to_unit_id[result.chain] = {}
+                    chain_to_index_to_unit_id[result.chain][result.chain_index] = result.unit_id
 
-            pos_id = exp_mapping[key]
-            mapped = trans[chain]
+                # self.logger.info('unit_info: %s %s %s' % (result.chain, result.unit_id, result.chain_index))
 
-            if unit_id:
-                self.logger.info('Mapping %s to %s in chain %s with id %s' % (unit_id, pos_id, chain, mapped.id))
+        for mapped_chain in mapped_chains:
+            chain = mapped_chain.name
+            exp_seq_chain_mapping_id = mapped_chain.id
+            for index, unit_id in chain_to_index_to_unit_id[chain].items():
+
+                if (chain, index) not in exp_mapping:
+                    raise core.InvalidState("No exp_seq_position_id for chain %s index %s" % (chain, index))
+
+                # next line is the hard part; this is an integer that is unique to the
+                # chain and the position in the chain, over all NA chains in the database
+                exp_seq_position_id = exp_mapping[(chain, index)]
+
+                self.logger.info('Mapping %s to %s in chain %s with exp_seq_chain_mapping_id %s' % (unit_id, exp_seq_position_id, chain, exp_seq_chain_mapping_id))
+
                 yield mod.ExpSeqUnitMapping(
                     unit_id=unit_id,
-                    exp_seq_chain_mapping_id=mapped.id,
-                    exp_seq_position_id=pos_id,
+                    exp_seq_chain_mapping_id=exp_seq_chain_mapping_id,
+                    exp_seq_position_id=exp_seq_position_id,
                     chain=chain,
                     )
-            else:
-                self.logger.info('exp_seq/mapping.py unit_id is None see %s %s %s' % (unit_id,mapped.id,pos_id))
-                # print('exp_seq/mapping.py unit_id is None',unit_id,mapped.id,pos_id)
 
 
     def data(self, pdb_chains, **kwargs):
         """
-        Compute the data for the given pdb.
+        Compute the data for the given tuple of pdb id and list of chain names.
         This will load the cif file and
         get the mapping for residues in all designated NA chains.
 
@@ -300,33 +326,23 @@ class Loader(core.SimpleLoader):
 
         pdb, chain_names = pdb_chains
 
-        # load the cif file ...
-        cif = self.cif(pdb)
-
         # old code below checked to see if the chains were registered, but did
         # not check to see if the chains were already mapped.
         # Now we know which chains actually need to be mapped in this stage.
+
+        # look up chain id and id
         chains = self.mapped_chains(pdb, chain_names)
 
         if not chains:
             self.logger.info('No chains found in %s' % pdb)
             raise core.InvalidState("No chains found in %s" % pdb)
 
-        self.logger.info('chains from mapped_chains: %s' % str(chains))
-        # print('chains from mapped_chains: %s' % str(chains))
-
-        # if not chains:
-        #     raise core.InvalidState("Found no chains in %s" % pdb)
-
-        # self.logger.info('Found chains %s to map' % chains)
+        self.logger.info('chain tuples from mapped_chains: %s' % str(chains))
 
         exp_mapping = self.exp_mapping(pdb, chain_names)
 
         self.logger.info('exp_seq/mapping exp_mapping:')
         self.logger.info(sorted(exp_mapping.items()))
 
-        # print('exp_seq/mapping exp_mapping:')
-        # print(sorted(exp_mapping.items()))
-
-        for entry in self.chain_mapping(cif, chains, exp_mapping):
+        for entry in self.chain_mapping(pdb, chains, exp_mapping):
             yield entry
