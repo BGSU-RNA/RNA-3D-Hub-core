@@ -34,8 +34,8 @@ from pymotifs.utils import grouper
 from pymotifs import models as mod
 from pymotifs.units.incomplete import Entry
 
-from pymotifs.constants import RSRZ_PAIRED_OUTLIERS as PAIR
-from pymotifs.constants import RSRZ_FICTIONAL_CUTOFF as FICTIONAL_CUTOFF
+from pymotifs.constants import RSRZ_PAIRED_OUTLIERS
+from pymotifs.constants import RSRZ_FICTIONAL_CUTOFF
 
 #from pymotifs.loops.release import Loader as ReleaseLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
@@ -235,7 +235,7 @@ class Loader(core.SimpleLoader):
                 join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.LoopPositions.unit_id).\
                 filter(mod.LoopInfo.pdb_id == pdb).\
-		filter(~mod.LoopInfo.loop_id.in_(badloops)).\
+	        	filter(~mod.LoopInfo.loop_id.in_(badloops)).\
                 order_by(asc(mod.LoopPositions.position))
 
             loops = coll.defaultdict(empty_loop)
@@ -379,7 +379,8 @@ class Loader(core.SimpleLoader):
         return True
 
     def has_no_non_cWW(self, loop):
-        """Check if there are non-cWW interactions within the loop.
+        """
+        Check if there are non-cWW interactions within the loop.
         """
 
         with self.session() as session:
@@ -389,14 +390,15 @@ class Loader(core.SimpleLoader):
                 join(bps, bps.bp_family_id == inters.f_lwbp).\
                 filter(inters.unit_id_1.in_(loop['nts'])).\
                 filter(inters.unit_id_2.in_(loop['nts'])).\
-                filter(inters.program == 'matlab').\
+                filter(inters.program == 'python').\
                 filter(bps.is_near == 0).\
                 filter(bps.bp_family_id != 'cWW')
 
             return not bool(query.count())
 
     def is_complementary(self, loop):
-        """Check if a loop has a complementary sequence. This requires that the
+        """
+        Check if a loop has a complementary sequence. This requires that the
         loop have no non-cWW basepairs (though near are allowed) between them.
         If so then we consider it as a complemenatry loop since it is likely
         just a poorly modeled helix.
@@ -510,19 +512,21 @@ class Loader(core.SimpleLoader):
 #                filter_by(unit.in_('A','C','G','U')).\
         """
         data = defaultdict(lambda: None)
+        na_types = ['rna','dna','hybrid']
         with self.session() as session:
             query = session.query(mod.UnitQuality).\
                 join(mod.UnitInfo,
                      mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
-                filter_by(unit_type_id='rna').\
+                filter(mod.UnitInfo.unit_type_id.in_(na_types)).\
                 filter_by(pdb_id=pdb)
             data.update({r.unit_id: r.real_space_r_z_score for r in query})
             return data
 
     def is_fictional_loop(self, rsrz, loop):
-        """Detect if this loop is fictional. A fictional loop is defined as one
+        """
+        Detect if this loop is fictional. A fictional loop is defined as one
         where all nucleotides in the loop have an RSRZ value are above some cutoff.
-        The cutoff used here is the FICTIONAL_CUTOFF imported from
+        The cutoff used here is the RSRZ_FICTIONAL_CUTOFF imported from
         pymotifs.constants.
 
         Parameters
@@ -539,13 +543,14 @@ class Loader(core.SimpleLoader):
             True if all nucleotides in the loop have an RSRZ greater than the
             cutoff.
         """
-        return all(rsrz[unit] >= FICTIONAL_CUTOFF for unit in loop['nts'])
+
+        return all(rsrz[unit] is None or rsrz[unit] >= RSRZ_FICTIONAL_CUTOFF for unit in loop['nts'])
 
     def is_fictional_pair(self, pairs, rsrz, loop):
         """
         """
         paired = pairs[loop['id']]
-        return any(rsrz[u] >= PAIR for u in loop['nts'] if u in paired)
+        return any(rsrz[u] >= RSRZ_PAIRED_OUTLIERS for u in loop['nts'] if u in paired)
 
     def status(self, assess, loop):
         """Compute the status code. The status code is defined above.
