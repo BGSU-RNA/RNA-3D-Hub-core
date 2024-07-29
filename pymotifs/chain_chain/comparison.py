@@ -224,7 +224,7 @@ class Loader(core.SimpleLoader):
                 chains = filter(disc.valid_chain, group['members'])                                                           ##
                 chains = filter(has_rotations, chains)
                 # chains = filter(has_centers, chains)
-                chains = it.imap(op.itemgetter('db_id'), chains)
+                chains = map(op.itemgetter('db_id'), chains)
                 # convert chains from iterator to list of chain ids and append to list
                 # use a set to not repeat any chain ids, was a problem with 2M4Q|1|1
                 chain_list = sorted(set(chains))
