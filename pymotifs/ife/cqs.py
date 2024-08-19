@@ -1,5 +1,6 @@
-"""This module contains the logic to create IFE-level CQS
-(Composite Quality Scoring) data for subsequent import
+"""
+This module contains the logic to create IFE-level CQS
+(Composite Quality Scoring) data for import
 into the database.
 """
 
@@ -22,7 +23,8 @@ from pymotifs.utils import row2dict
 
 
 class IfeQualityLoader(core.SimpleLoader):
-    """Loader to store non-release-dependent (i.e., IFE-based)
+    """
+    Loader to store non-release-dependent (i.e., IFE-based)
     quality data for an input equivalence class in table
     ife_cqs.
     """
@@ -57,47 +59,59 @@ class IfeQualityLoader(core.SimpleLoader):
     #    return data
     """
 
-    def data(self, entry, **kwargs):
-        """Create a report about the NR set.
+    def to_process(self, pdbs, **kwargs):
+        """
+        Look up the list of IFEs to process, from among pdb ids in pdbs
 
         Parameters
         ----------
-        entry : str
-            The IFE for which to collect IFE-level composite
-            quality score data.
+        pdbs : list
+            Ignored.
 
         Returns
         -------
-            The required data for the database update step.
+        release : string
+            The NR release ID to process.
         """
 
-        ife = dict([('index', 0), ('id', entry)])
-        ife = self.member_info(ife)
-        ife['length'] = self.observed_length(ife)
+        resolution = 'all'
+        release = None
 
-        nr_class = []
-        nr_class.append(ife)
+        pdbs_set = set(pdbs)
+        ife_list = []
 
-        ife_info = self.ife_info(nr_class)
-        quality_data = self.ife_quality_data(nr_class)
+        if False and kwargs.get('manual', {}).get('nr_release_id', False):
+            # This query would not need to rewritten to get the release id
+            # from nr_classes and join with this nr_chains table
+            release = kwargs['manual']['nr_release_id']
+            self.logger.info("IQL: to_process: release: %s" % release)
+            with self.session() as session:
+                query = session.query(mod.NrChains.ife_id).\
+                    join(mod.NrClasses,
+                         mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
+                    filter(mod.NrClasses.nr_release_id == release).\
+                    filter(mod.NrClasses.resolution == resolution)
+                return [r.ife_id for r in query]
+        else:
+            with self.session() as session:
+                query = session.query(mod.IfeInfo.ife_id).\
+                    filter(mod.IfeInfo.model.isnot(None)).\
+                    filter(mod.IfeInfo.new_style == True)
+                for r in query:
+                    pdb_id = r.ife_id.split('|')[0]
+                    if pdb_id in pdbs_set:
+                        ife_list.append(r.ife_id)
 
-        data = {
-            'IFE ID': ife['id'],
-            'Observed Length': ife['length'],
-        }
-        data.update(ife_info[ife['id']])
-        data.update(quality_data[ife['id']])
-        self.logger.debug("data: data: %s" % data)
+                if len(ife_list) == 0:
+                    raise core.Skip("No IFEs to process for CQS")
 
-        yield mod.IfeCqs(
-            ife_id = data['IFE ID'],
-            obs_length = data['Observed Length'],
-            clashscore = data['Clashscore'],
-            average_rsr = data['Average RSR'],
-            average_rscc = data['Average RSCC'],
-            percent_clash = data['Percent Clash'],
-            rfree = data['Rfree'],
-            resolution = data['Resolution'])
+                return ife_list
+
+        pass
+
+    def query(self, session, ife_id):
+        return session.query(mod.IfeCqs.ife_id).filter_by(ife_id=ife_id)
+
 
     def class_property(self, ifes, name):
         return {ife[name] for ife in ifes}
@@ -212,63 +226,55 @@ class IfeQualityLoader(core.SimpleLoader):
                 filter(mod.UnitInfo.model == info['model']).\
                 filter(mod.UnitInfo.sym_op == info['sym_op']).\
                 filter(mod.UnitInfo.chain.in_(info['chains'])).\
-                filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U'])).\
+                filter(mod.UnitInfo.unit_type_id.in_(['dna','rna'])).\
                 filter(mod.UnitInfo.chain_index != None)
             self.logger.info("observed_length: after query generation")
             return query.count()
 
-    def to_process(self, pdbs, **kwargs):
+        # until 2024-08-18 instead of unit_type_id this used a simpler thing:
+        # filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U'])).\
+        # That recorded 0 for DNA chains, and ignored modified RNA nucleotides.
+
+    def data(self, entry, **kwargs):
         """
-        Look up the list of IFEs to process, from among pdb ids in pdbs
+        Process one ife, called entry.
 
         Parameters
         ----------
-        pdbs : list
-            Ignored.
+        entry : str
+            The IFE for which to collect IFE-level composite
+            quality score data.
 
         Returns
         -------
-        release : string
-            The NR release ID to process.
+            The required data for the database update step.
         """
 
-        resolution = 'all'
-        release = None
+        ife = dict([('index', 0), ('id', entry)])
+        ife = self.member_info(ife)
+        ife['length'] = self.observed_length(ife)
 
-        pdbs_set = set(pdbs)
-        ife_list = []
+        nr_class = []
+        nr_class.append(ife)
 
-        if False and kwargs.get('manual', {}).get('nr_release_id', False):
-            # This query would not need to rewritten to get the release id
-            # from nr_classes and join with this nr_chains table
-            release = kwargs['manual']['nr_release_id']
-            self.logger.info("IQL: to_process: release: %s" % release)
-            with self.session() as session:
-                query = session.query(mod.NrChains.ife_id).\
-                    join(mod.NrClasses,
-                         mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
-                    filter(mod.NrClasses.nr_release_id == release).\
-                    filter(mod.NrClasses.resolution == resolution)
-                return [r.ife_id for r in query]
-        else:
-            with self.session() as session:
-                query = session.query(mod.IfeInfo.ife_id).\
-                    filter(mod.IfeInfo.model.isnot(None)).\
-                    filter(mod.IfeInfo.new_style == True)
-                for r in query:
-                    pdb_id = r.ife_id.split('|')[0]
-                    if pdb_id in pdbs_set:
-                        ife_list.append(r.ife_id)
+        ife_info = self.ife_info(nr_class)
+        quality_data = self.ife_quality_data(nr_class)
 
-                if len(ife_list) == 0:
-                    raise core.Skip("No IFEs to process for CQS")
+        data = {
+            'IFE ID': ife['id'],
+            'Observed Length': ife['length'],
+        }
+        data.update(ife_info[ife['id']])
+        data.update(quality_data[ife['id']])
+        self.logger.debug("data: data: %s" % data)
 
-                return ife_list
-
-        pass
-
-    def query(self, session, ife_id):
-        return session.query(mod.IfeCqs.ife_id).filter_by(ife_id=ife_id)
-
-    pass
+        yield mod.IfeCqs(
+            ife_id = data['IFE ID'],
+            obs_length = data['Observed Length'],
+            clashscore = data['Clashscore'],
+            average_rsr = data['Average RSR'],
+            average_rscc = data['Average RSCC'],
+            percent_clash = data['Percent Clash'],
+            rfree = data['Rfree'],
+            resolution = data['Resolution'])
 
