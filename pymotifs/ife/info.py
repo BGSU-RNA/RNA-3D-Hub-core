@@ -60,7 +60,7 @@ class Loader(core.SimpleLoader):
             # # print(333333)
             # with self.session() as session:
             #     query = session.query(mod.IfeChains.ife_id).\
-            #             filter(mod.IfeChains.ife_id == group.id) 
+            #             filter(mod.IfeChains.ife_id == group.id)
             # # print(222222222222)
             # # for row in query:
             # #     print(row.ife_id)
