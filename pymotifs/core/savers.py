@@ -107,6 +107,11 @@ class Saver(Base):
             to_save = [data]
         saved = False
         if type(data) == bytes:
+            try:
+                # convert bytes to string   
+                data = data.decode('utf-8')
+            except UnicodeDecodeError:
+                pass
             with self._writer(pdb, **kwargs) as writer:
                 writer(data)
                 saved = True
