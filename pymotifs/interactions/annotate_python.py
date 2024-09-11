@@ -8,13 +8,14 @@ from pymotifs import models as mod
 
 from pymotifs.pdbs.info import Loader as PdbLoader
 from pymotifs.units.info import Loader as UnitLoader
+from pymotifs.chains.info import Loader as ChainLoader
 
 # import these from the interactions directory; in the future, they'll be updated with fr3d-python
 from fr3d.classifiers.NA_pairwise_interactions import annotate_nt_nt_in_structure
 
 class Loader(core.SimpleLoader):
     allow_no_data = True
-    dependencies = set([PdbLoader, UnitLoader])
+    dependencies = set([PdbLoader, UnitLoader, ChainLoader])
 
     @property
     def table(self):
@@ -46,7 +47,6 @@ class Loader(core.SimpleLoader):
                 pdb_id_program_all = set([(result.pdb_id,result.program) for result in query])
         else:
             # get all (pdb_id,program) pairs in unit_pairs_interactions table
-            # sometimes fast, sometimes not
             with self.session() as session:
                 query = session.query(mod.UnitPairsInteractions.pdb_id,mod.UnitPairsInteractions.program).\
                 distinct()

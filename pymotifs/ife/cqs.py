@@ -1,6 +1,6 @@
-"""This module contains the logic to create IFE-level CQS
-(Composite Quality Scoring) data for subsequent import
-into the database.
+"""
+This module contains the logic to create IFE-level CQS
+(Composite Quality Scoring) data for import into the database.
 """
 
 import operator as op
@@ -21,7 +21,8 @@ from pymotifs.utils import row2dict
 
 
 class IfeQualityLoader(core.SimpleLoader):
-    """Loader to store non-release-dependent (i.e., IFE-based)
+    """
+    Loader to store non-release-dependent (i.e., IFE-based)
     quality data for an input equivalence class in table
     ife_cqs.
     """
@@ -225,14 +226,18 @@ class IfeQualityLoader(core.SimpleLoader):
                 filter(mod.UnitInfo.model == info['model']).\
                 filter(mod.UnitInfo.sym_op == info['sym_op']).\
                 filter(mod.UnitInfo.chain.in_(info['chains'])).\
-                filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U'])).\
+                filter(mod.UnitInfo.unit_type_id.in_(['dna','rna'])).\
                 filter(mod.UnitInfo.chain_index != None)
             self.logger.info("observed_length: after query generation")
             return query.count()
 
+        # until 2024-08-18 instead of unit_type_id the query above used a simpler thing:
+        # filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U'])).\
+        # That recorded 0 for DNA chains, and ignored modified RNA nucleotides.
 
     def data(self, entry, **kwargs):
-        """Create a report about the NR set.
+        """
+        Process one ife, called entry.
 
         Parameters
         ----------
@@ -247,6 +252,8 @@ class IfeQualityLoader(core.SimpleLoader):
 
         ife = dict([('index', 0), ('id', entry)])
         ife = self.member_info(ife)
+
+        # count the number of observed nucleotides
         ife['length'] = self.observed_length(ife)
 
         nr_class = []

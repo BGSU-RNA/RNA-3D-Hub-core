@@ -66,10 +66,10 @@ class Loader(core.SimpleLoader):
         if molecule_parent_current:
             molecule_type = molecule_parent_current.split(",")[0]
         else:
-            molecule_type = 'RNA'
+            molecule_type = 'rna'
 
         # different molecule types have different prefixes like NR_ and DNA_
-        if molecule_type == 'RNA':
+        if molecule_type.lower() == 'rna':
             prefix = 'NR%'
         else:
             prefix = 'DNA%'
