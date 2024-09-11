@@ -97,10 +97,11 @@ class IfeLoader(core.Base):
         #     data['length'] = 0
         #     if result:
         #         data['length'] = result.count
-        # data['length'] will also calculate water units, this query works for rna structures even if the rna has water units.
+        # data['length'] will also calculate water units, this query works for rna structures
+        # even if the rna has water units.
         # however, it is not work for dna structures for some unknown reason.
-        # thus, ekko directly make it equal to the 'full_length'. 
-        # Dr. Zirbel believes we should used the full_length insteal of making different lengths for hybrid chains
+        # thus, ekko directly make it equal to the 'full_length'.
+        # Dr. Zirbel believes we should used the full_length instead of making different lengths for hybrid chains
         data['length'] = data['full_length']
 
         helper = st.BasePairQueries(self.session)
@@ -261,7 +262,13 @@ class IfeGroup(object):
 
     def add(self, chain):
         self._chains.add(chain)
+
+        # print("A self.integral is %s" % (self.integral))
+
         self.integral = max(self.integral, chain)
+
+        # print("B self.integral is %s" % (self.integral))
+
         if chain.is_structured:
             self.is_structured = True
 
