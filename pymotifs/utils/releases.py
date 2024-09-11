@@ -35,13 +35,13 @@ def next_id(current, mode='minor'):
 
 def parse_id(release_id):
     try:
-        parts = map(int, release_id.split('.'))
+        parts = list(map(int, release_id.split('.')))
     except:
         raise BadlyFormattedRelease("Can't process release id: %s" %
                                     release_id)
 
     if len(parts) != 2:
-        raise BadlyFormattedRelease("Release id must have major an minor")
+        raise BadlyFormattedRelease("Release id %s must have major and minor" % release_id)
 
     return dict(zip(MODES, parts))
 
