@@ -33,13 +33,15 @@ class Loader(core.MassLoader):
     dependencies = set([ChainLoader, InteractionLoader,
                         IfeLoader, CorrespondenceLoader, ChainChainLoader,
                         QualityLoader, UnitsLoader, IFEDiscrepancyExporter])
-    # dependencies = set([])
+
     update_gap = dt.timedelta(7)
-    ## I think this is not safe, the following variable is just for testing purposes.
     allow_no_data = True
+    mark = False
+    use_marks = False
 
     def has_data(self, *args, **kwargs):
-        """This will always return True because we only want to update if the time
+        """
+        This will always return True because we only want to update if the time
         difference has been large enough.
         """
         return True
@@ -67,22 +69,6 @@ class Loader(core.MassLoader):
 
             current = query.one()
             return current.nr_release_id, current.index
-
-    # let's not make separate code for DNA
-    # instead, let's pass in the parent and the next release number
-    # we also want to make clear what type of molecule we are running on
-    # def current_dna_version(self):
-    #     with self.session() as session:
-    #         query = session.query(mod.NrReleases.nr_release_id,
-    #                               mod.NrReleases.index).\
-    #             order_by(desc(mod.NrReleases.index)).\
-    #             limit(1)
-
-    #         if query.count() == 0:
-    #             return '0.0', 0
-
-    #         current = query.one()
-    #         return current.nr_release_id, current.index
 
     def data(self, pdbs, **kwargs):
 

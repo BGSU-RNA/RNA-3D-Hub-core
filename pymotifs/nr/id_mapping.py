@@ -18,6 +18,7 @@ from pymotifs.constants import NR_CACHE_NAME
 class Loader(core.MassLoader):
     dependencies = set([NrReleaseLoader, ClassLoader])
     allow_no_data = True
+    mark = False
 
     def mapping(self, release_id, grouping):
         """Compute the mapping from names to ids in the database for the given

@@ -15,9 +15,11 @@ from pymotifs.nr.class_rank import Loader as ClassRankLoader
 
 
 class Cleanup(core.MassLoader):
-    allow_no_data = True
     dependencies = set([ReleaseLoader, ClassLoader, ParentLoader,
                         CountLoader, ClassRankLoader,OrderingLoader])
+
+    allow_no_data = True
+    mark = False
 
     def has_data(self, *args, **kwargs):
         grouping = self.cached(NR_CACHE_NAME)

@@ -18,6 +18,8 @@ class Loader(BaseLoader):
     dependencies = set([IdMappingLoader, ClassRankLoader])
     update_gap = dt.timedelta(7)  # Only update every 7 days
     allow_no_data = True
+    mark = False
+
     @property
     def table(self):
         return mod.NrClassParents

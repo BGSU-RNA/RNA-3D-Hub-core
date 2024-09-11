@@ -1,4 +1,5 @@
-"""Store the nr classes (equivelance sets). This requires cached NR data to
+"""
+Store the nr classes (equivelance sets). This requires cached NR data to
 process and then store.
 """
 
@@ -19,7 +20,14 @@ from pymotifs.ife.loader import Loader as IfeLoader
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader, ChainLoader, InteractionLoader,
                         IfeLoader])
-    update_gap = dt.timedelta(7)  # Only update every 7 days
+
+    """
+    whatever the to_process method generates, it is not a list of pdb ids
+    so the pdb_analysis_status table cannot handle them
+    """
+    # update_gap = dt.timedelta(7)  # Only update every 7 days
+    mark = False
+
 
     @property
     def table(self):

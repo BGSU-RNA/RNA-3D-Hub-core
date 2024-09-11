@@ -9,6 +9,7 @@ chains will not show up in the final ordering.
 """
 
 from collections import defaultdict
+import os
 import numpy as np
 import time
 
@@ -39,6 +40,7 @@ class Loader(core.SimpleLoader):
 
     trials = 100
     dependencies = set([NrClassRankLoader, NrClassLoader, NrQualityLoader, SimilarityLoader])
+    mark = False
 
     def to_process(self, pdbs, **kwargs):
         """

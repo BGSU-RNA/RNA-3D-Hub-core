@@ -36,6 +36,7 @@ class NrQualityLoader(core.SimpleLoader):
 
     """We allow for no data to be written when appropriate"""
     allow_no_data = True
+    mark = False
 
     """
     #Blake's sample class contained three functions, as follows:

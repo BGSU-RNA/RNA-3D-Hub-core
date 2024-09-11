@@ -14,6 +14,9 @@ from pymotifs.nr.release import Loader as ReleaseLoader
 
 class Loader(BaseLoader):
     dependencies = set([ReleaseLoader])
+
+    mark = False
+
     @property
     def table(self):
         return mod.NrParentCounts
