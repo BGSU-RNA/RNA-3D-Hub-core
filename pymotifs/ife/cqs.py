@@ -252,6 +252,8 @@ class IfeQualityLoader(core.SimpleLoader):
 
         ife = dict([('index', 0), ('id', entry)])
         ife = self.member_info(ife)
+
+        # count the number of observed nucleotides
         ife['length'] = self.observed_length(ife)
 
         nr_class = []
