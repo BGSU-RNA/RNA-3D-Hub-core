@@ -21,7 +21,8 @@ from sqlalchemy import case
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([ChainLoader, InfoLoader])    
+    dependencies = set([ChainLoader, InfoLoader])
+    mark = False
 
     def to_process_old(self, pdbs, **kwargs):
         """Compute all chain ids to process. This will extract all rna chain
@@ -130,7 +131,7 @@ class Loader(core.SimpleLoader):
                 raise core.InvalidState("There should be exactly one matching"
                                         " experimental sequence")
             return query.one().exp_seq_id
-        
+
     def exp_id_two_queries(self, chain_id):
         simplify_type = {}
         simplify_type['Polydeoxyribonucleotide (DNA)'] = 'dna'
@@ -151,7 +152,7 @@ class Loader(core.SimpleLoader):
                                             " experimental sequence")
                 else:
                     data.append(result2.exp_seq_id for result2 in query2)
-            return data  
+            return data
 
     def exp_id(self, chain_id):
         """Compute the experimetnal sequence id for the given chain id. This
@@ -173,7 +174,7 @@ class Loader(core.SimpleLoader):
         simplify_type['polyribonucleotide'] = 'rna'
         simplify_type['polydeoxyribonucleotide'] = 'dna'
         simplify_type['polydeoxyribonucleotide/polyribonucleotide hybrid'] = 'hybrid'
-        simplify_type['DNA/RNA Hybrid'] = 'hybrid'  
+        simplify_type['DNA/RNA Hybrid'] = 'hybrid'
 
         with self.session() as session:
             exp = mod.ExpSeqInfo
@@ -186,7 +187,7 @@ class Loader(core.SimpleLoader):
             if query.count() != 1:
                 raise core.InvalidState("There should be exactly one matching"
                                         " experimental sequence and entity type")
-            return query.one().exp_seq_id            
+            return query.one().exp_seq_id
 
     def data(self, chain_id, **kwargs):
         """
