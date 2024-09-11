@@ -49,7 +49,7 @@ def treePenalty(distance,link="average"):
 def greedyInsertionPathLength(distance, order=[], verbose=False):
     # if no starting ordering
     if len(order) == 0:
-        order = range(0,len(distance))
+        order = list(range(0,len(distance)))
         random.shuffle(order)          # random starting ordering
     path = order[:2]            # first two points of the current ordering
     score = distance[path[0], path[1]]
@@ -128,7 +128,7 @@ def treePenalizedPathLength(distance,repetitions=100,seed=None):
         order = multipleGreedyInsertionPathLength(penalizedMatrix,repetitions)
         order = orientPath(distance,order)
     else:
-        order = range(0,n)
+        order = list(range(0,n))
     return order
 
 def reorderSymmetricMatrix(distance, newOrder):
