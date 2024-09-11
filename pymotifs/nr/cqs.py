@@ -1,12 +1,11 @@
-"""This module contains the logic to create NR-level CQS (Composite
-Quality Score) data for subsequent import into the database.  Uses
-IFE-specific data that were previously generated using ife.cqs and
-stored in the database (table ife_cqs).
+"""
+This module contains the logic to create EC-level CQS (Composite
+Quality Score) data for subsequent import into the database.
+Uses IFE-specific data that were previously generated using ife.cqs
+and stored in the database (table ife_cqs).
 """
 
-import abc
 import collections as coll
-import pprint
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -19,13 +18,15 @@ from pymotifs.utils import row2dict
 
 
 class NrQualityLoader(core.SimpleLoader):
-    """Loader to store quality data for an input equivalence class
+    """
+    Loader to store quality data for an input equivalence class
     in table nr_cqs.
     """
 
     dependencies = set([ClassRankLoader, CountLoader])
 
-    """We allow this to merge data since sometimes we want to replace.
+    """
+    We allow this to merge data since sometimes we want to replace.
 
     Blake thinks that this is unnecessary/undesirable.  However, if
     class membership changes (and the maximum IFE length as a
@@ -59,8 +60,20 @@ class NrQualityLoader(core.SimpleLoader):
     #    return data
     """
 
+    def list_nr_classes(self, release, resolution):
+        with self.session() as session:
+            query = session.query(mod.NrClasses.name).\
+                filter(mod.NrClasses.nr_release_id == release).\
+                filter(mod.NrClasses.resolution == resolution)
+
+            data = []
+            for result in query:
+                data.append(result[0])
+        return data
+
     def to_process(self, pdbs, **kwargs):
-        """Collect the list of nr_class name values to process for the
+        """
+        Collect the list of nr_class name values to process for the
         specified release. Ignores the given PDBs.
 
         Parameters
@@ -90,8 +103,16 @@ class NrQualityLoader(core.SimpleLoader):
         with self.session() as session:
             return classlist
 
+    def query(self, session, nr_name):
+        return session.query(mod.NrCqs.nr_name).\
+            filter(mod.NrCqs.nr_name == nr_name)
 
     def load_ife_cqs_data(self, ife_list, nr_name):
+        """
+        Note:  ife_cqs.obs_length is based on a query of the unit_info table
+        to get the number of rna/dna residues in each chain.
+        That query is done by ife/cqs.py
+        """
         with self.session() as session:
             query = session.query(
                 mod.IfeCqs.ife_id,
@@ -107,25 +128,25 @@ class NrQualityLoader(core.SimpleLoader):
 
             data = coll.defaultdict(list)
 
-            max_exp_len = 0
-
+            # find the maximum number of observed nucleotides in this equivalence class
+            max_observed = 0
             for result in query:
                 entry = row2dict(result)
                 ii = entry['ife_id']
                 entry['nr_name'] = nr_name
                 data[ii].append(entry)
-                if result[1] > max_exp_len:
-                    max_exp_len = result[1]
+                if result[1] > max_observed:
+                    max_observed = result[1]
 
         for ife in ife_list:
             if data[ife]:
                 ife_data = data[ife]
                 obs_length = ife_data[0]['obs_length']
-                ife_data[0]['max_exp_len'] = max_exp_len
+                ife_data[0]['max_observed'] = max_observed
             else:
                 self.logger.warning("NQL: data: LICD: no data for %s" % ife)
                 continue
-            truth, fraction_unobserved = self.fraction_unobserved(obs_length, max_exp_len)
+            truth, fraction_unobserved = self.fraction_unobserved(obs_length, max_observed)
             percent_observed = (1 - fraction_unobserved)
             data[ife][0]['fraction_unobserved'] = fraction_unobserved
             data[ife][0]['percent_observed'] = percent_observed
@@ -134,63 +155,11 @@ class NrQualityLoader(core.SimpleLoader):
 
         return data.values()
 
-    def list_nr_classes(self, release, resolution):
-        with self.session() as session:
-            query = session.query(mod.NrClasses.name).\
-                filter(mod.NrClasses.nr_release_id == release).\
-                filter(mod.NrClasses.resolution == resolution)
-
-            data = []
-            for result in query:
-                data.append(result[0])
-        return data
-
-    def query(self, session, nr_name):
-        return session.query(mod.NrCqs.nr_name).\
-            filter(mod.NrCqs.nr_name == nr_name)
-
-    def data(self, nr_name, **kwargs):
-        """Collect composite quality scoring data for the NR class.
-
-        Parameters
-        ----------
-        nr_name : str
-            Name of class for which to collect NR-level composite
-            quality score (CQS) data.
-
-        Returns
-        -------
-            The required data for the database update step.
-        """
-
-        cqs_data = {}
-
-        ife_list = []
-        # we stop using the following query cuz we stop updating the nrchains table
-        # with self.session() as session:
-        #     query = session.query(mod.NrChains.ife_id).\
-        #         join(mod.NrClasses, mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
-        #         filter(mod.NrClasses.name == nr_name)
-        with self.session() as session:
-            query = session.query(mod.NrClassRank.ife_id).\
-                filter(mod.NrClassRank.nr_class_name == nr_name)
-
-            for result in query:
-                ife_list.append(result[0])
-
-        data = self.load_ife_cqs_data(ife_list, nr_name)
-
-        for ife_output in data:
-            for ife_out in ife_output:
-                yield mod.NrCqs(
-                    ife_id = ife_out['ife_id'],
-                    nr_name = nr_name,
-                    maximum_experimental_length = ife_out['max_exp_len'],
-                    fraction_unobserved = ife_out['fraction_unobserved'],
-                    percent_observed = ife_out['percent_observed'],
-                    composite_quality_score = ife_out['compscore'])
-
     def fraction_unobserved(self, obs, max):
+        """
+        obs is the number of unit ids in unit_info for this ife
+        max is the maximum number across the equivalence class
+        """
         observed = float(obs)
         experimental = float(max)
         if experimental == 0:
@@ -214,5 +183,49 @@ class NrQualityLoader(core.SimpleLoader):
 
         return compscore
 
-    pass
+    def data(self, nr_name, **kwargs):
+        """
+        Collect composite quality scoring data for the equivalence class.
 
+        Parameters
+        ----------
+        nr_name : str
+            Name of class for which to collect NR-level composite
+            quality score (CQS) data.
+
+        Returns
+        -------
+            The required data for the database update step.
+        """
+
+        ife_list = []
+        # we stop using the following query cuz we stop updating the nrchains table
+        # with self.session() as session:
+        #     query = session.query(mod.NrChains.ife_id).\
+        #         join(mod.NrClasses, mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
+        #         filter(mod.NrClasses.name == nr_name)
+        with self.session() as session:
+            query = session.query(mod.NrClassRank.ife_id).\
+                filter(mod.NrClassRank.nr_class_name == nr_name)
+
+            for result in query:
+                ife_list.append(result[0])
+
+        data = self.load_ife_cqs_data(ife_list, nr_name)
+
+        # the field name maximum_experimental_length is poorly chosen,
+        # because the value is actually the maximum number of observed nucleotides
+        # in the unit_info table, not the length of the longest experimental
+        # sequence that went into the experiment
+        # Maximum number of observed nucleotides is more robust, because sometimes
+        # a very long chain gets reported as the experimental sequence, on that
+        # includes many chains concatenated together.
+        for ife_output in data:
+            for ife_out in ife_output:
+                yield mod.NrCqs(
+                    ife_id = ife_out['ife_id'],
+                    nr_name = nr_name,
+                    maximum_experimental_length = ife_out['max_observed'],
+                    fraction_unobserved = ife_out['fraction_unobserved'],
+                    percent_observed = ife_out['percent_observed'],
+                    composite_quality_score = ife_out['compscore'])
