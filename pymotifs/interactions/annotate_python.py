@@ -157,11 +157,7 @@ class Loader(core.SimpleLoader):
                     pair_to_dictionary[pair]['unit_id_2'] = u2
                     pair_to_dictionary[pair]['pdb_id'] = pdb
                     pair_to_dictionary[pair]['program'] = 'python'
-                    if category == 'bss':
-                        # if the pair is here, bss interaction is true
-                        pair_to_dictionary[pair][heading] = 1
-                    else:
-                        pair_to_dictionary[pair][heading] = interaction
+                    pair_to_dictionary[pair][heading] = interaction
 
                     if 'f_crossing' in pair_to_dictionary[pair]:
                         if not pair_to_dictionary[pair]['f_crossing'] == triple[2]:
