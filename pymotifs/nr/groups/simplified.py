@@ -93,7 +93,7 @@ class Grouper(core.Base):
 
         self.logger.info("Loading ifes for %s with molecule_type %s" % (pdb,self.molecule_type))
 
-        if self.molecule_type == 'rna':
+        if self.molecule_type.lower() == 'rna':
             nucleic_acid_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
             nucleic_acid_types.add('DNA/RNA Hybrid')
             nucleic_acid_types.add('NA-hybrid')

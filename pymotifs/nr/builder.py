@@ -30,13 +30,14 @@ class Known(core.Base):
     def handles(self, molecule_type):
         """Return a set of all known handles for the nr set.
         """
-        if molecule_type == 'DNA':
-            query_key = molecule_type
-        else:
+        if molecule_type.lower() == 'rna':
             query_key = 'NR_'
+        else:
+            query_key = 'DNA_'
+
         with self.session() as session:
             query = session.query(mod.NrClasses.handle).\
-            filter(func.substr(mod.NrClasses.name, 1, 3) == query_key).\
+            filter(mod.NrClasses.name.startswith(query_key)).\
             distinct()
             return set(result.handle for result in query)
 
@@ -72,10 +73,13 @@ class Known(core.Base):
                 'resolution': result.resolution,
             }
 
-        if molecule_type == 'DNA':
-            query_key = molecule_type
-        else:
+        if molecule_type.lower() == 'rna':
             query_key = 'NR_'
+        elif molecule_type.lower() == 'dna':
+            query_key = 'DNA_'
+        else:
+            # should never happen
+            query_key = 'vvv'
 
         with self.session() as session:
             query = session.query(mod.NrClassRank.ife_id.label('id'),
@@ -97,9 +101,8 @@ class Known(core.Base):
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
                 filter(mod.IfeInfo.new_style == True).\
-                filter(func.substr(mod.NrClasses.name, 1, 3) == query_key).\
+                filter(mod.NrClasses.name.startswith(query_key)).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
-            self.logger.info("finish the query of the class function in the nr/builder.py")
             results = coll.defaultdict(empty)
             for result in query:
                 member = as_member(result)
@@ -268,19 +271,19 @@ class Builder(core.Base):
         if molecule_parent_current:
             molecule_type = molecule_parent_current.split(",")[0]
         else:
-            molecule_type = 'RNA'
+            molecule_type = 'rna'
 
 
         grouper = Grouper(self.config, self.session)
 
-        if molecule_type == 'RNA':
+        if molecule_type.lower() == 'rna':
             self.logger.info('Grouping RNA IFEs into equivalence classes.')
             conf = self.config['nr']
             self.logger.info("conf: %s" % str(conf))
             grouper.use_discrepancy = conf.get('use_discrepancy',
                                             grouper.use_discrepancy)
             grouper.use_species = conf.get('use_species', grouper.use_species)
-            grouper.molecule_type = 'RNA'
+            grouper.molecule_type = 'rna'
             if not grouper.use_species:
                 enforce = conf.get('enforce_species',
                                 grouper.must_enforce_single_species)
@@ -295,7 +298,7 @@ class Builder(core.Base):
                                             grouper.use_discrepancy)
             # grouper.use_species = conf.get('use_species', grouper.use_species)
             # try again to avoid using species
-            grouper.molecule_type = 'DNA'
+            grouper.molecule_type = 'dna'
             grouper.use_species = False
             # if not grouper.use_species:
             #     enforce = conf.get('enforce_species',
@@ -579,14 +582,14 @@ class Builder(core.Base):
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
 
-        if molecule_type == 'DNA':
-            query_key = molecule_type
-        else:
+        if molecule_type.lower() == 'rna':
             query_key = 'NR_'
+        else:
+            query_key = 'DNA_'
 
         with self.session() as session:
             query = session.query(mod.NrClassRank.nr_class_name).\
-            filter(func.substr(mod.NrClassRank.nr_class_name, 1, 3) == query_key).\
+            filter(mod.NrClassRank.nr_class_name.startswith(query_key)).\
             distinct()
         nr_class_name_list = [row.nr_class_name for row in query]
 
@@ -688,7 +691,7 @@ class Builder(core.Base):
         if molecule_parent_current:
             molecule_type = molecule_parent_current.split(",")[0]
         else:
-            molecule_type = 'RNA'
+            molecule_type = 'rna'
 
         parents = self.load_parents(parent_release, cutoffs, molecule_type)
         named = self.name_groups(groups, parents['all'], molecule_type)
