@@ -614,7 +614,11 @@ class SimpleLoader(Loader):
     __metaclass__ = abc.ABCMeta
 
     def has_data(self, args, **kwargs):
-        """Check if we already have data.
+        """
+        Check if we already have data.
+        If this method is not overwritten in a specific stage, then
+        it uses the query method to see if the table already has the
+        data the stage is supposed to produce.
         """
         with self.session() as session:
             return bool(self.query(session, args).limit(1).count())
