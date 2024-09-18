@@ -40,7 +40,7 @@ class Saver(Base):
     allow_no_data : bool
         A flag to control if we should fail if no data is written
     merge : bool
-        If we should merge instead of saveing normally.
+        If we should merge instead of saving normally.
     insert_max : int
         The maximum number of entries to write at once.
     """
@@ -101,20 +101,20 @@ class Saver(Base):
         """
 
         to_save = data
-        with open('/usr/local/pipeline/hub-core/logs/quality_download.logs', 'w') as f:
-            f.write(str(to_save))
+        # with open('/usr/local/pipeline/hub-core/logs/quality_download.logs', 'w') as f:
+        #     f.write(str(to_save))
         if not isinstance(to_save, coll.Iterable) or isinstance(to_save, dict):
             to_save = [data]
         saved = False
         if type(data) == bytes:
             try:
-                # convert bytes to string   
+                # convert bytes to string
                 data = data.decode('utf-8')
+                with self._writer(pdb, **kwargs) as writer:
+                    writer(data)
+                    saved = True
             except UnicodeDecodeError:
                 pass
-            with self._writer(pdb, **kwargs) as writer:
-                writer(data)
-                saved = True
         else:
             for index, chunk in enumerate(ut.grouper(self.insert_max, to_save)):
                 chunk = list(chunk)
