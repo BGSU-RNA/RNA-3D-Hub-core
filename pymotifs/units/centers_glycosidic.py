@@ -1,16 +1,14 @@
-"""Load all unit centers into the database.
+"""
+Find structures that do not have glycosidic centers calculated, and load them.
 """
 
-import pymotifs.core as core
-
-from pymotifs import models as mod
 import itertools as it
-from pymotifs.units.info import Loader as InfoLoader
 
+import pymotifs.core as core
+from pymotifs import models as mod
+from pymotifs.units.info import Loader as InfoLoader
 from pymotifs.skip_files import SKIP
 from pymotifs.utils import units
-from sqlalchemy import and_
-
 
 class Loader(core.SimpleLoader):
     """
@@ -20,34 +18,47 @@ class Loader(core.SimpleLoader):
 
     dependencies = set([InfoLoader])
     allow_no_data = True
+    mark = False
 
     def to_process(self, pdbs, **kwargs):
-        # return ["1UVK"]
+        """
+        If pdbs is a list of just one pdb id, process that one.
+        Otherwise, find all pdbs that do not have glycosidic
+        """
 
-        with self.session() as session:
-            query_all_pdb_ids = session.query(mod.ChainInfo.pdb_id).distinct()
-            query_glycosidic_present = session.query(mod.UnitCenters.pdb_id).\
-                                        filter(mod.UnitCenters.name == 'glycosidic').distinct()
-                                        #filter(and_(mod.UnitCenters.name == 'base',mod.UnitCenters.name != 'glycosidic')).distinct()
+        if len(pdbs) == 1:
+            return pdbs
+        else:
+            with self.session() as session:
+                query_all_pdb_ids = session.query(mod.ChainInfo.pdb_id).distinct()
+                pdb_ids = set()
+                for result in query_all_pdb_ids:
+                    pdb_ids.add(result.pdb_id)
+            self.logger.info("Total number of pdb files: %s" % len(pdb_ids))
 
-        pdb_ids = set()
-        for result in query_all_pdb_ids:
-            pdb_ids.add(result.pdb_id)
-        existing_ids = set()
-        for result in query_glycosidic_present:
-            existing_ids.add(result.pdb_id)
+            # this query takes a long time
+            with self.session() as session:
+                query_glycosidic_present = session.query(mod.UnitCenters.pdb_id).\
+                                            filter(mod.UnitCenters.name == 'glycosidic').distinct()
 
-        if len(pdb_ids - existing_ids - set(SKIP)) == 0:
-            raise core.Skip("No new glycosidic centers")
+                pdb_with_glycosidic = set()
+                for result in query_glycosidic_present:
+                    pdb_with_glycosidic.add(result.pdb_id)
+            self.logger.info("Number of pdb files with glycosidic centers: %s" % len(pdb_with_glycosidic))
 
-        self.logger.info('%s'%list(pdb_ids - existing_ids - set(SKIP)))
-        return sorted(pdb_ids - existing_ids - set(SKIP))
-        # return ['4V3P']
+            if len(pdb_ids - pdb_with_glycosidic - set(SKIP)) == 0:
+                raise core.Skip("All pdb files have glycosidic centers")
+
+            self.logger.info('%s' % list(pdb_ids - pdb_with_glycosidic - set(SKIP)))
+
+            return sorted(pdb_ids - pdb_with_glycosidic - set(SKIP))
+
 
     def query(self, session, pdb):
         return session.query(mod.UnitCenters).\
             filter(mod.UnitCenters.pdb_id == pdb).\
             filter(mod.UnitCenters.name == 'glycosidic')
+
 
     def type(self, unit):
         """Compute the component type, ie A, C, G, U is RNA, DA, DC, etc is DNA
@@ -76,6 +87,7 @@ class Loader(core.SimpleLoader):
         #     unit_ids_list.append(result.unit_id)
         # print(unit_ids_list)
 
+        # load the structure
         structure = self.structure(pdb)
         for residue in structure.residues():
             # if residue.unit_id() not in unit_ids_list:
@@ -104,6 +116,7 @@ class Loader(core.SimpleLoader):
             for name in residue.centers.definitions():
                 center = residue.centers[name]
                 if len(center) == 3 and name == 'glycosidic':
+                    self.logger.info('Adding glycosidic center for %s' % residue.unit_id())
                     yield mod.UnitCenters(unit_id=residue.unit_id(),
                                           name=name,
                                           pdb_id=pdb,
