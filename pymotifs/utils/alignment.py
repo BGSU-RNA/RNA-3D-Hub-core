@@ -27,7 +27,9 @@ def align(data):
 
     SeqIO.write(sequences, infile, "fasta")
 
-    aligner = Clustal('clustalw2', INFILE=infile, OUTFILE=outfile)
+    clustal_executable = os.path.join('/usr/local/bin/clustalw2')
+
+    aligner = Clustal(clustal_executable, INFILE=infile, OUTFILE=outfile)
     aligner()
 
     alignment = AlignIO.read(outfile, "clustal")
@@ -62,10 +64,12 @@ def align_dna(data):
 
     SeqIO.write(dna_sequences, infile_dna, "fasta")
 
-    aligner = Clustal('clustalw2', INFILE=infile_dna, OUTFILE=outfile)
+    clustal_executable = os.path.join('/usr/local/bin/clustalw2')
+
+    aligner = Clustal(clustal_executable, INFILE=infile_dna, OUTFILE=outfile_dna)
     aligner()
 
-    alignment = AlignIO.read(outfile, "clustal")
+    alignment = AlignIO.read(outfile_dna, "clustal")
     shutil.rmtree(tmpdir_dna)
 
     mapping = []
