@@ -13,6 +13,8 @@ As of end of 2023, only store in chain_property_value when source, Rfam family, 
 from cgi import print_arguments
 import itertools as it
 from operator import contains
+import os
+
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.chains.taxid_species_domain import Loader as DomainLoader
@@ -91,17 +93,19 @@ class Loader(core.Loader):
     #     return d
 
 
-    def open_and_format_file(self,file_str, delim):
+    def read_delimited_file(self,filename, delim="\t"):
         """
-        Generic function to read a csv file
+        Generic function to read a delimited file
         """
-        import os, csv
-        file_content = None
-        text_file = open(file_str, "r")
-        if os.path.exists(file_str):
-            file_content = csv.reader(text_file.readlines(), delimiter=delim)
-        return file_content
 
+        if os.path.exists(filename):
+            with open(filename, 'rt', encoding='latin-1') as f:
+                lines = f.readlines()
+                print(lines)
+                return [line.strip().split(delim) for line in lines]
+
+        else:
+            return []
 
     # def tax_to_domain(self,tax_list):
     #     """
@@ -411,7 +415,7 @@ class Loader(core.Loader):
 
         # NCBI Taxonomy files
         # taxonomy_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/tax_dictionary.csv"
-        # tax_dict = self.tax_to_domain(self.open_and_format_file(taxonomy_file,'\t')) # rename to tax_to_dict using find and replace
+        # tax_dict = self.tax_to_domain(self.read_delimited_file(taxonomy_file,'\t')) # rename to tax_to_dict using find and replace
 
         # read database table with mappings of taxonomy ids to species and domain
         taxid_to_domain = self.get_taxid_to_domain()
@@ -422,18 +426,18 @@ class Loader(core.Loader):
 
         # load an Rfam data file listing all Rfam families and information about the family
         rfam_family_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/family.txt"
-        rfam_family_txt = self.open_and_format_file(rfam_family_file, '\t') # returns a list of list of strings
+        rfam_family_txt = self.read_delimited_file(rfam_family_file, '\t')
         rfam_family_txt_arr = [line[:4] for line in rfam_family_txt]
 
         # read mappings of chains to Rfam families
         # TODO: need to be more sophisticated because more than one mapping may be listed for a chain
         #
-        rfam_pdb = self.open_and_format_file(rfam_pdb_file, '\t')
+        rfam_pdb = self.read_delimited_file(rfam_pdb_file, '\t')
         rfam_pdb_arr = [line for line in rfam_pdb if not line[0] == 'RF00000']
 
         # standard names file
         consensus_names_file = "/usr/local/pipeline/hub-core/aux/consensus_naming_aux_files/manual_consensus_names.tsv"
-        consensus_names = self.open_and_format_file(consensus_names_file, '\t')
+        consensus_names = self.read_delimited_file(consensus_names_file, '\t')
         consensus_arr = [line for line in consensus_names]
         rfam_family_to_standard_name = self.make_rfam_family_to_standard_name(consensus_arr)
 
