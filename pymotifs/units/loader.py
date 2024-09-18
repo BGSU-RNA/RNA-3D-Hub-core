@@ -19,9 +19,12 @@ from pymotifs.units.bond_orientation import Loader as BondOrientationLoader
 
 
 class Loader(core.StageContainer):
-    """A container for all unit level `Stage`s.
+    """
+    A container for all unit level stages
     """
 
-    """The `Stages` this will run"""
+    """
+    The stages this will run
+    """
     stages = set([InfoLoader, CenterRotationLoader,
                   CoordinateLoader, IncompleteLoader, BondOrientationLoader])
