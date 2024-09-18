@@ -16,6 +16,8 @@ class Loader(core.SimpleLoader):
     def table(self):
         return mod.ExpSeqPosition
 
+    mark = False
+
     def to_process(self, pdbs, **kwargs):
         """Find all stored experimental sequences for the given pdb ids. This
         will only use experimental sequences which show up in the given
