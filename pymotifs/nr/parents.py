@@ -16,7 +16,7 @@ from pymotifs.nr.id_mapping import Loader as IdMappingLoader
 
 class Loader(BaseLoader):
     dependencies = set([IdMappingLoader, ClassRankLoader])
-    update_gap = dt.timedelta(7)  # Only update every 7 days
+    # update_gap = dt.timedelta(7)  # Only update every 7 days
     allow_no_data = True
     mark = False
 
