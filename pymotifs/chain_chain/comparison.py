@@ -280,6 +280,8 @@ class Loader(core.SimpleLoader):
             # the query below could be split to do 1000 pdbs at a time
 
             self.logger.info('Updating unit_to_position.pickle for %d pdbs' % len(needed_pdbs))
+            self.logger.info(sorted(needed_pdbs))
+
             # get correspondences between unit ids and experimental sequence positions
             # sort to put no alt_id before A before B before C, etc.
             with self.session() as session:
@@ -521,78 +523,80 @@ class Loader(core.SimpleLoader):
         return matching_pairs
 
 
-    def get_unit_correspondences(self, corr_id, info1, info2):
-        """
-        Query the database to find all pairs of unit ids with a given
-        correspondence id, matching two given chains and matching PDB ids,
-        because that is the fastest query.
+    # def get_unit_correspondences(self, corr_id, info1, info2):
+    #     """
+    #     Old method, no longer used because it is too slow
 
-        Parameters
-        ----------
-        corr_id : int
-            The correspondence id.                                                                                 ## we need fill in more correspondence_id of dna pairs
-        info1 : dict
-            The result of `info` for the first chain to compare.
-        info2 : dict
-            The result of `info` for the second chain to compare.
+    #     Query the database to find all pairs of unit ids with a given
+    #     correspondence id, matching two given chains and matching PDB ids,
+    #     because that is the fastest query.
 
-        Returns
-        -------
-        matching_pairs : list of pairs of unit ids
+    #     Parameters
+    #     ----------
+    #     corr_id : int
+    #         The correspondence id.
+    #     info1 : dict
+    #         The result of `info` for the first chain to compare.
+    #     info2 : dict
+    #         The result of `info` for the second chain to compare.
 
-        """
+    #     Returns
+    #     -------
+    #     matching_pairs : list of pairs of unit ids
 
-        with self.session() as session:
-            corr_pos = mod.CorrespondencePositions     # C
-            exp_map1 = aliased(mod.ExpSeqUnitMapping)           # M1
-            exp_map2 = aliased(mod.ExpSeqUnitMapping)           # M2
+    #     """
 
-            mycolumns = [corr_pos.correspondence_id, exp_map1.unit_id.label('unit1'), exp_map2.unit_id.label('unit2')]
+    #     with self.session() as session:
+    #         corr_pos = mod.CorrespondencePositions     # C
+    #         exp_map1 = aliased(mod.ExpSeqUnitMapping)           # M1
+    #         exp_map2 = aliased(mod.ExpSeqUnitMapping)           # M2
 
-            # if mycolumns does not reference the first table to be used in the join, use select_from
-            # select_from(corr_pos).\
-            # The query without joining units1, units2 takes about 41 seconds on rnatest, for T.th. LSU
-            # Joining on units1, units2 to get the pdb id takes about 58 seconds
-            # Not filtering for chain takes many, many minutes, so don't do that
-            # filtering exp_map1.unit_id.contains(info1['pdb']) takes 46 seconds
-            # filtering also on info2['pdb'] takes 27 to 39 seconds, so that seems to be the fastest
-            # filtering with like(info1['pdb']+"%") on both 1 and 2 takes 79 seconds
+    #         mycolumns = [corr_pos.correspondence_id, exp_map1.unit_id.label('unit1'), exp_map2.unit_id.label('unit2')]
 
-            query = session.query(*mycolumns).\
-                join(exp_map1, exp_map1.exp_seq_position_id == corr_pos.exp_seq_position_id_1).\
-                join(exp_map2, exp_map2.exp_seq_position_id == corr_pos.exp_seq_position_id_2).\
-                filter(corr_pos.correspondence_id == corr_id).\
-                filter(exp_map1.chain == info1['chain_name']).\
-                filter(exp_map2.chain == info2['chain_name']).\
-                filter(exp_map1.unit_id.contains(info1['pdb'])).\
-                filter(exp_map2.unit_id.contains(info2['pdb']))
+    #         # if mycolumns does not reference the first table to be used in the join, use select_from
+    #         # select_from(corr_pos).\
+    #         # The query without joining units1, units2 takes about 41 seconds on rnatest, for T.th. LSU
+    #         # Joining on units1, units2 to get the pdb id takes about 58 seconds
+    #         # Not filtering for chain takes many, many minutes, so don't do that
+    #         # filtering exp_map1.unit_id.contains(info1['pdb']) takes 46 seconds
+    #         # filtering also on info2['pdb'] takes 27 to 39 seconds, so that seems to be the fastest
+    #         # filtering with like(info1['pdb']+"%") on both 1 and 2 takes 79 seconds
 
-            """
-                filter(exp_map1.unit_id.like(info1['pdb']+"%")).\
-                filter(exp_map2.unit_id.like(info2['pdb']+"%"))
+    #         query = session.query(*mycolumns).\
+    #             join(exp_map1, exp_map1.exp_seq_position_id == corr_pos.exp_seq_position_id_1).\
+    #             join(exp_map2, exp_map2.exp_seq_position_id == corr_pos.exp_seq_position_id_2).\
+    #             filter(corr_pos.correspondence_id == corr_id).\
+    #             filter(exp_map1.chain == info1['chain_name']).\
+    #             filter(exp_map2.chain == info2['chain_name']).\
+    #             filter(exp_map1.unit_id.contains(info1['pdb'])).\
+    #             filter(exp_map2.unit_id.contains(info2['pdb']))
 
-                limit(10)
-                join(units1, units1.unit_id == exp_map1.unit_id).\
-                join(units2, units2.unit_id == exp_map2.unit_id).\
-                filter(units1.pdb_id == info1['pdb']).\
-                filter(units2.pdb_id == info2['pdb'])
-                filter(units1.unit_id <> units2.unit_id)
-                filter(units1.chain == info1['chain_name']).\
-                filter(units2.chain == info2['chain_name'])
-            """
+    #         """
+    #             filter(exp_map1.unit_id.like(info1['pdb']+"%")).\
+    #             filter(exp_map2.unit_id.like(info2['pdb']+"%"))
 
-            # the query does not seem to actually run until you ask for data from it;
-            # setting up is instantaneous, evaluating or counting takes time
-            self.logger.info("get_unit_correspondences: query set up for %s" % corr_id)
+    #             limit(10)
+    #             join(units1, units1.unit_id == exp_map1.unit_id).\
+    #             join(units2, units2.unit_id == exp_map2.unit_id).\
+    #             filter(units1.pdb_id == info1['pdb']).\
+    #             filter(units2.pdb_id == info2['pdb'])
+    #             filter(units1.unit_id <> units2.unit_id)
+    #             filter(units1.chain == info1['chain_name']).\
+    #             filter(units2.chain == info2['chain_name'])
+    #         """
 
-            matching_pairs = []
-            for r in query:
-                if r.unit1 and r.unit2 and "|" in r.unit1 and "|" in r.unit2:
-                    matching_pairs.append((r.unit1,r.unit2))
+    #         # the query does not seem to actually run until you ask for data from it;
+    #         # setting up is instantaneous, evaluating or counting takes time
+    #         self.logger.info("get_unit_correspondences: query set up for %s" % corr_id)
 
-            self.logger.info("get_unit_correspondences: query found %d matching pairs" % len(matching_pairs))
+    #         matching_pairs = []
+    #         for r in query:
+    #             if r.unit1 and r.unit2 and "|" in r.unit1 and "|" in r.unit2:
+    #                 matching_pairs.append((r.unit1,r.unit2))
 
-            return matching_pairs
+    #         self.logger.info("get_unit_correspondences: query found %d matching pairs" % len(matching_pairs))
+
+    #         return matching_pairs
 
     def get_unit_correspondences_id_chain(self, corr_id, chain1_name, chain2_name):
         """
@@ -677,8 +681,9 @@ class Loader(core.SimpleLoader):
     def load_centers_rotations_pickle(self,info,allunitdictionary):
 
         for chain_string in info['ife_id'].split('+'):
-            ## changed from RNA to NA
-            picklefile = 'pickle-FR3D/' + chain_string.replace('|','-') + '_NA.pickle'
+            # unit directory relative to hub-core
+            unit_directory = 'data/units'
+            picklefile = os.path.join(unit_directory,chain_string.replace('|','-') + '_NA.pickle')
 
             if not chain_string in allunitdictionary:
 
@@ -1014,10 +1019,10 @@ class Loader(core.SimpleLoader):
         """
 
         if len(c1) == 0:
-            self.logger.warning("No matched nucleotides, using -1 instead")
+            self.logger.warning("No matched nucleotides, using discrepancy = -1")
             disc = -1
         elif len(c1) < 3:
-            self.logger.warning("Too few matched nucleotides to compute discrepancy for %s %s, using -1 instead" %
+            self.logger.warning("Too few matched nucleotides to compute discrepancy for %s %s, using disc = -1 instead" %
                                   (info1['name'], info2['name']))
             disc = -1
         else:
@@ -1026,12 +1031,12 @@ class Loader(core.SimpleLoader):
                 disc = matrix_discrepancy(c1, r1, c2, r2)
 
             except Exception as err:
-                self.logger.warning("Could not compute discrepancy for %s %s, using -1 instead" %
+                self.logger.warning("Could not compute discrepancy for %s %s, using discrepancy = -1 instead" %
                                   (info1['name'], info2['name']))
                 disc = -1
 
             if np.isnan(disc):
-                self.logger.warning("Could not compute discrepancy for %s %s, using -1 instead" %
+                self.logger.warning("Could not compute discrepancy for %s %s, using discrepancy = -1 instead" %
                                   (info1['name'], info2['name']))
                 disc = -1
 
@@ -1158,10 +1163,12 @@ class Loader(core.SimpleLoader):
                 chain_info[chain_id] = self.get_chain_info(chain_id)
 
             # takes about 44 seconds on rnatest in December 2020
+            # takes about 2 seconds on rnaprod2 in September 2024
             self.logger.info("Loading unit to position correspondences")
             unit_to_position = pickle.load(open("unit_to_position.pickle","rb"))
 
             # takes about 45 seconds on rnatest in December 2020
+            # takes about 7 seconds on rnaprod2 in September 2024
             self.logger.info("Loading position to position correspondences")
             position_to_position = pickle.load(open("position_to_position.pickle","rb"))
 
@@ -1296,7 +1303,6 @@ class Loader(core.SimpleLoader):
 
                 self.compare_list_of_pairs(old_unit_pairs,unit_pairs)
                 """
-
 
                 # show some matched units to build confidence
                 if len(unit_pairs) > 0:
