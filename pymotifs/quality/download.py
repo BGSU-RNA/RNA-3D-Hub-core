@@ -1,10 +1,12 @@
-"""Download and store validation reports. This will download all validation
+"""
+Download and store validation reports. This will download all validation
 reports from PDB and store them locally as a gzip file. In addition, it will
 write an empty file for any report it could not download.
 """
 
 import os
 import ftplib
+import urllib.request
 
 import pymotifs.utils as ut
 import pymotifs.core as core
@@ -47,7 +49,8 @@ class Loader(core.Loader):
         return util.filename(pdb, compressed=True)
 
     def remote(self, pdb):
-        """Get the path to validation report on PDB's FTP servers.
+        """
+        Get the path to validation report on PDB's FTP servers.
 
         Parameters
         ----------
@@ -89,8 +92,8 @@ class Loader(core.Loader):
         return os.path.exists(self.filename(pdb))
 
     def data(self, pdb, **kwargs):
-        """Compute the quality assignments for residues in the structure. This
-        will fetch the validation report from PDB and convert the entries there
+        """
+        Fetch the validation report from PDB and convert the entries there
         into forms suitable to write to the database. If the report has no RSR
         or DCC data then a `core.Skip` exception will be raised.
 
@@ -104,14 +107,25 @@ class Loader(core.Loader):
         data: iterable
             An iterable of a quality assignments to store in the database.
         """
+
+        # Example: https://files.rcsb.org/pub/pdb/validation_reports/tn/4tna/4tna_validation.xml.gz
+        pdb_url = "https://files.rcsb.org/pub/pdb/validation_reports/{short}/{pdb}/{pdb}_validation.xml.gz".format(short=pdb[1:3].lower(), pdb=pdb.lower())
+
+        # Example: /usr/local/pipeline/hub-core/MotifAtlas/quality/validation-reports/4tna.xml.gz
         filename = self.filename(pdb)
+
         directory = os.path.dirname(filename)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+        self.logger.info("Saving data in %s" % filename)
+
         try:
-            remote = self.remote(pdb)
-            return self.ftp(remote)
+            # download from pdb_url and save the .gz file as filename
+            urllib.request.urlretrieve(pdb_url, filename)
+            return None
+            # remote = self.remote(pdb)
+            # return self.ftp(remote)
         except ftplib.error_perm:
             self.logger.warning("Could not fetch quality data for %s", pdb)
             return ''
