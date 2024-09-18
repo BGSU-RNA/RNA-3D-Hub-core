@@ -49,7 +49,7 @@ class Loader(core.Loader):
             return {}
 
         if filename.endswith('.gz'):
-            with gzip.open(filename,'r') as f:
+            with gzip.open(filename,'rt') as f:
                 lines = f.readlines()
         else:
             with open(filename,'r') as f:
@@ -163,9 +163,6 @@ class Loader(core.Loader):
                     chain_name = cm['chain']
                     pdb_start = int(cm['pdb_start'])
                     pdb_end = int(cm['pdb_end'])
-
-                    # print('write_pdb 2',rfam_family)
-
 
                     # previously-used chain_range notation
                     chain_range = "%s_%s_%s_%s" % (pdb_id,chain_name,pdb_start,pdb_end)
@@ -296,14 +293,15 @@ class Loader(core.Loader):
 
     def to_process(self, pdbs, **kwargs):
         """
+        This is the starting point for map_to_rfam.
         Ignore pdbs because we want to map obsolete pdbs as well for backward compatibility.
-
         """
 
         print("Starting to_process for map_to_rfam")
 
         # track rfam families with new PDB chains that need to be aligned
         rfam_families_to_align = set()
+
         # read the current list of Rfam families that need to be aligned
         # if the previous process failed, it will try again now
         rfam_to_align_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'rfam_families_to_align.txt')
@@ -317,7 +315,7 @@ class Loader(core.Loader):
         chain_to_range_to_mapping = self.read_mapping(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'Rfam.pdb.gz'))
 
         # find minimum score in each Rfam family according to Rfam mapping
-        print('Getting min Rfam criteria')
+        self.logger.info('Getting min Rfam scores in each family')
         rfam_family_to_minima = {}
         for chain, range_to_mapping in chain_to_range_to_mapping.items():
             for range_string, rfam_md in range_to_mapping.items():
@@ -351,6 +349,8 @@ class Loader(core.Loader):
 
         # retrieve from the database all chains and sequences that can reasonably map to Rfam
         # or just retrieve all of them; the short ones don't amount to much
+        # This avoids using pdbseqres
+        self.logger.info('Getting RNA chains from the database')
         with self.session() as session:
             query = session.query(mod.ChainInfo.pdb_id,
                                   mod.ChainInfo.chain_name,
@@ -377,6 +377,7 @@ class Loader(core.Loader):
 
         # if any unmapped sequences are the same as a chain that is already mapped, map them like before
         # this avoids having to run cmsearch on them, and promotes consistency.  Also propagates any errors!
+        self.logger.info('Identifying chains whose sequences are already mapped to Rfam')
         for sequence, chains in sequence_to_chains.items():
             new_chains = set(chains) - set(chain_to_range_to_mapping.keys())
             mapped_chains = set(chains) & set(chain_to_range_to_mapping.keys())
@@ -420,7 +421,6 @@ class Loader(core.Loader):
 
         self.logger.info('chain_to_range_to_mapping has %i chains' % len(chain_to_range_to_mapping.keys()))
 
-
         # accumulate unmapped chain sequences, write to a fasta file, run cmsearch
         lines = []
         chains_to_map = set()
@@ -435,7 +435,6 @@ class Loader(core.Loader):
                 lines.append(sequence)
                 self.logger.info('Did not find %s in the mapped chains' % chains[0])
                 print('Did not find %s in the mapped chains' % chains[0])
-
 
         if len(lines) > 0:
             print('Found %i unmapped sequences, writing to chains_for_cmsearch.fa' % (len(lines)/2))
@@ -456,6 +455,7 @@ class Loader(core.Loader):
         chain_to_range_to_cmsearch_results = self.read_cmsearch_results(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'cmsearch_results.txt'),rfam_family_to_minima)
 
         # accumulate new data to write to pdb_chain_to_rfam.txt
+        self.logger.info("Writing any new lines to pdb_chain_to_rfam.txt")
         output_lines = []
         for chain in chains_to_map:
             if chain in chain_to_range_to_mapping:
@@ -531,7 +531,7 @@ class Loader(core.Loader):
 
         # write information about the decisions
         current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        with open(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'mapping_decision_%s.txt' % current_datetime),'w') as f:
+        with open(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'mapping_decision','mapping_decision_%s.txt' % current_datetime),'w') as f:
             # write basic information about each Rfam family's mappings
             for rfam_family, min_score in sorted(rfam_family_to_minima.items()):
                 f.write('%s Min score %7.2f Min length %5d Min ratio %7.2f\n' % (rfam_family,min_score['score'],min_score['length'],min_score['score_per_length']))
@@ -565,16 +565,15 @@ class Loader(core.Loader):
         # write a list of Rfam families that have new chains and so need to be re-aligned
         print('Writing rfam_families_to_align.txt')
         self.logger.info('Writing rfam_families_to_align.txt')
-        # only ever append to this list; the only thing that can take away from the list is the aligning program
+        # only ever append to this list here
+        # the only thing that can take away from the list is the aligning program
         with open(rfam_to_align_filename,'w') as f:
             for rfam_family in sorted_rfam_families_to_align:
                 if not 'RF00000' in rfam_family:
                     # write PDB chain sequences to align in this Rfam family
-                    print('Writing PDB chain sequences to align to %s' % rfam_family)
-                    self.logger.info('Writing PDB chain sequences to align to %s' % rfam_family)
                     num_chains = self.write_pdb_chain_sequences_to_align(RFAM_ALIGNMENT_DIRECTORY,rfam_family,chain_to_range_to_mapping,chain_to_sequence)
-
-                if not "RF00000" in rfam_family:
+                    print('Wrote %4d PDB chain sequences to align to %s' % (num_chains,rfam_family))
+                    self.logger.info('Wrote %4d PDB chain sequences to align to %s' % (num_chains,rfam_family))
                     f.write('%s\n' % rfam_family)
 
         if len(sorted_rfam_families_to_align) == 0:
@@ -738,7 +737,7 @@ class Loader(core.Loader):
                     new_sequence = self.rectify_sequence(line[k+1:].replace('\n',''))
                     new_lines.append(new_sequence + "\n")
 
-        with gzip.open(alignment_file_out_gz,'w') as f:
+        with gzip.open(alignment_file_out_gz,'wt') as f:
             f.writelines(new_lines)
 
 
@@ -870,20 +869,23 @@ class Loader(core.Loader):
 
         # run infernal cmalign to align PDB chain sequences to the model
         # default mxsize is 128, 1200 covers most big alignments
+        # LSU pdb chains got to 13.2 GB on 2024-09-12, about 10 minutes into a 13-minute run
         pdb_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_PDB_chains.sto' % family_id)
         command = '%s --mxsize 1200 --noprob --outformat Pfam %s %s > %s' % (cmalign_location,model_file,pdb_chain_file,pdb_alignment_file_sto)
+        self.logger.info('Running command: %s' % command)
         print('Running command: %s' % command)
         os.system(command)
 
-        # even if Infernal fails, the alignment file will be created, so then a .gz version will be made
+        # even if Infernal fails, the .sto alignment file will be created, so then a .gz version will be made
         # check to see that Infernal really produced an alignment
         # if so gzip, if not remove
-        if os.path.getsize(pdb_alignment_file_sto) == 0:
+        if not os.path.exists(pdb_alignment_file_sto):
+            self.logger.info('Alignment file %s does not exist' % (pdb_alignment_file_sto))
+        elif os.path.getsize(pdb_alignment_file_sto) == 0:
             os.remove(pdb_alignment_file_sto)
             self.logger.info('Infernal failed to align %s' % pdb_chain_file)
             self.logger.info('Command was: %s' % command)
             raise core.Skip("Something went wrong with aligning PDB chain sequences for %s" % (rfam_family))
-
         else:
             # read PDB chain alignment file, put sequence all on one line, replace leading and trailing - with .
             alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_PDB_chains.fa' % family_id)
@@ -903,6 +905,7 @@ class Loader(core.Loader):
                         for line in f.readlines():
                             rfam_sequence_file_needed.add(line.replace('\n',''))
                 rfam_sequence_file_needed.add(rfam_family)
+                # write list of Rfam families that need sequence files
                 with open(sequence_needed_filename,'w') as f:
                     for rf in sorted(rfam_sequence_file_needed):
                         f.write('%s\n' % rf)
