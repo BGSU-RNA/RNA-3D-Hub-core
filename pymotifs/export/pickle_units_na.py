@@ -1,4 +1,5 @@
-"""Module for export of unit center/rotation data
+"""
+Module for export of unit center/rotation data
 in pickle format for FR3D.
 """
 
@@ -21,7 +22,6 @@ class Exporter(core.Loader):
     """
     Export unit data in pickle format, one file per IFE-chain.
     """
-
 
     # General Setup
     compressed = False
