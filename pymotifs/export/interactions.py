@@ -24,6 +24,23 @@ class Exporter(core.Exporter):
     compressed = True
     mark = False
 
+
+    def to_process(self, pdbs, **kwargs):
+        """
+        Ignore the pdbs input.
+        The return value is a list with one entry which is a tuple of all pdb ids.
+        We do this because we only want to run this script one time even if we have a lot of pdbs.
+        """
+
+        if len(pdbs) < 100:
+            raise core.Skip("Too few pdb files being processed to write interactions.gz")
+        else:
+            # write interactions for all pdb files, which is slow
+            with self.session() as session:
+                query = session.query(mod.PdbInfo.pdb_id).distinct()
+                return [tuple([result.pdb_id for result in query])]
+
+
     def filename(self, *args, **kwargs):
         """
         This will always return the configured path at
@@ -109,8 +126,9 @@ class Exporter(core.Exporter):
             An iterable over all interactions in all the given structures.
         """
 
-        if len(pdbs) < 100:
-            raise core.Skip("Too few pdb files being processed to write all interactions")
+        # Doesn't work because something already generates a list of *all* pdb ids
+        # if len(pdbs) < 100:
+        #     raise core.Skip("Too few pdb files being processed to write all interactions")
 
         interactions = map(self.interactions, pdbs)
         interactions = it.chain.from_iterable(interactions)
