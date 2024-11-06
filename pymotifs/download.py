@@ -1,11 +1,13 @@
-"""Download CIF files.
+"""
+Download CIF files.
 
 This will download compressed cif files and place under PDBFiles in the defined
 FR3D directory.
 """
 
-import os
 from contextlib import contextmanager
+import os
+import urllib.request
 
 from pymotifs import core
 from pymotifs import utils
@@ -19,20 +21,19 @@ class Writer(core.FileHandleSaver):
 
 
 class Downloader(core.Loader):
-    file_url = 'http://files.rcsb.org/download/{pdb}.cif.gz'
     name = 'downloader'
+    file_url = 'https://files.rcsb.org/download/{pdb}.cif.gz'
     update_gap = False
     dependencies = set()
     saver = Writer
 
     def __init__(self, *args, **kwargs):
         super(Downloader, self).__init__(*args, **kwargs)
-        self.gzip = utils.GzipFetchHelper(allow_fail=True)
-        self.location = os.path.join(self.config['locations']['fr3d_root'],
-                                     'PDBFiles')
+        self.FH = utils.FetchHelper(allow_fail=True)
+        self.location = self.config['locations']['cif_files']
 
     def filename(self, name, **kwargs):
-        return os.path.realpath(os.path.normpath(os.path.join(self.location, name + '.cif')))
+        return os.path.realpath(os.path.normpath(os.path.join(self.location, name + '.cif.gz')))
 
     def url(self, name, **kwargs):
         return self.file_url.format(pdb=name)
@@ -45,14 +46,22 @@ class Downloader(core.Loader):
         return os.path.exists(self.filename(entry))
 
     def data(self, name, **kwargs):
+        downloaded = False
         try:
-            content = self.gzip(self.url(name, **kwargs))
+            # skip the helpers and saver stage and just get it done
+            url = self.url(name, **kwargs)
+            filename = self.filename(name, **kwargs)
+            urllib.request.urlretrieve(url, filename)
+            downloaded = True
         except Exception as err:
             self.logger.error('%s could not be downloaded', name)
             self.logger.exception(err)
             raise core.Skip("Couldn't get %s" % name)
 
-        if not content:
-            core.Skip("Downloaded empty file %s" % name)
+        if downloaded:
+            raise core.Skip("Downloaded to %s" % filename)
 
-        return content
+        # if not content:
+        #     core.Skip("Downloaded empty file %s" % name)
+
+        # return content
