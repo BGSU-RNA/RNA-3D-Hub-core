@@ -51,11 +51,15 @@ class Exporter(core.Exporter):
     def data(self, pdb, **kwargs):
 
         '''
+        Ignores input pdb
         This method writes the discrepancy for every possible combination
         of ife ids into a file for later import.
-        The data is pickled for easy reading and writing in python.
+        Note: for smaller file size and speed of reading, each pair of
+        IFEs is only listed once, and not listed in both orders.
+        Self discrepancies are not listed.
+        Output is text format, tab delimited.
 
-            :results: list of lists of the the two ife ids and their corresponding discrepancy.
+        :results: list of lists of the the two ife ids and their corresponding discrepancy.
         '''
 
         with self.session() as session:
@@ -69,10 +73,9 @@ class Exporter(core.Exporter):
                                   join(IC2, IC2.chain_id == CCS.chain_id_2).\
                                   filter(IC1.index == 0).\
                                   filter(IC2.index == 0).\
-                                  filter(IC1.chain_id != IC2.chain_id).\
+                                  filter(IC1.chain_id < IC2.chain_id).\
                                   order_by(IC1.ife_id, IC2.ife_id).\
                                   distinct()
-#            query.all()
 
             count = query.count()
             if not count:
@@ -84,7 +87,7 @@ class Exporter(core.Exporter):
 
             results = [[r.ife1, r.ife2, r.discrepancy] for r in query]
 
-            # write into a file
+            # write into a text file
             self.logger.info("Writing IFEdiscrepancy.txt")
             with open(os.path.join(DATA_FILE_DIRECTORY,'IFEdiscrepancy.txt'), 'w') as f:
                 for r in results:
