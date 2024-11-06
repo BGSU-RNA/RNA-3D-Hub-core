@@ -70,14 +70,16 @@ def defaults():
         "locations": {
             "base": base,
             "cache": os.path.join(base, "cache"),
-            "loops_mat_files": os.path.join(base, "MotifAtlas",
-                                            "PrecomputedData"),
-            "loops_search_dir": os.path.join(base, "MotifAtlas", "aAa"),
+            "cif_files": os.path.join(base, "cif_files"), # where .cif.gz files are saved
+            "data": os.path.join(base, "data"),           # output files, temporary files
             "log_dir": os.path.join(base, "MotifAtlas", "logs"),
-            "releases_dir": os.path.join(base, "MotifAtlas", "Releases"),
-            "fr3d_root": os.path.join(base, "FR3D"),      # where .cif files are saved
             'quality_reports': os.path.join(base, "MotifAtlas", 'quality',
                                             'validation-reports'),
+            "releases_dir": os.path.join(base, "MotifAtlas", "Releases"),
+            "fr3d_root": os.path.join(base, "FR3D"),      # no longer used
+            "loops_search_dir": os.path.join(base, "MotifAtlas", "aAa"), # no longer used
+            "loops_mat_files": os.path.join(base, "MotifAtlas",
+                                            "PrecomputedData"),  # no longer used
         },
         'recaculate': collections.defaultdict(lambda: False)
     }
