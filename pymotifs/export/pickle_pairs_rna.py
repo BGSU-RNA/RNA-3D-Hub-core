@@ -27,7 +27,6 @@ class Exporter(core.Loader):
     # General Setup
     compressed = False
     mark = False
-    # dependencies = set([ChainLoader, InteractionLoader, AnnotationLoader, IfeInfoLoader])
     dependencies = set([ChainLoader, InteractionLoader, IfeInfoLoader])
 
     def has_data(self, pdb, *args, **kwargs):
@@ -47,7 +46,8 @@ class Exporter(core.Loader):
 
 
     def filename(self, pdb, **kwargs):
-        """Create the filename for the given PDB.
+        """
+        Create the filename for the given PDB.
 
         Parameters
         ----------
@@ -82,7 +82,7 @@ class Exporter(core.Loader):
         """
 
         with self.session() as session:
-            iupi = mod.UnitPairsInteractions
+            iupi = mod.UnitPairsInteractions2024
 
             query = session.query(iupi.unit_id_1,
                                iupi.unit_id_2,
@@ -98,18 +98,11 @@ class Exporter(core.Loader):
                                iupi.f_covalent).\
                     filter(iupi.unit_id_1.isnot(None)).\
                     filter(iupi.unit_id_2.isnot(None)).\
-                    filter(iupi.program == 'python').\
                     filter(iupi.pdb_id == pdb)
-
-            # count = query.count()
-            # if not count:
-            #     self.logger.info("No interactions found for %s", pdb)
-            # else:
-            #     self.logger.info("Found %s interactions for %s", count, pdb)
 
             interactionToPair = defaultdict(list)
 
-            category_list = ['f_lwbp', 'f_stacks', 'f_bphs', 'f_brbs', 'f_so', 'f_coplanar', 'f_sugar_ribose', 'f_covalent', 'f_bss']
+            category_list = ['f_lwbp', 'f_stacks', 'f_bphs', 'f_brbs', 'f_so', 'f_coplanar', 'f_sugar_ribose', 'f_bss', 'f_covalent']
             for result in query:
                 unit_id_1 = result.unit_id_1
                 unit_id_2 = result.unit_id_2
