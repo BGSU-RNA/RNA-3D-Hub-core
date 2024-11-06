@@ -3,14 +3,14 @@ are the basic building blocks that all stages are built from and thus contain
 the basic logic for all stages.
 """
 
-import os
 import abc
-import sys
-import pickle
-import datetime
 from contextlib import contextmanager
-
+import datetime
+import gzip
 import io as sio
+import os
+import pickle
+import sys
 
 from fr3d.data import Structure
 from fr3d.cif.reader import Cif
@@ -66,6 +66,7 @@ class Stage(base.Base):
     skip = []
     saver = None
     use_marks = False
+    recompute = False
 
     def __init__(self, *args, **kwargs):
         """Build a new Stage.
@@ -121,7 +122,7 @@ class Stage(base.Base):
         pass
 
     def remove(self, entry, **kwargs):
-        """A method to cleanup if writing data failed. This should be
+        """A method to clean up if writing data failed. This should be
         implemented by inheriting classes, because this version does nothing.
         Generally it is a good idea if the method uses `dry_run` option and
         then does nothing given True. In general this method should **never**
@@ -138,7 +139,8 @@ class Stage(base.Base):
         pass
 
     def cif(self, pdb):
-        """A method to load the cif file for a given pdb id. If given a CIF
+        """
+        A method to load the cif file for a given pdb id. If given a CIF
         file this will return the given CIF file.
 
         Parameters
@@ -155,30 +157,46 @@ class Stage(base.Base):
         if isinstance(pdb, Cif):
             return pdb
 
-        try:
-            with open(self._cif(pdb), 'rb') as raw:
-                # raw_content = raw.read()
-                # bytes_io_raw = sio.BytesIO(raw_content)
-                # Read the content of the file and wrap it in a BytesIO object
-                raw_content = raw.read()
-                bytes_io_raw = sio.BytesIO(raw_content)
+        filename = self._cif(pdb)
 
-                # Decode the content from bytes to str
-                decoded_content = bytes_io_raw.read().decode('utf-8')
+        if ".gz" in filename:
+            try:
+                with gzip.open(filename, 'rt') as raw:
+                    # structure = Cif(raw).structure()
+                    return Cif(raw)
+            except ComplexOperatorException as err:
+                if self.skip_complex:
+                    self.logger.warning("Got a complex operator for %s, skipping",
+                                        pdb)
+                    raise Skip("Complex operator must be skipped")
+                raise err
+        else:
+            try:
+                with open(filename, 'rb') as raw:
+                    # raw_content = raw.read()
+                    # bytes_io_raw = sio.BytesIO(raw_content)
+                    # Read the content of the file and wrap it in a BytesIO object
+                    raw_content = raw.read()
+                    bytes_io_raw = sio.BytesIO(raw_content)
 
-                # Wrap the decoded content in a StringIO object to pass to Cif
-                string_io_raw = sio.StringIO(decoded_content)
-                return Cif(string_io_raw)
-        except ComplexOperatorException as err:
-            if self.skip_complex:
-                self.logger.warning("Got a complex operator for %s, skipping",
-                                    pdb)
-                raise Skip("Complex operator must be skipped")
-            raise err
+                    # Decode the content from bytes to str
+                    decoded_content = bytes_io_raw.read().decode('utf-8')
+
+                    # Wrap the decoded content in a StringIO object to pass to Cif
+                    string_io_raw = sio.StringIO(decoded_content)
+                    return Cif(string_io_raw)
+            except ComplexOperatorException as err:
+                if self.skip_complex:
+                    self.logger.warning("Got a complex operator for %s, skipping",
+                                        pdb)
+                    raise Skip("Complex operator must be skipped")
+                raise err
 
     def structure(self, pdb):
-        """A method to load the cif file and get a `fr3d.data.structure.Structure`
-        for. This will find the CIF file, if it exists and then parse it to get
+        """
+        A method to load the cif file and get a `fr3d.data.structure.Structure`
+        for.
+        This will find the CIF file, if it exists and then parse it to get
         the Structure data. If given a `fr3d.data.structure.Structure`, then
         this will simply return it. If given a `fr3d.reader.cif.Cif` data
         structure then this will return the structure that is part of that
@@ -284,7 +302,8 @@ class Stage(base.Base):
         return data
 
     def must_recompute(self, entry, recalculate=False, **kwargs):
-        """Detect if we have been told to recompute this stage for this pdb.
+        """
+        Detect if we have been told to recompute this stage for this pdb.
         This can be done by either passing in a bool which will always be
         interpreted as meaning to recalculate. If recalculate is a `set`,
         `tuple`, or `list` that contains the name of this stage then this will
@@ -313,6 +332,8 @@ class Stage(base.Base):
             True if we must recompute.
         """
         if recalculate is True:
+            return True
+        if self.recompute:
             return True
         if isinstance(recalculate, (set, list, tuple)):
             try:
@@ -586,7 +607,6 @@ class Loader(Stage):
             if kwargs.get('dry_run'):
                 self.logger.debug("Skipping removal in dry run")
             else:
-                self.logger.debug("Removing old data for %s", entry)
                 self.remove(entry)
 
         data = self.data(entry, **kwargs)
@@ -800,6 +820,7 @@ class Exporter(Loader):
         -------
         input : list
             The list of pdbs to attempt to process.
+        output : list with one entry, which is a tuple
         """
 
         if not kwargs.get('all'):
