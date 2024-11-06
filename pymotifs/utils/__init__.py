@@ -205,14 +205,15 @@ def known_subclasses(base, glob):
 
 
 def known(config, pdb=False, cif=True, pdb1=False, cifatoms=True):
-    """Find all known mmCIF, pdb and/or PDB1 files. Giving all flags means
+    """
+    Find all known mmCIF, pdb and/or PDB1 files. Giving all flags means
     getting all PDB, mmCIF or PDB1 files. This will check if we have a copy of
     the file downloaded with the correct extension.
 
     Parameters
     ----------
     config : defaultdict
-        The configuration object that species the 'fr3d_root'.
+        The configuration object that species the 'cif_files'.
     pdb : bool, optional
         A flag if we should get known PDB files.
     cif : bool, optional
@@ -226,13 +227,14 @@ def known(config, pdb=False, cif=True, pdb1=False, cifatoms=True):
         A PDB id that is known.
     """
 
-    path = os.path.join(config['locations']['fr3d_root'], 'PDBFiles')
+    path = os.path.join(config['locations']['cif_files'])
     names = coll.defaultdict(dict)
 
     for filename in os.listdir(path):
         if not os.path.isfile(os.path.join(path, filename)):
             continue
-        if 'exemplar' in filename.lower():
+        filename_lower = filename.lower()
+        if 'exemplar' in filename_lower:
             continue
         name, ext = os.path.splitext(filename)
         ext = ext.replace('.', '')
@@ -240,9 +242,9 @@ def known(config, pdb=False, cif=True, pdb1=False, cifatoms=True):
 
     for name, exts in names.items():
         if not pdb or (pdb and exts.get('pdb')):
-            if not cif or (cif and exts.get('cif')):
-                if not pdb1 or (pdb1 and exts.get('pdb1')):
-                    if not cifatoms or (cifatoms and exts.get('cifatoms')):
+            if not cif or (cif and '.cif.gz' in filename_lower):
+                if not cif or (cif and exts.get('cif')):
+                    if not pdb1 or (pdb1 and exts.get('pdb1')):
                         yield name
 
 
@@ -348,8 +350,7 @@ class StructureFileFinder(object):
     def __init__(self, config, extension=None, strict=True):
         self.config = config
         self.strict = strict
-        self.location = os.path.join(self.config['locations']['fr3d_root'],
-                                     'PDBFiles')
+        self.location = self.config['locations']['cif_files']
         if extension:
             self.extension = extension
 
@@ -371,14 +372,16 @@ class StructureFileFinder(object):
 
 
 class CifFileFinder(StructureFileFinder):
-    """This is a class that can find cif files. It looks into the configure
+    """
+    This is a class that can find cif files. It looks into the configure
     PDBFiles directory for cif files. It will return the full path to the file,
     or raise an exception if it could not be found in strict mode. If not
     strict it returns None.
     """
 
     """File extension to find."""
-    extension = 'cif'
+    # updated 2024-09-19 to look for .cif.gz files
+    extension = 'cif.gz'
 
 
 class PickleFileFinder(StructureFileFinder):
@@ -421,3 +424,14 @@ class GzipFetchHelper(WebRequestHelper):
         # if py_ver3:
         #     return unzipped.read().decode('utf-8')
         return unzipped.read()
+
+class FetchHelper(WebRequestHelper):
+    """
+    Just like GzipFetchHelper but don't unzip.
+    """
+    def __init__(self, **kwargs):
+        super(FetchHelper, self).__init__(parser=self.parser)
+
+    def parser(self, response):
+        fileobj = StringIO(response.content)
+        return fileobj.read()
