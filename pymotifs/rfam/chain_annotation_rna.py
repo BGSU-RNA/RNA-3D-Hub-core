@@ -5,24 +5,21 @@ This module contains a loader to load all unit level information into the
 database.
 """
 
-from cgi import print_arguments
-import itertools as it
-from operator import contains
+# from cgi import print_arguments
+# import itertools as it
+# from operator import contains
 import pymotifs.core as core
 from pymotifs import models as mod
-from pymotifs.utils import units
-from pymotifs import utils
+# from pymotifs.utils import units
+# from pymotifs import utils
 # from pymotifs.download import Downloader
 # from pymotifs.pdbs.info import Loader as PdbLoader
 # from pymotifs.units import Loader as UnitInfoLoder
-from sqlalchemy import and_
-from collections import defaultdict
-from Bio.Alphabet import ThreeLetterProtein
-from sqlalchemy import desc
+# from sqlalchemy import and_
+# from collections import defaultdict
+# from sqlalchemy import desc
 from sqlalchemy import asc
 from sqlalchemy import not_
-
-
 
 
 class Loader(core.Loader):
@@ -44,7 +41,7 @@ class Loader(core.Loader):
             query = session.query(mod.ChainInfo.pdb_id).\
                 filter(mod.ChainInfo.entity_macromolecule_type.contains('Polyribonucleotide'))
         not_in_table_pdbs = set([r.pdb_id for r in query])
-        
+
         with self.session() as session:
             # query = session.query(mod.ChainPropertyValue.pdb_id).\
             query = session.query(mod.ChainPropertyValue.pdb_id)
@@ -102,8 +99,8 @@ class Loader(core.Loader):
     #     return d
 
     '''
-    This function checks to see if the string specified file from rfam 
-    exists, if not then download the file from rfam. Once the file is 
+    This function checks to see if the string specified file from rfam
+    exists, if not then download the file from rfam. Once the file is
     present this program reads and returns the tab separated file from rfam
     '''
 
@@ -136,19 +133,19 @@ class Loader(core.Loader):
         chain_to_rfamily_id = {}  # chain -> RF0001, chain start, chain end
         for line in rfam_pdb_list[1:]:
             if pdb_id in line[1].upper():
-                chain = line[2]  # ignore model number use the %s format 
+                chain = line[2]  # ignore model number use the %s format
                 rfam_family = line[0]
                 if chain not in chain_to_rfamily_id:
                     chain_to_rfamily_id[chain] = rfam_family, line[5], line[3], line[4]
 
-        
+
         # 2nd. Loop over the family list
         rfam_family_to_family = {}  # RF0001 -> 5S ribosomal RNA
         for line in rfam_family_list:
             family = line[-1]
             rfam_family = line[0]
             rfam_family_to_family[rfam_family] = family
-        
+
         # 3rd. combine chain_to_rfamily_id and rfam_family_to_family by rfamily id
         rfamilyid_to_rfam_data = {}  # chain -> RF0001, chain start, chain end, 5S ribosomal RNA
         for key in chain_to_rfamily_id:
@@ -161,19 +158,19 @@ class Loader(core.Loader):
             # print ("%s | %s" % (key, rfamilyid_to_rfam_data[key]))
 
         return rfamilyid_to_rfam_data # keys are chains in the form pdbid|1|chain
-    
+
     def domain_checking(self,rna_chains, all_chains, pdb_id):
         checks = set()
         from_title = False
         from_rfam_ncbi_mismatch = False
         from_ssu_lsu_ncbi_mismatch  = False
         clue_count_dict = {}
-        
+
         mitochondria_count = 0.0
         chloroplast_count = 0.0
         indicator_count = 0.0
         voted_domain = None
-        
+
         # checking title [This check is at the PDB level]
         # if len(rna_chains) > 0:
         title = rna_chains[0]['title']
@@ -183,7 +180,7 @@ class Loader(core.Loader):
         elif "chloroplast".upper() in title.upper():
             checks.add("Chloroplast")
             from_title = True
-        
+
         # checking compound name [This check is at the PDB level]
         for chain in all_chains:
             if "chloroplast".upper() in chain['compound'].upper():
@@ -200,16 +197,16 @@ class Loader(core.Loader):
                 voted_domain = "Mitochondria"
             elif c_percent > threshold:
                 voted_domain = "Chloroplast"
-        
+
         # checking if there is a mismatch between SSU chain and LSU chain domains [This check is at the PDB level]
         ssu = None
         lsu = None
         lsu_rfam_id_set = {"RF02541","RF02546"}
-        ssu_rfam_id_set = {"RF00177","RF02545","RF02542"} 
+        ssu_rfam_id_set = {"RF00177","RF02545","RF02542"}
         for row in rna_chains:
             if row['tax_id'].isdigit() and 'rfam_family' in row:
                 if row['domain'].startswith("Eukarya"): # Should we check for mismatches outside of just Eukarya?
-                    if row['rfam_family'] in ssu_rfam_id_set: 
+                    if row['rfam_family'] in ssu_rfam_id_set:
                         ssu = row
                     elif row['rfam_family'] in lsu_rfam_id_set:
                         lsu = row
@@ -224,7 +221,7 @@ class Loader(core.Loader):
         for chain in rna_chains:
             from_rfam_ncbi_mismatch = False
             lsu_ncbi_mismatch = False
-            ssu_ncbi_mismatch = False 
+            ssu_ncbi_mismatch = False
             from_ssu_lsu_ncbi_mismatch  = False
             if chain['tax_id'].isdigit() and 'rfam_family' in chain:
                 if chain['domain'].startswith("Eukarya"):
@@ -246,7 +243,7 @@ class Loader(core.Loader):
                 if clue:
                     row_counter += 1
             clue_count_dict[chain['chain_name']] = [row_counter, checks, clue_checks_dict]    #chains are keys
-        
+
         # checking the domain source of each row at the pdb id level
         for chain in rna_chains:
             source_str = "NCBI"
@@ -268,9 +265,9 @@ class Loader(core.Loader):
                         consensus_domain = list(check_set)[0]
 
                 if chain['tax_id'].isdigit():
-                    chain['source'] = source_str   
+                    chain['source'] = source_str
                 else:
-                    chain['source'] = "No_tax" 
+                    chain['source'] = "No_tax"
                 chain['clues'] = {'from_title':clue_booleans["PDB_Title"], 'from_compound_name':clue_booleans["PDB_Name"], 'percent_m_or_c_chains':clue_booleans["Other_chains"], 'from_Rfam_ncbi_domain_mismatch':clue_booleans["NCBI_Rfam_mismatch"], 'from_ssu_lsu_domain_mismatch':clue_booleans["SSU_LSU_mismatch"], 'num_clues': num_clues, 'check_set':check_set}
                 chain['domain'] = consensus_domain
 
@@ -312,7 +309,7 @@ class Loader(core.Loader):
                     chain['source'] = "Protein / RNA chains vote (compound name: Multiple domains found)"
 
         #return rna_dict.copy()
-    
+
     def consensus_naming(self, rna_chains, rfam_family_to_standardized_name):
         new_rfam = set()
         # for pdb in pdb_dict:
@@ -323,7 +320,7 @@ class Loader(core.Loader):
             # RF00001 length rule: if chain length > 500 use PDB description as consensus name
             chain_length = chain['chain_length']
 
-            
+
             # chain['std_name'] = pdb_compound_name
             if 'rfam_family' in chain:
                 if chain['rfam_family'] in rfam_family_to_standardized_name :
@@ -339,13 +336,13 @@ class Loader(core.Loader):
                 if str(chain_length).isdigit():
                     if int(chain_length) > 500 and chain['rfam_family'] == "RF00001":
                         chain['std_name'] = pdb_compound_name
-                     
+
             if "7S.S" in pdb_compound_name.upper(): # Rule: if the PDB compound contains "7S.S", say "Signal recognition particle domain S
                 standardized_name = "Signal recognition particle domain S RNA; SRP S RNA"
                 chain['std_name'] = standardized_name
             # elif chain['tax_id'].isdigit():
             if 'domain' in chain:
-                # Archea rules 
+                # Archea rules
                 if chain['domain'].startswith("Archaea"):
                     if '7S.S' not in pdb_compound_name.upper() and "7S" in pdb_compound_name.upper(): # Rule:  if domain == 'Archaea' and '7S' in PDB_compound:
                         standardized_name = "Signal recognition particle RNA; SRP RNA"
@@ -355,14 +352,14 @@ class Loader(core.Loader):
                         chain['std_name'] = standardized_name
                     elif 'std_name' not in chain and '23S' in pdb_compound_name.upper() and int(chain['chain_length']) < 2000:
                         standardized_name = "Large subunit ribosomal RNA fragment; LSU rRNA fragment"
-                        chain['std_name'] = standardized_name            
-                # Bacteria rules   
+                        chain['std_name'] = standardized_name
+                # Bacteria rules
                 if chain['domain'].startswith("Bacteria") and "16S" in pdb_compound_name.upper():
                     if int(chain_length) < 500:
                         standardized_name = 'Small subunit ribosomal RNA fragment; SSU rRNA fragment'
                     else:
                         standardized_name = 'Small subunit ribosomal RNA; SSU rRNA'
-                    chain['std_name'] = standardized_name 
+                    chain['std_name'] = standardized_name
                 # Mitochondria rules
                 if 'domain' in chain:
                     if not chain['domain'] == 'Mitochondrial' and "16S" in pdb_compound_name and int(chain_length) < 500:
@@ -371,11 +368,11 @@ class Loader(core.Loader):
                 #Helix rules
                 helix_set = set([44, 45, 6, 28, 40, 93, 8, 18, 89, 42, 69, 71, 89, 92, 95, 5, 14, 15, 34, 39])
                 if 'FRAGMENT' in pdb_compound_name.upper() or 'HELIX' in pdb_compound_name.upper() or any('H' +str(num) in pdb_compound_name.upper() for num in helix_set):
-                    # If a matching number is found, it is stored in the matching_num variable, None is stored otherwise. 
+                    # If a matching number is found, it is stored in the matching_num variable, None is stored otherwise.
                     # matching_num = next((num for num in helix_set if str(num) in pdb_compound_name), None)
                     # matching_num = next(('H' + str(num) for num in helix_set if 'H' + str(num) in pdb_compound_name.upper()), None)
                     matching_num = next((num for num in helix_set if ('H'+str(num) in pdb_compound_name.upper()) or ('HELIX '+str(num) in pdb_compound_name.upper())), None)
-                    if matching_num is not None: 
+                    if matching_num is not None:
                         if 'std_name' in chain:
                             helix_string = 'Helix'
                             long_form = chain['std_name'].split(';')[0]
@@ -403,7 +400,7 @@ class Loader(core.Loader):
                                 chain['std_name'] = long_form + short_form
 
 
-                    
+
     def make_rfam_family_to_standardized_name(self, standardized_name_list):
         rfam_family_to_standardized_name = {}
         cn_list = standardized_name_list[1:]
@@ -431,12 +428,12 @@ class Loader(core.Loader):
                 outerjoin(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id).\
                 filter(mod.ChainInfo.pdb_id == pdb_id, mod.ChainInfo.entity_macromolecule_type.contains('Polyribonucleotide')).\
                 order_by(asc(mod.ChainInfo.chain_id))
-        
+
         print("Current PDB: %s" %(pdb_id))
         data = [] # array containing annotated rna chains (domain, rfam family, standard name)
 
         if rna_query.count() > 0:
-            
+
             print("Procesing PDB: %s" %(pdb_id))
 
             # query the database for data on all pdb chains that are not RNA in the Chain info table
@@ -451,14 +448,14 @@ class Loader(core.Loader):
                     outerjoin(mod.PdbInfo, mod.ChainInfo.pdb_id == mod.PdbInfo.pdb_id).\
                     filter(mod.ChainInfo.pdb_id == pdb_id, not_(mod.ChainInfo.entity_macromolecule_type.contains('Polyribonucleotide'))).\
                     order_by(asc(mod.ChainInfo.chain_id))
-            
+
             # Loading data files
             self.logger.info("Started Reading files!") # check timestamp in log file
 
             # NCBI Taxonomy files read
             taxonomy_file = "/usr/local/pipeline/hub-core/aux/chain_property_value_files/tax_dictionary.csv"
             tax_dict = self.tax_to_domain(self.open_and_format_file(taxonomy_file,'\t')) # rename to tax_to_dict using find and replace
-            
+
             # Rfam files read
             rfam_pdb_file = "/usr/local/pipeline/hub-core/aux/chain_property_value_files/Rfam.pdb"
             rfam_family_file = "/usr/local/pipeline/hub-core/aux/chain_property_value_files/family.txt"
@@ -467,7 +464,7 @@ class Loader(core.Loader):
             rfam_family_txt_arr = [line[:4] for line in rfam_family_txt]
             rfam_pdb_arr = [line for line in rfam_pdb]
             rfam_dict = self.map_chains_to_rfam_data(rfam_pdb_arr,rfam_family_txt_arr,pdb_id)
-            
+
             # standard names file read
             standardized_names_file = "/usr/local/pipeline/hub-core/aux/chain_property_value_files/standardized_names.tsv"
             standardized_names = self.open_and_format_file(standardized_names_file, '\t')
@@ -489,7 +486,7 @@ class Loader(core.Loader):
                 chain_dict['compound'] = str(r.compound)
                 chain_dict['title'] = str(r.title)
                 chain_dict['tax_id'] = str(r.taxonomy_id)
-                
+
                 # adding ncbi taxonomy data
                 if chain_dict['tax_id'] in tax_dict:
                     # chain_dict['lineage'] = tax_dict[chain_dict['tax_id']][1]
@@ -500,9 +497,9 @@ class Loader(core.Loader):
                 # adding rfam data
                 if chain_dict['chain_name'] in rfam_dict:
                     chain_dict['rfam_family'] = rfam_dict[chain_dict['chain_name']][0]
-                    chain_dict['rfam_description'] = rfam_dict[chain_dict['chain_name']][1]       
+                    chain_dict['rfam_description'] = rfam_dict[chain_dict['chain_name']][1]
                     chain_dict['rfam_bit_score'] = rfam_dict[chain_dict['chain_name']][2]
-                
+
                 rna_chains.append(chain_dict)
 
             for r in pdb_query: # r is a structured variable (like a row)
@@ -522,7 +519,7 @@ class Loader(core.Loader):
 
 
             # checking for domain conflicts
-            self.domain_checking(rna_chains, other_pdb_chains, pdb_id) 
+            self.domain_checking(rna_chains, other_pdb_chains, pdb_id)
 
             # adding standard name
             self.consensus_naming(rna_chains, rfam_family_to_standardized_name)
@@ -534,7 +531,7 @@ class Loader(core.Loader):
                     rna_str += "%s | %s | %s | %s\n" % (pdb_id, line['chain_name'], line['domain'], line['std_name'])
 
                 else:
-                    print("%s | %s | %s | %s\n" % (pdb_id,line['chain_name'], line['domain'], 'No standard name found'))                   
+                    print("%s | %s | %s | %s\n" % (pdb_id,line['chain_name'], line['domain'], 'No standard name found'))
                     rna_str += "%s | %s | %s | %s\n" % (pdb_id, line['chain_name'], line['domain'], 'No standard name found')
 
             # write csv files here
@@ -542,7 +539,7 @@ class Loader(core.Loader):
             # rna_annotations = "/usr/local/pipeline/hub-core/aux/chain_property_value_files/output.txt"
             # with open(rna_annotations, 'a') as f:
             #     f.write(rna_str)
-            
+
             # Making dictionaries for PDB_ID
             for chain in rna_chains: #for chain_dict in other_pdb_chains. Check if its an rna chain, if so make this little dictionary if we have (name, doman rfam family), append it to the data list
                 standardized_name_dict = {}
@@ -568,7 +565,7 @@ class Loader(core.Loader):
                         domain_dict['chain'] = chain_id
                         domain_dict['property'] = property_val
                         domain_dict['value'] = value
-                
+
                 # Rfam family dict
                 property_val = "rfam_family"
                 if 'rfam_family' in chain:
@@ -599,4 +596,4 @@ class Loader(core.Loader):
                 yield mod.ChainPropertyValue(**row)
         else:
             raise core.Skip("RNA data not found for pdb id %s" % (pdb_id))
-       
+

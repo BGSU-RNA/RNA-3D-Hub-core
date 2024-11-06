@@ -1,10 +1,9 @@
-from Bio.Alphabet import ThreeLetterProtein
 
 from pymotifs import core
 from pymotifs import models as mod
 
-AA = [seq.upper() for seq in ThreeLetterProtein().letters]
-
+# most common amino acids
+AA = ["ALA", "ARG", "ASN", "ASP", "CYS","GLU", "GLN", "GLY", "HIS", "ILE","LEU", "LYS", "MET", "PHE", "PRO","SER", "THR", "TRP", "TYR", "VAL","SEC", "PYL"]
 
 class TranslationFailed(Exception):
     """This is raised when we could not translate an old style id to a new

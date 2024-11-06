@@ -5,7 +5,7 @@ This module contains a loader to load all unit level information into the
 database.
 """
 
-import itertools as it
+# import itertools as it
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.utils import units
@@ -13,12 +13,11 @@ from pymotifs import utils
 # from pymotifs.download import Downloader
 # from pymotifs.pdbs.info import Loader as PdbLoader
 # from pymotifs.units import Loader as UnitInfoLoder
-from sqlalchemy import and_
-from collections import defaultdict
-from Bio.Alphabet import ThreeLetterProtein
-from sqlalchemy import desc
-from sqlalchemy import asc
-import re
+# from sqlalchemy import and_
+# from collections import defaultdict
+# from sqlalchemy import desc
+# from sqlalchemy import asc
+# import re
 from pymotifs.units.info import Loader as UnitInfoLoader
 from pymotifs.loops.extractor import Loader as InfoLoader
 from pymotifs.loops.positions import Loader as PositionLoader
@@ -29,15 +28,15 @@ class Loader(core.Loader):
     mark = False
     allow_no_data = True
 
-    dependencies =  set([UnitInfoLoader, InfoLoader, PositionLoader, QALoader]) 
+    dependencies =  set([UnitInfoLoader, InfoLoader, PositionLoader, QALoader])
 
 
-    
+
 
     def to_process(self, pdbs, **kwargs):
         '''
         Every pbd is writen twice because data method has two stages and they are processed twice in data method
-        
+
         '''
         with self.session() as session:
             query = session.query(mod.LoopInfo.pdb_id).\
@@ -47,7 +46,7 @@ class Loader(core.Loader):
                 distinct()
 
             to_use = [(r.pdb_id, i) for r in query for i in [1, 2]]
-        
+
         if len(to_use) > 1:
             return to_use
         else:
@@ -114,7 +113,7 @@ class Loader(core.Loader):
         to_process method, one after another.
         We will get one pdb identifier at a time.
         """
-        
+
         stage_1 = pdb[1]
         current_pdb = pdb[0]
 
@@ -138,7 +137,7 @@ class Loader(core.Loader):
                             filter(mod.LoopPositions.unit_id.like(current_pdb+'%')).\
                             order_by(mod.LoopPositions.loop_id, mod.LoopPositions.position).\
                             subquery()
-                        
+
                         query = session.query(
                             mod.UnitInfo.unit_id,
                             mod.UnitInfo.unit,
@@ -158,11 +157,11 @@ class Loader(core.Loader):
                             order_by(mod.UnitInfo.model, mod.UnitInfo.sym_op, mod.UnitInfo.chain, mod.UnitInfo.chain_index)
 
 
-                        
+
                         count = 0
                         sanity_check = ["A", "C", "G", "U", "DA", "DC", "DG","DT"]
                         rna_or_dna = ["rna", "dna"]
-                        tem_p = 1000 
+                        tem_p = 1000
 
                         keys_update_existing_nts = ['loop_positions_id', 'position_2023']
                         keys_update_modified_nts = ['loop_positions_id', 'loop_id', 'position', 'bulge', 'flanking', 'border', 'unit_id', 'position_2023']
@@ -216,7 +215,7 @@ class Loader(core.Loader):
                 if r.position > 800:
                     loop_id = r.loop_id
                     loops_have_modified_nts.add(loop_id)
-            
+
             keys_update_existing_nts = ['loop_positions_id', 'position_2023']
 
             loop_id_to_position_2023 = {}
@@ -246,7 +245,7 @@ class Loader(core.Loader):
                             if not loop_id in loop_id_to_position_2023:
                                 loop_id_to_position_2023[loop_id] = 1
                             else:
-                                loop_id_to_position_2023[loop_id] +=1    
+                                loop_id_to_position_2023[loop_id] +=1
                             row = [int(r.loop_positions_id), loop_id_to_position_2023[loop_id]]
                             entry = dict(zip(keys_update_existing_nts, row))
                             yield mod.LoopPositions(**entry)

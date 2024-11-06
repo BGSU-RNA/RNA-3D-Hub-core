@@ -4,7 +4,7 @@ This module contains a loader to load all unit level information into the
 database.
 """
 
-import itertools as it
+# import itertools as it
 
 import pymotifs.core as core
 
@@ -14,11 +14,11 @@ from pymotifs import utils
 # from pymotifs.download import Downloader
 # from pymotifs.pdbs.info import Loader as PdbLoader
 # from pymotifs.units import Loader as UnitInfoLoder
-from sqlalchemy import and_
+# from sqlalchemy import and_
 from collections import defaultdict
-from Bio.Alphabet import ThreeLetterProtein
 
-AA = [seq.upper() for seq in ThreeLetterProtein().letters]
+# most common amino acids
+AA = ["ALA", "ARG", "ASN", "ASP", "CYS","GLU", "GLN", "GLY", "HIS", "ILE","LEU", "LYS", "MET", "PHE", "PRO","SER", "THR", "TRP", "TYR", "VAL","SEC", "PYL"]
 
 class Loader(core.Loader):
     merge_data = True
