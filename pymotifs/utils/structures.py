@@ -120,10 +120,8 @@ class Structure(Base):
 
             return data
 
-    ############### Ding start ####################################
     def na_chains(self, pdb, return_id=False, strict=False, extended=True):
         macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
-#        if extended:
         macromolecule_types.add('DNA/RNA Hybrid')
         macromolecule_types.add('NA-hybrid')
         macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
@@ -154,14 +152,6 @@ class Structure(Base):
                 data.append(entry)
             return data
 
-    ############## Ding end   #####################################
-
-
-
-
-
-
-
     def longest_chain(self, pdb, model=1):
         with self.session() as session:
             query = session.query(mod.UnitInfo).\
@@ -178,22 +168,12 @@ class Structure(Base):
         c2 = aliased(mod.UnitInfo)
         interactions = []
         with self.session() as session:
-            query = session.query(mod.UnitPairsInteractions).\
-                join(c1, c1.id == mod.UnitPairsInteractions.unit_id_1).\
-                join(c2, c2.id == mod.UnitPairsInteractions.unit_id_2).\
-                filter(mod.UnitPairsInteractions.pdb_id == pdb).\
-                filter(mod.UnitPairsInteractions.program == 'matlab').\
+            query = session.query(mod.UnitPairsInteractions2024).\
+                join(c1, c1.id == mod.UnitPairsInteractions2024.unit_id_1).\
+                join(c2, c2.id == mod.UnitPairsInteractions2024.unit_id_2).\
+                filter(mod.UnitPairsInteractions2024.pdb_id == pdb).\
+                filter(mod.UnitPairsInteractions2024.program == 'fr3d').\
                 filter(c1.chain == c2.chain, c1.chain == chain)
-
-            if query.count() == 0:
-                # look for python pairs instead, until we switch completely over to python pairs
-                query = session.query(mod.UnitPairsInteractions).\
-                    join(c1, c1.id == mod.UnitPairsInteractions.unit_id_1).\
-                    join(c2, c2.id == mod.UnitPairsInteractions.unit_id_2).\
-                    filter(mod.UnitPairsInteractions.pdb_id == pdb).\
-                    filter(mod.UnitPairsInteractions.program == 'python').\
-                    filter(c1.chain == c2.chain, c1.chain == chain)
-
 
             for result in query:
                 data = ut.row2dict(result)
@@ -261,10 +241,6 @@ class Structure(Base):
 
             tax_ids = [int(tax_id) for tax_id in tax_ids.split(',')]
 
-        # with self.session() as session:
-        #     query = session.query(mod.SpeciesMapping.species_id).\
-        #         filter(mod.SpeciesMapping.species_mapping_id.in_(tax_ids))
-        #     species_ids = [result.species_id for result in query]
         with self.session() as session:
             query = session.query(mod.TaxidSpeciesDomain.species_taxid).\
             filter(mod.TaxidSpeciesDomain.taxonomy_id.in_(tax_ids))
@@ -295,7 +271,8 @@ class BasePairQueries(Base):
     def representative(self, pdb, chain, model=1, count=False,
                        range_cutoff=None, near=False, family=None,
                        sym_op='1_555'):
-        """This gets all forward interactions within a chain. This means we get
+        """
+        This gets all forward interactions within a chain. This means we get
         only the interactions which are either non-symmetric (tWH) or the
         symmetric ones where unit 1 id < unit 2 id.
 
@@ -306,7 +283,7 @@ class BasePairQueries(Base):
         :family: The family to limit to.
         :returns: A count or the interactions themselves
         """
-        inter = mod.UnitPairsInteractions
+        inter = mod.UnitPairsInteractions2024
 
         with self.session() as session:
             u1, u2, query = self.__base__(session, pdb, chain, near=near,
@@ -314,16 +291,9 @@ class BasePairQueries(Base):
                                           sym_op=sym_op)
 
             if range_cutoff is not None:
-                query = query.filter(inter.f_crossing >= range_cutoff).filter(inter.program == 'matlab')
+                query = query.filter(inter.f_crossing >= range_cutoff).filter(inter.program == 'fr3d')
             else:
-                query = query.filter(u1.chain == u2.chain,inter.program == 'matlab')
-
-            # look for python pairs instead, until we switch completely over to python pairs
-            if query.count() == 0:
-                if range_cutoff is not None:
-                    query = query.filter(inter.f_crossing >= range_cutoff).filter(inter.program == 'python')
-                else:
-                    query = query.filter(u1.chain == u2.chain,inter.program == 'python')
+                query = query.filter(u1.chain == u2.chain,inter.program == 'fr3d')
 
             if count:
                 return query.count()
@@ -331,7 +301,8 @@ class BasePairQueries(Base):
 
     def cross_chain(self, pdb, chain, other_chain=None, count=False,
                     near=False, family=None, model=1, sym_op='1_555'):
-        """This method gets all interactions between on chain and another
+        """
+        This method gets all interactions between one chain and another
         chain. If no other chain is specified then we go to any other chain.
         This will get all interactions
 
@@ -402,7 +373,7 @@ class BasePairQueries(Base):
         u1 = aliased(mod.UnitInfo)
         u2 = aliased(mod.UnitInfo)
         bp = mod.BpFamilyInfo
-        inter = mod.UnitPairsInteractions
+        inter = mod.UnitPairsInteractions2024
 
         query = session.query(inter.unit_id_1, inter.unit_id_2, inter.f_lwbp).\
             join(u1, u1.unit_id == inter.unit_id_1).\
@@ -411,28 +382,11 @@ class BasePairQueries(Base):
             filter(bp.is_forward == True).\
             filter(u1.model == u2.model).\
             filter(inter.pdb_id == pdb).\
-            filter(inter.program == 'matlab').\
+            filter(inter.program == 'fr3d').\
             filter(u1.sym_op == u2.sym_op).\
             filter(u1.model == u2.model).\
             filter(u1.model == model).\
             filter(u1.sym_op == sym_op)
-
-        if query.count() == 0:
-            # re-do query to look for python pairs instead, until we switch completely over to python pairs
-            query = session.query(inter.unit_id_1, inter.unit_id_2, inter.f_lwbp).\
-                join(u1, u1.unit_id == inter.unit_id_1).\
-                join(u2, u2.unit_id == inter.unit_id_2).\
-                join(bp, bp.bp_family_id == inter.f_lwbp).\
-                filter(bp.is_forward == True).\
-                filter(u1.model == u2.model).\
-                filter(inter.pdb_id == pdb).\
-                filter(inter.program == 'python').\
-                filter(u1.sym_op == u2.sym_op).\
-                filter(u1.model == u2.model).\
-                filter(u1.model == model).\
-                filter(u1.sym_op == sym_op)
-
-
 
         if symmetry:
             query = query.filter((bp.is_symmetric == False) |
@@ -481,9 +435,3 @@ class Correspondence(Base):
 
         return mapping
 
-    # def experimental_sequence_mapping(self, pdb, chain):
-    #     with self.session() as session:
-    #         query = session.query(ObsMap).\
-    #             join(Obs, Obs.id == ObsMap.sequence_unit_id).\
-    #             filter(ObsMap.pdb == pdb)
-    #         return [ut.row2dict(result) for result in query]
