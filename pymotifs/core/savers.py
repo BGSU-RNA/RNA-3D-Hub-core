@@ -255,7 +255,7 @@ class FileHandleSaver(Saver):
         if kwargs.get('dry_run'):
             return True
 
-        temp_output_file = os.path.join(self.config['locations']['fr3d_root'],
+        temp_output_file = os.path.join(self.config['locations']['data'],
                                         self.name)
         handle = gzip.open(temp_output_file, 'wb')
         with open(filename, 'rb') as raw:
