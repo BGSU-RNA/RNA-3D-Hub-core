@@ -184,13 +184,26 @@ class Loader(core.Loader):
                         print('No sequence found for chain %s' % chain)
 
         num_chains = len(sequence_to_chain_range.keys())
-        filename = os.path.join(directory,'sequences','%s_PDB_chains.fa' % rfam_family.split(",")[0])
+        family_id = rfam_family.split(",")[0]
+        filename = os.path.join(directory,'sequences','%s_PDB_chains.fa' % family_id)
 
         if num_chains > 0:
-            with open(filename,'w') as f:
+            # long headers may be making cmalign crash, so write a separate file with just the headers
+            header_filename = os.path.join(directory,'sequences','%s_headers.txt' % family_id)
+            with open(header_filename,'w') as f:
+                c = 1
                 for sequence in sequence_to_chain_range.keys():
-                    f.write(">" + ",".join(sorted(sequence_to_chain_range[sequence])) + "\n")
+                    f.write(">header%d\t>%s\n" % (c,",".join(sorted(sequence_to_chain_range[sequence]))))
+                    c += 1
+
+            # write short headers in the sequence file
+            with open(filename,'w') as f:
+                c = 1
+                for sequence in sequence_to_chain_range.keys():
+                    # f.write(">" + ",".join(sorted(sequence_to_chain_range[sequence])) + "\n")
+                    f.write(">header%d\n" % c)
                     f.write(sequence + "\n")
+                    c += 1
         else:
             # not sure why, but some empty files were written
             if os.path.exists(filename):
@@ -544,7 +557,7 @@ class Loader(core.Loader):
         self.write_mapping(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'pdb_chain_to_rfam.txt'),chain_to_range_to_mapping)
 
         # when you need to re-align everything, you can use this list
-        if False:
+        if True:
             rfam_families_to_align = set()
             for chain in chain_to_range_to_mapping.keys():
                 for range_string in chain_to_range_to_mapping[chain].keys():
@@ -557,6 +570,8 @@ class Loader(core.Loader):
 
         # practice with SSU and LSU alignments
         # rfam_families_to_align = set()
+        # for molecule in ['SSU']:
+        #     rfam_families_to_align.add("%s,%s" % (molecule,",".join(joint_alignments[molecule])))
         # for molecule in joint_alignments.keys():
         #     rfam_families_to_align.add("%s,%s" % (molecule,",".join(joint_alignments[molecule])))
 
@@ -604,7 +619,7 @@ class Loader(core.Loader):
 
         rfam_model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'Rfam.cm.gz')
 
-        with gzip.open(rfam_model_file,'r') as file:
+        with gzip.open(rfam_model_file,'rt') as file:
             cm_data = file.read().split("//")
 
         for i in range(len(cm_data)):
@@ -642,17 +657,27 @@ class Loader(core.Loader):
 
         return new_sequence
 
-    def rectify_alignment_file(self,alignment_file,alignment_file_out_gz=None):
+    def rectify_alignment_file(self,alignment_file,header_filename,alignment_file_out_gz=None):
         """
         Read alignment in various formats, write out in fasta format
         cmalign sto format splits long sequences onto multiple lines; combine
         cmalign AFA format splits long sequences onto multiple lines; combine
         cmalign Pfam format has long header on one line, then short header and sequence later
-        Also, replace leading and trailing - with .
+        Replace leading and trailing - with .
+        Replace short placeholder headers with full header of PDB chain list
         """
 
         if not alignment_file_out_gz:
             alignment_file_out_gz = alignment_file+".gz"
+
+        short_header_to_full = {}
+        with open(header_filename,'r') as f:
+            for line in f:
+                fields = line.split()
+                if len(fields) == 2:
+                    short_header = fields[0]
+                    full_header = fields[1]
+                    short_header_to_full[short_header] = full_header
 
         new_lines = []
         if ".fa" in alignment_file.lower():
@@ -663,7 +688,10 @@ class Loader(core.Loader):
             i = 0
             while i < len(lines):
                 if lines[i].startswith(">"):
-                    new_lines.append(lines[i])
+                    if lines[i] in short_header_to_full:
+                        new_lines.append(short_header_to_full[lines[i]])
+                    else:
+                        new_lines.append(lines[i])
                     i += 1
                     sequence = ""
                     while i < len(lines) and not lines[i].startswith(">"):
@@ -716,7 +744,10 @@ class Loader(core.Loader):
                     i += 1
 
             for id in id_list_pdb + id_list_sequence:
-                new_lines.append(">%s\n" % id_to_header[id])
+                if ">"+id_to_header[id] in short_header_to_full:
+                    new_lines.append(short_header_to_full[">"+id_to_header[id]] + "\n")
+                else:
+                    new_lines.append(">%s\n" % id_to_header[id])
                 sequence = id_to_sequence[id]
                 new_sequence = self.rectify_sequence(sequence)
                 new_lines.append(new_sequence + "\n")
@@ -733,7 +764,11 @@ class Loader(core.Loader):
                         k = len(line)-1
                         while k > 0 and line[k] != ' ':
                             k -= 1
-                    new_lines.append(">"+line[:k].rstrip() + "\n")  # remove spaces after header
+                    header = ">"+line[:k].rstrip()    # remove spaces after header
+                    if header in short_header_to_full:
+                        new_lines.append(short_header_to_full[header] + "\n")
+                    else:
+                        new_lines.append(header + "\n")
                     new_sequence = self.rectify_sequence(line[k+1:].replace('\n',''))
                     new_lines.append(new_sequence + "\n")
 
@@ -840,7 +875,7 @@ class Loader(core.Loader):
             for line in f.readlines():
                 rfam_families_to_align.add(line.replace('\n',''))
 
-        family_id = rfam_family.split(',')[0]  # e.g., LSU, RF02543
+        family_id = rfam_family.split(",")[0]  # e.g., LSU, RF02543
 
         if family_id == 'LSU':
             model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'covariance_models','RF02543.cm') # eukaryotic LSU
@@ -889,7 +924,8 @@ class Loader(core.Loader):
         else:
             # read PDB chain alignment file, put sequence all on one line, replace leading and trailing - with .
             alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_PDB_chains.fa' % family_id)
-            self.rectify_alignment_file(pdb_alignment_file_sto,alignment_file_fa+".gz")
+            header_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_headers.txt' % family_id)
+            self.rectify_alignment_file(pdb_alignment_file_sto,header_filename,alignment_file_fa+".gz")
 
             # check to see if sequences from Rfam full family are already collected; if not, note that
             sequence_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_rfam_sequences.fa' % rfam_family)
@@ -964,7 +1000,8 @@ class Loader(core.Loader):
             self.logger.info("Rectifying alignment")
             print("Rectifying alignment")
             alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined.fa' % family_id)
-            self.rectify_alignment_file(combined_sto,alignment_file_fa+".gz")
+            header_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_headers.txt' % family_id)
+            self.rectify_alignment_file(combined_sto,header_filename,alignment_file_fa+".gz")
 
             # remove rfam_family from the list of rfam families to align
             with open(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'rfam_families_to_align.txt'),'w') as f:
