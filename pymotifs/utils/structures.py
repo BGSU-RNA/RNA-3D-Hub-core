@@ -3,12 +3,10 @@ Some queries that are useful in accessing stuff in the database.
 """
 
 import itertools as it
-import sys
 
 from sqlalchemy.orm import aliased
 
 from pymotifs import core
-
 from pymotifs import utils as ut
 from pymotifs import models as mod
 
@@ -263,7 +261,8 @@ class Structure(Base):
 
 
 class BasePairQueries(Base):
-    """This is a class to deal with getting information about basepairs from
+    """
+    This is a class to deal with getting information about basepairs from
     the database. We store some useful but complex queries in here as methods
     for ease of use.
     """
@@ -370,6 +369,9 @@ class BasePairQueries(Base):
         :returns: A query.
         """
 
+        # No intrinsic reason to insist that both units are from the
+        # same symmetry operator, but we may get funny IFEs if we don't
+
         u1 = aliased(mod.UnitInfo)
         u2 = aliased(mod.UnitInfo)
         bp = mod.BpFamilyInfo
@@ -380,13 +382,12 @@ class BasePairQueries(Base):
             join(u2, u2.unit_id == inter.unit_id_2).\
             join(bp, bp.bp_family_id == inter.f_lwbp).\
             filter(bp.is_forward == True).\
-            filter(u1.model == u2.model).\
             filter(inter.pdb_id == pdb).\
             filter(inter.program == 'fr3d').\
-            filter(u1.sym_op == u2.sym_op).\
-            filter(u1.model == u2.model).\
             filter(u1.model == model).\
-            filter(u1.sym_op == sym_op)
+            filter(u2.model == model).\
+            filter(u1.sym_op == sym_op).\
+            filter(u2.sym_op == sym_op)
 
         if symmetry:
             query = query.filter((bp.is_symmetric == False) |
