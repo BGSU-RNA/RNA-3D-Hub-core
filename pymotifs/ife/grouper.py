@@ -287,6 +287,9 @@ class Grouper(core.Base):
 
         loader = IfeLoader(self.config, self.session.maker)
         chains, interactions = loader(pdb)
+
+        self.logger.info("Grouping %d chains for %s" % (len(chains),pdb))
+
         groups = self.group(chains, interactions)
         if not groups:
             raise core.InvalidState("No ifes found for %s" % pdb)
