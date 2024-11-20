@@ -1,9 +1,7 @@
 """
-Store the nr classes (equivelance sets). This requires cached NR data to
-process and then store.
+Store the nr classes (equivalence sets).
+This requires cached NR data to process and then store.
 """
-
-import datetime as dt
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -23,15 +21,21 @@ class Loader(BaseLoader):
 
     """
     whatever the to_process method generates, it is not a list of pdb ids
-    so the pdb_analysis_status table cannot handle them
+    so the pdb_analysis_status table cannot handle them; use mark = False
     """
     # update_gap = dt.timedelta(7)  # Only update every 7 days
     mark = False
 
-
     @property
     def table(self):
         return mod.NrClasses
+
+    def has_data(self, args, **kwargs):
+        """
+        If we are running this stage, we need to add the data
+        to the table.
+        """
+        return False
 
     def classes(self, data):
         result = []
