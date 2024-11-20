@@ -107,12 +107,12 @@ class Loader(core.MassLoader):
         # build the current release; data must be cached and will be read in a later stage
         self.build(pdbs, parent, next, **kwargs)
 
-        self.logger.info('Built NR release %s, saving to nr_releases table' % next)
-
         if nr_molecule_parent_current:
+            # we are filling in DNA releases with the same dates and numbers as for RNA
             raise core.Skip("Filling in DNA releases, no need to write to nr_releases table")
         else:
             # regular new release
+            self.logger.info('Built NR release %s, saving to nr_releases table' % next)
             return mod.NrReleases(nr_release_id=next,
                                 date=now,
                                 parent_nr_release_id=parent,
