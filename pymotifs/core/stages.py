@@ -88,7 +88,8 @@ class Stage(base.Base):
 
     @abc.abstractmethod
     def is_missing(self, entry, **kwargs):
-        """Determine if we do not have any data. If we have no data then we
+        """
+        Determine if we do not have any data. If we have no data then we
         will recompute. This method must be implemented by inhering classes
         and is how we determine if we have data or not.
 
@@ -382,8 +383,9 @@ class Stage(base.Base):
             return bool(query.count())
 
     def should_process(self, entry, **kwargs):
-        """Determine if we should process this entry. This is true if we are
-        told to recompute, if we do not have data for this pdb or it has been
+        """
+        Determine if we should process this entry. This is true if we are
+        told to recompute, if we do not have data for this entry or it has been
         long enough since the last update. In the case of a stage, which may
         not produce data we will skip running it if we have a mark for the
         stage.
@@ -430,7 +432,8 @@ class Stage(base.Base):
         return False
 
     def to_process(self, pdbs, **kwargs):
-        """Compute the things to process. For things that work with PDBs the
+        """
+        Compute the things to process. For things that work with PDBs the
         default one will work well. For things that work with groups this could
         simply ignore the given pdbs and return the names of the groups to work
         with.
@@ -442,7 +445,8 @@ class Stage(base.Base):
         return [str(p).upper() for p in pdbs if p.upper() not in self.skip]
 
     def mark_processed(self, pdb, dry_run=False, **kwargs):
-        """Mark that we have finished computing the results for the given pdb.
+        """
+        Mark that we have finished computing the results for the given pdb.
 
         :pdb: The pdb to mark done.
         """
@@ -560,7 +564,8 @@ class Loader(Stage):
 
     @abc.abstractmethod
     def remove(self, pdb, **kwargs):
-        """Remove any old data for this pdb. This is used both when we have
+        """
+        Remove any old data for this pdb. This is used both when we have
         failed to store all data as well as when we are overwriting existing
         data. This should never raise anything unless something is drastically
         wrong.
@@ -568,7 +573,8 @@ class Loader(Stage):
         pass
 
     def is_missing(self, entry, **kwargs):
-        """Determine if the data is missing by using the has_data method.
+        """
+        Determine if the data is missing by using the has_data method.
 
         :entry: The entry to check for.
         :kwargs: Keyword arguments
@@ -577,7 +583,8 @@ class Loader(Stage):
         return not self.has_data(entry, **kwargs)
 
     def store(self, pdb, data, **kwargs):
-        """Store the given data. The data is written in chunks of
+        """
+        Store the given data. The data is written in chunks of
         self.insert_max at a time. The data can be a list or a nested set of
         iterables. If dry_run is true then this will not actually store
         anything, but instead will log the attempt. If this loader has
@@ -595,7 +602,8 @@ class Loader(Stage):
         saver(pdb, data, **kwargs)
 
     def process(self, entry, **kwargs):
-        """Get the data for a particular entry. This will get the data and then
+        """
+        Get the data for a particular entry. This will get the data and then
         store it. It will remove data as needed and makes sure that data is
         produced if required.
 
@@ -625,7 +633,8 @@ class Loader(Stage):
 
 
 class SimpleLoader(Loader):
-    """A SimpleLoader is a subclass of Loader that has a default implementation
+    """
+    A SimpleLoader is a subclass of Loader that has a default implementation
     of has_data and remove. These depend on the abstract method query which
     generates the query to use for these things. Basically this is what to use
     if we are simply adding things to a table in the database.
@@ -644,7 +653,8 @@ class SimpleLoader(Loader):
             return bool(self.query(session, args).limit(1).count())
 
     def remove(self, args, **kwargs):
-        """This will delete all entries for the given arguments. If the keyword
+        """
+        This will delete all entries for the given arguments. If the keyword
         argument dry_run is given then this will not actually delete anything.
         This will also check if there is nothing to delete and do nothing in
         that case. This also deals with the fact that SQLalchemly does not
