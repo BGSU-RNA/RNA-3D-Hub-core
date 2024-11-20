@@ -1,5 +1,6 @@
-"""Parse and store validation reports for unit level information. This will
-process the downloaded validation reports and use them to populate the
+"""
+Parse and store validation reports for unit level information.
+This will process the downloaded validation reports and use them to populate the
 units_quality table.
 """
 
@@ -12,7 +13,8 @@ from pymotifs.quality.download import Loader as Downloader
 
 
 class Loader(core.SimpleLoader):
-    """The loader to fetch and store quality data for structures.
+    """
+    The loader to fetch and store quality data for structures.
     """
     dependencies = set([InfoLoader, Downloader])
 
@@ -20,7 +22,8 @@ class Loader(core.SimpleLoader):
     mark = True           # note each pdb when it is processed
 
     def to_process(self, pdbs, **kwargs):
-        """Compute the PDBs to process. These are only the PDB's that have
+        """
+        Compute the PDBs to process. These are only the PDB's that have
         stored validation files and have validation data.
 
         Parameters
@@ -40,7 +43,7 @@ class Loader(core.SimpleLoader):
         # query pdb_analysis_status to see what pdbs have been processed
         with self.session() as session:
             query = session.query(mod.PdbAnalysisStatus.pdb_id).\
-                filter(mod.PdbAnalysisStatus.stage == 'quality.clashes').\
+                filter(mod.PdbAnalysisStatus.stage == 'quality.units').\
                 distinct()
 
             pdbs_processed = set()
@@ -56,7 +59,9 @@ class Loader(core.SimpleLoader):
 
 
     def filename(self, pdb):
-        """Get the filename where the validation report of the PDB is stored.
+        """
+        Get the filename where the validation report of the PDB is stored.
+        /usr/local/pipeline/hub-core/MotifAtlas/quality/validation-reports/9ICY.xml.gz
 
         Parameters
         ----------
@@ -70,8 +75,10 @@ class Loader(core.SimpleLoader):
         """
         return self._create(qual.Utils).filename(pdb)
 
+
     def query(self, session, pdb):
-        """Generate a query to find all entries in units_quality for the given
+        """
+        Generate a query to find all entries in units_quality for the given
         PDB id.
 
         Attributes
@@ -120,7 +127,8 @@ class Loader(core.SimpleLoader):
         )
 
     def parse(self, filename, mapping):
-        """Actually the parse the file and map quality data to unit ids.
+        """
+        Parse the file and map quality data to unit ids.
 
         Parameters
         ----------
@@ -143,7 +151,8 @@ class Loader(core.SimpleLoader):
             return map(self.as_quality, parser.nts(mapping))
 
     def data(self, pdb, **kwargs):
-        """Compute the quality assignments for residues in the structure. This
+        """
+        Compute the quality assignments for residues in the structure. This
         will fetch the validation report from PDB and convert the entries there
         into forms suitable to write to the database. If the report has no RSR
         or DCC data then a `core.Skip` exception will be raised.
@@ -158,6 +167,7 @@ class Loader(core.SimpleLoader):
         data : iterable
             An iterable of a quality assignments to store in the database.
         """
+
         util = qual.Utils(self.config, self.session)
         mapping = util.unit_mapping(pdb)
         return self.parse(self.filename(pdb), mapping)
