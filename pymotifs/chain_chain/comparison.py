@@ -169,6 +169,8 @@ class Loader(core.SimpleLoader):
         # while developing DNA equivalence classes, run those manually
         nr_molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
 
+        # when DNA catches up to RNA, run rna each week and generate the .pickle files,
+        # and then run DNA and no need to generate the .pickle files
         if nr_molecule_parent_current and 'dna' in nr_molecule_parent_current.lower():
             molecule_types = ['dna']
         else:
@@ -186,8 +188,12 @@ class Loader(core.SimpleLoader):
             # grouper is part of the nr stage, so it appears that way in the log file
             grouper = Grouper(self.config, self.session)
             grouper.use_discrepancy = False                                                                                      ## change the use_discrepancy to False.
-            grouper.must_enforce_single_species = False   # use False with DNA
-            grouper.must_enforce_single_species = True    # use True on production
+
+            if molecule_type == 'rna':
+                grouper.must_enforce_single_species = True    # use True on production
+            else:
+                grouper.must_enforce_single_species = False   # use False with DNA
+
             grouper.molecule_type = molecule_type
             groups = grouper(pdbs)                                                                                               ## Grouped PDB ids by sequence and species. How this class works
             if not groups:
@@ -253,6 +259,15 @@ class Loader(core.SimpleLoader):
         if len(pdbs) < 500:
             GeneratePickleFiles = False
             self.logger.info('Not generating pickle files for small number of pdbs')
+
+        if molecule_type == 'dna':
+            GeneratePickleFiles = False
+            self.logger.info('Not generating pickle files for DNA because that should be done year by year')
+            self.logger.info('Run chain_chain.comparison for each year, then fill in the releases')
+            self.logger.info('Or run chain_chain.comparison up to the current date, then fill in the releases')
+
+            GeneratePickleFiles = True
+            self.logger.info('Actually, generating pickle files because we are doing multiple years now')
 
         if GeneratePickleFiles:
             self.logger.info('Getting the unit_id to experimental sequence position table')
