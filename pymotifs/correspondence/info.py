@@ -146,10 +146,9 @@ class Loader(core.MassLoader):
                 upper = min(upper, self.huge_cutoff)
 
             return lower <= smallest <= largest <= upper
+
         if pair[0]['entity_type'] == 'dna':
-            # if (pair[0]['length'] == pair[1]['length']) & (pair[0]['length'] <=20) & (pair[1]['length'] <= 20):
             if pair[0]['length'] == pair[1]['length']:
-                # self.logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 return True
 
 
@@ -166,14 +165,11 @@ class Loader(core.MassLoader):
         if pair[0]['entity_type'] == 'dna':
             return True
 
-        # common = pair[0]['species'].intersection(pair[1]['species'])
         common = pair[0]['taxonomy_id'].intersection(pair[1]['taxonomy_id'])
-        # self.logger.info("show the current species: %s  %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
         if len(common):
             return True
         species = set()
         for seq in pair:
-            # species.update(seq['species'])
             species.update(seq['taxonomy_id'])
         return len(species) <= 1 or None in species or SYNTHETIC_SPECIES_ID in species ## note: should be based on taxonmy id
 
@@ -233,7 +229,7 @@ class Loader(core.MassLoader):
         mapping = {}
         for seq in sequences:
             sid = seq['id']
-            self.logger.info("seq_id, length, taxid, type: %5s %4s %6s %9s" % (seq["id"], seq["length"],seq["taxonomy_id"],seq["entity_type"]))
+            self.logger.info("seq_id, length, taxid, type: %5s %4s %10s %9s" % (seq["id"], seq["length"],seq["taxonomy_id"],seq["entity_type"]))
             if sid not in mapping:
                 mapping[sid] = dict(seq)
                 # mapping[sid]['species'] = set([seq['species']])
@@ -245,13 +241,12 @@ class Loader(core.MassLoader):
         return mapping.values()
 
     def entity_type_matches(self, pair):
-        """Check if a pair of entity_types have compatible species.
+        """
+        Check if a pair of entity_types have compatible molecule types.
 
         :param tuple pair: The pair of entity_types to compare.
         :returns: The boolean
         """
-        # if pair[0]['entity_type'] == 'dna':
-        #     self.logger.info("the entity_types of the current pair %s %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
         return pair[0]['entity_type'] == pair[1]['entity_type']
 
 
@@ -264,19 +259,14 @@ class Loader(core.MassLoader):
         :returns: A boolean.
         """
 
-        # if pair[0]['id'] == '7087':
-        #     self.logger.info("pair ids: %s %s" % (pair[0]['id'], pair[1]['id']))
-        #     self.logger.info("pair lengths: %s %s" % (pair[0]['length'], pair[1]['length']))
-        #     self.logger.info("pair species: %s %s" % (pair[0]['taxonomy_id'], pair[1]['taxonomy_id']))
-        #     self.logger.info("pair entity_type: %s %s" % (pair[0]['entity_type'], pair[1]['entity_type']))
-
         return self.length_match(pair) and \
             self.species_matches(pair) and \
             self.entity_type_matches(pair) and \
             not self.is_known(pair)
 
     def sequences(self, pdbs):
-        """Get all unique_sequences for all given pdbs.
+        """
+        Get all unique_sequences for all given pdbs.
 
         :param list pdbs: The pdbs to lookup.
         :returns: A list of unique sequences.
@@ -284,10 +274,8 @@ class Loader(core.MassLoader):
 
         self.logger.info("Using %i pdbs", len(pdbs))
         seqs = map(self.look_up_sequences, pdbs)
-        # self.logger.info("show the it.map's result: %s" % seqs)
         seqs = it.chain.from_iterable(seqs)
         seqs = self.unique_sequences(seqs)
-        # self.logger.info("show the unique_sequences's result: %s" % seqs)
         if not seqs:
             raise core.InvalidState("Found no new sequences")
 
