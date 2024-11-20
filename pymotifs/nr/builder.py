@@ -197,7 +197,8 @@ class Known(core.Base):
 
 
     def mapping(self, release_id, names):
-        """Create a mapping from nr class names to id in the database. This
+        """
+        Create a mapping from nr class names to id in the database. This
         will raise an exception if it cannot find all names or if not given a
         list of names and a release id.
 
@@ -216,9 +217,12 @@ class Known(core.Base):
                 filter(mod.NrClasses.name.in_(names)).\
                 filter(mod.NrClasses.nr_release_id == release_id)
 
+            self.logger.info('release_id: %s' % release_id)
+            self.logger.info('names: %s' % str(names))
+
             if query.count() == 0:
                 self.logger.info(names)
-                raise core.InvalidState("Found no clases with given names")
+                raise core.InvalidState("Found no classes in nr_classes release %s with given names %s" % (release_id, names))
 
             mapping = {}
             for result in query:
