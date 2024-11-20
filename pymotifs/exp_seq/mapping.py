@@ -293,6 +293,7 @@ class Loader(core.SimpleLoader):
         for mapped_chain in mapped_chains:
             chain = mapped_chain.name
             exp_seq_chain_mapping_id = mapped_chain.id
+            counter = 0
             for index, unit_id in chain_to_index_to_unit_id[chain].items():
 
                 if (chain, index) not in exp_mapping:
@@ -302,7 +303,9 @@ class Loader(core.SimpleLoader):
                 # chain and the position in the chain, over all NA chains in the database
                 exp_seq_position_id = exp_mapping[(chain, index)]
 
-                self.logger.info('Mapping %s to %s in chain %s with exp_seq_chain_mapping_id %s' % (unit_id, exp_seq_position_id, chain, exp_seq_chain_mapping_id))
+                if counter < 10:
+                    self.logger.info('Mapping %s to %s in chain %s with exp_seq_chain_mapping_id %s' % (unit_id, exp_seq_position_id, chain, exp_seq_chain_mapping_id))
+                    counter += 1
 
                 yield mod.ExpSeqUnitMapping(
                     unit_id=unit_id,
