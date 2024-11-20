@@ -1,4 +1,5 @@
-"""Run the update pipeline.
+"""
+Run the update pipeline.
 
 This stage represents the update pipeline. Running this will run all stages
 that are part of the pipeline proper.
