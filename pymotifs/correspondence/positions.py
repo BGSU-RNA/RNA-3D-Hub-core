@@ -134,8 +134,8 @@ class Loader(core.Loader):
         """
 
         seq1, seq2 = self.info(corr_id)
-        self.logger.info('show seq1: %d and seq2: %d'%(seq1,seq2))
-        self.logger.info('show the corr_id: %d'%corr_id)
+        # self.logger.info('show seq1: %d and seq2: %d'%(seq1,seq2))
+        # self.logger.info('show the corr_id: %d'%corr_id)
         with self.session() as session:
             query = session.query(mod.ExpSeqInfo.entity_type).\
                 filter(mod.ExpSeqInfo.exp_seq_id.in_([seq1,seq2]))
