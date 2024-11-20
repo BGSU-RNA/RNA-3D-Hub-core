@@ -14,6 +14,8 @@ from pymotifs.units.loader import Loader as UnitInfoLoader
 from pymotifs.chains.loader import Loader as ChainLoader
 from pymotifs.interactions.loader import Loader as InteractionLoader
 
+from pymotifs.constants import STRUCTURED_BP_COUNT
+
 
 class Loader(core.SimpleLoader):
     dependencies = set([ChainLoader, InteractionLoader, UnitInfoLoader])
@@ -38,50 +40,171 @@ class Loader(core.SimpleLoader):
         # print("length                 %s" % group.length)
         # print("bp_count               %s" % group.bps)
 
+        # some structures have so many chains "stapled" together that they
+        # greatly exceed the 100 character limit for the ife_id field
+        # we'll reduce the length
+        # anyway, the database only allows up to 100 characters, hard to change that
+        ife_id = group.group_id()
+        while len(ife_id) > 100:
+            ife_id = "+".join(ife_id.split("+")[:-1])
+
+        chain_count = len(ife_id.split("+"))
+
+        self.logger.info("ife_id: %s" % ife_id)
+
         yield mod.IfeInfo(
-            ife_id=group.group_id(),
+            ife_id=ife_id,
             pdb_id=group.pdb,
             model=group.model,
-            chain_count=len(group),
+            chain_count=chain_count,
             has_structured=bool(group.is_structured),
             has_integral=bool(group.integral),
             has_accompanying=len(group.chains()) > 1,
-            structured_chain_count=len(group.chains(structured=True)),
+            structured_chain_count=len(group.chains(structured=True)),  # might exceed chain_count
             length=group.length,
             bp_count=group.bps,
             new_style=True)
 
         for index, chain in enumerate(group.chains()):
-            # print(group.group_id())
             reference = (index == 0)
             integral = (reference or chain.is_structured)
             accompanying = not integral
-            # # print(group.id)
-            # # print(333333)
-            # with self.session() as session:
-            #     query = session.query(mod.IfeChains.ife_id).\
-            #             filter(mod.IfeChains.ife_id == group.id)
-            # # print(222222222222)
-            # # for row in query:
-            # #     print(row.ife_id)
-            # # print(not query.count())
-            # if not query.count():
-            #     # print(1111111111)
-            #     # print(group.id)
             yield mod.IfeChains(
                 chain_id=chain.db_id,
                 model=chain.model,
-                ife_id=group.group_id(),
+                ife_id=ife_id,
                 is_integral=integral,
                 is_structured=chain.is_structured,
                 is_accompanying=accompanying,
                 index=index)
 
+    def store_many_chains(self, chain_partners, chain_chain_to_count, pdb_id):
+        # make that chain the IFE and skip the rest of this stage
+        chain1 = chain_partners[0][0]
+        ife_id = "%s|%s|%s" % (pdb_id, 1, chain1)
+        self.logger.info("Chain %s has %d partners, making it the IFE" % (chain1, len(chain_partners[0][1])))
+        print("Chain %s has %d partners, making it the IFE" % (chain1, len(chain_partners[0][1])))
+
+        # count total number of units in these chains in the PDB file
+        total_length = 0
+        with self.session() as session:
+            UI = mod.UnitInfo
+            query = session.query(UI.unit_id).\
+                filter(UI.pdb_id == pdb_id).\
+                filter(UI.chain.in_(chain_partners[0][1]))
+            total_length = len([row for row in query])
+
+        total_bp_count = 0
+        for chain2 in chain_partners[0][1]:
+            total_bp_count += chain_chain_to_count[chain1][chain2]
+
+        # map chain_name to chain_id for the ife_chains table
+        chain_name_to_id = {}
+        with self.session() as session:
+            CI = mod.ChainInfo
+            query = session.query(CI.chain_id,CI.chain_name).\
+                filter(CI.pdb_id == pdb_id)
+            for row in query:
+                chain_name_to_id[row.chain_name] = row.chain_id
+
+        # record the main chain and its data
+        yield mod.IfeInfo(
+            ife_id=ife_id,
+            pdb_id=pdb_id,
+            model=1,
+            chain_count=len(chain_partners[0][1]),
+            has_structured=(chain_chain_to_count[chain1][chain1] > STRUCTURED_BP_COUNT),
+            has_integral=True,
+            has_accompanying=True,
+            structured_chain_count=len(chain_partners[0][1]),
+            length=total_length,
+            bp_count=total_bp_count,
+            new_style=True)
+        # record the main chain and its role
+        yield mod.IfeChains(
+            chain_id=chain_name_to_id[chain1],
+            model=1,
+            ife_id=ife_id,
+            is_integral=True,
+            is_structured=(chain_chain_to_count[chain1][chain1] > STRUCTURED_BP_COUNT),
+            is_accompanying=False,
+            index=0)
+        # record all the other chains as accompanying chains
+        counter = 1
+        for chain2 in sorted(chain_partners[0][1]):
+            if chain2 != chain1:
+                yield mod.IfeChains(
+                    chain_id=chain_name_to_id[chain2],
+                    model=1,
+                    ife_id=ife_id,
+                    is_integral=False,
+                    is_structured=(chain_chain_to_count[chain1][chain1] > STRUCTURED_BP_COUNT),
+                    is_accompanying=True,
+                    index=counter)
+                counter += 1
+
+        print("Only supposed to get here with big origami structures")
+
+        return
+
+
     def data(self, pdb_id, **kwargs):
+
+        # check for DNA origami structures and if found,
+        # completely skip the usual code
+
+        # query for all basepairs in the structure
+        # count cWW basepairs within and between chains
+        chain_chain_to_count = {}
+        with self.session() as session:
+            UPI = mod.UnitPairsInteractions2024
+            query = session.query(UPI.unit_id_1, UPI.unit_id_2).\
+                filter(UPI.pdb_id == pdb_id).\
+                filter(UPI.f_lwbp == 'cWW').\
+                filter(UPI.program == 'fr3d')
+
+            for row in query:
+                fields1 = row.unit_id_1.split('|')
+                # only work with model 1
+                if fields1[1] == '1':
+                    chain1 = fields1[2]
+                    if not chain1 in chain_chain_to_count:
+                        chain_chain_to_count[chain1] = {}
+                        chain_chain_to_count[chain1][chain1] = 0
+                    fields2 = row.unit_id_2.split('|')
+                    chain2 = fields2[2]
+                    if not chain2 in chain_chain_to_count[chain1]:
+                        chain_chain_to_count[chain1][chain2] = 0
+                    chain_chain_to_count[chain1][chain2] += 1
+
+        # map each chain to its significant cWW basepairing partners
+        chain_to_partners = {}
+        for chain1 in chain_chain_to_count:
+            for chain2 in chain_chain_to_count[chain1]:
+                if chain_chain_to_count[chain1][chain2] > 3:
+                    if not chain1 in chain_to_partners:
+                        chain_to_partners[chain1] = set([chain1])  # include chain1
+                    chain_to_partners[chain1].add(chain2)
+
+        # sort chains and set of partners from most to least partners
+        chain_partners = sorted(chain_to_partners.items(), key=lambda x: len(x[1]), reverse=True)
+
+        # make sure the list is not empty ...
+        if len(chain_partners) > 0:
+            # if the chain with the most partners has more than 10 partners,
+            if len(chain_partners[0][1]) > 10:
+                # make that chain the IFE and skip the rest of this stage
+                groups = self.store_many_chains(chain_partners, chain_chain_to_count, pdb_id)
+                return groups
+
+        # traditional code for everything but huge origami structures
         grouper = Grouper(self.config, self.session.maker)
         groups = grouper(pdb_id)
         groups = map(self.as_group, groups)
         groups = it.chain.from_iterable(groups)
         groups = list(groups)
+
+        # print("Number of groups: %d" % len(groups))
+        # print(groups)
 
         return groups

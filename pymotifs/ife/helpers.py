@@ -102,12 +102,17 @@ class IfeLoader(core.Base):
         # Dr. Zirbel believes we should used the full_length instead of making different lengths for hybrid chains
         data['length'] = data['full_length']
 
+        # print('Starting BasePairQueries for %s %s' % (pdb, chain))
+
         helper = st.BasePairQueries(self.session)
         rep = helper.representative
         data['internal'] = rep(data['pdb'], data['chain'], count=True,
                                family='cWW', sym_op=sym_op)
         data['bps'] = rep(data['pdb'], data['chain'], count=True,
                           model=model, sym_op=sym_op)
+
+        # print('internal', data['internal'])
+        # print('bps', data['bps'])
 
         return IfeChain(**data)
 
@@ -124,6 +129,9 @@ class IfeLoader(core.Base):
             raise core.InvalidState("No ifes to get interactions between")
 
         pdb = ifes[0].pdb
+
+        # following lines apparently took 11.8 hours on 4V5X with 160 chains
+        # not super clear how to know it is going to take that long
         helper = st.BasePairQueries(self.session)
         interactions = defaultdict(dict)
         pairs = it.product((ife.chain for ife in ifes), repeat=2)
@@ -141,11 +149,25 @@ class IfeLoader(core.Base):
     def __call__(self, pdb):
         helper = st.Structure(self.session.maker)
         names = helper.na_chains(pdb)
+
+        # print("Found names for %d chains in %s" % (len(names), pdb))
+
         sym_op = self.sym_op(pdb)
+
+        # print(sym_op)
+
         model = self.best_model(pdb, sym_op)
+
+        # print(model)
+
         load = ft.partial(self.load, pdb, model=model, sym_op=sym_op)
-        ifes = [load(name) for name in names]
-        return ifes, self.cross_chain_interactions(ifes, sym_op=sym_op)
+        chains = [load(name) for name in names]
+
+        # print(chains)
+
+        cci = self.cross_chain_interactions(chains, sym_op=sym_op)
+
+        return chains, cci
 
 
 @total_ordering
