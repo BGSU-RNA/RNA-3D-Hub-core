@@ -1,6 +1,6 @@
 """
 Run Python code to annotate pairwise interactions
-and store them in unit_pairs_annotations_2024, noting that program = 'python'
+and store them in unit_pairs_annotations_2024, noting that program = 'fr3d'
 2024 in the table name refers to the year when the parameters were set
 Making a separate table will hopefully speed up queries for pairwise interactions
 Next time there is a big change to the annotation program, make a new table
@@ -58,11 +58,26 @@ class Loader(core.SimpleLoader):
                 distinct()
                 pdb_id_program_all = set([(result.pdb_id,result.program) for result in query])
 
+        if False:
+            # temporary to get all pdb files in unit_info (unit ids will exist and not cause foreign key problems)
+            with self.session() as session:
+                query = session.query(mod.UnitInfo.pdb_id).\
+                distinct()
+                pdbs = [result.pdb_id for result in query]
+            print('Found %d pdb files in unit_info' % len(pdbs))
+
+            # get a list of .cif files in /usr/local/pipeline/hub-core/
+            cif_files = os.listdir('/usr/local/pipeline/hub-core/cif_files/')
+            cif_files = [f for f in cif_files if f.endswith('.cif.gz')]
+            cif_files = [f.replace('.cif.gz','') for f in cif_files]
+
         self.logger.info('Found %d pdb_id,program pairs' % len(pdb_id_program_all))
 
         pdbs_fr3d = set([pdb_id for pdb_id,program in pdb_id_program_all if program == 'fr3d'])
 
         need_to_annotate = set(pdbs) - pdbs_fr3d
+
+        print('Found %d files to annotate' % len(need_to_annotate))
 
         if len(need_to_annotate) == 0:
             raise core.Skip("No PDB files need pairwise interactions annotated with fr3d-python")
