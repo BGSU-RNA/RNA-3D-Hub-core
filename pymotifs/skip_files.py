@@ -11,23 +11,29 @@
 #       '7PJS' # failing exp_sep.mapping as on 2024-06-20 because it does not have unit_info for chains v,w,z
 # try running unit_info on this file to see if it can be fixed
 
-SKIP = {
-      '4V3P' # killed 2024-06-22 (CLZ), export.cifatom:Writing cifatom file for 4V3P
-    , '4V4G' # Matlab out of memory 2024-06-22 (CLZ)
-    , '4ZPY' # exp_seq.info:Nothing to process, virus, maybe no RNA 2024-06-22 (CLZ)
-    , '5O58' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
-    , '5W3V' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
-    , '6AWB' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
-    , '6AWC' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
-    , '6B0B' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
-    # after we replace Matlab with python code, we can try these again
-    , '6WLN' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
-    , '6WLO' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
+# INFO:2024-11-20 12:42:09,021:root:There are 19 files in skip_files.py that are also current PDB ids
+# INFO:2024-11-20 12:42:09,021:root:['104D', '169D', '170D', '1FC8', '1GTC', '1HO6', '1HOQ', '1OKA', '2X2Q',
+# '4V3P', '4V4G', '5O58', '5O61', '5W3V', '6AWB', '6AWC', '6B0B', '6WLN', '6WLO']
 
-    , '5O61' # failing loops.extractor as of 2018-01-10 (JJC) # still failing 2019-01-15 (JJC)
-    , '2X2Q' # failing quality.units as of 2018-02-09 (JJC)   # still failing 2024-06-20 (CLZ)
+SKIP = {
+      # '4V3P' # big file, 34A; killed 2024-06-22 (CLZ), export.cifatom:Writing cifatom file for 4V3P
+    # , '4V4G' # 5 ribosomes, 11.5A; Matlab out of memory 2024-06-22 (CLZ)
+      '4ZPY' # exp_seq.info:Nothing to process, virus, maybe no RNA 2024-06-22 (CLZ)
+    # , '5O58' # 2 nt; IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    # , '5W3V' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    # , '6AWB' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    # , '6AWC' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    # , '6B0B' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
+    # after we replace Matlab with python code, we can try these again
+    # , '6WLN' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
+    # , '6WLO' # failing mat_files as of 2020-07-08 (CLZ) Out of memory
+
+    # , '5O61' # failing loops.extractor as of 2018-01-10 (JJC) # still failing 2019-01-15 (JJC)
+    # , '2X2Q' # failing quality.units as of 2018-02-09 (JJC)   # still failing 2024-06-20 (CLZ)
 
     # The ones below all failed on 2024-06-22, generally something deep about pdbx
+    # Worse, some at least are deprecated and we can't get chain info about them
+    # None of them are current files as of 2024-11-26, so it's OK to skip them here.
     , '1CK5' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1CK8' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1CN8' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
@@ -53,14 +59,14 @@ SKIP = {
     , '2I1C' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '2NVS' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '2NYO' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
-    , '104D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '169D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '170D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '1FC8' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '1GTC' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '1HO6' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '1HOQ' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
-    , '1OKA' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '104D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '169D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '170D' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '1FC8' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '1GTC' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '1HO6' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '1HOQ' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
+    # , '1OKA' # missing pdbx_struct_oper_list block 2020-11-08 (CLZ)
 
 
     ########## The following pdb files are DNA files. Ding got the premission to skipped the following files on 12/17/2021
