@@ -1,4 +1,5 @@
-"""A loader to write the loop export file. This will create a CSV file that is
+"""
+A loader to write the loop export file. This will create a CSV file that is
 provided to NDB for information about all loops in all structures.
 """
 
@@ -10,7 +11,6 @@ from pymotifs import models as mod
 
 from pymotifs.utils import row2dict
 from pymotifs.constants import DATA_FILE_DIRECTORY
-from pymotifs.loops.extractor import Loader as LoopLoader
 from pymotifs.loops.positions import Loader as PositionLoader
 
 
@@ -18,7 +18,7 @@ class Exporter(core.Exporter):
     """The actual stage that gets run."""
 
     headers = ['id', 'motif_id', 'pdb', 'nts']
-    dependencies = set([LoopLoader, PositionLoader])
+    dependencies = set([PositionLoader])
 
     compressed = True
     """We provide a compressed file."""
@@ -75,7 +75,7 @@ class Exporter(core.Exporter):
         with self.session() as session:
             query = session.query(mod.LoopInfo.loop_id.label('id'),
                                   mod.LoopInfo.pdb_id.label('pdb'),
-                                  mod.LoopInfo.unit_ids.label('nts'),
+                                  mod.LoopInfo.unit_ids.label('nts'),    # field no longer exists!
                                   mod.MlLoops.motif_id.label('motif_id')
                                   ).\
                 outerjoin(mod.MlLoops,
