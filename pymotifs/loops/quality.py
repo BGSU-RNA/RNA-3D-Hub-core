@@ -27,7 +27,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import aliased
 
 from fr3d.unit_ids import decode
-from fr3d.data.mapping import modified_base_to_parent
+from fr3d.modified.mapping import modified_base_to_parent
 
 from pymotifs import core
 from pymotifs.utils import row2dict
@@ -39,8 +39,7 @@ from pymotifs.constants import RSRZ_PAIRED_OUTLIERS
 from pymotifs.constants import RSRZ_FICTIONAL_CUTOFF
 
 #from pymotifs.loops.release import Loader as ReleaseLoader
-from pymotifs.loops.extractor import Loader as InfoLoader
-from pymotifs.loops.positions import Loader as PositionLoader
+from pymotifs.loops.save_loops import Loader as SaveLoopsLoader
 from pymotifs.units.incomplete import Loader as IncompleteLoader
 from pymotifs.exp_seq.mapping import Loader as ExpSeqMappingLoader
 from pymotifs.exp_seq.positions import Loader as ExpSeqPositionLoader
@@ -71,7 +70,7 @@ class AssessmentData(nt('AssessmentData', ['incomplete', 'pairs', 'rsrz'])):
 
 
 class Loader(core.SimpleLoader):
-    dependencies = set([InfoLoader, PositionLoader,
+    dependencies = set([SaveLoopsLoader,
                         ExpSeqPositionLoader, ExpSeqMappingLoader,
                         IncompleteLoader])
 
@@ -279,7 +278,13 @@ class Loader(core.SimpleLoader):
             loops = loops.values()
             for loop in loops:
                 ends = loop['endpoints']
-                loop['endpoints'] = [(e1, e2) for (e1, e2) in grouper(2, ends)]
+                if len(ends) % 2 != 0:
+                    loop['endpoints'] = []
+                else:
+                    loop['endpoints'] = [(e1, e2) for (e1, e2) in grouper(2, ends)]
+
+            loops = [l for l in loops if l['endpoints']]
+
             return sorted(loops, key=op.itemgetter('id'))
 
     def position_info(self, unit):
@@ -287,21 +292,6 @@ class Loader(core.SimpleLoader):
         Get the information about a position in an experimental sequence
         using a unit id.
         """
-
-        # use chain_index in unit_info instead
-        # with self.session() as session:
-        #     result = session.query(mod.UnitInfo.chain_index as index,
-        #                             mod.UnitInfo.chain,
-        #                             mod.UnitInfo.model,
-        #                             mod.UnitInfo.sym_op,
-        #                             ).\
-        #         join(mapping,
-        #                 mapping.exp_seq_position_id == pos.exp_seq_position_id).\
-        #         join(mod.UnitInfo,
-        #                 mod.UnitInfo.unit_id == mapping.unit_id).\
-        #         filter(mapping.unit_id == unit).\
-        #         one()
-
 
         self.logger.info("Finding position for %s" % unit)
         try:
@@ -349,7 +339,7 @@ class Loader(core.SimpleLoader):
             return row2dict(result)
 
 
-    def units_between(self, unit1, unit2):
+    def units_between_old(self, unit1, unit2):
         """
         Get a list of all units between two units. This assumes they are on
         the same chain and have the same symmetry operator.
@@ -391,9 +381,89 @@ class Loader(core.SimpleLoader):
 
             return [Entry(**row2dict(r)) for r in query]
 
+
+    def unit_info(self, unit_id):
+        """
+        Get the information about a unit using a unit id.
+        """
+
+        with self.session() as session:
+            units = mod.UnitInfo
+            query = session.query(units.pdb_id,
+                                  units.model,
+                                  units.chain,
+                                  units.number,
+                                  units.unit,
+                                  units.alt_id,
+                                  units.ins_code,
+                                  units.chain_index,
+                                  units.sym_op
+                                  ).\
+                filter(units.unit_id == unit_id)
+
+            return row2dict(query.one())
+
+
+    def units_between(self, unit1, unit2):
+        """
+        Get a list of all units between two units. This assumes they are on
+        the same chain and have the same symmetry operator.
+        Use chain_index from unit_info.
+        """
+
+        # plan: split the fields, get a range of integers, get unit ids satisfying those
+        # that's more robust
+
+        unit1_info = self.unit_info(unit1)
+        unit2_info = self.unit_info(unit2)
+
+        if unit1_info["pdb_id"] != unit2_info["pdb_id"]:
+            return []
+        if unit1_info["model"] != unit2_info["model"]:
+            return []
+        if unit1_info["chain"] != unit2_info["chain"]:
+            return []
+        if unit1_info["sym_op"] != unit2_info["sym_op"]:
+            return []
+
+        start = int(unit1_info["chain_index"])
+        stop  = int(unit2_info["chain_index"])
+
+        self.logger.info('Units are %s and %s' % (unit1, unit2))
+        self.logger.info('Chain index range is %d to %d' % (start, stop))
+
+        between = list(range(start+1, stop))
+
+        with self.session() as session:
+            units = mod.UnitInfo
+            query = session.query(units.pdb_id,
+                                  units.model,
+                                  units.chain,
+                                  units.number,
+                                  units.unit,
+                                  units.alt_id,
+                                  units.ins_code,
+                                  ).\
+                filter(units.pdb_id == unit1_info["pdb_id"]).\
+                filter(units.model == unit1_info["model"]).\
+                filter(units.chain == unit1_info["chain"]).\
+                filter(units.sym_op == unit1_info["sym_op"]).\
+                filter(units.chain_index.in_(between)).\
+                distinct().\
+                order_by(asc(units.chain_index))
+
+            return [Entry(**row2dict(r)) for r in query]
+
+
     def complementary_sequence(self, loop):
         """
         Detect if an IL sequence is complementary.
+
+        Trouble:  methodology fails on CUC,GCGAG because its reversed version
+        is GAGCG,CUC and the entire sequence is complementary, if you ignore
+        the commas.
+
+        New python code does not extract complementary IL, so skip this.
         """
 
         # must have an even number of nucleotides to proceed
@@ -486,6 +556,32 @@ class Loader(core.SimpleLoader):
         """
         return bool(self.modified_bases(loop))
 
+    # def has_breaks_old(self, loop):
+    #     """
+    #     Check if there are any chain breaks within the loop.
+
+    #     :returns: Bool, true if the loop has any breaks.
+    #     """
+
+    #     for (u1, u2) in loop['endpoints']:
+    #         start = self.position_info(u1)
+    #         stop = self.position_info(u2)
+
+    #         with self.session() as session:
+    #             mapping = mod.ExpSeqUnitMapping
+    #             pos = mod.ExpSeqPosition
+    #             query = session.query(mapping).\
+    #                 join(pos,
+    #                      mapping.exp_seq_position_id == pos.exp_seq_position_id).\
+    #                 filter(pos.exp_seq_id == start['exp_seq_id']).\
+    #                 filter(pos.index >= start['index']).\
+    #                 filter(pos.index <= stop['index']).\
+    #                 filter(mapping.chain == start['chain']).\
+    #                 filter(mapping.unit_id == None)
+
+    #             return bool(query.count())
+
+
     def has_breaks(self, loop):
         """
         Check if there are any chain breaks within the loop.
@@ -494,22 +590,31 @@ class Loader(core.SimpleLoader):
         """
 
         for (u1, u2) in loop['endpoints']:
-            start = self.position_info(u1)
-            stop = self.position_info(u2)
+            unit1_info = self.unit_info(u1)
+            unit2_info = self.unit_info(u2)
+
+            between = list(range(int(unit1_info["chain_index"])+1, int(unit2_info["chain_index"])))
 
             with self.session() as session:
-                mapping = mod.ExpSeqUnitMapping
-                pos = mod.ExpSeqPosition
-                query = session.query(mapping).\
-                    join(pos,
-                         mapping.exp_seq_position_id == pos.exp_seq_position_id).\
-                    filter(pos.exp_seq_id == start['exp_seq_id']).\
-                    filter(pos.index >= start['index']).\
-                    filter(pos.index <= stop['index']).\
-                    filter(mapping.chain == start['chain']).\
-                    filter(mapping.unit_id == None)
+                units = mod.UnitInfo
+                query = session.query(units.chain_index).\
+                    filter(units.pdb_id == unit1_info["pdb_id"]).\
+                    filter(units.model == unit1_info["model"]).\
+                    filter(units.chain == unit1_info["chain"]).\
+                    filter(units.sym_op == unit1_info["sym_op"]).\
+                    filter(units.chain_index.in_(between)).\
+                    distinct().\
+                    order_by(asc(units.chain_index))
 
-                return bool(query.count())
+                # compute maximum difference between chain_index values
+                # if it is greater than 1, then there is a break
+                chain_indices = [r.chain_index for r in query]
+                for i in range(1,len(chain_indices)):
+                    if chain_indices[i] - chain_indices[i-1] > 1:
+                        return True
+
+        return False
+
 
     def has_incomplete_nucleotides(self, incomplete, loop):
         """
@@ -580,6 +685,8 @@ class Loader(core.SimpleLoader):
 #                filter_by(unit.in_('A','C','G','U')).\
         """
 
+        found_rsrz_value = False
+
         data = defaultdict(lambda: None)
         na_types = ['rna','dna','hybrid']
         with self.session() as session:
@@ -588,15 +695,24 @@ class Loader(core.SimpleLoader):
                      mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
                 filter(mod.UnitInfo.unit_type_id.in_(na_types)).\
                 filter_by(pdb_id=pdb)
-            data.update({r.unit_id: r.real_space_r_z_score for r in query})
-            return data
 
-    def is_fictional_loop(self, rsrz, loop):
+            for r in query:
+                if r.real_space_r_z_score is not None:
+                    found_rsrz_value = True
+                data[r.unit_id] = r.real_space_r_z_score
+
+            if found_rsrz_value:
+                return data
+            else:
+                return None
+
+
+    def all_high_RSRZ(self, rsrz, loop):
         """
-        Detect if this loop is fictional. A fictional loop is defined as one
-        where all nucleotides in the loop have an RSRZ value are above some cutoff.
+        Detect if all nucleotides in this loop have RSRZ values that are above some cutoff.
         The cutoff used here is the RSRZ_FICTIONAL_CUTOFF imported from
         pymotifs.constants.
+        Loops like that do not have enough experimental basis to consider.
 
         Parameters
         ----------
@@ -613,13 +729,23 @@ class Loader(core.SimpleLoader):
             cutoff.
         """
 
-        return all(rsrz[unit] is None or rsrz[unit] >= RSRZ_FICTIONAL_CUTOFF for unit in loop['nts'])
+        self.logger.info(rsrz)
+
+        if rsrz:
+            return all(rsrz[unit] is None or rsrz[unit] >= RSRZ_FICTIONAL_CUTOFF for unit in loop['nts'])
+        else:
+            # no rsrz values for this structure, like with cryo-EM and NMR
+            return False
 
     def is_fictional_pair(self, pairs, rsrz, loop):
         """
         """
-        paired = pairs[loop['id']]
-        return any(rsrz[u] >= RSRZ_PAIRED_OUTLIERS for u in loop['nts'] if u in paired)
+
+        if rsrz:
+            paired = pairs[loop['id']]
+            return any(rsrz[u] >= RSRZ_PAIRED_OUTLIERS for u in loop['nts'] if u in paired)
+        else:
+            return False
 
     def status(self, assess, loop):
         """Compute the status code. The status code is defined above.
@@ -647,9 +773,10 @@ class Loader(core.SimpleLoader):
             return 7
         if self.has_incomplete_nucleotides(assess.incomplete, loop):
             return 5
-        if self.is_complementary(loop):
-            return 6
-        if self.is_fictional_loop(assess.rsrz, loop):
+        # if self.is_complementary(loop):
+        #     # see comment in complementary_sequence about why to skip this
+        #     return 6
+        if self.all_high_RSRZ(assess.rsrz, loop):
             return 8
 # The following check is not able to work; need to pass in pairs, how to get it?
 #        if self.is_fictional_pair(assess.rsrz, loop):
