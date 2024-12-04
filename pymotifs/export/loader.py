@@ -12,8 +12,8 @@ export.loops
 from pymotifs.core import StageContainer
 
 # from pymotifs.export.cifatom import Exporter as CifAtom
-from pymotifs.export.interactions import Exporter as InteractionExporter
-from pymotifs.export.loops import Exporter as LoopExporter
+# from pymotifs.export.interactions import Exporter as InteractionExporter  # no longer needed by NDB, skip
+# from pymotifs.export.loops import Exporter as LoopExporter   # would need to be updated
 # from pymotifs.export.pickle_units_rna import Exporter as PickleURExporter
 from pymotifs.export.pickle_pairs_na import Exporter as PicklePRExporter
 from pymotifs.export.pickle_unit_annotations import Exporter as PickleUAExporter
@@ -26,4 +26,5 @@ class Exporter(StageContainer):
 
 #    stages = set([CifAtom, InteractionExporter, LoopExporter, PickleURExporter, PicklePRExporter])
 
-    stages = set([InteractionExporter, LoopExporter, PicklePRExporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter, NA_picklefileExporter])
+    # stages = set([InteractionExporter, PicklePRExporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter, NA_picklefileExporter])
+    stages = set([PicklePRExporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter, NA_picklefileExporter])
