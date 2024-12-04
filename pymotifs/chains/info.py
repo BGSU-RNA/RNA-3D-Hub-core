@@ -170,7 +170,7 @@ class Loader(core.SimpleLoader):
           #response = requests.post('http://data.rcsb.org/graphql', json={'query': currentquery})
 
           # here is a different way to do it
-          currenturl = 'http://data.rcsb.org/graphql?query=' + currentquery
+          currenturl = 'https://data.rcsb.org/graphql?query=' + currentquery
           response = requests.get(currenturl)
 
           if response.status_code == 200:
@@ -205,7 +205,7 @@ class Loader(core.SimpleLoader):
               if chain_data["rcsb_entity_source_organism"] == None:
                 chain_data["rcsb_entity_source_organism"] = [{'ncbi_scientific_name': None, 'ncbi_taxonomy_id': None}]
               renamed["taxonomy_id"]        = chain_data["rcsb_entity_source_organism"][0]["ncbi_taxonomy_id"]
-              renamed["source"]             = chain_data["rcsb_entity_source_organism"][0]["ncbi_scientific_name"]              
+              renamed["source"]             = chain_data["rcsb_entity_source_organism"][0]["ncbi_scientific_name"]
               ######
               renamed["compound"]           = chain_data["rcsb_polymer_entity"]["pdbx_description"]
 
