@@ -142,7 +142,7 @@ def flatten(sequence, predicate=list_or_tuple):
 def row2dict(row):
     """Convert an sqlalchemy object into a dictionary. This should either be
     the result of querying or an object that is to be saved. It must have
-    either a '__table__' property or a '_feilds' property.
+    either a '__table__' property or a '_fields' property.
 
     Parameters
     ----------
