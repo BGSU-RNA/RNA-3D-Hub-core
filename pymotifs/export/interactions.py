@@ -80,30 +80,17 @@ class Exporter(core.Exporter):
 
         with self.session() as session:
             query = session.query(
-                mod.UnitPairsInteractions.unit_id_1.label(self.headers[0]),
-                mod.UnitPairsInteractions.unit_id_2.label(self.headers[1]),
-                mod.UnitPairsInteractions.f_lwbp.label(self.headers[2]),
-                mod.UnitPairsInteractions.f_stacks.label(self.headers[3]),
-                mod.UnitPairsInteractions.f_bphs.label(self.headers[4]),
-                mod.UnitPairsInteractions.program
+                mod.UnitPairsInteractions2024.unit_id_1.label(self.headers[0]),
+                mod.UnitPairsInteractions2024.unit_id_2.label(self.headers[1]),
+                mod.UnitPairsInteractions2024.f_lwbp.label(self.headers[2]),
+                mod.UnitPairsInteractions2024.f_stacks.label(self.headers[3]),
+                mod.UnitPairsInteractions2024.f_bphs.label(self.headers[4]),
             ).filter_by(pdb_id=pdb)
-
-            matlab_found = False
-            for result in query:
-                if result.program == 'matlab':
-                    matlab_found = True
-                    break
 
             interactions = []
             for result in query:
                 output_dict = row2dict(result)
-                del output_dict['program']
-                if result.program == 'matlab':
-                    # prefer matlab annotations
-                    interactions.append(output_dict)
-                elif not matlab_found and result.program == 'python':
-                    # if no matlab annotations, use python annotations
-                    interactions.append(output_dict)
+                interactions.append(output_dict)
 
             count = len(interactions)
             self.logger.info("Found %5d interactions for %s" % (count, pdb))
