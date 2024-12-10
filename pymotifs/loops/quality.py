@@ -100,20 +100,24 @@ class Loader(core.SimpleLoader):
         # accumulate loop ids in the loop_info and loop_positions from pdb_id in pdbs
         with self.session() as session:
             query = session.query(mod.LoopInfo.loop_id).\
-                join(mod.LoopPositions,
-                     mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
-                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
-                distinct()
+                                join(mod.LoopPositions,
+                                    mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
+                                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
+                                distinct()
             all_loops = {r.loop_id for r in query}
+
+        print('all_loops:', all_loops)
 
         # get list of loop_ids in loop_qa from pdbs
         with self.session() as session:
             query = session.query(mod.LoopInfo.loop_id).\
-                join(mod.LoopQa,
-                     mod.LoopQa.loop_id == mod.LoopInfo.loop_id).\
-                filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
-                distinct()
+                            join(mod.LoopQa,
+                                mod.LoopQa.loop_id == mod.LoopInfo.loop_id).\
+                            filter(mod.LoopInfo.pdb_id.in_(pdbs)).\
+                            distinct()
             checked_loops = {r.loop_id for r in query}
+
+        print('checked_loops already in loop_qa:', checked_loops)
 
         # get list of loops that have not been checked
         not_checked_loops = all_loops - checked_loops
@@ -129,19 +133,25 @@ class Loader(core.SimpleLoader):
         return sorted(to_use)
 
     def query(self, session, pdb):
-        """Create a query to find all loop qa entries for the given pdb.
+        """
+        Create a query to find all loop qa entries for the given pdb.
 
         :param session: The session to query with.
         :param str pdb: The PDB id to look up.
         :returns: The query to use.
         """
 
+        # since to_process correctly identifies the pdb ids to use,
+        # make sure to pass back an empty query so it thinks work needs to be done
+        return session.query(mod.LoopQa).filter(mod.LoopQa.loop_id == 'aaa')
+
         return session.query(mod.LoopQa).\
-            join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
-            filter(mod.LoopInfo.pdb_id == pdb)
+                            join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
+                            filter(mod.LoopInfo.pdb_id == pdb)
 
     def paired(self, pdb):
-        """Load all within loop basepairs.
+        """
+        Load all within loop basepairs.
 
         Parameters
         ----------
@@ -176,7 +186,8 @@ class Loader(core.SimpleLoader):
             return pairs
 
     def incomplete(self, pdb):
-        """Load all incomplete nucleotides from the database. This will query
+        """
+        Load all incomplete nucleotides from the database. This will query
         the unit_incomplete for all incomplete data.
 
         Parameters
@@ -226,9 +237,12 @@ class Loader(core.SimpleLoader):
                 'chains': set(),
                 'signature': [],
                 'endpoints': [],
+                'position_2023': [],
+                'chain_index': [],
+                'border': [],
                 }
 
-        # get list of pdbs with related entries in loop_qa
+        # get list of loop ids from this pdb already in loop_qa
         with self.session() as session:
             query = session.query(mod.LoopInfo.loop_id).\
                 join(mod.LoopQa,
@@ -244,10 +258,12 @@ class Loader(core.SimpleLoader):
                                   mod.LoopInfo.pdb_id.label('pdb'),
                                   mod.UnitInfo.unit_id.label('uid'),
                                   mod.UnitInfo.unit.label('unit'),
-                                  mod.LoopInfo.seq.label('seq'),
                                   mod.UnitInfo.chain.label('chain'),
                                   mod.UnitInfo.number.label('number'),
+                                  mod.UnitInfo.chain_index,
+                                  mod.LoopInfo.seq.label('seq'),
                                   mod.LoopPositions.border,
+                                  mod.LoopPositions.position_2023
                                   ).\
                 join(mod.LoopPositions,
                      mod.LoopPositions.loop_id == mod.LoopInfo.loop_id).\
@@ -256,7 +272,7 @@ class Loader(core.SimpleLoader):
                 filter(mod.LoopInfo.pdb_id == pdb).\
 	        	filter(~mod.LoopInfo.loop_id.in_(badloops)).\
                 filter(~mod.LoopInfo.loop_id.in_(checked)).\
-                order_by(asc(mod.LoopPositions.position))
+                order_by(asc(mod.LoopPositions.position_2023))
 
             loops = coll.defaultdict(empty_loop)
             for result in query:
@@ -269,21 +285,25 @@ class Loader(core.SimpleLoader):
                 current['signature'].append(result.number)
                 current['pdb'] = result.pdb
                 current['seq'] = result.seq
+                current['position_2023'].append(result.position_2023)
+                current['chain_index'].append(result.chain_index)
+                current['border'].append(result.border)
 
-                if result.border:
-                    current['endpoints'].append(result.uid)
+                # if result.border:
+                #     current['endpoints'].append(result.uid)
 
                 loops[result.id] = current
 
             loops = loops.values()
-            for loop in loops:
-                ends = loop['endpoints']
-                if len(ends) % 2 != 0:
-                    loop['endpoints'] = []
-                else:
-                    loop['endpoints'] = [(e1, e2) for (e1, e2) in grouper(2, ends)]
 
-            loops = [l for l in loops if l['endpoints']]
+            # for loop in loops:
+            #     ends = loop['endpoints']
+            #     if len(ends) % 2 != 0:
+            #         loop['endpoints'] = []
+            #     else:
+            #         loop['endpoints'] = [(e1, e2) for (e1, e2) in grouper(2, ends)]
+
+            # loops = [l for l in loops if l['endpoints']]
 
             return sorted(loops, key=op.itemgetter('id'))
 
@@ -337,49 +357,6 @@ class Loader(core.SimpleLoader):
                 self.logger.info('No experimental sequence position for ' + unit)
 
             return row2dict(result)
-
-
-    def units_between_old(self, unit1, unit2):
-        """
-        Get a list of all units between two units. This assumes they are on
-        the same chain and have the same symmetry operator.
-        This method refers to the ExpSeqUnitMapping table, which is surprising
-        because the same information could be obtained from chain_index
-        in the unit_info table.
-        """
-
-        start = self.position_info(unit1)
-        stop = self.position_info(unit2)
-
-        # self.logger.info('Units are %s and %s' % (unit1, unit2))
-
-
-        with self.session() as session:
-            units = mod.UnitInfo
-            mapping = mod.ExpSeqUnitMapping
-            pos = mod.ExpSeqPosition
-            query = session.query(units.pdb_id,
-                                  units.model,
-                                  units.chain,
-                                  units.number,
-                                  units.unit,
-                                  units.alt_id,
-                                  units.ins_code,
-                                  ).\
-                join(mapping,
-                     mapping.unit_id == units.unit_id).\
-                join(pos,
-                     mapping.exp_seq_position_id == pos.exp_seq_position_id).\
-                filter(pos.exp_seq_id == start['exp_seq_id']).\
-                filter(pos.index >= start['index']).\
-                filter(pos.index <= stop['index']).\
-                filter(units.chain == start['chain']).\
-                filter(units.model == start['model']).\
-                filter(units.sym_op == start['sym_op']).\
-                distinct().\
-                order_by(asc(pos.index))
-
-            return [Entry(**row2dict(r)) for r in query]
 
 
     def unit_info(self, unit_id):
@@ -455,56 +432,56 @@ class Loader(core.SimpleLoader):
             return [Entry(**row2dict(r)) for r in query]
 
 
-    def complementary_sequence(self, loop):
-        """
-        Detect if an IL sequence is complementary.
+    # def complementary_sequence(self, loop):
+    #     """
+    #     Detect if an IL sequence is complementary.
 
-        Trouble:  methodology fails on CUC,GCGAG because its reversed version
-        is GAGCG,CUC and the entire sequence is complementary, if you ignore
-        the commas.
+    #     Trouble:  methodology fails on CUC,GCGAG because its reversed version
+    #     is GAGCG,CUC and the entire sequence is complementary, if you ignore
+    #     the commas.
 
-        New python code does not extract complementary IL, so skip this.
-        """
+    #     New python code does not extract complementary IL, so skip this.
+    #     """
 
-        # must have an even number of nucleotides to proceed
-        if len(loop['units']) % 2 != 0:
-            return False
+    #     # must have an even number of nucleotides to proceed
+    #     if len(loop['units']) % 2 != 0:
+    #         return False
 
-        parts = []
-        for (start, stop) in loop['endpoints']:
-            units = self.units_between(start, stop)
-            for unit in units:
-                u = unit.unit
-                if u in ['A','C','G','U']:
-                    parts.append(u)
-                elif u in ['DA','DC','DG']:
-                    parts.append(u[1])
-                elif u in ['DT']:
-                    parts.append('U')
-                elif u in modified_base_to_parent:
-                    # loop up parent nucleotide
-                    p = modified_base_to_parent[u]
-                    if p in ['A','C','G','U']:
-                        parts.append(p)
-                    elif p in ['DA','DC','DG']:
-                        parts.append(p[1])
-                    elif p in ['DT']:
-                        parts.append('U')
-                    else:
-                        parts.append(u)
-                else:
-                    parts.append(u)
+    #     parts = []
+    #     for (start, stop) in loop['endpoints']:
+    #         units = self.units_between(start, stop)
+    #         for unit in units:
+    #             u = unit.unit
+    #             if u in ['A','C','G','U']:
+    #                 parts.append(u)
+    #             elif u in ['DA','DC','DG']:
+    #                 parts.append(u[1])
+    #             elif u in ['DT']:
+    #                 parts.append('U')
+    #             elif u in modified_base_to_parent:
+    #                 # loop up parent nucleotide
+    #                 p = modified_base_to_parent[u]
+    #                 if p in ['A','C','G','U']:
+    #                     parts.append(p)
+    #                 elif p in ['DA','DC','DG']:
+    #                     parts.append(p[1])
+    #                 elif p in ['DT']:
+    #                     parts.append('U')
+    #                 else:
+    #                     parts.append(u)
+    #             else:
+    #                 parts.append(u)
 
-        pair = zip(parts, reversed(parts))
-        for (part1, part2) in pair:
-            if len(part1) != len(part2):
-                return False
-            seq_pair = zip(part1, reversed(part2))
-            for (first, second) in seq_pair:
-                if second not in COMPLEMENTARY or first != COMPLEMENTARY[second]:
-                    return False
+    #     pair = zip(parts, reversed(parts))
+    #     for (part1, part2) in pair:
+    #         if len(part1) != len(part2):
+    #             return False
+    #         seq_pair = zip(part1, reversed(part2))
+    #         for (first, second) in seq_pair:
+    #             if second not in COMPLEMENTARY or first != COMPLEMENTARY[second]:
+    #                 return False
 
-        return True
+    #     return True
 
     def has_no_non_cWW(self, loop):
         """
@@ -524,18 +501,18 @@ class Loader(core.SimpleLoader):
 
             return not bool(query.count())
 
-    def is_complementary(self, loop):
-        """
-        Check if a loop has a complementary sequence. This requires that the
-        loop have no non-cWW basepairs (though near are allowed) between them.
-        If so then we consider it as a complemenatry loop since it is likely
-        just a poorly modeled helix.
-        """
+    # def is_complementary(self, loop):
+    #     """
+    #     Check if a loop has a complementary sequence. This requires that the
+    #     loop have no non-cWW basepairs (though near are allowed) between them.
+    #     If so then we consider it as a complemenatry loop since it is likely
+    #     just a poorly modeled helix.
+    #     """
 
-        if loop['type'] != 'IL':
-            return False
+    #     if loop['type'] != 'IL':
+    #         return False
 
-        return self.has_no_non_cWW(loop) and self.complementary_sequence(loop)
+    #     return self.has_no_non_cWW(loop) and self.complementary_sequence(loop)
 
     def modified_bases(self, loop):
         """
@@ -543,10 +520,15 @@ class Loader(core.SimpleLoader):
         """
 
         modified = []
-        normal = ft.partial(op.contains, set(['A', 'C', 'G', 'U','DA','DC','DG','DT']))
-        for (start, end) in loop['endpoints']:
-            units = self.units_between(start, end)
-            modified.extend(u.unit for u in units if not normal(u.unit))
+
+        # normal = ft.partial(op.contains, set(['A', 'C', 'G', 'U','DA','DC','DG','DT']))
+        # for (start, end) in loop['endpoints']:
+        #     units = self.units_between(start, end)
+        #     modified.extend(u.unit for u in units if not normal(u.unit))
+
+        for unit in loop['units']:
+            if not unit in ['A','C','G','U','DA','DC','DG','DT']:
+                modified.append(unit)
 
         return modified
 
@@ -582,7 +564,7 @@ class Loader(core.SimpleLoader):
     #             return bool(query.count())
 
 
-    def has_breaks(self, loop):
+    def has_breaks_also_old(self, loop):
         """
         Check if there are any chain breaks within the loop.
 
@@ -616,7 +598,26 @@ class Loader(core.SimpleLoader):
         return False
 
 
-    def has_incomplete_nucleotides(self, incomplete, loop):
+    def has_breaks(self, loop):
+        """
+        Check if there are any chain breaks within the loop.
+
+        :returns: Bool, true if the loop has any breaks.
+        """
+
+        border = 0
+        for i in range(len(loop['nts'])):
+            chain_index = loop['chain_index'][i]
+            if border % 2 == 1:
+                if chain_index - previous_chain_index > 1:
+                    return True
+
+            border += loop['border'][i]
+            previous_chain_index = chain_index
+
+        return False
+
+    def has_incomplete_nucleotides_old(self, incomplete, loop):
         """
         Check if any of the nucleotides in the loop are incomplete, that is
         are missing atoms that they should not be.
@@ -628,11 +629,20 @@ class Loader(core.SimpleLoader):
                     return True
         return False
 
+    def has_incomplete_nucleotides(self, incomplete, loop):
+        """
+        Check if any of the nucleotides in the loop are incomplete, that is
+        are missing atoms that they should not be.
+        """
+
+        if len(set(loop['nts']) & incomplete) > 0:
+            return True
+        return False
+
     def bad_chain_number(self, loop):
         """
         Check if there are the correct number of distinct chains for each loop.
-        This is just looking to see if an IL has nucleotides from 3 or more
-        different chains.
+        For example, if an IL has nucleotides from 3 or more different chains.
         It is not counting strands.
         """
 
@@ -729,7 +739,7 @@ class Loader(core.SimpleLoader):
             cutoff.
         """
 
-        self.logger.info(rsrz)
+        # self.logger.info(rsrz)
 
         if rsrz:
             return all(rsrz[unit] is None or rsrz[unit] >= RSRZ_FICTIONAL_CUTOFF for unit in loop['nts'])
@@ -748,7 +758,8 @@ class Loader(core.SimpleLoader):
             return False
 
     def status(self, assess, loop):
-        """Compute the status code. The status code is defined above.
+        """
+        Compute the status code. The status code is defined above.
 
         Parameters
         ----------
@@ -763,10 +774,9 @@ class Loader(core.SimpleLoader):
             The status code
         """
 
+        # put the more serious ones first
         if self.has_breaks(loop):
             return 2
-        if self.has_modified(loop):
-            return 3
         if self.bad_chain_number(loop):
             return 4
         if self.too_many_sym_ops(loop):
@@ -778,9 +788,11 @@ class Loader(core.SimpleLoader):
         #     return 6
         if self.all_high_RSRZ(assess.rsrz, loop):
             return 8
-# The following check is not able to work; need to pass in pairs, how to get it?
-#        if self.is_fictional_pair(assess.rsrz, loop):
-#            return 9
+        if self.has_modified(loop):
+            return 3
+        # The following check is not able to work; need to pass in pairs, how to get it?
+        # if self.is_fictional_pair(assess.rsrz, loop):
+        #     return 9
         return 1
 
     def quality(self, assess, loop):
@@ -802,19 +814,21 @@ class Loader(core.SimpleLoader):
 
         self.logger.debug("Examining loop %s", str(loop))
         seq = None
-        if self.is_complementary(loop):
-            seq = loop['seq'].replace('*', ',')
+        # if self.is_complementary(loop):
+        #     seq = loop['seq'].replace('*', ',')
 
-        mods = None
-        if self.modified_bases(loop):
-            mods = ', '.join(self.modified_bases(loop))
+        mb = self.modified_bases(loop)
+        if mb:
+            mods = ', '.join(mb)
+        else:
+            mods = None
 
         return {
             'loop_id': loop['id'],
             'status': self.status(assess, loop),
             'modifications': mods,
-            'nt_signature': ', '.join(str(s) for s in loop['signature']),
-            'complementary': seq
+            # 'nt_signature': ', '.join(str(s) for s in loop['signature']),
+            # 'complementary': seq
         }
 
     def assessment_data(self, pdb):
