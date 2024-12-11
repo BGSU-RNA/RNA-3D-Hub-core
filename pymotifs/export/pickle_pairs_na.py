@@ -68,7 +68,7 @@ class Exporter(core.Loader):
     # def to_process(self, pdbs, **kwargs):
     #     """
     #     Comment this out for weekly use!
-    #
+
     #     Return *all* PDB ids which have pairwise annotations.
     #     :param list pdbs: The list of pdb ids of interest on this run, ignored.
     #     :returns: A list of pdb ids to process.
