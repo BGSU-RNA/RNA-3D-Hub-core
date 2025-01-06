@@ -64,15 +64,7 @@ class Loader(core.SimpleLoader):
             print(sorted(saved_loop_ids & motif_atlas_loop_ids))
 
         # for temporary overrides, speeds up testing
-        pdbs_needed = ['6TNA']
         pdbs_needed = ['4TNA']
-        pdbs_needed = ['4V9F']
-        pdbs_needed = ['1FFK']
-        pdbs_needed = ['1S72']
-        pdbs_needed = ['1VWW']
-        pdbs_needed = ['1DK1']
-        pdbs_needed = ['1DUH']
-        pdbs_needed = ['1F7Y']
         pdbs_needed = []         # leave blank to use all pdbs
 
         if len(pdbs_needed) == 0:
@@ -109,7 +101,7 @@ class Loader(core.SimpleLoader):
         """
 
         # return a query with no results when we want to process all files:
-        return session.query(mod.LoopInfo).filter_by(pdb_id='XYZ')
+        # return session.query(mod.LoopInfo).filter_by(pdb_id='XYZ')
 
         # skip pdb ids that already have loops:
         return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
@@ -190,13 +182,20 @@ class Loader(core.SimpleLoader):
                 border_total += 1
                 if border_total % 2 == 1:
                     # starting a new strand
-                    loop["loop_name"] += "%s/%s/%s:" % (fields[1],fields[2],fields[4])
+                    if len(fields) >= 8:
+                        # insertion code like https://rna.bgsu.edu/rna3dhub/pdb/4W29/motifs IL_4W29_077
+                        loop["loop_name"] += "%s/%s/%s%s:" % (fields[1],fields[2],fields[4],fields[7])
+                    else:
+                        loop["loop_name"] += "%s/%s/%s:" % (fields[1],fields[2],fields[4])
                     if i > 0 and i < len(loop["unit_ids"])-1:
                         # previous strand ended, start a new one
                         a = "*"
                 else:
                     # ending a strand
-                    loop["loop_name"] += fields[4]
+                    if len(fields) >= 8:
+                        loop["loop_name"] += fields[4] + fields[7]
+                    else:
+                        loop["loop_name"] += fields[4]
                     if i < len(loop["unit_ids"])-1:
                         # another strand will start
                         loop["loop_name"] += ","
@@ -358,7 +357,7 @@ class Loader(core.SimpleLoader):
         loop_id_to_data = {}
         loop_type_to_next_id = {}
 
-        # outerjoin was not getting lines in loop_info that were not in loop_positions
+        # outerjoin was not getting lines in loop_info that were not in loop_positions,
         # so just do two queries
         with self.session() as session:
             query = session.query(mod.LoopInfo.loop_id,
@@ -369,6 +368,7 @@ class Loader(core.SimpleLoader):
                         filter(mod.LoopInfo.pdb_id == pdb)
             for result in query:
                 if result.loop_id.split("_")[2] == "000":
+                    # fake loops introduced to avoid re-processing the same file again
                     continue
                 if not result.loop_id in loop_id_to_data:
                     loop_id_to_data[result.loop_id] = {}
@@ -491,6 +491,9 @@ class Loader(core.SimpleLoader):
 
                     # do not add the new loop itself, instead update the old loop where necessary
                     loop["add_new_loop"] = False
+
+                    if not "position_to_id_border" in old_loop:
+                        old_loop["position_to_id_border"] = {}
 
                     if old_loop["sort_name"] == "" or old_loop["sequence_2024"] == None or not old_loop["sequence_2024"] == loop["sequence_2024"]:
                         # old loop was not processed on a previous run, or not processed correctly
