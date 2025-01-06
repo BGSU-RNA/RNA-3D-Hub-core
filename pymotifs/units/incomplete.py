@@ -38,9 +38,9 @@ class Entry(coll.namedtuple('Entry', ['pdb_id', 'model', 'chain', 'number',
 
 
 class Loader(core.SimpleLoader):
-    merge = True
+    merge_data = True
     allow_no_data = True
-    use_marks = True      # not sure what this does, except to not check files!
+    use_marks = True
     use_marks = False
     dependencies = set([InfoLoader])
 
