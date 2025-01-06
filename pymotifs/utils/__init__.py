@@ -204,7 +204,7 @@ def known_subclasses(base, glob):
     return subclasses
 
 
-def known(config, pdb=False, cif=True, pdb1=False, cifatoms=True):
+def known(config, pdb=False, cif=True, pdb1=False):
     """
     Find all known mmCIF, pdb and/or PDB1 files. Giving all flags means
     getting all PDB, mmCIF or PDB1 files. This will check if we have a copy of
@@ -236,16 +236,36 @@ def known(config, pdb=False, cif=True, pdb1=False, cifatoms=True):
         filename_lower = filename.lower()
         if 'exemplar' in filename_lower:
             continue
-        name, ext = os.path.splitext(filename)
-        ext = ext.replace('.', '')
+
+        if '.cif.gz' in filename_lower:
+            ext = '.cif.gz'
+            name = filename_lower.replace('.cif.gz', '')
+        elif '.cifatoms' in filename_lower:
+            ext = '.cifatoms'
+            name = filename_lower.replace('.cifatoms', '')
+        elif '.cif' in filename_lower:
+            ext = '.cif'
+            name = filename_lower.replace('.cif', '')
+        elif '.pdb' in filename_lower:
+            ext = '.pdb'
+            name = filename_lower.replace('.pdb', '')
+        elif '.pdb1' in filename_lower:
+            ext = '.pdb1'
+            name = filename_lower.replace('.pdb1', '')
+        else:
+            name,ext = os.path.splitext(filename)
+
         names[name][ext] = True
 
     for name, exts in names.items():
-        if not pdb or (pdb and exts.get('pdb')):
-            if not cif or (cif and '.cif.gz' in filename_lower):
-                if not cif or (cif and exts.get('cif')):
-                    if not pdb1 or (pdb1 and exts.get('pdb1')):
-                        yield name
+        if pdb and exts.get('.pdb'):
+            yield name.upper()
+        elif cif and exts.get('.cif.gz'):
+            yield name.upper()
+        elif cif and exts.get('.cif'):
+            yield name.upper()
+        elif pdb1 and exts.get('.pdb1'):
+            yield name.upper()
 
 
 class RetryHelper(object):
