@@ -113,7 +113,7 @@ def run(ctx, name, ids, config=None, engine=None, **kwargs):
               help="Logging level to use")
 @click.option('--log-mode', default='a', type=click.Choice(['w', 'a']),
               help='Mode to open the  logging file')
-@click.option('--email/--no-email', default=True, help='Send email')
+@click.option('--email/--no-email', default=False, help='Send email')
 @click.option('--send-to', default=None, type=str,
               help='Set to address for emails')
 @click.version_option(__VERSION__)
@@ -149,14 +149,14 @@ def cli(ctx, **options):
               metavar='STAGE', help="Recalculate data for the given stage(s)")
 @click.option('--redo', is_flag=True, default=False,
               help='Skip dependencies and recalculate this stage')
-@click.option('--all', is_flag=True, help="Use all RNA containing PDBS")
+@click.option('--all', is_flag=True, help="Use all RNA containing PDBs")
 @click.option('--known', is_flag=True, help="Use only downloaded files")
-@click.option('--after-date', default=None,
-              type=DATE, help='Get files posted after DATE (YYYY-MM-DD)')
+@click.option('--after-date', type=DATE, help='Get files posted on or after DATE (YYYY-MM-DD)')
 #@click.option('--before-date', default=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
 #              help='Get files posted before DATE (YYYY-MM-DD)')
-@click.option('--before-date', default=datetime.strftime(datetime.now(), '%Y-%m-%d'),
-              help='Get files posted on or before DATE (YYYY-MM-DD)')
+# @click.option('--before-date', default=datetime.strftime(datetime.now(), '%Y-%m-%d'),
+#               help='Get files posted on or before DATE (YYYY-MM-DD)')
+@click.option('--before-date', help='Get files posted on or before DATE (YYYY-MM-DD)')
 #@click.option('--before-date', default=datetime.now(),
 #              help='Get files posted before DATE (YYYY-MM-DD)')
 @click.option('--nr_molecule_parent_current', type=str, help='Parent release,current release like DNA,0.3,0.4')
@@ -188,12 +188,11 @@ def do(ctx, name, ids, **kwargs):
 @click.option('--skip-stage', multiple=True, help='Stage to skip')
 @click.option('--recalculate', multiple=True,
               metavar='STAGE', help="Recalculate data for the given stage(s)")
-@click.option('--all', is_flag=True, help="Use all RNA containing PDBS")
+@click.option('--all', is_flag=True, help="Use all RNA containing PDBs")
 @click.option('--known', is_flag=True, help="Use only downloaded files")
 @click.option('--after-date', default=None,
               type=DATE, help='Get files posted after DATE (YYYY-MM-DD)')
-@click.option('--before-date', default=None,
-              type=DATE, help='Get files posted before DATE (YYYY-MM-DD)')
+@click.option('--before-date', type=DATE, help='Get files posted before DATE (YYYY-MM-DD)')
 @click.option('--exclude', multiple=True, type=PDB,
               help='Excluded PDB(s)')
 @click.argument('name')
