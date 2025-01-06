@@ -7,10 +7,11 @@ data into the database if run several times the same data.
 """
 
 import requests
+import time
+
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils.pdb import CustomReportHelper
-
 from pymotifs.pdbs.loader import Loader as PdbLoader
 
 
@@ -171,7 +172,14 @@ class Loader(core.SimpleLoader):
 
           # here is a different way to do it
           currenturl = 'https://data.rcsb.org/graphql?query=' + currentquery
-          response = requests.get(currenturl)
+
+          try:
+              response = requests.get(currenturl)
+          except:
+              # sleep for 5 seconds and then try again, because the get failed
+              # once but then worked when the pipeline was run again
+              time.sleep(5)
+              response = requests.get(currenturl)
 
           if response.status_code == 200:
               result = response.json()
