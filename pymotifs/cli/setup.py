@@ -41,23 +41,28 @@ def pdbs(config, options):
         molecule_types = ['DNA',"NA-hybrid"]
     else:
         molecule_types = ['RNA',"NA-hybrid"]
-    logger.info("Molecule types: %s" % molecule_types)
 
     # Note: before-date in the command line becomes before_date in options
-    # Note: specifying a before-date or after-date overrides the -all option
+    # Note: specifying a before-date or after-date overrides the --all option
     if 'before_date' in options or 'after_date' in options:
         dates = (options.get('after_date', None),
                  options.get('before_date', None))
-        logger.info("Getting PDBs within dates %s, %s" % dates)
-        return helper(dates=dates,molecule_types=molecule_types)
+        if dates[0] or dates[1]:
+            logger.info("Molecule types: %s" % molecule_types)
+            logger.info("Getting PDBs within dates %s, %s" % dates)
+            return helper(dates=dates,molecule_types=molecule_types)
 
     if options.get('all', False):
-        logger.info("Getting all PDBs")
+        # molecule_types = ["RNA","DNA","NA-hybrid"]
+        logger.info("Molecule types: %s" % molecule_types)
+        logger.info("Getting all PDBs of the current type")
         return helper(molecule_types=molecule_types)
 
+    # use every PDB file with a CIF file in the cif_files folder
     if options.pop('known', None):
-        logger.info("Using known pdbs only")
-        return list(known(config, pdb=False))
+        known_pdbs = list(known(config, pdb=False))
+        logger.info("Using all %d PDB identifiers with a downloaded .cif.gz file" % len(known_pdbs))
+        return known_pdbs
 
     return []
 
