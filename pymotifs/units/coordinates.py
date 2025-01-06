@@ -1,18 +1,20 @@
 """
-A loader to store the coordinates for each residue in the database. This
-will write one row per non-water residue into the unit_coordinates table in the
+A loader to store the coordinates for each residue in the database.
+This will write one row per atom into the unit_coordinates table in the
 database. Data is written in the CIF format. This will write only the ATOM
 level entries (atom_site in cif) but will not include the header lines like
 'loop_' or '_atom_site.group_PDB'.
+
+Ligands, ions, and water molecules were not being written until January 2025.
+
 """
 
 import pymotifs.core as core
 from pymotifs import models as mod
+from pymotifs.units.info import Loader as InfoLoader
 
 from fr3d.cif.writer import CifAtom
 from fr3d.data import Structure
-
-from pymotifs.units.info import Loader as InfoLoader
 
 import sys
 
@@ -23,13 +25,20 @@ else:
     from io import StringIO
 
 class Loader(core.SimpleLoader):
-    """The loader to store unit_coordinates data.
+    """
+    The loader to store unit_coordinates data.
     """
 
     dependencies = set([InfoLoader])
 
+    allow_no_data = True
+
+    # check for units that were missed and fill them in
+    fill_in_missing = False
+
     def query(self, session, pdb):
-        """Create a query to find all entries in `units_coordinates` for the
+        """
+        Create a query to find all entries in `units_coordinates` for the
         given PDB id.
 
         Parameters
@@ -46,10 +55,15 @@ class Loader(core.SimpleLoader):
             The query for the given structure.
         """
 
-        return session.query(mod.UnitCoordinates).\
-            join(mod.UnitInfo,
-                 mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id).\
-            filter(mod.UnitInfo.pdb_id == pdb)
+        if self.fill_in_missing:
+            # return an empty query so we process all pdb ids
+            return session.query(mod.UnitCoordinates).filter_by(unit_id='nonexistent_unit_id')
+        else:
+            return session.query(mod.UnitCoordinates).\
+                join(mod.UnitInfo,
+                    mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id).\
+                filter(mod.UnitInfo.pdb_id == pdb)
+
 
     def coordinates(self, pdb, residue):
         """
@@ -87,8 +101,10 @@ class Loader(core.SimpleLoader):
                     line.startswith('loop_') or \
                     line[0] in set('_#'):
                 continue
+            line = line.replace("    "," ").replace("  "," ").replace("  "," ")
             coords.append(line)
         return '\n'.join(coords)
+
 
     def data(self, pdb, **kwargs):
         """
@@ -107,18 +123,45 @@ class Loader(core.SimpleLoader):
             A UnitCoordinates object with the coordinates to write.
         """
 
+        if self.fill_in_missing:
+            # find all unit ids in this pdb
+            with self.session() as session:
+                query = session.query(mod.UnitInfo.unit_id).filter_by(pdb_id=pdb)
+                unit_ids = set([u.unit_id for u in query])
+
+            # find unit ids in this pdb that have coordinates
+            with self.session() as session:
+                query = session.query(mod.UnitCoordinates).\
+                                join(mod.UnitInfo,
+                                    mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id).\
+                                filter(mod.UnitInfo.pdb_id == pdb)
+                has_coordinates = set([u.unit_id for u in query])
+
+            if len(unit_ids - has_coordinates) == 0:
+                raise core.Skip("All unit ids in %s already have centers" % pdb)
+
+        else:
+            has_coordinates = set()
+
+
+        # read the .cif file
         structure = self.structure(pdb)
+
+        # loop over units in the structure, RNA, DNA, protein, ligands, ions, etc.
         for unit in structure.residues():
-            if unit.sequence == 'HOH':
+            if unit.unit_id() in has_coordinates:
                 continue
+
             # pass the pdb id and the entire unit to self.coordinates
             coord = self.coordinates(pdb, unit)
             self.logger.debug("data: PDB: %s" % pdb)
             self.logger.debug("data: unit: %s" % unit)
             self.logger.debug("data: coordinates: %s" % coord)
             if not coord:
-                raise core.InvalidState("No coordinates computed for %s" %
-                                        unit)
+                raise core.InvalidState("No coordinates computed for %s" % unit)
+
+            if self.fill_in_missing:
+                print("Adding coordinates for %s value %s" % (unit.unit_id(), coord))
 
             yield mod.UnitCoordinates(
                 unit_id=unit.unit_id(),

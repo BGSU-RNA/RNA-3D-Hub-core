@@ -1,28 +1,33 @@
-"""Stage to populate the units.info table.
+"""
+Stage to populate the units.info table.
 
 This module contains a loader to load all unit level information into the
 database.
 """
 
-import itertools as it
-
 import pymotifs.core as core
-
 from pymotifs import models as mod
 from pymotifs.utils import units
 from pymotifs.download import Downloader
 from pymotifs.pdbs.info import Loader as PdbLoader
 
-
 class Loader(core.SimpleLoader):
-    """The loader that will populate the unit_info table in the database.
+    """
+    The loader that will populate the unit_info table in the database.
     """
 
+    # the dependencies for this stage
     dependencies = set([Downloader, PdbLoader])
-    """The dependencies for this stage."""
+
+    allow_no_data = True
+    use_marks = False
+
+    # check for units that were missed and fill them in
+    fill_in_missing = False
 
     def query(self, session, pdb):
-        """Create a query for all units for the given PDB.
+        """
+        Create a query for all units for the given PDB.
 
         Parameters
         ----------
@@ -36,11 +41,17 @@ class Loader(core.SimpleLoader):
         query : sqlalchemy.orm.query.Query
             A query to find all units from the given structure.
         """
-        # return session.query(mod.UnitInfo).filter_by(pdb_id='6X')
-        return session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
+
+        if self.fill_in_missing:
+            # return an empty query so we process all pdb ids
+            return session.query(mod.UnitInfo).filter_by(pdb_id='nonexistent_pdb_id')
+        else:
+            return session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
+
 
     def type(self, unit):
-        """Compute the component type, ie A, C, G, U is RNA, DA, DC, etc is DNA
+        """
+        Compute the component type, ie A, C, G, U is RNA, DA, DC, etc is DNA
         and so forth.
 
         Parameters
@@ -55,8 +66,10 @@ class Loader(core.SimpleLoader):
         """
         return units.component_type(unit)
 
+
     def as_unit(self, nt):
-        """Turn a `Component` into a `UnitInfo`.
+        """
+        Turn a `Component` into a `UnitInfo`.
 
         Parameters
         ----------
@@ -70,7 +83,6 @@ class Loader(core.SimpleLoader):
         """
         # self.logger.info("unit_id: %s, pdb: %s, model: %s, chain: %s, unit: %s, number: %s, alt_id: %s, ins_code: %s, sym_op: %s, chain_index: %s, unit_type_id: %s" % (nt.unit_id(), nt.pdb, nt.model, nt.chain, nt.sequence, nt.number, getattr(nt, 'alt_id', None), nt.insertion_code, nt.symmetry, nt.index, self.type(nt)))
 
-
         return mod.UnitInfo(unit_id=nt.unit_id(),
                             pdb_id=nt.pdb,
                             model=nt.model,
@@ -83,8 +95,10 @@ class Loader(core.SimpleLoader):
                             chain_index=nt.index,
                             unit_type_id=self.type(nt))
 
+
     def data(self, pdb, **kwargs):
-        """Compute the data to store. This will extract all components from the
+        """
+        Compute the data to store. This will extract all components from the
         structure, include water, ligands and other non-polymers and create
         `UnitInfo` objects.
 
@@ -99,6 +113,22 @@ class Loader(core.SimpleLoader):
             An iterable over all units in the structure.
         """
 
+        if self.fill_in_missing:
+            with self.session() as session:
+                query = session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
+            existing = set([u.unit_id for u in query])
+        else:
+            existing = set()
+
         structure = self.structure(pdb)
 
-        return map(self.as_unit, structure.residues())
+        entries = []
+        for unit in structure.residues():
+            if not unit.unit_id() in existing:
+                if self.fill_in_missing:
+                    self.logger.info("Filling in missing unit %s" % (unit.unit_id()))
+                entries.append(self.as_unit(unit))
+
+        self.logger.info("Found %4d new units for %s" % (len(entries), pdb))
+
+        return entries

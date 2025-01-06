@@ -15,27 +15,38 @@ class Loader(core.SimpleLoader):
     dependencies = set([InfoLoader])
     allow_no_data = True
 
+    # check for units that were missed and fill them in
+    fill_in_missing = False
+
     def to_process(self, pdbs, **kwargs):
         """
         Do one query to determine which pdb ids do not have centers/rotations
         Since you need a center to have a rotation, just check for centers
         """
 
-        with self.session() as session:
-            query = session.query(mod.UnitCenters.pdb_id).distinct()
+        if self.fill_in_missing:
+            return pdbs
 
-        existing_ids = set()
-        for result in query:
-            existing_ids.add(result.pdb_id)
+            # takes too much memory to try to find all unit ids that don't
+            # have a center
 
-        pdbs_to_check = set(pdbs) - existing_ids
+        else:
+            existing_ids = set()
+            with self.session() as session:
+                query = session.query(mod.UnitCenters.pdb_id).distinct()
 
-        self.logger.info("Found %d existing ids and %d pdbs to check" % (len(existing_ids),len(pdbs_to_check)))
+            for result in query:
+                existing_ids.add(result.pdb_id)
+
+            pdbs_to_check = set(pdbs) - existing_ids
+
+            self.logger.info("Found %d existing ids and %d pdbs to check" % (len(existing_ids),len(pdbs_to_check)))
 
         if len(pdbs_to_check) == 0:
             raise core.Skip("All pdb ids already represented in unit_rotations table")
 
         return sorted(pdbs_to_check)
+
 
     def query(self, session, pdb):
         """
@@ -46,8 +57,12 @@ class Loader(core.SimpleLoader):
         :returns: A query to get rotation matrices.
         """
 
-        return session.query(mod.UnitCenters).\
-            filter_by(pdb_id=pdb)
+        if self.fill_in_missing:
+            # return an empty query so we process all pdb ids
+            return session.query(mod.UnitCenters).filter_by(pdb_id='nonexistent_pdb_id')
+        else:
+            return session.query(mod.UnitCenters).filter_by(pdb_id=pdb)
+
 
     def data(self, pdb, **kwargs):
         """
@@ -58,12 +73,40 @@ class Loader(core.SimpleLoader):
         for the corresponding tables
         """
 
+        if self.fill_in_missing:
+            # find unit ids in this pdb that have a center
+            with self.session() as session:
+                query = session.query(mod.UnitCenters).filter_by(pdb_id=pdb)
+                has_center = set([u.unit_id for u in query])
+
+            # find all unit ids in this pdb
+            with self.session() as session:
+                query = session.query(mod.UnitInfo.unit_id).filter_by(pdb_id=pdb)
+                unit_ids = set([u.unit_id for u in query])
+
+            if len(unit_ids - has_center) == 0:
+                raise core.Skip("All unit ids in %s already have centers" % pdb)
+
+        else:
+            has_center = set()
+
         structure = self.structure(pdb)
 
         c = 0
         for residue in structure.residues():
+            # if the unit has any center at all, skip it
+            # if we ever have to add some new center, this logic will need to change
+
+            if residue.unit_id() in has_center:
+                continue
+
             for name in residue.centers.definitions():
                 center = residue.centers[name]
+
+                if self.fill_in_missing:
+                    self.logger.info("Adding center for %s value %s" % (residue.unit_id(), center))
+                    print("Adding center for %s value %s" % (residue.unit_id(), center))
+
                 if len(center) == 3:
                     yield mod.UnitCenters(unit_id=residue.unit_id(),
                                           name=name,
