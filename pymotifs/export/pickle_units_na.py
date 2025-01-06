@@ -173,7 +173,8 @@ class Exporter(core.Loader):
 
 
     def process(self, entry, **kwargs):
-        """Load centers/rotations data for the given IFE-chain.
+        """
+        Load centers/rotations data for the given IFE-chain.
 
         Parameters
         ----------
@@ -183,10 +184,6 @@ class Exporter(core.Loader):
             Generic keyword arguments.
         """
         if len(self.data(entry)[0]) != 0:
-            # print(self.data(entry))
-            # print(self.data(entry)[0])
-            # print(len(self.data(entry)[0]))
-            # print(len(self.data(entry)[0]) != 0)
 
             filename = self.filename(entry)
 
