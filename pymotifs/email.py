@@ -56,7 +56,7 @@ class Emailer(core.Base):
             return 'No log file produced'
 
         lines = []
-        with open(filename, 'rb') as raw:
+        with open(filename, 'rt') as raw:
             for line in raw:
                 if any(line.startswith(level) for level in self.levels):
                     lines.append(line)
@@ -113,7 +113,7 @@ class Emailer(core.Base):
         if not filename:
             return None
         outname = filename + '.gz'
-        with open(filename, 'rb') as raw, gzip.open(outname, 'wb') as out:
+        with open(filename, 'rt') as raw, gzip.open(outname, 'wb') as out:
             shutil.copyfileobj(raw, out)
         return outname
 
