@@ -64,6 +64,43 @@ class NR(Base):
 
 
 class Structure(Base):
+    def na_chains(self, pdb, return_id=False, strict=False, extended=True):
+        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
+        macromolecule_types.add('DNA/RNA Hybrid')
+        macromolecule_types.add('NA-hybrid')
+        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
+
+        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
+        macromolecule_types.add('polydeoxyribonucleotide')
+
+        # new on 2025-03-08
+        macromolecule_types.add('Peptide nucleic acid')
+
+        with self.session() as session:
+            query = session.query(mod.ChainInfo.chain_name,
+                     mod.ChainInfo.chain_id).\
+                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
+
+            if isinstance(pdb, str):
+                query = query.filter_by(pdb_id=pdb)
+            else:
+                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
+
+            if strict:
+                # look specifically for A, C, G, U, N but not modified nts
+                func = mod.ChainInfo.sequence.op('regexp')
+                query = query.filter(func('^[ACGUN]$'))
+
+            data = []
+            for result in query:
+                if return_id:
+                    entry = (result.chain_name, result.chain_id)
+                else:
+                    entry = result.chain_name
+                data.append(entry)
+            return data
+
+
     def rna_chains(self, pdb, return_id=False, strict=False, extended=True):
         """
         This will get all chains labeled as RNA for a given structure or
@@ -116,38 +153,6 @@ class Structure(Base):
                     entry = (result.chain_name, result.chain_id)
                 data.append(entry)
 
-            return data
-
-    def na_chains(self, pdb, return_id=False, strict=False, extended=True):
-        macromolecule_types = set(['Polyribonucleotide (RNA)','polyribonucleotide'])
-        macromolecule_types.add('DNA/RNA Hybrid')
-        macromolecule_types.add('NA-hybrid')
-        macromolecule_types.add('polydeoxyribonucleotide/polyribonucleotide hybrid')
-
-        macromolecule_types.add('Polydeoxyribonucleotide (DNA)')
-        macromolecule_types.add('polydeoxyribonucleotide')
-
-        with self.session() as session:
-            query = session.query(mod.ChainInfo.chain_name,
-                     mod.ChainInfo.chain_id).\
-                filter(mod.ChainInfo.entity_macromolecule_type.in_(macromolecule_types))
-
-            if isinstance(pdb, str):
-                query = query.filter_by(pdb_id=pdb)
-            else:
-                query = query.filter(mod.ChainInfo.pdb_id.in_(pdb))
-
-            # look specifically for A, C, G, U, N but not modified nts
-            if strict:
-                func = mod.ChainInfo.sequence.op('regexp')
-                query = query.filter(func('^[ACGUN]$'))
-
-            data = []
-            for result in query:
-                entry = result.chain_name
-                if return_id:
-                    entry = (result.chain_name, result.chain_id)
-                data.append(entry)
             return data
 
     def longest_chain(self, pdb, model=1):
