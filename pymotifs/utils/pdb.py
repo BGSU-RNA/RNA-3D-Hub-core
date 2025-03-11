@@ -63,48 +63,46 @@ class RnaPdbsHelper(object):
         logger.info('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
         print('Earliest date is %s, latest date is %s' % (earliest_date,latest_date))
 
-        resultIDs = []
+        resultIDs = set()
 
         # change http to https, v1 to v2, pager to paginate on 2022-07-20
         # limit to 10,000 rows on 2023-08-09 when PDB imposed that limit
         # need to use the paginate option when the number of results exceeds 10,000
-        url = "https://search.rcsb.org/rcsbsearch/v2/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22entity_poly.rcsb_entity_polymer_type%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22RNA%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22greater_or_equal%22%2C%22value%22%3A%221000-01-01T00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22less_or_equal%22%2C%22value%22%3A%223000-01-01T00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%5D%7D%2C%22request_options%22%3A%7B%22paginate%22%3A%7B%22start%22%3A0%2C%22rows%22%3A10000%7D%7D%2C%22return_type%22%3A%22entry%22%7D"
+        # successively replacing more % codes with keyboard characters
+        url = "https://search.rcsb.org/rcsbsearch/v2/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22entity_poly.rcsb_entity_polymer_type%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22RNA%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22greater_or_equal%22%2C%22value%22%3A%221000-01-01T00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22operator%22%3A%22less_or_equal%22%2C%22value%22%3A%223000-01-01T00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22%7D%7D%5D%7D%2C%22request_options%22%3A%7B%22paginate%22%3A%7B%22start%22%3Astart_row%2C%22rows%22%3A10000%7D%7D%2C%22return_type%22%3A%22entry%22%7D"
+        url = 'https://search.rcsb.org/rcsbsearch/v2/query?json={%22query%22%3A{%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B{%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A{%22attribute%22%3A%22entity_poly.rcsb_entity_polymer_type%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22RNA%22}}%2C{%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A{%22operator%22%3A%22greater_or_equal%22%2C%22value%22%3A%221000-01-01T00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22}}%2C{%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A{%22operator%22%3A%22less_or_equal%22%2C%22value%22%3A%223000-01-01T00%3A00%3A00Z%22%2C%22attribute%22%3A%22rcsb_accession_info.initial_release_date%22}}%5D}%2C%22request_options%22%3A{%22paginate%22%3A{%22start%22%3Astart_row%2C%22rows%22%3A10000}}%2C%22return_type%22%3A%22entry%22}'
+        url = 'https://search.rcsb.org/rcsbsearch/v2/query?json={"query"%3A{"type"%3A"group"%2C"logical_operator"%3A"and"%2C"nodes"%3A%5B{"type"%3A"terminal"%2C"service"%3A"text"%2C"parameters"%3A{"attribute"%3A"entity_poly.rcsb_entity_polymer_type"%2C"operator"%3A"exact_match"%2C"value"%3A"RNA"}}%2C{"type"%3A"terminal"%2C"service"%3A"text"%2C"parameters"%3A{"operator"%3A"greater_or_equal"%2C"value"%3A"1000-01-01T00%3A00%3A00Z"%2C"attribute"%3A"rcsb_accession_info.initial_release_date"}}%2C{"type"%3A"terminal"%2C"service"%3A"text"%2C"parameters"%3A{"operator"%3A"less_or_equal"%2C"value"%3A"3000-01-01T00%3A00%3A00Z"%2C"attribute"%3A"rcsb_accession_info.initial_release_date"}}%5D}%2C"request_options"%3A{"paginate"%3A{"start"%3Astart_row%2C"rows"%3A10000}}%2C"return_type"%3A"entry"}'
+        url = 'https://search.rcsb.org/rcsbsearch/v2/query?json={"query":{"type":"group"%2C"logical_operator":"and"%2C"nodes":%5B{"type":"terminal"%2C"service":"text"%2C"parameters":{"attribute":"entity_poly.rcsb_entity_polymer_type"%2C"operator":"exact_match"%2C"value":"RNA"}}%2C{"type":"terminal"%2C"service":"text"%2C"parameters":{"operator":"greater_or_equal"%2C"value":"1000-01-01T00:00:00Z"%2C"attribute":"rcsb_accession_info.initial_release_date"}}%2C{"type":"terminal"%2C"service":"text"%2C"parameters":{"operator":"less_or_equal"%2C"value":"3000-01-01T00:00:00Z"%2C"attribute":"rcsb_accession_info.initial_release_date"}}%5D}%2C"request_options":{"paginate":{"start":start_row%2C"rows":10000}}%2C"return_type":"entry"}'
+        # does not seem to work to replace %5B with [ and %5D with ].  Don't know why!
+        url = 'https://search.rcsb.org/rcsbsearch/v2/query?json={"query":{"type":"group","logical_operator":"and","nodes":%5B{"type":"terminal","service":"text","parameters":{"attribute":"entity_poly.rcsb_entity_polymer_type","operator":"exact_match","value":"RNA"}},{"type":"terminal","service":"text","parameters":{"operator":"greater_or_equal","value":"1000-01-01T00:00:00Z","attribute":"rcsb_accession_info.initial_release_date"}},{"type":"terminal","service":"text","parameters":{"operator":"less_or_equal","value":"3000-01-01T00:00:00Z","attribute":"rcsb_accession_info.initial_release_date"}}%5D},"request_options":{"paginate":{"start":start_row,"rows":10000}},"return_type":"entry"}'
+
         url = url.replace("1000-01-01",earliest_date)
         url = url.replace("3000-01-01",latest_date)
 
-        # query converted to regular text
-        # never seems to work; maybe PDB simply won't accept these characters?
-        # tried to convert this way, but doesn't work
-        # import urllib.parse
-        # print(urllib.parse.unquote(url))
-        # url = 'https://search.rcsb.org/rcsbsearch/v2/query?json={"query":{"type":"group","logical_operator":"and","nodes":[{"type":"terminal","service":"text","parameters":{"attribute":"entity_poly.rcsb_entity_polymer_type","operator":"exact_match","value":"RNA"}},{"type":"terminal","service":"text","parameters":{"operator":"greater_or_equal","value":"1000-01-01T00:00:00Z","attribute":"rcsb_accession_info.initial_release_date"}},{"type":"terminal","service":"text","parameters":{"operator":"less_or_equal","value":"3000-01-01T00:00:00Z","attribute":"rcsb_accession_info.initial_release_date"}}]},"request_options":{"paginate":{"start":0,"rows":10000}},"return_type":"entry"}'
-        # url = url.replace("1000-01-01",earliest_date)
-        # url = url.replace("3000-01-01",latest_date)
-
         for molecule_type in molecule_types:
-            currenturl = url.replace("RNA",molecule_type)
-            # print("Querying PDB with url %s" % currenturl)
-            logger.info("Querying PDB with url %s" % currenturl)
-            response = requests.get(currenturl)
-            jsonR = response.json()
+            start_row = 0
+            keep_downloading = True
+            while keep_downloading:
+                currenturl = url.replace("RNA",molecule_type)
+                currenturl = currenturl.replace("start_row",str(start_row))
+                # print("Querying PDB with url %s" % currenturl)
+                logger.info("Querying PDB with url %s" % currenturl)
+                response = requests.get(currenturl)
+                jsonR = response.json()
 
-            print("Number of %-9s rows received is %5d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
-            logger.info("Number of %-9s rows received is %5d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
-
-            for item in jsonR["result_set"]:
-                resultIDs.append(item["identifier"])
-
-        # except Exception as err:
-        #     # for key in jsonR.keys():
-        #     #     print(key,jsonR[key])
-        #     print("PDB query error %s" % err)
-        #     logger.exception(err)
-        #     raise GetAllRnaPdbsError("Failed getting all PDBs")
+                if "result_set" in jsonR:
+                    print("Number of %-9s rows received is %5d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
+                    logger.info("Number of %-9s rows received is %5d; limit is 10,000" % (molecule_type,len(jsonR["result_set"])))
+                    for item in jsonR["result_set"]:
+                        resultIDs.add(item["identifier"])
+                    start_row += 10000
+                else:
+                    keep_downloading = False
 
         print("utils/pdb.py: Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),", ".join(molecule_types)))
         logger.info("Found %d distinct non-obsolete PDB ids of %s" % (len(set(resultIDs)),", ".join(molecule_types)))
 
-        return(sorted(resultIDs))
+        return sorted(resultIDs)
 
         # code from before November 2020
 """
