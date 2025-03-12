@@ -1,7 +1,8 @@
 """
 Download and store validation reports. This will download all validation
-reports from PDB and store them locally as a gzip file. In addition, it will
-write an empty file for any report it could not download.
+reports from PDB and store them locally as a gzip file.
+In addition, it will write an empty file for any report it could not download.
+But ... apparently it does not actually write a file anymore, as of 2025-02-25
 """
 
 import os
@@ -108,7 +109,8 @@ class Loader(core.Loader):
             An iterable of a quality assignments to store in the database.
         """
 
-        # Example: https://files.rcsb.org/pub/pdb/validation_reports/tn/4tna/4tna_validation.xml.gz
+        # OK     Example: https://files.rcsb.org/pub/pdb/validation_reports/tn/4tna/4tna_validation.xml.gz
+        # Not OK Example: https://files.rcsb.org/pub/pdb/validation_reports/xc/8xc7/8xc7_validation.xml.gz
         pdb_url = "https://files.rcsb.org/pub/pdb/validation_reports/{short}/{pdb}/{pdb}_validation.xml.gz".format(short=pdb[1:3].lower(), pdb=pdb.lower())
 
         # Example: /usr/local/pipeline/hub-core/MotifAtlas/quality/validation-reports/4tna.xml.gz
@@ -130,7 +132,7 @@ class Loader(core.Loader):
             self.logger.warning("Could not fetch quality data for %s", pdb)
             return ''
         except ut.RetryFailedException:
-            self.logger.warning("No quality found of %s", pdb)
+            self.logger.warning("No quality found for %s", pdb)
             return ''
         except Exception as err:
             self.logger.exception(err)
