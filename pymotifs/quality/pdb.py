@@ -94,5 +94,5 @@ class Loader(core.SimpleLoader):
         """
         filename = self._create(Utils).filename(pdb)
         if not os.path.exists(filename):
-            raise core.Skip("No quality for %s" % pdb)
+            raise core.Skip("No quality file downloaded for %s" % pdb)
         return self.parse(filename)
