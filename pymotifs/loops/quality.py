@@ -68,6 +68,9 @@ class Loader(core.SimpleLoader):
     use_marks = False
     merge_data = True     # update rows in the database, instead of inserting brand new every time
 
+    re_process_files = True   # force query to not skip files
+    re_process_files = False  # only process new files, with no entries in loop_qa
+
     @property
     def table(self):
         return mod.LoopQa
@@ -127,7 +130,7 @@ class Loader(core.SimpleLoader):
         if False:
             # get all pdb files that are the basis for the motif atlas
             # won't take so very long to process those
-            nr_release_id = '3.352'
+            nr_release_id = '3.360'
             class_start = 'NR'
             from pymotifs.constants import MOTIF_ALLOWED_METHODS
             from pymotifs.constants import MOTIF_RESOLUTION_CUTOFF
@@ -171,13 +174,14 @@ class Loader(core.SimpleLoader):
         :returns: The query to use.
         """
 
-        # since to_process correctly identifies the pdb ids to use,
-        # make sure to pass back an empty query so it thinks work needs to be done
-        # return session.query(mod.LoopQa).filter(mod.LoopQa.loop_id == 'aaa')
-
-        return session.query(mod.LoopQa).\
-                            join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
-                            filter(mod.LoopInfo.pdb_id == pdb)
+        if self.re_process_files:
+            # when to_process correctly identifies the pdb ids to use,
+            # make sure to pass back an empty query so it thinks work needs to be done
+            return session.query(mod.LoopQa).filter(mod.LoopQa.loop_id == 'aaa')
+        else:
+            return session.query(mod.LoopQa).\
+                                join(mod.LoopInfo, mod.LoopInfo.loop_id == mod.LoopQa.loop_id).\
+                                filter(mod.LoopInfo.pdb_id == pdb)
 
 
     def paired(self, pdb):
@@ -673,12 +677,15 @@ class Loader(core.SimpleLoader):
     def has_breaks(self, loop):
         """
         Check if there are any chain breaks within the loop.
+        Also checks to see if any chain index values are duplicated in the interior of the loop,
+        to fix an earlier problem.
 
         :returns: Bool, true if the loop has any breaks.
         """
 
         border = 0
         previous_chain_index = 0
+        previous_unit_id = '|||||||'
 
         for i in range(0,len(loop['unit_ids'])):
             chain_index = loop['chain_index'][i]
@@ -689,8 +696,29 @@ class Loader(core.SimpleLoader):
                 if abs(chain_index - previous_chain_index) > 1:
                     return True
 
+                if chain_index == previous_chain_index:
+                    f1 = loop["unit_ids"][i].split("|")
+                    f2 = previous_unit_id.split("|")
+
+                    if len(f1) >= 5 and len(f2) >= 5:
+                        if f1[1] == f2[1]:
+                            # same model, just in case
+                            if f1[2] == f2[2]:
+                                # same chain
+                                if f1[4] == f2[4]:
+                                    # same number
+                                    self.logger.info("%s and %s have the same chain index, so %s is deprecated" % (loop["unit_ids"][i],previous_unit_id,loop["id"]))
+                                    return True
+
             border += loop['border'][i]
             previous_chain_index = chain_index
+            previous_unit_id = loop["unit_ids"][i]
+
+        # check for a situation where two nucleotides have the same chain_index value
+        # that occurred with https://rna.bgsu.edu/rna3dhub/loops/view/IL_364D_001 because
+        # of some mistakes in adding modified nucleotides
+
+
 
         return False
 
