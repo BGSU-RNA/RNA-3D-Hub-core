@@ -34,6 +34,7 @@ class Loader(core.SimpleLoader):
     allow_no_data = True
 
     # check for units that were missed and fill them in
+    fill_in_missing = True
     fill_in_missing = False
 
     def query(self, session, pdb):
@@ -129,7 +130,7 @@ class Loader(core.SimpleLoader):
                 query = session.query(mod.UnitInfo.unit_id).filter_by(pdb_id=pdb)
                 unit_ids = set([u.unit_id for u in query])
 
-            # find unit ids in this pdb that have coordinates
+            # find unit ids in this pdb that have non-empty coordinates
             with self.session() as session:
                 query = session.query(mod.UnitCoordinates).\
                                 join(mod.UnitInfo,
@@ -138,7 +139,7 @@ class Loader(core.SimpleLoader):
                 has_coordinates = set([u.unit_id for u in query])
 
             if len(unit_ids - has_coordinates) == 0:
-                raise core.Skip("All unit ids in %s already have centers" % pdb)
+                raise core.Skip("All unit ids in %s already have coordinates" % pdb)
 
         else:
             has_coordinates = set()
