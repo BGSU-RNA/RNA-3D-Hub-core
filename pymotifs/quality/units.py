@@ -4,6 +4,8 @@ This will process the downloaded validation reports and use them to populate the
 units_quality table.
 """
 
+import os
+
 import pymotifs.core as core
 from pymotifs import models as mod
 from pymotifs.quality import utils as qual
@@ -167,6 +169,10 @@ class Loader(core.SimpleLoader):
         data : iterable
             An iterable of a quality assignments to store in the database.
         """
+
+        filename = self.filename(pdb)
+        if not os.path.exists(filename):
+            raise core.Skip("No quality file downloaded for %s" % pdb)
 
         util = qual.Utils(self.config, self.session)
         mapping = util.unit_mapping(pdb)
