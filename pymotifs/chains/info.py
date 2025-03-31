@@ -18,6 +18,7 @@ from pymotifs.pdbs.loader import Loader as PdbLoader
 class Loader(core.SimpleLoader):
     merge_data = True
     dependencies = set([PdbLoader])
+
     @property
     def table(self):
         return mod.ChainInfo
