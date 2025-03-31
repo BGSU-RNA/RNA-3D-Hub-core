@@ -77,6 +77,9 @@ class Loader(core.MassLoader):
 
         now = kwargs.get('before_date', dt.datetime.strftime(dt.datetime.now(), '%Y-%m-%d %H:%M:%S'))
 
+        if not now:
+            now = dt.datetime.strftime(dt.datetime.now(), '%Y-%m-%d %H:%M:%S')
+
         if ":" in now:
             nowstring = dt.datetime.strftime(dt.datetime.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
         else:
