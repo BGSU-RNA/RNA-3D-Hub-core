@@ -1,3 +1,11 @@
+"""
+Compare new groups to old groups to decide if a new name is needed.
+The same code is used for equivalence classes and for motif groups.
+
+A problem on 2025-03-12 is that when an equivalence class gets strictly smaller,
+it was being marked as being the same, which is not correct.
+"""
+
 import random
 import itertools as it
 
@@ -8,7 +16,8 @@ class Namer(core.Base):
     size_cutoff = 2.0 / 3.0
 
     def overlap(self, group1, group2):
-        """Compute the overlap between the two groups. This is done by
+        """
+        Compute the overlap between the two groups. This is done by
         comparing the number of ife ids in common between them.
         """
 
@@ -20,6 +29,17 @@ class Namer(core.Base):
             return {}
 
         return {'group': group2, 'intersection': intersection}
+
+    def same_members(self, group, overlap):
+        """
+        Compute the overlap between the two groups. This is done by
+        comparing the number of ife ids in common between them.
+        """
+
+        members1 = set(mem['id'] for mem in group['members'])
+        members2 = set(mem['id'] for mem in overlap['group']['members'])
+
+        return members1 == members2
 
     def overlap_size(self, group, overlap):
         inter_size = len(overlap['intersection'])
@@ -35,6 +55,9 @@ class Namer(core.Base):
         }
 
     def updated_name(self, group, parents):
+        """
+        Set the comment and increment the version number
+        """
         parent_comment = '1 parent'
         if parents == 2:
             parent_comment = '2 parents'
@@ -47,7 +70,8 @@ class Namer(core.Base):
         }
 
     def new_name(self, count, known):
-        """Create a new name for a class. This will generate a new handle that
+        """
+        Create a new name for a class. This will generate a new handle that
         has never been seen before and create a dictonary with the parts named.
 
         :returns: A naming dictonary.
@@ -73,15 +97,31 @@ class Namer(core.Base):
             'type': 'new',
         }
 
-    def one_parent(self, group, parent, known):
-        # - use same name if the groups are identical
-        if self.overlap_size(group, parent) == 1:
-            return self.same_name(parent['group']['name'])
+    def one_parent(self, group, overlap, known):
+        # same handle and version if the groups are identical
+        # if self.overlap_size(group, overlap) == 1:
+        #     return self.same_name(overlap['group']['name'])
+        # old code above behaved erratically when the group got smaller
+        if self.same_members(group, overlap) == 1:
 
-        # - use a new name if the overlap is > 2/3
-        elif self.overlap_size(group, parent) >= self.size_cutoff:
-            return self.updated_name(parent['group']['name'], 1)
+            if False and overlap['group']['name']['full'].startswith('NR') and len(overlap['group']['members']) > 1:
+                # temporarily, on 2025-03-12, for RNA groups with more than
+                # one member, to fix old orderings,
+                # increment the version number even when the IFEs are the same
+                r = self.updated_name(overlap['group']['name'], 1)
+                # but also signal that the groups are the same
+                r["comment"] = "Exact match"
+                r["type"] = "exact"
+                return r
+            else:
+                return self.same_name(overlap['group']['name'])
 
+        # same handle, increment version if the overlap is > 2/3
+        # because the overlap is enough that we can consider it the same.
+        elif self.overlap_size(group, overlap) >= self.size_cutoff:
+            return self.updated_name(overlap['group']['name'], 1)
+
+        # generate a completely new handle and use version 1
         return self.new_name(1, known)
 
     def two_parents(self, group, parents, known):
@@ -91,7 +131,11 @@ class Namer(core.Base):
         return self.new_name(2, known)
 
     def many_parents(self, group, parents, known):
-        # If there is more than 2 parents we always use a new name
+        # Old: If there are more than 2 parents we always use a new name
+        # New: the 2/3 cutoff is plenty big to keep the same name
+        parent = max(parents, key=lambda p: self.overlap_size(group, p))
+        if self.overlap_size(group, parent) >= self.size_cutoff:
+            return self.updated_name(parent['group']['name'], 2)
         return self.new_name(len(parents), known)
 
     def parents(self, group, known_groups):
@@ -105,6 +149,7 @@ class Namer(core.Base):
     def __call__(self, groups, parent_groups, handles):
         named = []
         for group in groups:
+            # find all groups from the previous release that have some overlap
             parents = self.parents(group, parent_groups)
             self.logger.debug("Group with %i members", len(group['members']))
 
@@ -126,8 +171,8 @@ class Namer(core.Base):
             named_group['parents'] = [p['group'] for p in parents]
             named_group['comment'] = name.pop('comment')
             named_group['name'] = dict(name)
-            self.logger.info("Named group %s with %i members" %
-                (named_group['comment'], len(named_group['members'])))
+            self.logger.info("Named group %s.%s comment %s with %i members parent(s): %s" %
+                (named_group['name']['handle'], named_group['name']['version'], named_group['comment'], len(named_group['members']), named_group['parents']))
 
             named.append(named_group)
             handles.add(named_group['name']['handle'])
@@ -139,11 +184,13 @@ class Namer(core.Base):
 
 
 class ChangeCounter(core.Base):
-    """A class to help summarize changes between two sets of named groups.
+    """
+    A class to help summarize changes between two sets of named groups.
     """
 
     def group_changes(self, groups, parent_groups):
-        """Compute the number of changes at the group level. That is the number
+        """
+        Compute the number of changes at the group level. That is the number
         of added, removed, updated or unchanged groups.
         """
 
@@ -179,7 +226,8 @@ class ChangeCounter(core.Base):
         }
 
     def transformed_changes(self, groups, parents, fn):
-        """Compute the counts of changes given some transformation function.
+        """
+        Compute the counts of changes given some transformation function.
 
         :param list groups: The list of groups to compare.
         :param list parents: The list of parent groups to compare against.
@@ -207,7 +255,8 @@ class ChangeCounter(core.Base):
         return counts
 
     def __call__(self, groups, parents, **transformers):
-        """Compute the number of changes between groups and parent groups.
+        """
+        Compute the number of changes between groups and parent groups.
         """
 
         def members(group):
