@@ -131,7 +131,7 @@ class Grouper(core.Base):
                 join(mod.ExpSeqInfo,
                      mod.ExpSeqInfo.exp_seq_id == mod.ExpSeqPdb.exp_seq_id).\
                 filter(mod.IfeInfo.pdb_id == pdb).\
-                filter(mod.IfeInfo.new_style == True).\
+                filter(mod.IfeInfo.new_style == 1).\
                 filter(mod.ExpSeqInfo.was_normalized == 1).\
                 filter(mod.ChainInfo.entity_macromolecule_type.in_(nucleic_acid_types)).\
                 order_by(mod.IfeChains.ife_id, mod.IfeChains.index)
