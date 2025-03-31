@@ -1,9 +1,10 @@
-"""Store the assignments of chains to nr classes. This means the chains which
-are part of an equivalence class. This requires that there is cached NR data to
-store.
+"""
+Store the assignments of chains to nr classes and the rank within the class.
+This means the chains which are part of an equivalence class.
+This requires that there is cached NR data to store.
 """
 
-import datetime as dt
+# import datetime as dt
 
 from pymotifs import core
 
@@ -12,11 +13,11 @@ from pymotifs.constants import NR_CACHE_NAME
 
 from pymotifs.nr.utils import BaseLoader
 from pymotifs.nr.id_mapping import Loader as IdMappingLoader
-
+from pymotifs.nr.cqs import Loader as NrQualityLoader
 
 class Loader(BaseLoader):
 
-    dependencies = set([IdMappingLoader])
+    dependencies = set([IdMappingLoader,NrQualityLoader])
     # update_gap = dt.timedelta(7)  # Only update every 7 days
     allow_no_data = True
     mark = False
@@ -44,35 +45,35 @@ class Loader(BaseLoader):
     #     return [row.nr_class_name for row in query]
 
 
-    def chains(self, grouping):
-        """
-        Compute the chain level data to store. The produced chains will be
-        suitable for writing to the ``nr_class_rank`` table in the database.
+    # def chains(self, grouping):
+    #     """
+    #     Compute the chain level data to store. The produced chains will be
+    #     suitable for writing to the ``nr_class_rank`` table in the database.
 
-        Parameters
-        ----------
-        release : str
-            The nr release id.
+    #     Parameters
+    #     ----------
+    #     release : str
+    #         The nr release id.
 
-        grouping : dict
-            The dict with a 'members' entry that contains the chain to store.
+    #     grouping : dict
+    #         The dict with a 'members' entry that contains the chain to store.
 
-        Returns
-        -------
-        chains : list
-            A list of chain dicts to store.
-        """
+    #     Returns
+    #     -------
+    #     chains : list
+    #         A list of chain dicts to store.
+    #     """
 
-        data = []
-        for group in grouping:
-            for chain in group['members']:
-                data.append({
-                    'ife_id': chain['id'],
-                    'nr_class_name': group['name']['full'],
-                    'rank': chain['rank'],
-                    'nr_class_id': group['name']['class_id']
-                })
-        return data
+    #     data = []
+    #     for group in grouping:
+    #         for chain in group['members']:
+    #             data.append({
+    #                 'ife_id': chain['id'],
+    #                 'nr_class_name': group['name']['full'],
+    #                 'rank': chain['rank'],
+    #                 'nr_class_id': group['name']['class_id']
+    #             })
+    #     return data
 
 
     def data(self, release, **kwargs):
@@ -93,4 +94,17 @@ class Loader(BaseLoader):
         data = self.cached(NR_CACHE_NAME)
         if not data:
             raise core.Skip("Nothing to do here, maybe too few files, maybe an earlier stage failed")
-        return self.chains(data['groups'])
+
+        grouping = data['groups']
+
+        group_data = []
+        for group in grouping:
+            for chain in group['members']:
+                group_data.append({
+                    'ife_id': chain['id'],
+                    'nr_class_name': group['name']['full'],
+                    'rank': chain['rank'],
+                    'nr_class_id': group['name']['class_id']
+                })
+
+        return group_data
