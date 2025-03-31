@@ -11,6 +11,7 @@ from pymotifs import models as mod
 from pymotifs.constants import DATA_FILE_DIRECTORY
 
 from pymotifs.pdbs.info import Loader as InfoLoader
+from pymotifs.chains.info import Loader as ChainLoader
 
 from collections import defaultdict
 
@@ -23,14 +24,11 @@ from sqlalchemy.sql import union
 
 
 class Exporter(core.Loader):
-    """Export pairs data in pickle format.
-    """
 
     # General Setup
     compressed = False
     mark = False
-    dependencies = set([InfoLoader])
-    #dependencies = set()
+    dependencies = set([InfoLoader,ChainLoader])
 
     def has_data(self, *args, **kwargs):
         filename = self.filename()
@@ -64,6 +62,7 @@ class Exporter(core.Loader):
         self.logger.info("filename: %s" % filename)
 
         return os.path.join(DATA_FILE_DIRECTORY,filename)
+
 
     def to_process(self, pdbs, **kwargs):
         """
@@ -166,55 +165,77 @@ class Exporter(core.Loader):
         for row in query:
             if not result.get(row.pdb_id):
                 result[row.pdb_id]['chains'] = {}
-            result[row.pdb_id]['resolution'] = row.resolution
-            result[row.pdb_id]['method'] = row.experimental_technique
+                result[row.pdb_id]['resolution'] = row.resolution
+                result[row.pdb_id]['method'] = row.experimental_technique
+                result[row.pdb_id]['model'] = sorted(pdb_id_to_models[row.pdb_id])
 
-            result[row.pdb_id]['model'] = sorted(pdb_id_to_models[row.pdb_id])
-            if result[row.pdb_id].get('symmetry'):
-                result[row.pdb_id]['symmetry'][row.chain_name] = list(pdb_chain_to_sym_op[str(row.pdb_id)+"_"+str(row.chain_name)])
-            else:
+            if not result[row.pdb_id].get('symmetry'):
                 result[row.pdb_id]['symmetry'] = {}
-                result[row.pdb_id]['symmetry'][row.chain_name] = list(pdb_chain_to_sym_op[str(row.pdb_id)+"_"+str(row.chain_name)])
+            result[row.pdb_id]['symmetry'][row.chain_name] = list(pdb_chain_to_sym_op[str(row.pdb_id)+"_"+str(row.chain_name)])
 
             if row.entity_macromolecule_type == 'Polypeptide(L)':
-                if result[row.pdb_id]['chains'].get('protein'):
-                    result[row.pdb_id]['chains']['protein'].append(row.chain_name)
-                else:
-                    result[row.pdb_id]['chains']['protein'] = []
-                    result[row.pdb_id]['chains']['protein'].append(row.chain_name)
+                if not result[row.pdb_id]['chains'].get('protein'):
+                    result[row.pdb_id]['chains']['protein'] = set()
+                result[row.pdb_id]['chains']['protein'].add(row.chain_name)
             elif (row.entity_macromolecule_type in dna_long):
-                if result[row.pdb_id]['chains'].get('DNA'):
-                    result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
-                else:
-                    result[row.pdb_id]['chains']['DNA'] = []
-                    result[row.pdb_id]['chains']['DNA'].append(row.chain_name)
+                if not result[row.pdb_id]['chains'].get('DNA'):
+                    result[row.pdb_id]['chains']['DNA'] = set()
+                result[row.pdb_id]['chains']['DNA'].add(row.chain_name)
             elif (row.entity_macromolecule_type in rna_long):
-                if result[row.pdb_id]['chains'].get('RNA'):
-                    result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
-                else:
-                    result[row.pdb_id]['chains']['RNA'] = []
-                    result[row.pdb_id]['chains']['RNA'].append(row.chain_name)
+                if not result[row.pdb_id]['chains'].get('RNA'):
+                    result[row.pdb_id]['chains']['RNA'] = set()
+                result[row.pdb_id]['chains']['RNA'].add(row.chain_name)
             elif (row.entity_macromolecule_type in hybrid_long):
-                if result[row.pdb_id]['chains'].get('hybrid'):
-                    result[row.pdb_id]['chains']['hybrid'].append(row.chain_name)
-                else:
-                    result[row.pdb_id]['chains']['hybrid'] = []
-                    result[row.pdb_id]['chains']['hybrid'].append(row.chain_name)
+                if not result[row.pdb_id]['chains'].get('hybrid'):
+                    result[row.pdb_id]['chains']['hybrid'] = set()
+                result[row.pdb_id]['chains']['hybrid'].add(row.chain_name)
             elif (row.entity_macromolecule_type == 'Peptide nucleic acid'):
-                if result[row.pdb_id]['chains'].get('PNA'):
-                    result[row.pdb_id]['chains']['PNA'].append(row.chain_name)
-                else:
-                    result[row.pdb_id]['chains']['PNA'] = []
-                    result[row.pdb_id]['chains']['PNA'].append(row.chain_name)
+                if not result[row.pdb_id]['chains'].get('PNA'):
+                    result[row.pdb_id]['chains']['PNA'] = set()
+                result[row.pdb_id]['chains']['PNA'].add(row.chain_name)
             elif (row.entity_macromolecule_type not in entity_type_check):
-                if result[row.pdb_id]['chains'].get(row.entity_macromolecule_type):
-                    result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
-                else:
-                    result[row.pdb_id]['chains'][row.entity_macromolecule_type] = []
-                    result[row.pdb_id]['chains'][row.entity_macromolecule_type].append(row.chain_name)
+                if not result[row.pdb_id]['chains'].get(row.entity_macromolecule_type):
+                    result[row.pdb_id]['chains'][row.entity_macromolecule_type] = set()
+                result[row.pdb_id]['chains'][row.entity_macromolecule_type].add(row.chain_name)
+
+        # get solitary nucleotides and their chains
+        self.logger.info("Starting solitary nucleotide query")
+        with self.session() as session:
+            query = session.query(mod.UnitInfo.pdb_id,
+                            mod.UnitInfo.unit_id,
+                            mod.UnitInfo.unit_type_id,
+                            mod.UnitInfo.chain,
+                            mod.PdbInfo.resolution,
+                            mod.PdbInfo.experimental_technique).\
+                            join(mod.PdbInfo, mod.UnitInfo.pdb_id == mod.PdbInfo.pdb_id).\
+                            filter(mod.UnitInfo.chain_index == None).\
+                            filter(mod.UnitInfo.unit_type_id.in_(['rna','dna'])).\
+                            distinct()
+
+        for row in query:
+            if not result.get(row.pdb_id):
+                result[row.pdb_id]['chains'] = {}
+                result[row.pdb_id]['resolution'] = row.resolution
+                result[row.pdb_id]['method'] = row.experimental_technique
+                result[row.pdb_id]['model'] = sorted(pdb_id_to_models[row.pdb_id])
+                self.logger.info("New PDB id %s" % row.pdb_id)
+
+            if not result[row.pdb_id].get('symmetry'):
+                result[row.pdb_id]['symmetry'] = {}
+            result[row.pdb_id]['symmetry'][row.chain] = list(pdb_chain_to_sym_op[str(row.pdb_id)+"_"+str(row.chain)])
+
+            if row.unit_type_id == 'dna':
+                if not result[row.pdb_id]['chains'].get('DNA'):
+                    # self.logger.info("New DNA nucleotide %s" % row.unit_id)
+                    result[row.pdb_id]['chains']['DNA'] = set()
+                result[row.pdb_id]['chains']['DNA'].add(row.chain)
+            elif row.unit_type_id == 'rna':
+                if not result[row.pdb_id]['chains'].get('RNA'):
+                    # self.logger.info("New RNA nucleotide %s" % row.unit_id)
+                    result[row.pdb_id]['chains']['RNA'] = set()
+                result[row.pdb_id]['chains']['RNA'].add(row.chain)
 
         return result
-
 
 
     def process(self, pdb, **kwargs):
