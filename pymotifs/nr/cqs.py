@@ -1,37 +1,28 @@
 """
-This module contains the logic to create EC-level CQS (Composite
-Quality Score) data for subsequent import into the database.
-Uses IFE-specific data that were previously generated using ife.cqs
-and stored in the database (table ife_cqs).
+This stage saves composite quality score and other data to the
+table nr_cqs.
+The data is computed earlier in using_quality and cached.
 """
-
-import collections as coll
 
 from pymotifs import core
 from pymotifs import models as mod
-from pymotifs.constants import COMPSCORE_COEFFICENTS
 from pymotifs.constants import NR_CACHE_NAME
-# from pymotifs.nr.chains import Loader as ChainLoader
-from pymotifs.nr.class_rank import Loader as ClassRankLoader
+
+from pymotifs.nr.utils import BaseLoader
+from pymotifs.nr.classes import Loader as NrClassLoader
 from pymotifs.nr.parent_counts import Loader as CountLoader
-from pymotifs.utils import row2dict
 
 
-class NrQualityLoader(core.SimpleLoader):
+class Loader(BaseLoader):
     """
     Loader to store quality data for an input equivalence class
     in table nr_cqs.
     """
 
-    dependencies = set([ClassRankLoader, CountLoader])
+    dependencies = set([NrClassLoader,CountLoader])
 
     """
     We allow this to merge data since sometimes we want to replace.
-
-    Blake thinks that this is unnecessary/undesirable.  However, if
-    class membership changes (and the maximum IFE length as a
-    consequence), all of the CQS values for that EC will need to be
-    updated.
     """
     merge_data = True
 
@@ -39,152 +30,16 @@ class NrQualityLoader(core.SimpleLoader):
     allow_no_data = True
     mark = False
 
-    """
-    #Blake's sample class contained three functions, as follows:
-
-    #def ifes(self, pdb_id):
-    #    return [] # Load all IFEs for the PDB ID.
-
-    #def ife_compscore(self, ife):
-    #    return -1 # Should actually compute something
-
-    #def data(self, pdb_id):
-    #    ifes = self.ifes(pdb_id)
-    #    data = []
-    #    for ife in self.ifes(pdb_id): # Get all IFEs in the PDB
-    #        # Let's assume that the ifes method returns a list of
-    #        # dicts with the IFE information
-    #        data.append(IfeCqs(
-    #            ife_id=ife['id'],
-    #            compscore=self.ife_compscore(ife),
-    #        ))
-    #    return data
-    """
-
-    def list_nr_classes(self, release, resolution):
-        with self.session() as session:
-            query = session.query(mod.NrClasses.name).\
-                filter(mod.NrClasses.nr_release_id == release).\
-                filter(mod.NrClasses.resolution == resolution)
-
-            data = []
-            for result in query:
-                data.append(result[0])
-        return data
-
-    def to_process(self, pdbs, **kwargs):
+    def has_data(self, *args, **kwargs):
         """
-        Collect the list of nr_class name values to process for the
-        specified release. Ignores the given PDBs.
-
-        Parameters
-        ----------
-        pdbs : list
-            Ignored.
-
-        Returns
-        -------
-        classlist : list
-            The list of NR class names to process.
+        We always want stages.py to think that data needs to be computed
+        for this stage, so it does not get skipped.
+        This works better than trying to manipulate the query method.
         """
+        return False
 
-        resolution = 'all'
 
-        latest = None
-        if kwargs.get('manual', {}).get('nr_release_id', False):
-            latest = kwargs['manual']['nr_release_id']
-        else:
-            data = self.cached(NR_CACHE_NAME)
-            if not data:
-                raise core.Skip("Nothing to do here, maybe too few files, maybe an earlier stage failed")
-            latest = data['release']
-
-        classlist = self.list_nr_classes(latest, resolution)
-
-        with self.session() as session:
-            return classlist
-
-    def query(self, session, nr_name):
-        return session.query(mod.NrCqs.nr_name).\
-            filter(mod.NrCqs.nr_name == nr_name)
-
-    def load_ife_cqs_data(self, ife_list, nr_name):
-        """
-        Note:  ife_cqs.obs_length is based on a query of the unit_info table
-        to get the number of rna/dna residues in each chain.
-        That query is done by ife/cqs.py
-        """
-        with self.session() as session:
-            query = session.query(
-                mod.IfeCqs.ife_id,
-                mod.IfeCqs.obs_length,
-                mod.IfeCqs.clashscore,
-                mod.IfeCqs.average_rsr,
-                mod.IfeCqs.average_rscc,
-                mod.IfeCqs.percent_clash,
-                mod.IfeCqs.rfree,
-                mod.IfeCqs.resolution,
-                ).\
-                filter(mod.IfeCqs.ife_id.in_(ife_list))
-
-            data = coll.defaultdict(list)
-
-            # find the maximum number of observed nucleotides in this equivalence class
-            max_observed = 0
-            for result in query:
-                entry = row2dict(result)
-                ii = entry['ife_id']
-                entry['nr_name'] = nr_name
-                data[ii].append(entry)
-                if result[1] > max_observed:
-                    max_observed = result[1]
-
-        for ife in ife_list:
-            if data[ife]:
-                ife_data = data[ife]
-                obs_length = ife_data[0]['obs_length']
-                ife_data[0]['max_observed'] = max_observed
-            else:
-                self.logger.warning("NQL: data: LICD: no data for %s" % ife)
-                continue
-            truth, fraction_unobserved = self.fraction_unobserved(obs_length, max_observed)
-            percent_observed = (1 - fraction_unobserved)
-            data[ife][0]['fraction_unobserved'] = fraction_unobserved
-            data[ife][0]['percent_observed'] = percent_observed
-            compscore = self.compscore(data[ife])
-            data[ife][0]['compscore'] = compscore
-
-        return data.values()
-
-    def fraction_unobserved(self, obs, max):
-        """
-        obs is the number of unit ids in unit_info for this ife
-        max is the maximum number across the equivalence class
-        """
-        observed = float(obs)
-        experimental = float(max)
-        if experimental == 0:
-            return (True, 1)
-        return (True, (1 - (observed / experimental)))
-
-    def compscore(self, member):
-        """
-        Compute composite quality score using six indicators weighted by
-        various coefficients set in constants.py
-        """
-        compscore = COMPSCORE_COEFFICENTS['resolution'] * member[0]['resolution']
-        compscore += COMPSCORE_COEFFICENTS['percent_clash'] * member[0]['percent_clash']
-        compscore += COMPSCORE_COEFFICENTS['average_rsr'] * member[0]['average_rsr']
-        compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - member[0]['average_rscc'])
-        compscore += COMPSCORE_COEFFICENTS['rfree'] * member[0]['rfree']
-        compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * member[0]['fraction_unobserved']
-
-        if compscore < 0:
-            raise core.InvalidState("Invalid compscore (%s) for %s" % (compscore, member))
-
-        return compscore
-
-    def data(self, nr_name, **kwargs):
+    def data(self, release, **kwargs):
         """
         Collect composite quality scoring data for the equivalence class.
 
@@ -199,34 +54,28 @@ class NrQualityLoader(core.SimpleLoader):
             The required data for the database update step.
         """
 
-        ife_list = []
-        # we stop using the following query cuz we stop updating the nrchains table
-        # with self.session() as session:
-        #     query = session.query(mod.NrChains.ife_id).\
-        #         join(mod.NrClasses, mod.NrChains.nr_class_id == mod.NrClasses.nr_class_id).\
-        #         filter(mod.NrClasses.name == nr_name)
-        with self.session() as session:
-            query = session.query(mod.NrClassRank.ife_id).\
-                filter(mod.NrClassRank.nr_class_name == nr_name)
+        # retrieve the current data on equivalence classes
+        data = self.cached(NR_CACHE_NAME)
 
-            for result in query:
-                ife_list.append(result[0])
+        grouping = data['groups']
 
-        data = self.load_ife_cqs_data(ife_list, nr_name)
+        # loop over equivalence classes
+        for group in grouping:
+            if group.get('new_nr_cqs_entry',False):
+                # loop over ifes in the equivalence class
+                for member in group['members']:
+                    yield mod.NrCqs(
+                        ife_id = member['id'],
+                        nr_name = group['name']['full'],
+                        maximum_experimental_length = member['max_observed'],
+                        fraction_unobserved = member['fraction_unobserved'],
+                        percent_observed = member['percent_observed'],
+                        composite_quality_score = member['composite_quality_score'])
 
         # the field name maximum_experimental_length is poorly chosen,
         # because the value is actually the maximum number of observed nucleotides
         # in the unit_info table, not the length of the longest experimental
         # sequence that went into the experiment
         # Maximum number of observed nucleotides is more robust, because sometimes
-        # a very long chain gets reported as the experimental sequence, on that
+        # a very long chain gets reported as the experimental sequence, and that
         # includes many chains concatenated together.
-        for ife_output in data:
-            for ife_out in ife_output:
-                yield mod.NrCqs(
-                    ife_id = ife_out['ife_id'],
-                    nr_name = nr_name,
-                    maximum_experimental_length = ife_out['max_observed'],
-                    fraction_unobserved = ife_out['fraction_unobserved'],
-                    percent_observed = ife_out['percent_observed'],
-                    composite_quality_score = ife_out['compscore'])
