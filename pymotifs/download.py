@@ -51,6 +51,8 @@ class Downloader(core.Loader):
             # skip the helpers and saver stage and just get it done
             url = self.url(name, **kwargs)
             filename = self.filename(name, **kwargs)
+            self.logger.info('Downloading %s from %s' % (filename,url))
+            # next line failed on 2/18/2025, timeout
             urllib.request.urlretrieve(url, filename)
             downloaded = True
         except Exception as err:
