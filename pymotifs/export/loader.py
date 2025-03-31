@@ -23,4 +23,4 @@ from pymotifs.export.pickle_units_na import Exporter as na_units_exporter
 from pymotifs.export.pickle_units_protein import Exporter as protein_units_exporter
 
 class Exporter(StageContainer):
-    stages = set([na_pairs_exporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter, na_units_exporter])
+    stages = set([na_pairs_exporter, PickleUAExporter, IFEDiscrepancyExporter, NA_datafileExporter, na_units_exporter, protein_units_exporter])
