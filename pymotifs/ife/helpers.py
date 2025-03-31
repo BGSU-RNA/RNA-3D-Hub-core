@@ -164,6 +164,7 @@ class IfeLoader(core.Base):
         chains = [load(name) for name in names]
 
         # print(chains)
+        # print('Getting cross_chain_interactions')
 
         cci = self.cross_chain_interactions(chains, sym_op=sym_op)
 
@@ -173,7 +174,7 @@ class IfeLoader(core.Base):
 @total_ordering
 class IfeChain(object):
     def __init__(self, pdb=None, chain=None, internal=None, length=None,
-                 full_length=None, db_id=None, bps=None, model=None):
+                 full_length=None, db_id=None, bps=None, model=None, part_of_ife=False):
         self.pdb = pdb
         self.chain = chain
         self.db_id = db_id
@@ -182,6 +183,7 @@ class IfeChain(object):
         self.length = length
         self.full_length = full_length
         self.model = model
+        self.part_of_ife = part_of_ife  # currently not updated in s-s or u-u cases, that's OK, just confusing
 
     @property
     def id(self):
@@ -249,27 +251,25 @@ class IfeGroup(object):
             # originally a group is not structured
             # when you add a structured chain, it becomes structured
             # but then the list of chains is only the structured chains!
-            # tRNA-mRNA is one use case; tRNA is structured, mRNA is not, don't make an IFE
-            # however, 2OEU is a different case, A is structured, B is not, but make an IFE
+            # tRNA-mRNA is one use case; tRNA is structured, mRNA is not, don't make an IFE with both
+            # however, 2OEU is a different case, A is structured, B is not, but make an IFE with both
             chains = self.chains(structured=True)
         else:
             chains = self.chains()
+
+        # print('group_id: chains are %s' % (chains))
 
         # new code to cover the structured-structured case, the un-un case,
         # and some new structured-unstructured cases but not tRNA-mRNA
         all_chains = self.chains()
         if len(all_chains) == len(chains):
-            # all chains are structured, or all are unstructured, or just one chain
+            # all chains are structured or all are unstructured
             return IFE_SEPARATOR.join(c.id for c in chains)
         else:
-            ife_id = IFE_SEPARATOR.join(c.id for c in all_chains)
+            ife_id = IFE_SEPARATOR.join(c.id for c in all_chains if c.part_of_ife)
             # pdb_id = ife_id.split('|')[0]
             # # cannot use self.logger.info here, using print instead
             # print("#### struct+unstruct new ife %s http://rna.bgsu.edu/rna3dhub/pdb/%s/2d" % (ife_id,pdb_id))
-
-            # temporarily make code to remove old chains as being IFEs of their own
-            # for c in all_chains:
-            #     print("UPDATE ife_info SET new_style = 0 WHERE ife_id = '%s';" % (c.id))
 
             return ife_id
 
