@@ -14,12 +14,12 @@ from pymotifs.constants import COMPSCORE_COEFFICENTS
 from pymotifs.constants import MANUAL_IFE_REPRESENTATIVES
 from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
-from pymotifs.ife.helpers import IfeLoader
+# from pymotifs.ife.helpers import IfeLoader
 
 from .core import Representative
 
-import inspect
-import traceback
+# import inspect
+# import traceback
 
 
 class QualityBase(Representative):
@@ -113,29 +113,27 @@ class QualityBase(Representative):
         return self.insert_as_representative(hardcoded, members)
 
     def final_ordering(self, ordered, given):
+        """
+        This method is still used.
+        """
         already_ordered = {m['id'] for m in ordered}
+
         rest = [m for m in given if m['id'] not in already_ordered]
+
+        # already_ordered appears to be empty in all cases
+        # self.logger.info('final_ordering: already_ordered: %s' % already_ordered)
+        # self.logger.info('final_ordering: rest: %s' % rest)
+
         return ordered + self.sort_by_quality(rest)
 
     def __call__(self, given):
-        # # Get information about the __call__ function
-        # caller_frame = inspect.currentframe().f_back
-        # caller_function_name = caller_frame.f_code.co_name
-        # caller_module = inspect.getmodule(caller_frame).__name__
+        """
+        This is the abstract method when ordering members of a class.
+        For builder.py, this is called when rep_finder is called.
+        See below the class with method = 'compscore' for equivalence classes.
+        """
 
-        # # Use traceback to get the calling code line
-        # stack = traceback.extract_stack()
-        # calling_code_line = stack[-2][1]
-        # self.logger.info("__call__ method called from function '%s' in module '%s' at line %s" % (caller_function_name, caller_module, calling_code_line))
-        # self.logger.info("show the runnng message 1: %s", stack[-3])
-        # self.logger.info("show the runnng message 2: %s", stack[-2])
-        # self.logger.info("show the runnng message 3: %s", stack[-1])
-        # self.logger.info("show the runnng message 4: %s", stack[0])
-        # self.logger.info("show the runnng message 5: %s", stack[1])
-        # self.logger.info("show the runnng message 6: %s", stack[2])
-
-
-        # self.logger.info("Selecting representative for %s", given['name']['full'])
+        self.logger.info("Ordering members of %s", given['name']['full'])
         with_quality = self.load_quality(given['members'])
         candidates = self.select_candidates(with_quality)
         ordered_by_quality = self.sort_by_quality(candidates)
@@ -207,9 +205,15 @@ class CompScore(QualityBase):
     """
     This implements a composite scoring metric that should provide a good
     linear ordering of IFE's.
+
+    Apparently several of the methods here are no longer used, having
+    been replaced by the nr.cqs stage that stores the calculations in the
+    nr_cqs table, which is faster.
+    Unfortunately, that makes it harder to follow this code.
     """
     method = 'compscore'
 
+    """
     def count_atoms(self, info):
         with self.session() as session:
             query = session.query(mod.UnitCoordinates).\
@@ -250,16 +254,6 @@ class CompScore(QualityBase):
             if query.count() < 0:
                 raise core.InvalidState("Negative clashes: %s" % info)
             return float(query.count())
-
-    def has_quality(self, member):
-        has_quality = member['quality']['has']
-        return 'real_space_r' in has_quality and \
-            'rscc' in has_quality and \
-            'rfree' in has_quality and \
-            'resolution' in has_quality
-
-    def select_candidates(self, members):
-        return [m for m in members if self.has_quality(m)]
 
     def percent_clash(self, info):
         clashes = self.count_clashes(info)
@@ -321,6 +315,7 @@ class CompScore(QualityBase):
             if rfree is None or rfree.dcc_rfree is None:
                 return (False, 1.0)
             return (True, rfree.dcc_rfree)
+    """
 
     def observed_length(self, info):
         self.logger.debug("info: %s" % info)
@@ -333,48 +328,94 @@ class CompScore(QualityBase):
 
     def fraction_unobserved(self, info):
         observed = float(self.observed_length(info))
-        experimental = float(info['max_length'])
-        #return (True, (observed - 1) / experimental)
-        self.logger.debug("info: %s" % info)
-        self.logger.debug("observed: %s" % observed)
-        self.logger.debug("experimental: %s" % experimental)
+        experimental = float(info['maximum_experimental_length'])
+
         return (True, (1 - (observed / experimental)))
 
+    def has_quality(self, member):
+        """
+        """
+        has_quality = member['quality']['has']
+        return 'real_space_r' in has_quality and \
+            'rscc' in has_quality and \
+            'rfree' in has_quality and \
+            'resolution' in has_quality
+
+    def select_candidates(self, members):
+        """
+        This method is still used.
+        """
+        return [m for m in members if "composite_quality_score" in m]
+
+    def select_candidates_old(self, members):
+        """
+        """
+        return [m for m in members if self.has_quality(m)]
+
     def member_info(self, member):
-        with self.session() as session:
-            info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
-                                 mod.IfeInfo.model).\
-                            filter_by(ife_id=member['id']).\
-                            filter(mod.IfeInfo.new_style == True).\
-                            one()
-            info = row2dict(info)
-            info.update(member)
+        """
+        """
 
-            with self.session() as session:
-                query = session.query(mod.ChainInfo.chain_name,
-                                      mod.IfeChains.is_structured,
-                                      ).\
-                    join(mod.IfeChains,
-                         mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
-                    filter_by(ife_id=member['id'])
+        ife_id = member['id']
+        fields = ife_id.split('|')
+        if len(fields) < 3:
+            raise core.InvalidState("Invalid ife_id: %s" % ife_id)
 
-                if not query.count():
-                    raise core.InvalidState("Could not find chains for %s" %
-                                            member)
+        pdb_id = fields[0]
+        model = fields[1]
+        member['pdb'] = pdb_id
+        member['model'] = model
 
-                all_chains = [row2dict(c) for c in query]
-                valid = op.itemgetter('is_structured')
-                chains = [c['chain_name'] for c in all_chains if valid(c)]
-                if not chains:
-                    chains = [c['chain_name'] for c in all_chains]
+        # no need to query to get this information
+        # with self.session() as session:
+        #     info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
+        #                          mod.IfeInfo.model).\
+        #                     filter_by(ife_id=member['id']).\
+        #                     filter(mod.IfeInfo.new_style == True).\
+        #                     one()
+        #     info = row2dict(info)
+        #     info.update(member)
 
-            info['chains'] = chains
-            loader = self._create(IfeLoader)
-            info['sym_op'] = loader.sym_op(info['pdb'])
+        # find out which chains in this ife are structured
+        # but ... that cannot be important for IFE ranking, because many
+        # chains are not structured
+        # Just trust the chains that are in the ife_id
+        # with self.session() as session:
+        #     query = session.query(mod.ChainInfo.chain_name,
+        #                             mod.IfeChains.is_structured,
+        #                             ).\
+        #         join(mod.IfeChains,
+        #                 mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
+        #         filter_by(ife_id=member['id'])
 
-            return info
+        #     if not query.count():
+        #         raise core.InvalidState("Could not find chains for %s" %
+        #                                 member)
 
-    def experimental_length(self, members):
+        #     all_chains = [row2dict(c) for c in query]
+        #     valid = op.itemgetter('is_structured')
+        #     chains = [c['chain_name'] for c in all_chains if valid(c)]
+        #     if not chains:
+        #         chains = [c['chain_name'] for c in all_chains]
+
+        chains = []
+        for chain in ife_id.split("+"):
+            fields = chain.split("|")
+            if len(fields) >= 3:
+                chains.append(fields[2])
+
+        # loader = self._create(IfeLoader)
+        # info['sym_op'] = loader.sym_op(info['pdb'])
+
+        return member
+
+    def maximum_experimental_length(self, members):
+        """
+        Turns out that maximum experimental length is not stable enough
+        because some chains have the incorrect experimental sequence
+        reported for them, much longer than the actual molecule used in
+        the experiment.  Better to use maximum number of observed nucleotides.
+        """
         ids = [m['id'] for m in members]
         with self.session() as session:
             query = session.query(func.sum(mod.ExpSeqInfo.length).label('length')).\
@@ -386,10 +427,9 @@ class CompScore(QualityBase):
                 group_by(mod.IfeChains.ife_id)
             return max(r.length for r in query)
 
-    def load_quality(self, members):
+    def load_quality_old(self, members):
         """
-        This will load and store all quality data for the given list of members
-        of the EC.
+        Load and store all quality data for the given list of members of the EC.
         """
 
         parameters = [
@@ -401,11 +441,14 @@ class CompScore(QualityBase):
             'fraction_unobserved',
         ]
 
-        experimental_length = self.experimental_length(members)
+        # get the maximum experimental length across this equivalence class
+        maximum_experimental_length = self.maximum_experimental_length(members)
 
         for member in members:
+            # query database for pdb id, model, symmetry operator
             info = self.member_info(member)
-            info['max_length'] = experimental_length
+
+            info['maximum_experimental_length'] = maximum_experimental_length
             data = {'has': set()}
             for index, name in enumerate(parameters):
                 method = getattr(self, name)
@@ -418,40 +461,122 @@ class CompScore(QualityBase):
                 if has:
                     data['has'].add((name, index))
 
-            #if has:
-                #data['has'].add(('max_length', experimental_length))
-
-            data['max_length'] = experimental_length
+            data['maximum_experimental_length'] = maximum_experimental_length
             data['obs_length'] = info['length']
 
             member['quality'] = data
+
         return members
+
+    def load_quality(self, members):
+        """
+        Developed as part of nr/cqs.py, but moved here where it belongs.
+        That code has been used for a long time to populate the nr_cqs table.
+        cqs needs to be calculate here, when an equivalence class is first created.
+        """
+
+        ife_list = [m['id'] for m in members]
+
+        with self.session() as session:
+            query = session.query(
+                mod.IfeCqs.ife_id,
+                mod.IfeCqs.obs_length,
+                mod.IfeCqs.clashscore,
+                mod.IfeCqs.average_rsr,
+                mod.IfeCqs.average_rscc,
+                mod.IfeCqs.percent_clash,
+                mod.IfeCqs.rfree,
+                mod.IfeCqs.resolution,
+                ).\
+                filter(mod.IfeCqs.ife_id.in_(ife_list))
+
+            ife_id_to_data = {}
+            for result in query:
+                entry = row2dict(result)
+                ife_id = entry['ife_id']
+                ife_id_to_data[ife_id] = entry
+
+        # find the maximum number of observed nucleotides in this equivalence class
+        max_observed = 0
+        for ife_id in ife_list:
+            if ife_id in ife_id_to_data:
+                obs_length = ife_id_to_data[ife_id]['obs_length']
+                if obs_length > max_observed:
+                    max_observed = obs_length
+
+        # calculate cqs for each member of the equivalence class
+        for member in members:
+            ife_id = member['id']
+            if ife_id in ife_id_to_data:
+                obs_length = ife_id_to_data[ife_id]['obs_length']
+
+                if max_observed == 0:
+                    fraction_unobserved = 1
+                else:
+                    fraction_unobserved = 1 - (obs_length / max_observed)
+
+                member['max_observed'] = max_observed
+                member['fraction_unobserved'] = fraction_unobserved
+                member['percent_observed'] = 1 - fraction_unobserved
+
+                compscore =  COMPSCORE_COEFFICENTS['resolution'] * ife_id_to_data[ife_id]['resolution']
+                compscore += COMPSCORE_COEFFICENTS['percent_clash'] * ife_id_to_data[ife_id]['percent_clash']
+                compscore += COMPSCORE_COEFFICENTS['average_rsr'] * ife_id_to_data[ife_id]['average_rsr']
+                compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - ife_id_to_data[ife_id]['average_rscc'])
+                compscore += COMPSCORE_COEFFICENTS['rfree'] * ife_id_to_data[ife_id]['rfree']
+                compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * fraction_unobserved
+
+                if compscore < 0:
+                    raise core.InvalidState("Invalid compscore (%s) for %s" % (compscore, member))
+
+                member['composite_quality_score'] = compscore
+
+            else:
+                self.logger.info("No data in ife_cqs query for %s" % ife_id)
+                member['composite_quality_score'] = 999
+
+        return members
+
+
+    def sort_by_quality(self, members):
+        """
+        Sort by computed composite quality score
+        """
+        return sorted(members, key=lambda x: x['composite_quality_score'])
+
+    def sort_by_quality_old(self, members):
+        """
+        This is the method that calls compscore.
+        """
+        return sorted(members, key=self.compscore, reverse=False)
 
     def compscore(self, member):
         """
-        Compute composite quality score using six indicators weighted by various coefficients
-        set in constants.py
-        In the future, we may just use the quality instead of doing the database query ___ 9/1/2023
+        Look up the quality score from the nr_cqs table, where it should have
+        been computed earlier.
+        The value of CQS is computed based on fraction observed, which is
+        computed based on the largest sequence length in the class.
+        So it needs the nr_name available in order to retrieve the CQS.
         """
+
         quality = member['quality']
         ife_id = member['id']
-        nr_class = member['name']
+        nr_name = member['nr_name']
+
+        cqs = 999  # default value larger than would ever happen
 
         with self.session() as session:
-            query = session.query(mod.NrCqs.ife_id,
-                                  mod.NrCqs.nr_name,
-                                  mod.NrCqs.composite_quality_score.label('cqs'),
-                                  ).\
+            query = session.query(mod.NrCqs.composite_quality_score.label('cqs')).\
                 filter(mod.NrCqs.ife_id == ife_id).\
-                filter(mod.NrCqs.nr_name == nr_class).\
+                filter(mod.NrCqs.nr_name == nr_name).\
                 limit(1)
 
             for result in query:
                 cqs = result.cqs
-        #self.logger.info("compscore function of using_quality")
-        try:
-            cqs
-        except NameError:
+
+        if cqs == 999:
+            # sometimes nr_class is equal to the last chain name, then of course this won't work
+            self.logger.info('Not able to retrieve CQS for %s in %s' % (ife_id, nr_name))
             pass
             cqs = COMPSCORE_COEFFICENTS['resolution'] * quality['resolution']
             cqs += COMPSCORE_COEFFICENTS['percent_clash'] * quality['percent_clash']
@@ -459,23 +584,10 @@ class CompScore(QualityBase):
             cqs += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - quality['average_rscc'])
             cqs += COMPSCORE_COEFFICENTS['rfree'] * quality['rfree']
             cqs += COMPSCORE_COEFFICENTS['fraction_unobserved'] * quality['fraction_unobserved']
-
-        self.logger.debug("test compscore: %s" % cqs)
-
-        if cqs < 0:
+        elif cqs < 0:
             raise core.InvalidState("Invalid compscore (%s) for %s" % (cqs, member))
+        else:
+            self.logger.info('Successfully retrieved CQS %0.2f for %s in %s' % (cqs, ife_id, nr_name))
 
         return cqs
 
-
-    def sort_by_quality(self, members):
-        return sorted(members, key=self.compscore, reverse=False)
-        #return sorted(members, key=self.compscore, reverse=True)
-
-    def __chain_query__(self, query, info, table=mod.UnitInfo):
-        return query.filter(table.pdb_id == info['pdb']).\
-            filter(table.model == info['model']).\
-            filter(table.sym_op == info['sym_op']).\
-            filter(table.chain.in_(info['chains'])).\
-            filter(table.unit.in_(['A', 'C', 'G', 'U'])).\
-            filter(table.chain_index != None)
