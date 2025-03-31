@@ -10,7 +10,7 @@ import datetime
 import gzip
 import os
 
-from pymotifs.constants import DATA_FILE_DIRECTORY
+# from pymotifs.constants import DATA_FILE_DIRECTORY
 import pymotifs.core as core
 from pymotifs import models as mod
 from sqlalchemy import or_
