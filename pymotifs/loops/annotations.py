@@ -25,7 +25,7 @@ class Loader(core.SimpleLoader):
         """
         return the different loop types to process
         """
-        return ["IL","HL"]
+        return ["HL","IL","JL"]
 
     """
     def remove(self, *args, **kwargs):
