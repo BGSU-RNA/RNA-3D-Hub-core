@@ -26,7 +26,7 @@ from pymotifs.nr.classes import Loader as ClassLoader
 from pymotifs.nr.parents import Loader as ParentLoader
 from pymotifs.nr.parent_counts import Loader as CountLoader
 from pymotifs.nr.id_mapping import Loader as IdLoader
-from pymotifs.nr.cqs import NrQualityLoader
+from pymotifs.nr.cqs import Loader as NrQualityLoader
 from pymotifs.nr.ordering import Loader as OrderingLoader
 from pymotifs.nr.cleanup import Cleanup
 from pymotifs.nr.class_rank import Loader as ClassRankLoader
