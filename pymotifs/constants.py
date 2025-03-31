@@ -7,7 +7,7 @@ STRUCTURED_BP_COUNT = 5
 """Min number of bp/nt for a chain to be structured."""
 STRUCTURED_BP_PER_NT = 0.5
 
-"""Min ration of external/internal cWW to join structured IFEs"""
+"""Min ratio of external/internal cWW to join structured IFEs"""
 IFE_EXTERNAL_INTERNAL_FRACTION = 0.6
 
 """PDBS used when bootstrapping the database"""
