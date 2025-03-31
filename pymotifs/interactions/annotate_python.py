@@ -77,6 +77,8 @@ class Loader(core.SimpleLoader):
 
         need_to_annotate = set(pdbs) - pdbs_fr3d
 
+        need_to_annotate = need_to_annotate - set(['4R3I'])
+
         print('Found %d files to annotate' % len(need_to_annotate))
 
         if len(need_to_annotate) == 0:
