@@ -1,6 +1,5 @@
 """
-Module for export of unit center/rotation data
-in pickle format for FR3D.
+Module for export of unit center/rotation data in pickle format for FR3D
 """
 
 import numpy as np
@@ -20,38 +19,33 @@ from pymotifs.ife.info import Loader as IfeInfoLoader
 
 class Exporter(core.Loader):
     """
-    Export unit data in pickle format, one file per IFE-chain.
+    Export unit data in pickle format, one file per chain.
     """
 
     # General Setup
     compressed = False
     mark = False
+
+    # Write out all files
+    write_all_files = True
+    write_all_files = False
+
     dependencies = set([ChainLoader, CenterRotationsLoader,
                         PositionLoader, IfeInfoLoader, MappingLoader])
-
-    def has_data(self, entry, *args, **kwargs):
-        #self.logger.info("has_data: entry: %s" % str(entry))
-        filename = self.filename(entry)
-        #self.logger.info("has_data: filename: %s" % filename)
-        if os.path.exists(filename) is True:
-            self.logger.info("has_data: filename %s exists" % filename)
-            return True
-        self.logger.info("has_data: filename %s is missing" % filename)
-        return False
-
 
     def remove():
         pass
 
 
-    def filename(self, ichain, **kwargs):
-        """Create the filename for the given IFE-chain.
+    def filename(self, chain_tuple, **kwargs):
+        """
+        Create the filename for the given chain.
 
         Parameters
         ----------
-        ichain : tuple
+        chain_tuple : tuple
             The components (PDB ID, model, and chain) of the
-            IFE-chain name (hyphen-deliminted concatenation)
+            chain name (hyphen-deliminted concatenation)
             for which to create a file.
 
         Returns
@@ -62,9 +56,9 @@ class Exporter(core.Loader):
 
         # TO DO: put the important directories into the config
 
-        pdb = ichain[0]
-        mdl = ichain[1]
-        chn = ichain[2]
+        pdb = chain_tuple[0]
+        mdl = chain_tuple[1]
+        chn = chain_tuple[2]
 
         chain_string = pdb + '-' + str(mdl) + '-' + chn
 
@@ -85,7 +79,7 @@ class Exporter(core.Loader):
         Returns
         -------
         (pdb_id, model, chain) : tuple
-            The components of the IFE-chains to be processed.
+            The components of the chains to be processed.
         """
 
         with self.session() as session:
@@ -93,31 +87,51 @@ class Exporter(core.Loader):
                        mod.UnitInfo.pdb_id,
                        mod.UnitInfo.model,
                        mod.UnitInfo.chain).\
-                   distinct().\
-                   filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
-                   filter(mod.UnitInfo.pdb_id.in_(pdbs))
+                   filter(mod.UnitInfo.unit_type_id.in_(['rna','dna'])).\
+                   distinct()
+
+            if not self.write_all_files:
+                query = query.filter(mod.UnitInfo.pdb_id.in_(pdbs))
 
             return [(r.pdb_id, r.model, r.chain) for r in query]
 
 
-    def data(self, ichain, **kwargs):
+    def has_data(self, entry, *args, **kwargs):
+
+        if self.write_all_files:
+            return False
+
+        #self.logger.info("has_data: entry: %s" % str(entry))
+        filename = self.filename(entry)
+        #self.logger.info("has_data: filename: %s" % filename)
+
+        # temporary to overwrite some/all files
+        if os.path.exists(filename):
+            self.logger.info("has_data: filename %s exists" % filename)
+            return True
+        else:
+            self.logger.info("has_data: filename %s is missing" % filename)
+            return False
+
+
+    def data(self, chain_tuple, **kwargs):
         """
-        Get all unit listings for the given IFE-chain, centers and
+        Get all unit listings for the given chain, centers and
         rotations, and format them for convenient use by FR3D.
 
         Parameters
         ----------
-        ichain : tuple
-            The IFE-chain for which to look up centers and rotation data.
+        chain_tuple : tuple
+            The chain for which to look up centers and rotation data.
 
         Returns
         -------
         resultset : list of dicts
         """
 
-        pdb = ichain[0]
-        mdl = ichain[1]
-        chn = ichain[2]
+        pdb = chain_tuple[0]
+        mdl = chain_tuple[1]
+        chn = chain_tuple[2]
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.unit_id,
@@ -137,13 +151,17 @@ class Exporter(core.Loader):
                      distinct().\
                      join(mod.UnitCenters, mod.UnitInfo.unit_id == mod.UnitCenters.unit_id).\
                      join(mod.UnitRotations, mod.UnitInfo.unit_id == mod.UnitRotations.unit_id).\
-                     filter(mod.UnitInfo.unit_type_id.in_(['rna','dna','hybrid'])).\
                      filter(mod.UnitCenters.name == 'glycosidic').\
                      filter(mod.UnitInfo.pdb_id == pdb).\
                      filter(mod.UnitInfo.model == str(mdl)).\
                      filter(mod.UnitInfo.chain == chn).\
-                     filter(mod.UnitInfo.chain_index != None).\
                      order_by(mod.UnitInfo.chain_index)
+
+            # removed this filter on 2025-02-28 because glycosidic center is enough
+            #  filter(mod.UnitInfo.unit_type_id.in_(['rna','dna'])).\
+
+            # removed this filter on 2025-02-27 for solitary nucleotides like 2JEF|1|A|DGT|1343
+            #  filter(mod.UnitInfo.chain_index != None).\
 
             self.logger.debug("cenrot: query built")
 
@@ -155,7 +173,11 @@ class Exporter(core.Loader):
 
             for row in query:
                 units.append(row.unit_id)
-                order.append(row.chain_index - 1)
+                if row.chain_index == None:
+                    # solitary nucleotides that are not covalently linked to a chain
+                    order.append(None)
+                else:
+                    order.append(row.chain_index - 1)
                 cntrs.append(np.asarray([row.x, row.y, row.z]))
                 rttns.append(np.asarray([np.asarray([row.cell_0_0, row.cell_0_1, row.cell_0_2]),
                              np.asarray([row.cell_1_0, row.cell_1_1, row.cell_1_2]),
@@ -174,7 +196,7 @@ class Exporter(core.Loader):
 
     def process(self, entry, **kwargs):
         """
-        Load centers/rotations data for the given IFE-chain.
+        Load centers/rotations data for the given chain.
 
         Parameters
         ----------
