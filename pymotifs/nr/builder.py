@@ -8,6 +8,9 @@ import copy
 import itertools as it
 from collections import defaultdict
 
+from sqlalchemy import desc
+# from sqlalchemy import func
+
 from pymotifs import core
 from pymotifs import models as mod
 
@@ -21,8 +24,6 @@ from pymotifs.constants import NR_REPRESENTATIVE_METHOD  # could be "compscore"
 from pymotifs.constants import RESOLUTION_GROUPS
 from pymotifs.constants import NR_CLASS_NAME
 from pymotifs.constants import DNA_CLASS_NAME
-from sqlalchemy import desc
-from sqlalchemy import func
 from pymotifs.constants import WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS
 
 
@@ -42,9 +43,13 @@ class Known(core.Base):
             return set(result.handle for result in query)
 
     def classes(self, release_id, cutoff, molecule_type):
-        """Get all classes with the given resolution cutoff in the given
-        release. If nothing is below the cutoff then an empty dictonary will be
-        returned.
+        """
+        Get all classes with the given resolution cutoff in the given release.
+        If nothing is below the cutoff then an empty dictonary will be returned.
+
+        It is important not to specify new_style == 1 here, because when an
+        IFE is deprecated, we need to see that it was in the parent but not in
+        the new group.
 
         :release_id: Release id to lookup.
         :cutoff: The resolution cutoff to use. Default is 'all'.
@@ -100,10 +105,8 @@ class Known(core.Base):
                      mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
-                filter(mod.IfeInfo.new_style == True).\
                 filter(mod.NrClasses.name.startswith(query_key)).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrClassRank.rank)
-            self.logger.info("finish the query of the class function in the nr/builder.py")
             results = defaultdict(empty)
             for result in query:
                 member = as_member(result)
@@ -120,6 +123,8 @@ class Known(core.Base):
                     'version': int(result.version),
                     'cutoff': cutoff,
                 }
+
+            self.logger.info("Found %d parent groups for release %s with cutoff %s" % (len(results), release_id, cutoff))
 
         return results.values()
 
@@ -175,7 +180,6 @@ class Known(core.Base):
                     mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.NrClasses.nr_release_id == release_id).\
                 filter(mod.NrClasses.resolution == cutoff).\
-                filter(mod.IfeInfo.new_style == True).\
                 order_by(mod.NrClasses.nr_class_id, mod.NrChains.rank)
 
             results = defaultdict(empty)
@@ -432,7 +436,8 @@ class Builder(core.Base):
         return updated
 
     def class_name(self, resolution, entry, molecule_type):
-        """Create the name of the class given the class and resolution.
+        """
+        Create the name of the class given the class and resolution.
 
         :param dict entry: The class.
         :param str resolution: The resolution cutoff.
@@ -452,7 +457,8 @@ class Builder(core.Base):
             )
 
     def filter_groups(self, groups, resolutions, molecule_type):
-        """This will filter each group so that it contains only the members
+        """
+        Filter each group so that it contains only the members
         with that pass the given resolution cutoff. The cutoffs should be
         be values that are accepted by within_cutoff. In addition, the groups
         will have their group['name']['full'] and group['name']['cutoff']
@@ -564,7 +570,8 @@ class Builder(core.Base):
         return old_rank
 
     def find_representatives(self, groups, molecule_type, sorting_key=ranking_key):
-        """Compute the representative for each group. This will modify the
+        """
+        Compute the representative for each group. This will modify the
         group to now have a 'representative' entry containing the
         representative entry. In addition, the members will be sorted and
         assigned a rank based upon the sorting. The representative will always
@@ -582,7 +589,7 @@ class Builder(core.Base):
         -------
         groups : list
             The list of groups which have been modified to include the
-            representative entry and the members are resorted.
+            representative entry and the members are re-sorted.
         """
         data = []
         rep_finder = RepresentativeFinder(self.config, self.session)
@@ -622,6 +629,7 @@ class Builder(core.Base):
             ## new if statement
             ## make two log info messages and show what is old and what is new.
             # if not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS and group['comment'] == 'Exact match':
+
             if (group['name']['full'] in nr_class_name_list) and (not WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS):
                 # self.logger.info("Already have ranking and representative for %s", group['name']['full'])
                 # The lines below signal that we should retrieve the previous ranking and rep
@@ -653,21 +661,25 @@ class Builder(core.Base):
                     member['rank'] = index
                     self.logger.info("rank %3d ife %s" % (index, member['id']))
             else:
+                # We process the _all_ groups first, so this will be an _all_ group
                 # Look up data, calculate CQS, and rank the members
-                #
+                # calls nr/representatives/using_quality and method whose name is compscore
                 self.logger.info("Ranking and selecting representative for %s", group['name']['full'])
+
                 ordered_members = rep_finder(group)
                 group['representative'] = ordered_members[0]
+                group['new_nr_cqs_entry'] = True
 
-                self.logger.info('Representative chain %s' % str(group['representative']['id']))
+                # self.logger.info('Representative chain %s' % str(group['representative']['id']))
 
                 group['members'] = ordered_members
                 for index, member in enumerate(group['members']):
                     member['rank'] = index
+                    self.logger.info('rank %3d CQS %10.4f ife %s' % (index+1, member['composite_quality_score'], member['id']))
 
-                # uncomment the next line to use the elif statement above and save some time
-                # but maybe this scrambles the connection to the parents and thus backfires
+                # record how this handle maps to an ordered list of members
                 handle_to_ordered_members[handle] = ordered_members
+
             data.append(group)
         return data
 
