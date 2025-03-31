@@ -1,4 +1,5 @@
-"""Store the parents of nr classes.
+"""
+Store the parents of nr classes.
 """
 
 import datetime as dt
