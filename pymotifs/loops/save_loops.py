@@ -21,10 +21,13 @@ from pymotifs.interactions.loader import Loader as InteractionLoader
 class Loader(core.SimpleLoader):
     merge_data = True
     allow_no_data = True
-    dependencies = set([PdbLoader, UnitLoader, InteractionLoader])
-    save_loops = True
     use_marks = False
     mark = False
+
+    re_process_files = True   # force query to not skip files
+    re_process_files = False
+
+    dependencies = set([PdbLoader, UnitLoader, InteractionLoader])
 
     # location of loops from NA_pairwise_annotations
     loop_location = '/usr/local/pipeline/hub-core/data/loops'
@@ -43,6 +46,9 @@ class Loader(core.SimpleLoader):
         return t
 
     def to_process(self, pdbs, **kwargs):
+
+        if len(pdbs) == 1:
+            return pdbs
 
         # development code, to identify pdb ids where it is safe to delete loops
         if False:
@@ -65,6 +71,7 @@ class Loader(core.SimpleLoader):
 
         # for temporary overrides, speeds up testing
         pdbs_needed = ['4TNA']
+        pdbs_needed = ['5DO5']
         pdbs_needed = []         # leave blank to use all pdbs
 
         if len(pdbs_needed) == 0:
@@ -74,6 +81,7 @@ class Loader(core.SimpleLoader):
                 pdbs_with_existing_loops = set([r.pdb_id for r in query])
 
             # get the list of pdb ids with extracted loops in data/loops
+            self.logger.info('Looking for loops in %s' % self.loop_location)
             allfiles = glob.glob(self.loop_location + "/*")
             pdbs_with_new_loops = set([f.split('/')[-1].split('_')[0] for f in allfiles])
 
@@ -88,9 +96,12 @@ class Loader(core.SimpleLoader):
             # process all pdb ids that have loops in data/loops
             # once processed, the file will be moved to data/loops_done
             pdbs_needed = sorted(set(pdbs) & pdbs_with_new_loops)
+            pdbs_needed = sorted(pdbs_with_new_loops)
 
         if not pdbs_needed:
             raise core.Skip("no new PDB ids need loops extracted")
+
+
 
         return pdbs_needed
 
@@ -100,11 +111,12 @@ class Loader(core.SimpleLoader):
         See if the loop_info table already has loops from this pdb
         """
 
-        # return a query with no results when we want to process all files:
-        # return session.query(mod.LoopInfo).filter_by(pdb_id='XYZ')
-
-        # skip pdb ids that already have loops:
-        return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
+        if self.re_process_files:
+            # return a query with no results when we want to process files again:
+            return session.query(mod.LoopInfo).filter_by(pdb_id='XYZ')
+        else:
+            # skip pdb ids that already have loops:
+            return session.query(mod.LoopInfo).filter_by(pdb_id=pdb)
 
 
     def remove(self, *args, **kwargs):
@@ -136,6 +148,11 @@ class Loader(core.SimpleLoader):
 
         u = unit_ids[0]
         fields = u.split('|')
+
+        if len(fields) < 5:
+            self.logger.info("unit_id_to_sort_name: %s" % (str(unit_ids)))
+            self.logger.info("unit_id_to_sort_name: %s" % (u))
+            return "trouble"
 
         if len(fields) == 9:
             try:
@@ -173,8 +190,15 @@ class Loader(core.SimpleLoader):
         loop["sequence_2024"] = ""
         loop["sequence_standard"] = ""
         loop["nwc_seq"] = ""
+        loop["r_seq"] = ""
+        loop["r_nwc_seq"] = ""
 
         for i, u in enumerate(loop["unit_ids"]):
+            if not u:
+                self.logger.info("Empty unit id among %s" % (str(loop["unit_ids"])))
+                self.logger.info(str(loop))
+                loop["deprecate"] = 1
+                return loop
             fields = u.split('|')
 
             a = ""
@@ -234,15 +258,13 @@ class Loader(core.SimpleLoader):
             if len(fields) == 2:
                 loop["r_seq"] = fields[1] + "*" + fields[0]
             else:
-                print("This IL is missing a *: %s" % (str(loop)))
-                self.logger.info("This IL is missing a *:\n%s" % (self.dictionary_as_text(loop)))
+                print("This IL has the wrong number of *: %s" % (str(loop)))
+                self.logger.info("This IL has the wrong number of *:\n%s" % (self.dictionary_as_text(loop)))
+                loop["deprecate"] = 1
                 return loop
 
             a,b = loop["nwc_seq"].split("*")
             loop["r_nwc_seq"] = b + "*" + a
-        else:
-            loop["r_seq"] = ""
-            loop["r_nwc_seq"] = ""
 
         return loop
 
@@ -455,6 +477,10 @@ class Loader(core.SimpleLoader):
 
         loop_id_to_data, loop_type_to_next_id = self.get_existing_loops(pdb)
 
+        # self.logger.info('Existing loops:')
+        # for loop_id, data in loop_id_to_data.items():
+        #     self.logger.info(str(loop_id) + " " + str(data))
+
         new_loops, filename = self.get_new_loops(pdb)
 
         # self.logger.info("loop_type_to_next_id:")
@@ -467,20 +493,29 @@ class Loader(core.SimpleLoader):
         # some loop names are duplicated, and the second one won't ever get data
         loop_names_covered = set()
 
+        # loop over newly-extracted loops
         for loop in new_loops:
-            # default is to add the loop
+            # default is to add the loop to the database
             loop["add_new_loop"] = True
-            exact_match_found = False
 
             # loop over existing loops, if any, from oldest to newest
-            # I seem to have added a bunch of loops that duplicate earlier ones. Rats.
             for loop_id, old_loop in sorted(loop_id_to_data.items()):
                 if not loop["loop_type"] == old_loop["loop_type"]:
                     continue
 
+                if old_loop["unit_ids"][0] == '':
+                    self.logger.info('Old loop %s has empty unit_ids in loop_positions, will not be matched, will be deprecated' % loop_id)
+                    old_loop["deprecate"] = 1
+                    continue
+
+                if old_loop["loop_type"] == "IL" and not len(old_loop.get("sequence_2024","X*X").split("*")) == 2:
+                    self.logger.info('Old loop %s has the wrong number of * in seq, will not be matched, will be deprecated' % loop_id)
+                    old_loop["deprecate"] = 1
+                    continue
+
+                # self.logger.info('New loop %s compared to old loop %s' % (loop["loop_name"],old_loop["loop_name"]))
+
                 if loop["unit_ids_set"] == old_loop["unit_ids_set"] or loop["loop_name"] == old_loop["loop_name"]:
-                    # exact match
-                    exact_match_found = True
                     loop_names_covered.add(old_loop["loop_name"])
                     loop_names_covered.add(loop["loop_name"])
 
@@ -491,6 +526,13 @@ class Loader(core.SimpleLoader):
 
                     # do not add the new loop itself, instead update the old loop where necessary
                     loop["add_new_loop"] = False
+                    loop["exact_match_found"] = True
+
+                    # mark the old loop and do not deprecate it
+                    old_loop["exact_match_found"] = True
+                    if old_loop.get('deprecate',0) == 1:
+                        self.logger.info('Old loop %s is no longer deprecated' % loop_id)
+                    old_loop["deprecate"] = 0
 
                     if not "position_to_id_border" in old_loop:
                         old_loop["position_to_id_border"] = {}
@@ -528,8 +570,16 @@ class Loader(core.SimpleLoader):
                         # we have already updated this loop on a previous pass
                         old_loop["save_loop_info"] = False
 
-                    break
-                elif loop["interior_unit_ids"] & old_loop["interior_unit_ids"]:
+                    # next line saves time, but does not make it possible to automatically find
+                    # additional loops that should be deprecated
+                    # break
+
+
+                elif loop["interior_unit_ids"] & old_loop["interior_unit_ids"] and not old_loop.get('exact_match_found',False):
+                    # partial match between new and old loop
+                    # don't do this step if the old loop is already found in the set of new loops;
+                    # merged loops often entirely contain a new loop, but that does not mean they should be deprecated
+
                     print('Partial match between old %s and new %s %s' % (loop_id, loop["loop_type"], loop["loop_name"]))
                     self.logger.info('Partial match between old %s with %s' % (loop_id, loop["loop_name"]))
                     self.logger.info('  https://rna.bgsu.edu/rna3dhub/loops/view/%s' % loop_id)
@@ -546,7 +596,7 @@ class Loader(core.SimpleLoader):
                         print("  Old loop also has these nucleotides: %s" % (old_loop["unit_ids_set"] - loop["unit_ids_set"]))
                         self.logger.info("  New loop is entirely contained in the old loop")
                         self.logger.info("  Old loop also has these nucleotides: %s" % (old_loop["unit_ids_set"] - loop["unit_ids_set"]))
-                        self.logger.info("  Deprecate the old loop")
+                        self.logger.info("  Deprecate the old loop unless we find an exact match later")
 
                         old_loop["deprecate"] = 1
 
@@ -562,10 +612,6 @@ class Loader(core.SimpleLoader):
                         self.logger.info("  Complicated overlap")
                         self.logger.info("  Old loop also contains: %s" % (old_loop["unit_ids_set"] - loop["unit_ids_set"]))
                         self.logger.info("  New loop also contains: %s" % (loop["unit_ids_set"] - old_loop["unit_ids_set"]))
-
-            if exact_match_found:
-                # done processing this new loop, move on to the next new loop
-                continue
 
         # accumulate database entries for each new loop
         for loop in new_loops:
@@ -655,7 +701,7 @@ class Loader(core.SimpleLoader):
 
                 if old_loop["loop_name"] == "":
                     self.logger.info("  No loop name for %s" % loop_id)
-                    continue
+                    old_loop["deprecate"] = 1
 
                 # deprecate some problematic "loops" that are not really loops
                 if old_loop["loop_type"] == "HL" and len(old_loop["unit_ids"]) == 2:
@@ -673,25 +719,31 @@ class Loader(core.SimpleLoader):
 
             loop_names_covered.add(old_loop["loop_name"])
 
-            old_loop_info.append(mod.LoopInfo(
-                loop_id=loop_id,
-                length=len(old_loop["unit_ids"]),
-                r_seq=old_loop["r_seq"],
-                nwc_seq=old_loop["nwc_seq"],
-                r_nwc_seq=old_loop["r_nwc_seq"],
-                seq=old_loop["seq"],
-                sequence_2024=old_loop["sequence_2024"],
-                sequence_standard=old_loop["sequence_standard"],
-                sort_name=old_loop["sort_name"],
-                deprecate=old_loop.get("deprecate",0)))
+            if old_loop.get("deprecate",0) == 1:
+                self.logger.info('Deprecating loop %s' % loop_id)
+                old_loop_info.append(mod.LoopInfo(
+                    loop_id=loop_id,
+                    deprecate=1))
+            else:
+                old_loop_info.append(mod.LoopInfo(
+                    loop_id=loop_id,
+                    length=len(old_loop["unit_ids"]),
+                    r_seq=old_loop.get("r_seq",""),
+                    nwc_seq=old_loop["nwc_seq"],
+                    r_nwc_seq=old_loop["r_nwc_seq"],
+                    seq=old_loop["seq"],
+                    sequence_2024=old_loop["sequence_2024"],
+                    sequence_standard=old_loop["sequence_standard"],
+                    sort_name=old_loop["sort_name"],
+                    deprecate=old_loop.get("deprecate",0)))
 
         self.logger.info('Adding %d updated entries to loop_info from old loops that were not exact matches' % len(old_loop_info))
         for d in old_loop_info:
-            self.logger.info('Updated loop_info entry:')
+            self.logger.info('Updated loop_info entry from old loop that was not an exact match:')
             self.logger.info(self.dictionary_as_text(d.__dict__))
 
-
-        # move the file of loops once all loops have been processed
+        # move the file of loops ... once all loops have been processed
+        # but ... this code often thinks it's not done!  so just move the file.
         all_loops_done = True
         for loop in new_loops:
             if not loop.get("done",False) and not loop.get("loop_name","no") in loop_names_covered:
@@ -701,6 +753,10 @@ class Loader(core.SimpleLoader):
             if not old_loop.get("done",False) and not old_loop.get("loop_name","no") in loop_names_covered:
                 all_loops_done = False
                 break
+
+        # since we got this far, just figure that we're not coming back to do it again
+        all_loops_done = True
+
         if all_loops_done:
             self.logger.info('All loops processed, moving %s to %s' % (filename, self.done_location))
             # comment out the next two lines for testing
