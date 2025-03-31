@@ -1,273 +1,413 @@
-IL_09705.1,,Double sheared,,sree
-IL_09705.7,,Double sheared,,zirbel
-IL_09705.7,"IL_5J7L_327,IL_4WF9_054",Other IL,,zirbel
-IL_09705.7,IL_5TBW_135,tWS-tSW,,zirbel
-IL_74719.1,,Double sheared,Double sheared,zirbel
-IL_56467.1,,Triple sheared,,zirbel
-IL_56467.1,"IL_4IOA_012,IL_4WF9_019,IL_4Y4O_193,IL_5J7L_258,IL_4V9F_020,IL_7A0S_013",AAA cross-strand stack,,zirbel
-IL_56467.6,IL_7RQB_016,AAA cross-strand stack,,zirbel
-IL_56467.2,,Triple sheared,,zirbel
-IL_56467.6,,Triple sheared,,zirbel
-IL_56467.6,IL_4WF9_084,Other IL,,zirbel
-IL_05062.1,,Triple sheared related,Triple sheared,zirbel
-IL_74353.1,,Triple sheared with non-canonical cWW,Triple sheared,zirbel
-IL_66414.5,,Triple sheared with non-canonical cWW,Triple sheared,zirbel
-IL_18894.1,,Quadruple sheared,,zirbel
-IL_66584.5,,tSH-tSH-tHH-tHS,,zirbel
-IL_66584.5,"IL_3R9W_001,IL_3FTE_001",Quadruple sheared,,zirbel
-IL_92440.4,,tWH-tWH-tHW-tHW,,zirbel
-IL_87677.1,,tWH-tWH-tHW-tHW,,zirbel
-IL_17470.1,,tHW-tHW cross-strand stack,,zirbel
-IL_34907.2,,UAA/GAN with extra pair,,zirbel
-IL_34907.2,"IL_5J7L_292,IL_7A0S_048,IL_4WF9_051",UAA/GAN,,zirbel
-IL_34907.2,"IL_4WF9_099,IL_7RQB_102,IL_7A0S_093",tSH-tHS-tHW,,zirbel
-IL_55896.1,,tSH-tHS-tWS,,acoger
-IL_53523.1,,UAA/GAN,,zirbel
-IL_53523.4,,UAA/GAN,,zirbel
-IL_53523.5,,UAA/GAN,,zirbel
-IL_53523.5,IL_5TBW_118,UAA/GAN related,,zirbel
-IL_49767.4,,UAA/GAN with extra cWW,,zirbel
-IL_49767.4,IL_5XTM_002,Other IL,,zirbel
-IL_81389.2,,UAA/GAN related,,zirbel
-IL_81389.2,"IL_4LFB_062,IL_6CZR_170,IL_5J7L_303,IL_2R8S_006",UAA/GAN variation,,zirbel
-IL_37811.1,,UAA/GAN variation,,zirbel
-IL_37811.1,"IL_3FS0_001,IL_3IGI_009",UAA/GAN related,,zirbel
-IL_48459.1,IL_1UN6_005,UU cWW,Isolated non-canonical cWW,zirbel
-IL_48459.1,IL_4E48_002,UU cWW water inserted,Isolated non-canonical cWW,zirbel
-IL_48459.1,IL_5ED1_002,AA cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_5MWI_008,UU cWW,Isolated non-canonical cWW,zirbel
-IL_48459.1,"IL_4KNQ_004,IL_4E59_001,IL_4KNQ_001,IL_4KNQ_002",CC cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4E48_006,UU cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4PKD_001,UU cWW with bulged A,Isolated non-canonical cWW,sree
-IL_48459.1,IL_2PWT_001,UU cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4R0D_018,GU cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4V9F_077,AA cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4V5O_101,GA cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4V88_467,AA cWW,Isolated non-canonical cWW,sree
-IL_48459.1,"IL_4V5O_113,IL_1KFO_003,IL_1KFO_002,IL_5ED2_004,IL_4IOA_030,IL_4Y4O_211",CA cWW,Isolated non-canonical cWW,sree
-IL_48459.1,"IL_2PWT_004,IL_4ZC7_004,IL_1ZZ5_004,IL_1ZZ5_002,IL_4TS2_004,IL_3SZX_003",UU cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4P3T_005,CA cWW with bulged A,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4LFB_061,UG cWW,Isolated non-canonical cWW,sree
-IL_48459.1,IL_4V88_385,UC cWW,Isolated non-canonical cWW,sree
-IL_55456.1,,Isolated non-canonical cWW with bulges,Isolated non-canonical cWW,zirbel
-Various,"IL_6E8U_001,IL_5TBW_145,IL_1U6B_001,IL_4RUM_001,IL_7RQB_041,IL_5J7L_282,IL_7A0S_038,IL_4WF9_041,IL_4K31_002,IL_4K31_003,IL_5J7L_009,IL_3E5C_001,IL_3TD0_005,IL_3TD0_002,IL_4WF9_041,IL_7A0S_038",Isolated non-canonical cWW with bulges,Isolated non-canonical cWW,zirbel
-IL_60247.1,,Tandem non-canonical cWW pairs,,sree
-IL_85877.9,,Tandem non-canonical cWW pairs,,acoger
-,"IL_6CF2_001,IL_4V88_466",Non canonical cWW and near pair,,zirbel
-IL_22427.1,,Tandem non-canonical cWW pairs,,zirbel
-IL_50112.1,,Tandem non-canonical cWW pairs,,zirbel
-IL_50676.5,,Tandem non-canonical cWW pairs,,zirbel
-IL_50676.5,"IL_5FJC_004,IL_4AOB_004,IL_4KQY_006",Pseudoknot,,zirbel
-IL_35110.1,,7x6 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_35110.1,"IL_4V9F_092,IL_4IOA_096,IL_5J7L_346,IL_4WF9_100,IL_4Y4O_278",Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_35110.5,,7x6 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_35110.1,"IL_7RQB_103,IL_7A0S_094",Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_04346.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_04346.5,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_34470.1,,9x8 Sarcin-Ricin with GA cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_59724.1,,8x7 Sarcin-Ricin with CC bifurcated pair; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_50992.1,,9x8 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_24606.1,,8x6 Sarcin-Ricin with inserted Y; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_56501.1,,7x6 Sarcin-Ricin with UU cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_36582.1,,8x6 Sarcin-Ricin with inserted A; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_02349.1,,8x6 Sarcin-Ricin with bulged A; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_02349.2,,8x6 Sarcin-Ricin with bulged A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_88269.1,,6x5 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree
-IL_88269.2,,6x5 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_16109.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_83354.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_93830.1,,7x7 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_93830.2,,7x7 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_34590.1,,9x9 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_20463.1,,7x11 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_26785.1,,10x8 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_68633.1,,9x7 Sarcin-Ricin with inserted C; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_63596.1,,C-loop,,zirbel
-IL_63596.2,,C-loop,,zirbel
-IL_63596.3,,C-loop,,zirbel
-IL_93147.1,,C-loop,,sree
-IL_51590.1,IL_4V88_408,C-loop with extra cWW pair,C-loop,zirbel
-IL_51590.1,IL_4V88_435,Other IL,,zirbel
-IL_35410.1,,C-loop,,sree
-IL_08376.1,,C-loop,,sree
-IL_08376.2,,C-loop,,zirbel
-IL_80663.9,,Major groove platform,,zirbel
-IL_80663.9,"IL_3D0U_004,IL_4QLM_004,IL_1KUQ_001,IL_5J7L_031,IL_4LFB_027,IL_1G1X_001,IL_1G1X_004,IL_7A0S_061,IL_5TBW_076,IL_5J7L_306,IL_7RQB_066",Major groove platform; stack outside cWW,Major groove platform,zirbel
-IL_80663.9,IL_5J7L_352,Major groove intercalation,,zirbel
-IL_60171.1,,Major groove platform; stack outside cWW,Major groove platform,zirbel
-IL_70995.6,,Major groove platform; stack outside cWW,,zirbel
-IL_95485.6,,Major groove platform with extra cWW,Major groove platform,zirbel
-IL_95485.6,"IL_1XJR_001,IL_5UNE_002,IL_6CZR_172",Isolated basepair with bulged bases,,zirbel
-IL_42092.1,,Isolated basepair with bulged bases,,zirbel
-IL_87630.4,,Major groove platform with extra pair,Major groove platform,zirbel
-IL_87630.4,IL_5TBW_064,Other IL,,zirbel
-IL_02060.3,,Major groove platform,,zirbel
-IL_02060.3,IL_4WF9_106,Major groove intercalation,,zirbel
-IL_06437.1,,Minor groove platform,,zirbel
-IL_06437.10,,Minor groove platform,,zirbel
-IL_06437.9,"IL_5VSU_003,IL_7KGA_006",Single stack bend,,zirbel
-IL_06437.9,IL_4V9F_032,Single bulged A,,zirbel
-IL_06437.9,IL_5J7L_314,"Major groove outside cWW, minor groove, intercalation pocket",,zirbel
-IL_03932.3,,Minor groove platform with intercalation,Minor groove platform,zirbel
-IL_03932.3,"IL_4KQY_004,IL_4KQY_009",Minor groove platform,,zirbel
-IL_03932.3,IL_5TBW_070,Single stack bend,,zirbel
-IL_71960.4,,Minor groove platform,,zirbel
-IL_71960.4,IL_4WF9_098,Single bulged A,,zirbel
-IL_94431.4,,Minor groove platform,,zirbel
-IL_27900.1,IL_3IGI_005,Multiple bulged bases,,zirbel
-IL_27900.1,IL_3RW6_003,Minor groove platform,,zirbel
-IL_14148.4,,Minor groove platform with extra cWW,Minor groove platform,zirbel
-IL_35058.1,,Symmetric double minor groove platform,,zirbel
-IL_58103.5,,Symmetric double minor groove platform,,zirbel
-IL_58103.5,IL_6CZR_158,Minor groove platform,,zirbel
-IL_93270.1,,Minor groove platform,,zirbel
-IL_69507.1,,Minor groove platform,,zirbel
-IL_09061.4,,Major groove minor groove platform; mini C-loop,,zirbel
-IL_09061.4,"IL_1U9S_002,IL_1U9S_005,IL_3TZR_001","Major groove outside cWW, minor groove, intercalation pocket",,zirbel
-IL_81522.1,,Major groove minor groove platform with intercalation; mini C-loop,Major groove minor groove platform; mini C-loop,zirbel
-IL_96042.4,,Major groove minor groove platform with extra cWW,Major groove minor groove platform; mini C-loop,zirbel
-IL_28060.3,,Major groove minor groove platform with tHH,,zirbel
-,,,,
-IL_29549.1,,Kink-turn,,zirbel
-IL_29549.5,,Kink-turn,,acoger
-IL_29549.8,,Kink-turn,,acoger
-IL_29549.8,IL_6CZR_123,Kink-turn with non-sequential stacking,Kink-turn,acoger
-IL_51265.1,,Kink-turn from U4,Kink-turn,sree
-IL_51265.1,IL_4LCK_006,Kink-turn from T-box riboswitch,Kink-turn,sree
-IL_05466.1,,Kink-turn,,sree
-IL_05466.1,"IL_3RW6_002,IL_4LFB_011,IL_5J7L_014,IL_4V88_402",Kink-turn with non-sequential stacking,Kink-turn,zirbel
-IL_30294.1,,Kink-turn,,sree
-IL_44060.1,,Kink-turn from 23S H58,Kink-turn,sree
-IL_90922.1,,Kink-turn,,sree
-IL_61852.1,,Kink-turn,,sree
-IL_93952.1,,Kink-turn,,sree
-IL_64900.1,,Kink-turn,,zirbel
-IL_65876.1,,Kink-turn,,zirbel
-IL_16456.1,,Kink-turn,,zirbel
-IL_76900.1,,Kink-turn,,zirbel
-IL_34780.1,,Kink-turn,,zirbel
-IL_35904.1,,Kink-turn,,zirbel
-IL_90538.3,,Kink-turn,,zirbel
-IL_95993.1,,Kink-turn related,,zirbel
-IL_22436.1,,Kink-turn related,,zirbel
-IL_53581.1,,Kink-turn related,,zirbel
-IL_17069.3,,Kink-turn related,,zirbel
-IL_54997.5,,Isolated tWW turn,,zirbel
-IL_93094.1,,Reverse kink-turn,,zirbel
-IL_97697.1,,Reverse turn,,zirbel
-IL_08815.1,,180 degree turn,,zirbel
-IL_54997.5,IL_3LOA_003,Decoding loop with one bulged A,,zirbel
-IL_54997.5,"IL_2O3V_002,IL_2O3Y_002",Decoding loop related,,zirbel
-IL_95811.1,,Vitamin B12 Aptamer,,sree
-IL_80007.9,,Single bulged A,,zirbel
-IL_80007.15,,Single bulged A,,zirbel
-IL_80007.15,IL_7RQB_111,Major groove intercalation,,zirbel
-IL_40508.4,,Single bulged A,,zirbel
-IL_40508.4,"IL_5J7L_355,IL_4WF9_112,IL_4V9F_101",Major groove intercalation,,zirbel
-IL_66450.1,,Single bulged A,,zirbel
-IL_66450.1,"IL_4YAZ_007,IL_7A0S_097",Multiple bulged bases,,zirbel
-IL_61258.4,,Single bulged C,,zirbel
-IL_61258.9,,Single bulged C,,zirbel
-IL_59137.6,,Single bulged G,,zirbel
-IL_59137.9,,Single bulged G,,zirbel
-IL_85053.1,,Single bulged G,,zirbel
-IL_99645.1,,Single bulged G,,zirbel
-IL_83039.8,,Single bulged U,,zirbel
-IL_83039.10,,Single bulged U,,zirbel
-IL_21340.1,,Single bulged U,,zirbel
-IL_08757.3,,tSH-tHW,,zirbel
-IL_08757.3,"IL_5WTI_001,IL_5TBW_043",Other IL,,zirbel
-IL_23934.1,,tSH-tHW,,zirbel
-IL_98711.1,,tSH-tHW-tWW,,zirbel
-IL_62654.1,,tSH-tHH-tHS,,zirbel
-IL_39521.1,,tSH-tHW-tHS,,zirbel
-IL_39521.3,,tSH-tHW-tHS,,zirbel
-IL_39521.5,,tSH-tHW-tHS,,zirbel
-IL_39521.1,IL_4IOA_026,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_89193.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel
-IL_68674.1,,tSH-tHW-tHS with extra cWW pairs,,zirbel
-IL_22863.1,,tSH-tHW-tHH-tHS,,zirbel
-IL_76308.3,,tSH-tHW-tHS-cWW,,zirbel
-IL_76308.3,IL_1D4R_002,Other IL,,zirbel
-IL_76308.3,"IL_4EYA_005, IL_6ZDP_002",Tandem non-canonical cWW pairs with near WC pairs,,zirbel
-IL_87284.1,,tSH-tHW-tWH-tHS,,zirbel
-IL_56455.1,,Bacterial 5S Loop E,Loop E,zirbel
-IL_56455.2,,Bacterial 5S Loop E,Loop E,zirbel
-IL_56455.3,,Bacterial 5S Loop E,Loop E,zirbel
-IL_97601.1,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel
-IL_97601.1,IL_2XXA_002,Other IL,,zirbel
-IL_97601.6,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel
-IL_97601.6,"IL_5T83_002,IL_5U3G_002",8-nt loop receptor,Loop-receptor motif,zirbel
-IL_20549.1,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel
-IL_34915.1,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel
-IL_34915.2,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel
-IL_72938.1,,8-nt loop receptor,Loop-receptor motif,zirbel
-IL_72938.1,IL_4PDB_001,Other IL,,zirbel
-IL_67621.5,,Isolated cWS basepair,,zirbel
-IL_67621.5,IL_4V88_476,Other IL,,zirbel
-IL_38958.1,,Isolated tHS basepair with bulges,,sree
-IL_38958.6,,Isolated tHS basepair with bulges,,zirbel
-IL_42589.5,,Isolated cWH basepair,,zirbel
-IL_42589.5,"IL_4JGN_003,IL_2ZI0_001,IL_2ZI0_002,IL_7A0S_030,IL_3NJ7_004,IL_3NJ7_003",Isolated near basepair,,zirbel
-IL_42589.5,"IL_364D_004,IL_2D6F_001",Self complementary,,zirbel
-IL_38634.3,,cWH basepair and non-canonical AC,,zirbel
-IL_38634.3,IL_6DLR_005,tWW and near cWH,,zirbel
-IL_14526.1,"IL_4PMI_002,IL_4PMI_004,IL_4PMI_006,IL_4PMI_008,IL_4PMI_010,IL_4PMI_012",tWW and non-canonical cWW,,zirbel
-IL_14526.1,"IL_6CZR_120,IL_5J7L_010,IL_3BNR_008",Minor groove platform related,,zirbel
-IL_23638.1,,Multiple bulged bases,,zirbel
-IL_77034.1,,Multiple bulged bases,,zirbel
-IL_03466.1,,Multiple bulged bases,,zirbel
-IL_90991.5,,Multiple bulged bases,,zirbel
-IL_13730.6,,Multiple bulged bases,,zirbel
-IL_13730.11,,Multiple bulged bases,,zirbel
-IL_13730.6,IL_4IOA_084,Major groove platform,,zirbel
-IL_13730.6,"IL_1NTA_001,IL_1U9S_008,IL_6JQ6_001,IL_6JQ6_004,IL_6JQ5_001",Stack outside cWW,,zirbel
-IL_13730.11,IL_7RQB_009,Major groove platform,,zirbel
-IL_13730.11,"IL_1U9S_003,IL_1NBS_009,IL_4WF9_071,IL_6CF2_002 ,IL_7A0S_067,IL_5J7L_315,IL_7RQB_072,IL_5TBW_085,IL_4V9F_067","Major groove outside cWW, minor groove, intercalation pocket",,zirbel
-IL_13730.11,"IL_4KZD_006,IL_5LYS_006",Major groove platform outside cWW,,zirbel
-IL_13730.11,"IL_1XOK_002,IL_1XOK_001,IL_5LYS_007",Basepair outside cWW,,zirbel
-IL_57631.1,,Stack outside cWW,,zirbel
-IL_37629.1,,Stack outside cWW,,zirbel
-IL_72766.1,,"Basepair outside cWW, intercalation pocket",,zirbel
-IL_72766.1,IL_5WT1_001,"Major groove outside cWW, intercalation pocket",,zirbel
-IL_72766.1,IL_5TBW_084,"Major groove outside cWW, minor groove, intercalation pocket",,zirbel
-IL_72766.1,IL_1NTA_002,Intercalation pocket,,zirbel
-IL_72766.1,IL_4C7O_002,Single stack bend,,zirbel
-IL_19389.4,,Major groove platform with intercalated tWH,,zirbel
-IL_19389.4,"IL_6CZR_144,IL_4LFB_032,IL_5J7L_036",Left turn,,zirbel
-IL_19389.4,IL_4LCK_008,Other IL,,zirbel
-IL_22821.1,,Pseudoknot,,zirbel
-IL_15861.6,,SSU/LSU pseudoknot,,zirbel
-IL_98882.2,"IL_5Z1I_003,IL_5Z1I_002",Decoding loop related,,zirbel
-IL_98882.2,"IL_5TBW_077,IL_7A0S_062",Intercalated tWH,,zirbel
-IL_01312.11,"IL_4V9F_062,IL_4WF9_065,IL_5J7L_307,IL_7RQB_067",Intercalated tWH,,zirbel
-IL_01312.11,IL_7RQB_025,Intercalated cWW,,zirbel
-IL_01312.11,"IL_5E81_371,IL_5M0H_001",Self complementary,,zirbel
-IL_01312.11,"IL_6CZR_128,IL_5J7L_008","Single bulged G, near cWW",,zirbel
-IL_01312.11,IL_5M0H_002,"Multiple bulged bases, near cWW",,zirbel
-IL_01312.11,IL_2ET8_003,Decoding loop related,,zirbel
-IL_01312.11,"IL_4WZM_001,IL_3FOZ_001,IL_1M5K_004,IL_2H1M_003,IL_2H1M_002,IL_4J50_001,IL_4J50_003,IL_4J50_004,IL_4J50_006,IL_4J50_007,IL_4J50_009",Isolated cWH basepair,,zirbel
-IL_01312.11,IL_2R8S_005,cWH basepair with bulged bases,,zirbel
-IL_01312.11,IL_5TBW_057,Isolated cWS basepair,,zirbel
-IL_01312.11,"IL_4V88_406,IL_4V9F_077",Isolated near basepair,,zirbel
-IL_01312.11,"IL_5TBW_108,IL_7A0S_089,IL_4WF9_095,IL_7RQB_097,IL_5J7L_340,IL_4PKD_001,IL_5ML7_010,IL_4V9F_097,IL_3KTW_002",Isolated non-canonical cWW with bulges,,zirbel
-IL_43297.1,IL_4J39_001,CC cWW,,zirbel
-IL_43297.1,IL_5IBB_340,Single base bend,,zirbel
-IL_43297.1,IL_3WBM_004,Other IL,,zirbel
-IL_43297.1,"IL_4R4V_005,IL_4R4V_011",Intercalated cWS,,zirbel
-IL_31836.1,"IL_4UYK_002,IL_4LFB_053",Not an internal loop,,zirbel
-IL_31836.1,IL_7RQB_058,Single stack bend,,zirbel
-IL_31836.1,"IL_7A0S_066,IL_7RQB_071,IL_4V9F_066","Major groove outside cWW, minor groove, intercalation pocket",,zirbel
-IL_31836.1,IL_5J7L_267,Other IL,,zirbel
-IL_31836.1,IL_5TBW_101,Single stack bend with bulge,,zirbel
-IL_04038.4,,Single stack bend,,zirbel
-IL_04038.4,"IL_4WF9_047, IL_7A0S_044",Intercalated cWW,,zirbel
-IL_04038.4,"IL_2O3X_003,IL_7A0S_100,IL_2ET8_002,IL_2O3X_002,IL_3C3Z_003,IL_3C3Z_002,IL_1ZZ5_001,IL_1ZZ5_003,IL_4ZC7_003,IL_1T0E_001,IL_1ZX7_003,IL_1ZX7_005",Decoding loop related,,zirbel
-IL_04038.4,"IL_2O3X_001,IL_2ET8_001",Stack and bulge,,zirbel
-IL_04038.4,IL_5VCI_005,Not an internal loop,,zirbel
-IL_10235.1,IL_3NDB_001,Self complementary,,zirbel
-IL_10235.1,IL_5J7L_353,Multiple bulged bases with non-canonical cWW,,zirbel
-IL_51087.2,IL_5TBW_065,Multiple bulged bases with near cWW,,zirbel
-IL_51087.2,IL_7A0S_102,Major groove platform with intercalation,,zirbel
-IL_17470.1,,tHW-tHW cross-strand stack,,zirbel
-IL_62827.1,,cWH with bulged bases making A-minor,,zirbel
+IL_09705.1,,Double sheared,Double sheared,sree,2021-03-23
+IL_09705.7,,Double sheared,Double sheared,zirbel,2022-09-27
+IL_09705.9,,Double sheared,Double sheared,zirbel,2024-05-29
+IL_09705.12,,Double sheared,Double sheared,zirbel,2024-12-20
+IL_09705.7,"IL_5J7L_327,IL_4WF9_054",Other IL,,zirbel,2022-09-26
+IL_09705.9,"IL_5TBW_135,IL_8C3A_141,IL_8T29_001",Double sheared; A in syn,Double sheared,zirbel,2024-05-31
+IL_09705.13,,Double sheared,Double sheared,zirbel,2025-03-11
+IL_09705.13,IL_8P9A_362,Double sheared; A in syn,Double sheared,zirbel,2025-03-11
+IL_74719.1,,Double sheared,Double sheared,zirbel,2021-03-23
+IL_10484.1,,Double sheared,Double sheared,zirbel,2024-06-11
+IL_56467.1,,Triple sheared,,zirbel,2021-03-23
+IL_56467.1,"IL_4IOA_012,IL_4WF9_019,IL_4Y4O_193,IL_5J7L_258,IL_4V9F_020,IL_7A0S_013",AAA cross-strand stack,,zirbel,2022-09-27
+IL_56467.6,IL_7RQB_016,AAA cross-strand stack,,zirbel,2022-09-27
+IL_56467.2,,Triple sheared,,zirbel,2021-03-23
+IL_56467.6,,Triple sheared,,zirbel,2022-02-04
+IL_56467.6,IL_4WF9_084,Other IL,,zirbel,2022-02-04
+IL_56467.8,,Triple sheared,,zirbel,2024-06-11
+IL_96141.1,,Triple sheared,,zirbel,2024-06-11
+IL_55896.1,,Triple sheared,,zirbel,2024-06-11
+IL_95716.2,,Triple sheared,,zirbel,2025-02-18
+IL_05062.1,,Triple sheared related,Triple sheared,zirbel,2022-10-11
+IL_41507.1,,Triple sheared related,Triple sheared,zirbel,2024-06-11
+IL_64879.2,,Triple sheared related,Triple sheared,zirbel,2024-06-11
+IL_64879.2,IL_8C3A_104,Other IL,,zirbel,2024-06-11
+IL_74353.1,,Triple sheared with non-canonical cWW,Triple sheared,zirbel,2022-10-24
+IL_66414.5,,Triple sheared with non-canonical cWW,Triple sheared,zirbel,2023-03-27
+IL_66414.6,,Triple sheared with non-canonical cWW,Triple sheared,zirbel,2024-06-11
+IL_66414.7,,Triple sheared with non-canonical cWW,Triple sheared,zirbel,2025-01-29
+IL_86929.2,IL_7A0S_018,Triple sheared with non-canonical cWW,Triple sheared,zirbel,2024-06-11
+IL_86929.2,IL_4N0T_001,Double sheared; A in syn; two near cWW pairs,,zirbel,2024-06-11
+IL_86929.2,IL_4V88_421,Triple sheared related,,zirbel,2024-06-11
+IL_18894.1,,Quadruple sheared,,zirbel,2022-09-27
+IL_66584.5,"IL_3R9W_001,IL_3FTE_001",Quadruple sheared,,zirbel,2022-09-27
+IL_66584.5,,tSH-tSH-tHH-tHS,,zirbel,2022-09-27
+IL_54670.1,,tSH-tSH-tHH-tHS,,zirbel,2023-06-28
+IL_92440.4,,tWH-tWH-tHW-tHW,,zirbel,2022-09-27
+IL_87677.1,,tWH-tWH-tHW-tHW,,zirbel,2022-10-24
+IL_17470.1,,tHW-tHW cross-strand stack,,zirbel,2023-03-27
+IL_34907.2,,UAA/GAN with extra pair,,zirbel,2022-09-27
+IL_34907.2,"IL_5J7L_292,IL_7A0S_048,IL_4WF9_051",UAA/GAN,,zirbel,2022-09-27
+IL_34907.2,"IL_4WF9_099,IL_7RQB_102,IL_7A0S_093",tSH-tHS-tHW,,zirbel,2022-09-27
+IL_03420.1,IL_5J7L_345,tSH-tHS-tHW,,zirbel,2025-01-10
+IL_53523.1,,UAA/GAN,,zirbel,2021-03-23
+IL_53523.4,,UAA/GAN,,zirbel,2021-09-23
+IL_53523.5,,UAA/GAN,,zirbel,2022-04-15
+IL_53523.5,IL_5TBW_118,UAA/GAN related,,zirbel,2022-04-15
+IL_49767.4,,UAA/GAN with extra cWW,,zirbel,2022-09-27
+IL_49767.4,IL_5XTM_002,Other IL,,zirbel,2022-09-27
+IL_81389.2,,UAA/GAN related,,zirbel,2022-11-04
+IL_81389.2,"IL_4LFB_062,IL_6CZR_170,IL_5J7L_303,IL_2R8S_006",UAA/GAN variation,,zirbel,2022-11-04
+IL_37811.1,,UAA/GAN variation,,zirbel,2022-11-03
+IL_37811.1,"IL_3FS0_001,IL_3IGI_009",UAA/GAN related,,zirbel,2022-11-03
+IL_89002.3,,UAA/GAN,,zirbel,2025-01-29
+IL_89002.3,IL_3OXE_004,UAA/GAN related,,zirbel,2025-01-29
+IL_89002.4,,UAA/GAN,,zirbel,2025-02-18
+IL_89002.4,IL_7A0S_051,UAA/GAN variation,,zirbel,2025-02-18
+IL_48459.1,IL_1UN6_005,Isolated non-canonical cWW pair,,zirbel,2021-03-23
+IL_48459.1,IL_4E48_002,Isolated non-canonical cWW pair,,zirbel,2021-03-23
+IL_48459.1,IL_5ED1_002,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_5MWI_008,Isolated non-canonical cWW pair,,zirbel,2021-03-23
+IL_48459.1,"IL_4KNQ_004,IL_4E59_001,IL_4KNQ_001,IL_4KNQ_002",Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4E48_006,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4PKD_001,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_2PWT_001,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4R0D_018,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4V9F_077,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4V5O_101,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4V88_467,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,"IL_4V5O_113,IL_1KFO_003,IL_1KFO_002,IL_5ED2_004,IL_4IOA_030,IL_4Y4O_211",Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,"IL_2PWT_004,IL_4ZC7_004,IL_1ZZ5_004,IL_1ZZ5_002,IL_4TS2_004,IL_3SZX_003",Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4P3T_005,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4LFB_061,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_48459.1,IL_4V88_385,Isolated non-canonical cWW pair,,sree,2021-03-23
+IL_55456.1,,Isolated non-canonical cWW pair,,zirbel,2023-03-27
+Various,"IL_6E8U_001,IL_5TBW_145,IL_1U6B_001,IL_4RUM_001,IL_7RQB_041,IL_5J7L_282,IL_7A0S_038,IL_4WF9_041,IL_4K31_002,IL_4K31_003,IL_5J7L_009,IL_3E5C_001,IL_3TD0_005,IL_3TD0_002,IL_4WF9_041,IL_7A0S_038",Isolated non-canonical cWW pair,,zirbel,2023-06-23
+IL_64928.1,,Isolated non-canonical cWW pair,,zirbel,2025-01-08
+IL_44258.2,,Isolated non-canonical cWW pair,,zirbel,2025-02-15
+IL_44258.3,"IL_8P9A_337,IL_7QUA_004,IL_7QUA_003",Isolated non-canonical cWW pair,,zirbel,2025-03-10
+IL_76004.2,,Isolated non-canonical cWW contact,,zirbel,2025-02-18
+IL_10289.1,,Isolated non-canonical cWW pair,,zirbel,2025-03-11
+IL_10289.1,IL_4JGN_003,Isolated non-canonical cWW pair,,zirbel,2025-03-11
+IL_60247.1,,Tandem non-canonical cWW pairs,,sree,2021-03-23
+IL_85877.9,,Tandem non-canonical cWW pairs,,acoger,2022-02-03
+,"IL_6CF2_001,IL_4V88_466",Non canonical cWW and near pair,,zirbel,2021-10-13
+IL_22427.1,,Tandem non-canonical cWW pairs,,zirbel,2022-11-04
+IL_50112.1,,Tandem non-canonical cWW pairs,,zirbel,2023-04-04
+IL_86432.1,,Tandem non-canonical cWW pairs,,zirbel,2024-12-20
+IL_50676.5,,Tandem non-canonical cWW pairs,,zirbel,2023-04-04
+IL_50676.5,"IL_5FJC_004,IL_4AOB_004,IL_4KQY_006",Pseudoknot,,zirbel,2023-04-04
+IL_67085.1,,Tandem non-canonical cWW pairs,,zirbel,2025-02-10
+IL_67085.1,IL_7LYF_001,Isolated cWH basepair with non-canonical cWW,,zirbel,2025-02-10
+IL_49751.1,,Triple non-canonical cWW pairs,,zirbel,2025-03-10
+IL_49751.1,"IL_4WF9_123,IL_8D29_010,IL_6CZR_167,IL_7VYX_004,IL_7VYX_008",Partly complementary,,zirbel,2025-03-10
+IL_35110.1,,7x6 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2021-03-23
+IL_35110.1,"IL_4V9F_092,IL_4IOA_096,IL_5J7L_346,IL_4WF9_100,IL_4Y4O_278",Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_35110.5,,7x6 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-04-15
+IL_35110.1,"IL_7RQB_103,IL_7A0S_094",Sarcin-Ricin target in LSU H95; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-04-15
+IL_04346.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2021-03-23
+IL_04346.5,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-04-15
+IL_04346.7,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2024-02-29
+IL_04346.8,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2025-01-29
+IL_29509.1,,8x7 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2025-01-14
+IL_34470.1,,9x8 Sarcin-Ricin with GA cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_59724.1,,8x7 Sarcin-Ricin with CC bifurcated pair; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_50992.1,,9x8 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_24606.1,,8x6 Sarcin-Ricin with inserted Y; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_56501.1,,7x6 Sarcin-Ricin with UU cWW pair; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_36582.1,,8x6 Sarcin-Ricin with inserted A; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_02349.1,,8x6 Sarcin-Ricin with bulged A; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_02349.2,,8x6 Sarcin-Ricin with bulged A; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-04-15
+IL_88269.1,,6x5 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,sree,2021-03-23
+IL_88269.2,,6x5 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-04-15
+IL_16109.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2021-05-11
+IL_83354.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-04-15
+IL_93830.1,,7x7 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2021-05-11
+IL_93830.2,,7x7 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-04-15
+IL_34590.1,,9x9 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2021-05-11
+IL_20463.1,,7x11 Sarcin-Ricin with pseudoknotted region; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2021-05-11
+IL_26785.1,,10x8 Sarcin-Ricin; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2021-05-11
+IL_68633.1,,9x7 Sarcin-Ricin with inserted C; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-10-24
+IL_63596.1,,C-loop,,zirbel,2021-08-05
+IL_63596.2,,C-loop,,zirbel,2022-04-15
+IL_63596.3,,C-loop,,zirbel,2022-04-15
+IL_63596.6,,C-loop,,zirbel,2024-02-28
+IL_63596.7,,C-loop,,zirbel,2025-03-11
+IL_63596.8,,C-loop,,zirbel,2025-03-11
+IL_63596.9,,C-loop,,zirbel,2025-03-11
+IL_63596.10,,C-loop,,zirbel,2025-03-11
+IL_75255.1,,C-loop,,zirbel,2024-02-28
+IL_93147.1,,C-loop,,sree,2021-03-23
+IL_51590.1,IL_4V88_408,C-loop with extra cWW pair,C-loop,zirbel,2021-05-10
+IL_51590.1,IL_4V88_435,Other IL,,zirbel,2022-09-27
+IL_35410.1,,C-loop,,sree,2021-03-23
+IL_08376.1,,C-loop,,sree,2021-05-10
+IL_08376.2,,C-loop,,zirbel,2022-04-15
+IL_02509.1,,C-loop with bulged stacked A's,C-loop,zirbel,2024-02-28
+IL_80663.9,,Major groove platform,,zirbel,2022-08-19
+IL_80663.9,"IL_3D0U_004,IL_4QLM_004,IL_1KUQ_001,IL_5J7L_031,IL_4LFB_027,IL_1G1X_001,IL_1G1X_004,IL_7A0S_061,IL_5TBW_076,IL_5J7L_306,IL_7RQB_066",Major groove platform; stack outside cWW,Major groove platform,zirbel,2022-09-26
+IL_80663.9,IL_5J7L_352,Major groove intercalation,,zirbel,2022-11-04
+IL_27635.5,,Major groove platform,,zirbel,2024-12-20
+IL_60171.1,,Major groove platform; stack outside cWW,Major groove platform,zirbel,2022-10-24
+IL_70995.6,,Major groove platform; stack outside cWW,,zirbel,2022-09-28
+IL_50694.3,,Major groove platform; stack outside cWW,,zirbel,2025-01-29
+IL_50694.4,,Major groove platform; stack outside cWW,,zirbel,2025-02-18
+IL_50694.5,,Major groove platform; stack outside cWW,,zirbel,2025-03-11
+IL_95485.6,,Major groove platform with extra cWW,Major groove platform,zirbel,2022-09-27
+IL_95485.6,"IL_1XJR_001,IL_5UNE_002,IL_6CZR_172",Isolated basepair with bulged bases,,zirbel,2023-06-23
+IL_63959.1,,Major groove platform with extra cWW,,zirbel,2025-02-18
+IL_63959.1,"IL_7A0S_086,IL_4WF9_092,IL_8VTW_093,IL_5J7L_337,IL_4V9F_084,IL_8C3A_113,IL_5TBW_105",Major groove minor groove platform with extra cWW,,zirbel,2025-02-18
+IL_42092.1,,Isolated basepair with bulged bases,,zirbel,2023-06-23
+IL_87630.4,,Major groove platform with extra pair,Major groove platform,zirbel,2022-09-28
+IL_87630.4,IL_5TBW_064,Other IL,,zirbel,2022-09-28
+IL_02060.3,,Major groove platform,,zirbel,2022-11-04
+IL_02060.3,IL_4WF9_106,Major groove intercalation,,zirbel,2022-11-04
+IL_48076.1,,Major groove platform,,zirbel,2025-02-10
+IL_48076.2,,Major groove platform,,zirbel,2025-03-11
+IL_48076.2,IL_8P9A_293,Major groove platform related,,zirbel,2025-03-11
+IL_48779.2,"IL_5J7L_394,IL_8C3A_112,IL_8VTW_095,IL_8C3A_115",Major groove platform,,zirbel,2025-03-10
+IL_06437.1,,Minor groove platform,,zirbel,2022-09-26
+IL_06437.10,,Minor groove platform,,zirbel,2022-09-26
+IL_42622.1,,Minor groove platform,,zirbel,2025-01-29
+IL_42622.3,IL_42622.3,Minor groove platform,,zirbel,2025-01-29
+IL_42622.6,,Minor groove platform,,zirbel,2025-01-29
+IL_83162.3,,tHS double platform,,zirbel,2023-06-28
+IL_83162.3,,tHS double platform,,zirbel,2023-06-28
+IL_06437.9,"IL_5VSU_003,IL_7KGA_006",Single stack bend,,zirbel,2022-09-26
+IL_06437.9,IL_4V9F_032,Single bulged A,,zirbel,2023-06-22
+IL_03932.3,,Major groove platform with intercalation,Major groove platform,zirbel,2024-02-29
+IL_95601.3,,Major groove platform with intercalation,Major groove platform,zirbel,2024-02-29
+IL_95601.3,IL_8DP3_001,Major groove platform,Major groove platform,zirbel,2024-02-29
+IL_03932.3,"IL_4KQY_004,IL_4KQY_009",Minor groove platform,,zirbel,2022-09-27
+IL_03932.3,IL_5TBW_070,Single stack bend,,zirbel,2023-04-05
+IL_71960.4,,Minor groove platform,,zirbel,2022-09-27
+IL_71960.4,IL_4WF9_098,Single bulged A,,zirbel,2022-09-27
+IL_94431.4,,Minor groove platform,,zirbel,2022-09-28
+IL_27900.1,IL_3IGI_005,Multiple bulged bases,,zirbel,2023-06-23
+IL_27900.1,IL_3RW6_003,Minor groove platform,,zirbel,2023-06-23
+IL_14148.4,,Minor groove platform with extra cWW,Minor groove platform,zirbel,2022-09-27
+IL_35058.1,,Symmetric double minor groove platform,,zirbel,2022-10-24
+IL_58103.5,,Symmetric double minor groove platform,,zirbel,2022-10-21
+IL_58103.5,IL_6CZR_158,Minor groove platform,,zirbel,2022-10-21
+IL_93270.1,,Minor groove platform,,zirbel,2022-10-24
+IL_69507.1,,Minor groove platform,,zirbel,2022-10-24
+IL_10207.2,,Minor groove platform related,,zirbel,2024-12-21
+IL_92540.1,,Minor groove platform,,zirbel,2025-03-11
+IL_92540.1,"IL_3K0J_002,IL_7TZS_003",Minor groove platform related,,zirbel,2025-03-11
+IL_92540.1,"IL_1J9H_005,IL_8T29_003",Other IL,,zirbel,2025-03-11
+IL_58310.1,,Minor groove platform,,zirbel,2025-03-11
+IL_58310.1,"IL_1U9S_005,IL_5J7L_314,IL_9DFE_071,IL_8P9A_312","Minor groove platform, major groove intercalation",,zirbel,2025-03-11
+IL_09061.4,,Major groove minor groove platform; mini C-loop,,zirbel,2022-09-27
+IL_09061.6,,Major groove minor groove platform; mini C-loop,,zirbel,2024-02-28
+IL_09061.4,"IL_1U9S_002,IL_3TZR_001",Major groove intercalation,,zirbel,2023-06-23
+IL_81522.1,,Major groove minor groove platform with intercalation; mini C-loop,Major groove minor groove platform; mini C-loop,zirbel,2022-09-27
+IL_96042.4,,Major groove minor groove platform with extra cWW,Major groove minor groove platform; mini C-loop,zirbel,2022-11-03
+IL_68140.1,,Major groove minor groove platform; mini C-loop,,zirbel,2025-02-18
+IL_28060.3,,Major groove minor groove platform with tHH,,zirbel,2022-10-24
+IL_37712.2,IL_8C3A_126,Major groove minor groove platform with tHH,,zirbel,2022-10-24
+IL_29549.1,,Kink-turn,,zirbel,2021-03-23
+IL_29549.5,,Kink-turn,,acoger,2022-02-11
+IL_29549.8,,Kink-turn,,acoger,2022-02-11
+IL_29549.8,IL_6CZR_123,Kink-turn with non-sequential stacking,Kink-turn,acoger,2022-02-11
+IL_51265.1,,Kink-turn from U4,Kink-turn,sree,2021-03-23
+IL_51265.1,IL_4LCK_006,Kink-turn from T-box riboswitch,Kink-turn,sree,2021-04-01
+IL_05466.1,,Kink-turn,,sree,2021-03-23
+IL_05466.1,"IL_3RW6_002,IL_4LFB_011,IL_5J7L_014,IL_4V88_402",Kink-turn with non-sequential stacking,Kink-turn,zirbel,2021-05-24
+IL_45067.5,IL_8VTW_004,Kink-turn,,zirbel,2025-03-10
+IL_45067.5,IL_8C3A_410,Kink-turn with non-sequential stacking,Kink-turn,zirbel,2025-03-10
+IL_30294.1,,Kink-turn,,sree,2021-03-23
+IL_44060.1,,Kink-turn,Kink-turn,sree,2021-03-23
+IL_90922.1,,Kink-turn,,sree,2021-05-24
+IL_61852.1,,Kink-turn,,sree,2021-05-24
+IL_93952.1,,Kink-turn,,sree,2021-05-24
+IL_64900.1,,Kink-turn,,zirbel,2022-09-27
+IL_65876.1,,Kink-turn,,zirbel,2022-10-24
+IL_16456.1,,Kink-turn,,zirbel,2022-10-24
+IL_76900.1,,Kink-turn,,zirbel,2022-10-24
+IL_34780.1,,Kink-turn,,zirbel,2022-10-24
+IL_35904.1,,Kink-turn,,zirbel,2022-10-24
+IL_90538.3,,Kink-turn,,zirbel,2022-10-25
+IL_90538.5,,Kink-turn,,zirbel,2025-03-10
+IL_70923.4,,Kink-turn,,zirbel,2024-12-20
+IL_70923.5,,Kink-turn,,zirbel,2025-02-10
+IL_70923.6,,Kink-turn,,zirbel,2025-03-11
+IL_70923.7,,Kink-turn,,zirbel,2025-03-11
+IL_74051.1,,Kink-turn,,zirbel,2025-01-10
+IL_77045.1,,Kink-turn,,zirbel,2024-12-21
+IL_33886.1,,Kink-turn with embedded cWW pair,,zirbel,2024-12-20
+IL_95993.1,,Kink-turn related,,zirbel,2022-10-24
+IL_22436.1,,Kink-turn related,,zirbel,2022-10-24
+IL_53581.1,,Kink-turn related,,zirbel,2022-10-24
+IL_17069.3,,Kink-turn related,,zirbel,2023-06-23
+IL_87290.1,,Kink-turn related,,zirbel,2024-12-21
+IL_93585.1,,Kink-turn related,,zirbel,2024-12-21
+IL_33557.1,,Kink-turn related,,zirbel,2024-12-21
+IL_59027.1,,Kink-turn related,,zirbel,2024-12-21
+IL_70096.1,,Kink-turn related,,zirbel,2024-12-21
+IL_39287.1,,Kink-turn related,,zirbel,2024-12-21
+IL_22252.1,,Kink-turn related,,zirbel,2024-12-21
+IL_58809.1,,Kink-turn related,,zirbel,2024-12-21
+IL_57188.4,,Kink-turn related,,zirbel,2024-12-21
+IL_54177.1,,Kink-turn related,,zirbel,2024-12-21
+IL_54997.5,,Isolated tWW turn,,zirbel,2022-09-27
+IL_93094.1,,Reverse kink-turn,,zirbel,2022-09-28
+IL_03350.1,,Reverse kink-turn related,,zirbel,2024-12-21
+IL_38969.1,,Reverse kink-turn related,,zirbel,2024-12-21
+IL_97697.1,,Reverse turn,,zirbel,2022-11-17
+IL_08815.1,,180 degree turn,,zirbel,2022-10-24
+IL_84205.1,,180 degree turn,,zirbel,2024-12-21
+IL_67474.5,,180 degree turn,,zirbel,2024-12-21
+IL_75461.4,,180 degree turn,,zirbel,2024-12-21
+IL_54997.5,IL_3LOA_003,Decoding loop with one bulged A,,zirbel,2022-09-27
+IL_54997.5,"IL_2O3V_002,IL_2O3Y_002",Decoding loop related,,zirbel,2023-04-05
+IL_95811.1,,Vitamin B12 Aptamer,,sree,2021-06-02
+IL_80007.9,,Single bulged A,,zirbel,2021-08-07
+IL_80007.15,,Single bulged A,,zirbel,2022-12-08
+IL_80007.15,IL_7RQB_111,Major groove intercalation,,zirbel,2023-04-04
+IL_40508.4,,Single bulged A,,zirbel,2022-12-08
+IL_40508.4,"IL_5J7L_355,IL_4WF9_112,IL_4V9F_101",Major groove intercalation,,zirbel,2023-04-04
+IL_66450.1,,Single bulged A,,zirbel,2023-04-04
+IL_66450.1,"IL_4YAZ_007,IL_7A0S_097",Multiple bulged bases,,zirbel,2023-04-04
+IL_37497.8,,Single bulged A,,zirbel,2024-12-20
+IL_37497.8,"IL_7DLZ_002,IL_8VTW_110,IL_7JNH_003",Major groove intercalation,,zirbel,2024-12-20
+IL_31462.1,,Single bulged A,,zirbel,2025-02-10
+IL_31462.3,,Single bulged A,,zirbel,2025-03-10
+IL_31462.3,IL_5J7L_064,Single bulged A,,zirbel,2025-03-10
+IL_31462.3,IL_9DFE_110,Major groove intercalation,,zirbel,2023-04-04
+IL_61258.4,,Single bulged C,,zirbel,2021-08-07
+IL_61258.9,,Single bulged C,,zirbel,2023-04-04
+IL_61258.13,,Single bulged C,,zirbel,2024-12-20
+IL_61258.13,IL_8VTW_107,Major groove intercalation,,zirbel,2024-12-20
+IL_61258.14,,Single bulged C,,zirbel,2025-03-11
+IL_61258.14,IL_9DFE_107,Major groove intercalation,,zirbel,2025-03-11
+IL_59137.6,,Single bulged G,,zirbel,2021-08-07
+IL_59137.9,,Single bulged G,,zirbel,2023-04-04
+IL_85053.1,,Single bulged G,,zirbel,2022-10-24
+IL_99645.1,,Single bulged G,,zirbel,2023-04-04
+IL_00225.5,,Single bulged G,,zirbel,2024-12-20
+IL_00225.5,"IL_1U9S_006,IL_7A0S_099",Major groove intercalation,,zirbel,2024-12-20
+IL_00225.9,,Single bulged G,,zirbel,2025-03-11
+IL_83039.8,,Single bulged U,,zirbel,2021-08-07
+IL_83039.10,,Single bulged U,,zirbel,2022-12-08
+IL_83039.18,,Single bulged U,,zirbel,2024-12-20
+IL_83039.18,"IL_3MXH_003,IL_3IWN_003,IL_1ET4_002",Major groove intercalation,,zirbel,2024-12-20
+IL_83039.19,,Single bulged U,,zirbel,2025-02-19
+IL_21340.1,,Single bulged U,,zirbel,2022-12-08
+IL_89505.1,,Single bulged U,,zirbel,2025-03-11
+IL_08757.3,,tSH-tHW,,zirbel,2022-09-28
+IL_08757.3,"IL_5WTI_001,IL_5TBW_043",Other IL,,zirbel,2022-09-28
+IL_23934.1,,tSH-tHW,,zirbel,2023-04-04
+IL_98711.1,,tSH-tHW-tWW,,zirbel,2022-10-24
+IL_62654.1,,tSH-tHH-tHS,,zirbel,2022-10-24
+IL_39521.1,,tSH-tHW-tHS,,zirbel,2022-02-11
+IL_39521.3,,tSH-tHW-tHS,,zirbel,2022-02-11
+IL_39521.5,,tSH-tHW-tHS,,zirbel,2022-02-11
+IL_39521.1,IL_4IOA_026,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-09-27
+IL_89193.1,,5x5 Sarcin-Ricin with intercalated A; G-bulge,Sarcin-Ricin; G-bulge,zirbel,2022-09-27
+IL_17136.4,,tSH-tHW-tHS,,zirbel,2025-02-18
+IL_17136.4,IL_8C3A_127,UAA/GAN related,,zirbel,2025-02-18
+IL_68674.1,,tSH-tHW-tHS with extra cWW pairs,,zirbel,2022-10-24
+IL_22863.1,,tSH-tHW-tHH-tHS,,zirbel,2022-10-24
+IL_76308.3,,tSH-tHW-tHS-cWW,,zirbel,2022-09-27
+IL_76308.3,IL_1D4R_002,Other IL,,zirbel,2022-09-27
+IL_76308.3,"IL_4EYA_005, IL_6ZDP_002",Tandem non-canonical cWW pairs with near WC pairs,,zirbel,2022-09-27
+IL_87284.1,,tSH-tHW-tWH-tHS,,zirbel,2022-09-27
+IL_56455.1,,Bacterial 5S Loop E,Loop E,zirbel,2022-02-21
+IL_56455.2,,Bacterial 5S Loop E,Loop E,zirbel,2022-02-21
+IL_56455.3,,Bacterial 5S Loop E,Loop E,zirbel,2022-02-21
+IL_97601.1,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel,2022-06-18
+IL_97601.1,IL_2XXA_002,Other IL,,zirbel,2022-06-18
+IL_97601.6,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel,2022-06-18
+IL_97601.6,"IL_5T83_002,IL_5U3G_002",8-nt loop receptor,Loop-receptor motif,zirbel,2022-06-18
+IL_20549.1,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel,2022-06-18
+IL_34915.1,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel,2022-06-18
+IL_34915.2,,Receptor of 11-nt loop-receptor motif,Loop-receptor motif,zirbel,2022-06-18
+IL_72938.1,,8-nt loop receptor,Loop-receptor motif,zirbel,2022-06-18
+IL_72938.1,IL_4PDB_001,Other IL,,zirbel,2022-06-18
+IL_67621.5,,Isolated cWS basepair,,zirbel,2022-09-27
+IL_67621.5,IL_4V88_476,Other IL,,zirbel,2022-09-27
+IL_38958.1,,Isolated tHS basepair with bulges,,sree,2021-06-03
+IL_38958.6,,Isolated tHS basepair with bulges,,zirbel,2023-06-23
+IL_42589.5,,Isolated cWH basepair,,zirbel,2022-09-26
+IL_42589.5,"IL_2ZI0_001,IL_2ZI0_002,IL_7A0S_030,IL_3NJ7_004,IL_3NJ7_003",Isolated near basepair,,zirbel,2023-06-23
+IL_42589.5,"IL_364D_004,IL_2D6F_001",Self complementary,,zirbel,2023-06-23
+IL_66171.1,,Isolated cWH basepair,,zirbel,2024-12-20
+IL_66171.1,IL_5ZTM_001,Isolated non-canonical cWW pair,,zirbel,2025-02-10
+,IL_406D_006,Isolated cWH basepair,,zirbel,2025-02-10
+IL_48679.1,,Isolated cWH basepair,,zirbel,2025-02-10
+IL_48679.1,"IL_4V88_455,IL_7A0S_042,IL_8AF0_004,IL_4Y1M_005,IL_5TBW_016,IL_4V88_470,IL_8C3A_477,IL_7A0S_107,IL_4KYY_002,IL_8C3A_468,IL_4WF9_018,IL_4P3U_001",Isolated non-canonical cWW pair,,zirbel,2025-02-10
+IL_48679.1,"IL_7A0S_092,IL_8AMI_001",Other IL,,zirbel,2025-02-10
+IL_10167.1,,Isolated cWH basepair,,zirbel,2025-02-15
+IL_10167.1,IL_7MLW_006,Isolated tWW contact,,zirbel,2025-02-15
+IL_10167.3,,Isolated cWH basepair,,zirbel,2025-03-11
+IL_10167.3,"IL_8C3A_454,IL_9DFE_023",Other IL,,zirbel,2025-03-11
+IL_10167.3,IL_8P9A_464,Isolated tWW contact,,zirbel,2025-03-11
+IL_38634.3,,cWH basepair and non-canonical AC,,zirbel,2022-12-09
+IL_38634.3,IL_6DLR_005,tWW and near cWH,,zirbel,2022-12-09
+IL_14526.1,"IL_4PMI_002,IL_4PMI_004,IL_4PMI_006,IL_4PMI_008,IL_4PMI_010,IL_4PMI_012",tWW and non-canonical cWW,,zirbel,2022-12-09
+IL_14526.1,"IL_6CZR_120,IL_5J7L_010,IL_3BNR_008",Minor groove platform related,,zirbel,2022-12-09
+IL_23638.1,,Multiple bulged bases,,zirbel,2022-09-28
+IL_23638.1,"IL_7A0S_071 ,IL_5TBW_089,IL_5J7L_318,IL_7RQB_076",Bulged stacked bases,,zirbel,2023-06-28
+IL_50334.1,,Bulged stacked bases,,zirbel,2023-06-28
+IL_56121.1,,Bulged stacked bases,,zirbel,2023-06-28
+IL_77034.1,,Multiple bulged bases,,zirbel,2022-10-24
+IL_90991.5,,Multiple bulged bases,,zirbel,2023-03-27
+IL_13730.6,,Multiple bulged bases,,zirbel,2021-08-07
+IL_13730.11,,Multiple bulged bases,,zirbel,2023-04-05
+IL_82107.1,,Multiple bulged bases,,zirbel,2025-02-10
+IL_82107.2,,Multiple bulged bases,,zirbel,2025-03-11
+IL_82107.2,IL_8P9A_313,Major groove intercalation,,zirbel,2025-03-11
+IL_13730.6,IL_4IOA_084,Major groove platform,,zirbel,2021-08-07
+IL_13730.6,"IL_1NTA_001,IL_1U9S_008,IL_6JQ6_001,IL_6JQ6_004,IL_6JQ5_001",Stack outside cWW,,zirbel,2021-08-07
+IL_13730.11,IL_7RQB_009,Major groove platform,,zirbel,2022-11-04
+IL_13730.11,"IL_1U9S_003,IL_1NBS_009,IL_4WF9_071,IL_6CF2_002 ,IL_7A0S_067,IL_5J7L_315,IL_7RQB_072,IL_5TBW_085,IL_4V9F_067",Major groove intercalation,,zirbel,2025-02-10
+IL_13730.11,"IL_4KZD_006,IL_5LYS_006",Stack outside cWW,,zirbel,2025-02-18
+IL_13730.11,"IL_1XOK_001,IL_5LYS_007,IL_1XOK_002",Major groove intercalation,,zirbel,2025-02-18
+IL_57631.1,,Stack outside cWW,,zirbel,2022-10-24
+IL_37629.1,,Stack outside cWW,,zirbel,2023-04-05
+IL_66635.1,,Stack outside cWW,,zirbel,2025-02-18
+IL_66635.1,"IL_6XH2_001,IL_7VTI_003,IL_3DD2_003",Major groove intercalation,,zirbel,2025-02-18
+IL_72766.1,,Major groove intercalation,,zirbel,2025-02-18
+IL_72766.1,IL_5WT1_001,Stack outside cWW,,zirbel,2025-02-18
+IL_72766.1,IL_4C7O_002,Single stack bend,,zirbel,2023-06-23
+IL_19389.4,,Major groove platform with intercalated tWH,,zirbel,2022-09-27
+IL_19389.4,"IL_6CZR_144,IL_4LFB_032,IL_5J7L_036",Left turn,,zirbel,2022-09-27
+IL_19389.4,IL_4LCK_008,Other IL,,zirbel,2022-09-27
+IL_22821.1,,Pseudoknot,,zirbel,2022-10-24
+IL_53787.1,,Pseudoknot,,zirbel,2024-12-21
+IL_19516.1,,Pseudoknot,,zirbel,2024-12-21
+IL_15861.1,,SSU/LSU pseudoknot,,zirbel,2024-02-28
+IL_15861.6,,SSU/LSU pseudoknot,,zirbel,2022-11-03
+IL_15861.7,,SSU/LSU pseudoknot,,zirbel,2024-02-28
+IL_98882.2,"IL_5Z1I_003,IL_5Z1I_002",Decoding loop related,,zirbel,2023-06-22
+IL_98882.2,"IL_5TBW_077,IL_7A0S_062",Intercalated tWH,,zirbel,2023-04-04
+IL_01312.11,"IL_4V9F_062,IL_4WF9_065,IL_5J7L_307,IL_7RQB_067",Intercalated tWH,,zirbel,2023-04-04
+IL_01312.11,IL_7RQB_025,Intercalated cWW,,zirbel,2023-04-05
+IL_01312.11,IL_5E81_371,Self complementary,,zirbel,2023-04-04
+IL_01312.11,IL_5M0H_001,Other IL,,zirbel,2025-02-10
+IL_01312.11,"IL_6CZR_128,IL_5J7L_008","Single bulged G, near cWW",,zirbel,2023-04-05
+IL_01312.11,IL_5M0H_002,"Multiple bulged bases, near cWW",,zirbel,2023-04-05
+IL_01312.11,IL_2ET8_003,Decoding loop related,,zirbel,2023-06-22
+IL_01312.11,"IL_4WZM_001,IL_3FOZ_001,IL_1M5K_004,IL_2H1M_003,IL_2H1M_002,IL_4J50_001,IL_4J50_003,IL_4J50_004,IL_4J50_006,IL_4J50_007,IL_4J50_009",Isolated cWH basepair,,zirbel,2023-06-22
+IL_01312.11,IL_2R8S_005,cWH basepair with bulged bases,,zirbel,2023-06-22
+IL_01312.11,IL_5TBW_057,Isolated cWS basepair,,zirbel,2023-06-23
+IL_01312.11,"IL_4V88_406,IL_4V9F_077",Isolated near basepair,,zirbel,2023-06-23
+IL_01312.11,"IL_5TBW_108,IL_7A0S_089,IL_4WF9_095,IL_7RQB_097,IL_5J7L_340,IL_4PKD_001,IL_5ML7_010,IL_4V9F_097,IL_3KTW_002",Isolated non-canonical cWW with bulges,,zirbel,2023-06-23
+IL_43297.1,IL_5IBB_340,Single base bend,,zirbel,2023-06-23
+IL_43297.1,IL_3WBM_004,Other IL,,zirbel,2023-06-23
+IL_43297.1,"IL_4R4V_005,IL_4R4V_011",Intercalated cWS,,zirbel,2023-04-05
+IL_31836.1,"IL_4UYK_002,IL_4LFB_053",Not an internal loop,,zirbel,2023-04-05
+IL_31836.1,IL_7RQB_058,Single stack bend,,zirbel,2023-04-05
+IL_31836.1,"IL_7A0S_066,IL_7RQB_071,IL_4V9F_066","Minor groove platform, major groove intercalation",,zirbel,2025-03-11
+IL_31836.1,IL_5J7L_267,Other IL,,zirbel,2023-04-05
+IL_31836.1,IL_5TBW_101,Single stack bend with bulge,,zirbel,2023-06-23
+IL_67809.1,IL_8C3A_110,Single stack bend with bulge,,zirbel,2023-06-23
+IL_67809.1,,Single stack bend,,zirbel,2025-01-08
+IL_04038.4,,Single stack bend,,zirbel,2023-04-05
+IL_04038.4,"IL_4WF9_047, IL_7A0S_044",Intercalated cWW,,zirbel,2023-04-05
+IL_04038.4,"IL_2O3X_003,IL_7A0S_100,IL_2ET8_002,IL_2O3X_002,IL_3C3Z_003,IL_3C3Z_002,IL_1ZZ5_001,IL_1ZZ5_003,IL_4ZC7_003,IL_1T0E_001,IL_1ZX7_003,IL_1ZX7_005",Decoding loop related,,zirbel,2023-04-05
+IL_04038.4,"IL_2O3X_001,IL_2ET8_001",Stack and bulge,,zirbel,2023-04-05
+IL_04038.4,IL_5VCI_005,Not an internal loop,,zirbel,2023-04-05
+IL_06586.1,,Single stack bend,,zirbel,2025-03-11
+IL_06586.1,IL_8P9A_328,Single stack bend with bulge,,zirbel,2025-03-11
+IL_10235.1,IL_3NDB_001,Self complementary,,zirbel,2022-11-04
+IL_10235.1,IL_5J7L_353,Multiple bulged bases with non-canonical cWW,,zirbel,2022-11-04
+IL_51087.2,IL_5TBW_065,Multiple bulged bases with near cWW,,zirbel,2023-03-27
+IL_51087.2,IL_7A0S_102,Major groove platform with intercalation,,zirbel,2023-03-27
+IL_17470.1,,tHW-tHW cross-strand stack,,zirbel,2021-06-02
+IL_17470.5,,tHW-tHW cross-strand stack,,zirbel,2023-06-28
+IL_62827.1,,cWH with bulged bases making A-minor,,zirbel,2023-04-05
+IL_19852.1,,Part of G-quadruplex,,zirbel,2024-12-21
+IL_73759.1,,Part of G-quadruplex,,zirbel,2024-12-21
+IL_64858.1,,G-quadruplex,,zirbel,2024-12-21
+IL_82426.4,,Part of G-quadruplex,,zirbel,2024-12-21
