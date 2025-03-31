@@ -3,12 +3,13 @@ This module contains the logic to create IFE-level CQS
 (Composite Quality Scoring) data for import into the database.
 """
 
+from copy import deepcopy
+import numpy as np
 import operator as op
 
 from sqlalchemy import func
 from sqlalchemy.orm import aliased
 
-from copy import deepcopy
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -37,27 +38,8 @@ class IfeQualityLoader(core.SimpleLoader):
 
     mark = False  # do not try to mark in pdb_analysis_status
 
-    """
-    #Blake's sample class contained three functions, as follows:
-
-    #def ifes(self, pdb_id):
-    #    return [] # Load all IFEs for the PDB ID.
-
-    #def ife_compscore(self, ife):
-    #    return -1 # Should actually compute something
-
-    #def data(self, pdb_id):
-    #    ifes = self.ifes(pdb_id)
-    #    data = []
-    #    for ife in self.ifes(pdb_id): # Get all IFEs in the PDB
-    #        # Let's assume that the ifes method returns a list of
-    #        # dicts with the IFE information
-    #        data.append(IfeCqs(
-    #            ife_id=ife['id'],
-    #            compscore=self.ife_compscore(ife),
-    #        ))
-    #    return data
-    """
+    testing = False
+    fixing = False
 
     def to_process(self, pdbs, **kwargs):
         """
@@ -66,55 +48,44 @@ class IfeQualityLoader(core.SimpleLoader):
         Parameters
         ----------
         pdbs : list
-            Ignored.
 
         Returns
         -------
-        release : string
-            The NR release ID to process.
+        ife_list : list
+            List of IFEs to process
         """
 
-        resolution = 'all'
-        release = None
+        with self.session() as session:
+            query = session.query(mod.IfeInfo.ife_id).\
+                filter(mod.IfeInfo.model.isnot(None)).\
+                filter(mod.IfeInfo.new_style == True).\
+                filter(mod.IfeInfo.pdb_id.in_(pdbs))
 
-        pdbs_set = set(pdbs)
-        ife_list = []
+            ife_list = []
+            for r in query:
+                ife_list.append(r.ife_id)
 
-        if False and kwargs.get('manual', {}).get('nr_release_id', False):
-            # This query would not need to rewritten to get the release id
-            # from nr_classes and join with this nr_chains table
-            release = kwargs['manual']['nr_release_id']
-            self.logger.info("IQL: to_process: release: %s" % release)
-            with self.session() as session:
-                query = session.query(mod.NrChains.ife_id).\
-                    join(mod.NrClasses,
-                         mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
-                    filter(mod.NrClasses.nr_release_id == release).\
-                    filter(mod.NrClasses.resolution == resolution)
-                return [r.ife_id for r in query]
-        else:
-            with self.session() as session:
-                query = session.query(mod.IfeInfo.ife_id).\
-                    filter(mod.IfeInfo.model.isnot(None)).\
-                    filter(mod.IfeInfo.new_style == True)
-                for r in query:
-                    pdb_id = r.ife_id.split('|')[0]
-                    if pdb_id in pdbs_set:
-                        ife_list.append(r.ife_id)
+        if len(ife_list) == 0:
+            raise core.Skip("No IFEs to process for CQS")
 
-                if len(ife_list) == 0:
-                    raise core.Skip("No IFEs to process for CQS")
+        if self.testing:
+            print('Found %d IFEs to process' % len(ife_list))
 
-                return ife_list
+        return sorted(ife_list,reverse=True)
 
-        pass
 
     def query(self, session, ife_id):
-        return session.query(mod.IfeCqs.ife_id).filter_by(ife_id=ife_id)
+        if self.testing or self.fixing:
+            # allow re-processing of all IFEs
+            return session.query(mod.IfeCqs.ife_id).filter_by(ife_id='nonexistent')
+        else:
+            # do not re-do IFEs that have already been processed
+            return session.query(mod.IfeCqs.ife_id).filter_by(ife_id=ife_id)
 
 
     def class_property(self, ifes, name):
         return {ife[name] for ife in ifes}
+
 
     def ife_info(self, nr_class):
         ife_id = self.class_property(nr_class, 'id')
@@ -133,111 +104,219 @@ class IfeQualityLoader(core.SimpleLoader):
                 data[ife_id] = entry
         return data
 
-    # comment this out on 10/13/2023
-    # we cannot find anywhere that uses the following functions.
-    # If these two functions need to be used in the future, make the query works corrently with NrChains table/release_id.
-    # def nr_classes(self, release, resolution):
-    #     return self.load_nr_classes(release, resolution)
 
-    # def load_nr_classes(self, release, resolution):
+    # def ife_quality_data(self, ifes):
+    #     compscore = self._create(CompScore)
+    #     members = deepcopy(ifes)
+    #     compscore.load_quality(members)
+    #     data = {}
+    #     for ife in members:
+    #         quality = ife['quality']
+    #         self.logger.debug('quality: %s' % quality)
+    #         data[ife['id']] = {
+    #             'Clashscore': quality.get('clashscore', 100),
+    #             'Average RSR': quality['average_rsr'],
+    #             'Percent Clash': quality['percent_clash'],
+    #             'Average RSCC': quality['average_rscc'],
+    #             'Rfree': quality['rfree'],
+    #             'Resolution': quality['resolution'],
+    #         }
+    #     return data
+
+
+    def __chain_query__(self, query, info, table=mod.UnitInfo):
+        """
+        Filtering that is used repeatedly in this class.
+        info is a dictionary with information about an IFE.
+        """
+        return query.filter(table.pdb_id == info['pdb']).\
+            filter(table.model == info['model']).\
+            filter(table.sym_op == info['sym_op']).\
+            filter(table.chain.in_(info['chains'])).\
+            filter(table.unit_type_id.in_(['rna','dna'])).\
+            filter(table.chain_index != None)
+
+    def count_atoms(self, info):
+        with self.session() as session:
+            query = session.query(mod.UnitCoordinates).\
+                join(mod.UnitInfo,
+                     mod.UnitInfo.unit_id == mod.UnitCoordinates.unit_id)
+            query = self.__chain_query__(query, info)
+            counted_atoms = set(['C', 'N', 'O', 'P'])
+            count = 0
+            for row in query:
+                current = 0
+                for line in row.coordinates.split('\n'):
+                    parts = line.split()
+                    if len(parts) >= 2 and parts[2] in counted_atoms:
+                        current += 1
+
+                #if not current:
+                #    self.logger.error("No atoms in %s" % row.unit_id)
+                count += current
+
+            if not count:
+                # self.logger.error("No atoms found for %s" % str(info))
+                return 100.0
+
+            return float(count)
+
+    def count_clashes(self, info):
+        with self.session() as session:
+            u1 = aliased(mod.UnitInfo)
+            u2 = aliased(mod.UnitInfo)
+            query = session.query(mod.UnitClashes).\
+                join(u1, u1.unit_id == mod.UnitClashes.unit_id_1).\
+                join(u2, u2.unit_id == mod.UnitClashes.unit_id_2).\
+                filter(~mod.UnitClashes.atom_name_1.like('%H%')).\
+                filter(~mod.UnitClashes.atom_name_2.like('%H%'))
+
+            query = self.__chain_query__(query, info, table=u1)
+            query = self.__chain_query__(query, info, table=u2)
+
+            return float(query.count())
+
+    def percent_clash(self, info):
+        clashes = self.count_clashes(info)
+        if clashes is None:
+            return (False, 100)
+
+        atoms = self.count_atoms(info)
+        percent_clash = 100 * clashes / atoms
+        return (True, percent_clash)
+
+    def average_rsr(self, info):
+        default_avg_rsr = 40 # on 2017-10-12, maximum observed value was ~31
+        with self.session() as session:
+            query = session.query(mod.UnitQuality.real_space_r).\
+                join(mod.UnitInfo,
+                     mod.UnitInfo.unit_id == mod.UnitQuality.unit_id)
+
+            query = self.__chain_query__(query, info)
+            if not query.count():
+                return (False, default_avg_rsr)
+
+            values = [r.real_space_r for r in query if r.real_space_r is not None]
+            if not values:
+                return (False, default_avg_rsr)
+            return (True, np.mean(values))
+
+    def average_rscc(self, info):
+        default_average_rscc = -1 # minimum possible value for rscc
+        with self.session() as session:
+            query = session.query(mod.UnitQuality.rscc).\
+                join(mod.UnitInfo,
+                     mod.UnitInfo.unit_id == mod.UnitQuality.unit_id)
+
+            query = self.__chain_query__(query, info)
+            if not query.count():
+                return (False, default_average_rscc)
+
+            values = [r.rscc for r in query if r.rscc is not None]
+            if not values:
+                return (False, default_average_rscc)
+            return (True, np.mean(values))
+
+    def resolution(self, info):
+        with self.session() as session:
+            resolution = session.query(mod.PdbInfo.resolution).\
+                filter_by(pdb_id=info['pdb']).\
+                one().\
+                resolution
+            if resolution is None:
+                return (False, 100)
+            return (True, resolution)
+
+    def rfree(self, info):
+        with self.session() as session:
+            rfree = session.query(mod.PdbQuality).\
+                filter_by(pdb_id=info['pdb']).\
+                first()
+
+            if rfree is None or rfree.dcc_rfree is None:
+                return (False, 1.0)
+            return (True, rfree.dcc_rfree)
+
+    # def member_info(self, member):
     #     with self.session() as session:
-    #         query = session.query(
-    #             mod.NrChains.rank.label('index'),
-    #             mod.NrChains.ife_id.label('id'),
-    #             mod.IfeInfo.pdb_id,
-    #             mod.IfeInfo.length,
-    #             mod.IfeChains.chain_id,
-    #             mod.NrClasses.name,
-    #         ).\
-    #             join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.NrChains.ife_id).\
+    #         info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
+    #                              mod.IfeInfo.model).\
+    #             filter_by(ife_id=member['id']).\
+    #             one()
+    #         info = row2dict(info)
+    #         info.update(member)
+
+    #     with self.session() as session:
+    #         query = session.query(mod.ChainInfo.chain_name,
+    #                                 mod.IfeChains.is_structured,
+    #                                 ).\
     #             join(mod.IfeChains,
-    #                  mod.IfeChains.ife_id == mod.IfeInfo.ife_id).\
-    #             join(mod.NrClasses,
-    #                  mod.NrClasses.nr_class_id == mod.NrChains.nr_class_id).\
-    #             filter(mod.NrClasses.nr_release_id == release).\
-    #             filter(mod.NrClasses.resolution == resolution).\
-    #             filter(mod.IfeChains.index == 0)
+    #                     mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
+    #             filter_by(ife_id=member['id'])
 
-    #         data = coll.defaultdict(list)
-    #         for result in query:
-    #             entry = row2dict(result)
-    #             entry['rep'] = (entry['index'] == 0)
-    #             nr = entry['name']
-    #             data[nr].append(entry)
-    #     return data.values()
+    #         if not query.count():
+    #             raise core.InvalidState("Could not find chains for %s" %
+    #                                     member)
 
-    def ife_quality_data(self, ifes):
-        compscore = self._create(CompScore)
-        members = deepcopy(ifes)
-        compscore.load_quality(members)
-        data = {}
-        for ife in members:
-            quality = ife['quality']
-            self.logger.debug('quality: %s' % quality)
-            data[ife['id']] = {
-                'Clashscore': quality.get('clashscore', 100),
-                'Average RSR': quality['average_rsr'],
-                'Percent Clash': quality['percent_clash'],
-                'Average RSCC': quality['average_rscc'],
-                'Rfree': quality['rfree'],
-                'Resolution': quality['resolution'],
-            }
-        return data
+    #         all_chains = [row2dict(c) for c in query]
+    #         valid = op.itemgetter('is_structured')
+    #         chains = [c['chain_name'] for c in all_chains if valid(c)]
+    #         if not chains:
+    #             chains = [c['chain_name'] for c in all_chains]
 
-    def member_info(self, member):
+    #     info['chains'] = chains
+    #     loader = self._create(IfeLoader)
+    #     info['sym_op'] = loader.sym_op(info['pdb'])
+
+    #     return info
+
+
+    def observed_length_sym_op(self, info):
+        """
+        Query the unit_info table to determine the correct symmetry
+        operator and count the number of observed nucleotides in the first chain
+
+        Until 2025-03-12, this query got distinct chain_index values, which
+        meant that chain_index 2 would only get counted once, even if it occurred
+        in three chains in the IFE.  Very strange way of counting.
+        Now we get distinct chain_index and chain values.
+        """
         with self.session() as session:
-            info = session.query(mod.IfeInfo.pdb_id.label('pdb'),
-                                 mod.IfeInfo.model).\
-                filter_by(ife_id=member['id']).\
-                one()
-            info = row2dict(info)
-            info.update(member)
-
-            with self.session() as session:
-                query = session.query(mod.ChainInfo.chain_name,
-                                      mod.IfeChains.is_structured,
-                                      ).\
-                    join(mod.IfeChains,
-                         mod.IfeChains.chain_id == mod.ChainInfo.chain_id).\
-                    filter_by(ife_id=member['id'])
-
-                if not query.count():
-                    raise core.InvalidState("Could not find chains for %s" %
-                                            member)
-
-                all_chains = [row2dict(c) for c in query]
-                valid = op.itemgetter('is_structured')
-                chains = [c['chain_name'] for c in all_chains if valid(c)]
-                if not chains:
-                    chains = [c['chain_name'] for c in all_chains]
-
-            info['chains'] = chains
-            loader = self._create(IfeLoader)
-            info['sym_op'] = loader.sym_op(info['pdb'])
-
-            return info
-
-    def observed_length(self, info):
-        self.logger.info("observed_length: info: %s" % info)
-        with self.session() as session:
-            query = session.query(mod.UnitInfo.chain_index).\
+            query = session.query(mod.UnitInfo.chain_index,mod.UnitInfo.sym_op,mod.UnitInfo.chain).\
                 distinct().\
                 filter(mod.UnitInfo.pdb_id == info['pdb']).\
                 filter(mod.UnitInfo.model == info['model']).\
-                filter(mod.UnitInfo.sym_op == info['sym_op']).\
                 filter(mod.UnitInfo.chain.in_(info['chains'])).\
                 filter(mod.UnitInfo.unit_type_id.in_(['dna','rna'])).\
                 filter(mod.UnitInfo.chain_index != None)
-            self.logger.info("observed_length: after query generation")
-            return query.count()
+
+            sym_op_to_count = {}
+            for row in query:
+                sym_op = row.sym_op
+                if not sym_op in sym_op_to_count:
+                    sym_op_to_count[sym_op] = 0
+                sym_op_to_count[sym_op] += 1
+
+            if '1_555' in sym_op_to_count or len(sym_op_to_count) == 0:
+                sym_op = '1_555'
+            else:
+                sym_op = max(sym_op_to_count.items(), key=op.itemgetter(1))[0]
+
+            nt_count = 0
+            for row in query:
+                if row.sym_op == sym_op:
+                    nt_count += 1
+
+            return nt_count, sym_op
 
         # until 2024-08-18 instead of unit_type_id the query above used a simpler thing:
         # filter(mod.UnitInfo.unit.in_(['A', 'C', 'G', 'U'])).\
         # That recorded 0 for DNA chains, and ignored modified RNA nucleotides.
 
-    def data(self, entry, **kwargs):
+    def data(self, ife_id, **kwargs):
         """
-        Process one ife, called entry.
+        Process one ife id to get data needed to compute the
+        composite quality score.
 
         Parameters
         ----------
@@ -250,33 +329,74 @@ class IfeQualityLoader(core.SimpleLoader):
             The required data for the database update step.
         """
 
-        ife = dict([('index', 0), ('id', entry)])
-        ife = self.member_info(ife)
+        # collect information about this ife in a dictionary
+        info = {}
+        info['ife_id'] = ife_id
 
-        # count the number of observed nucleotides
-        ife['length'] = self.observed_length(ife)
+        fields = ife_id.split('|')
+        if len(fields) < 3:
+            raise core.InvalidState("Invalid ife_id: %s" % ife_id)
 
-        nr_class = []
-        nr_class.append(ife)
+        info['pdb'] = fields[0]
+        info['model'] = fields[1]
 
-        ife_info = self.ife_info(nr_class)
-        quality_data = self.ife_quality_data(nr_class)
+        # use the chains in the ife id, not in accompanying chains
+        chains = []
+        for chain in ife_id.split("+"):
+            fields = chain.split("|")
+            if len(fields) >= 3:
+                chains.append(fields[2])
+        info['chains'] = chains
 
-        data = {
-            'IFE ID': ife['id'],
-            'Observed Length': ife['length'],
-        }
-        data.update(ife_info[ife['id']])
-        data.update(quality_data[ife['id']])
-        self.logger.debug("data: data: %s" % data)
+        # count the number of observed nucleotides in the first chain
+        # also get the symmetry operator to use
+        observed_length, sym_op = self.observed_length_sym_op(info)
+        info['observed_length'] = observed_length
+        info['sym_op'] = sym_op
 
-        yield mod.IfeCqs(
-            ife_id = data['IFE ID'],
-            obs_length = data['Observed Length'],
-            clashscore = data['Clashscore'],
-            average_rsr = data['Average RSR'],
-            average_rscc = data['Average RSCC'],
-            percent_clash = data['Percent Clash'],
-            rfree = data['Rfree'],
-            resolution = data['Resolution'])
+        # calculate components of composite quality score
+        # first returned component is Boolean indicating if the data
+        # was present or not, but that is not actually used
+        a, info['average_rsr'] = self.average_rsr(info)
+        b, info['average_rscc'] = self.average_rscc(info)
+        c, info['percent_clash'] = self.percent_clash(info)
+        d, info['rfree'] = self.rfree(info)
+        e, info['resolution'] = self.resolution(info)
 
+        if self.testing or self.fixing:
+            print('Processed %s' % ife_id)
+            # load the data from the database if it is there already
+            with self.session() as session:
+                query = session.query(mod.IfeCqs).filter(mod.IfeCqs.ife_id==ife_id)
+
+                if query.count() > 1:
+                    self.logger.info('Error: multiple entries for %s' % ife_id)
+                if query.count() == 1:
+                    for row in query:
+                        if abs(row.average_rsr - info['average_rsr']) > 0.01:
+                            self.logger.info('Change in %s: old rsr: %s, new rsr: %s' % (row.ife_id,row.average_rsr, info['average_rsr']))
+                        if abs(row.average_rscc - info['average_rscc']) > 0.01:
+                            self.logger.info('Change in %s: old rscc: %s, new rscc: %s' % (row.ife_id,row.average_rscc, info['average_rscc']))
+                        if abs(row.percent_clash - info['percent_clash']) > 0.01:
+                            self.logger.info('Change in %s: old clash: %s, new clash: %s' % (row.ife_id,row.percent_clash, info['percent_clash']))
+                        if abs(row.rfree - info['rfree']) > 0.01:
+                            self.logger.info('Change in %s: old rfree: %s, new rfree: %s' % (row.ife_id,row.rfree, info['rfree']))
+                        if abs(row.resolution - info['resolution']) > 0.01:
+                            self.logger.info('Change in %s: old resolution: %s, new resolution: %s' % (row.ife_id,row.resolution, info['resolution']))
+                        if row.obs_length < info['observed_length']:
+                            self.logger.info('Change in %s: longer: old observed_length: %s, new observed_length: %s' % (row.ife_id,row.obs_length, info['observed_length']))
+                        if row.obs_length > info['observed_length']:
+                            self.logger.info('Change in %s: shorter: old observed_length: %s, new observed_length: %s' % (row.ife_id,row.obs_length, info['observed_length']))
+
+        if self.fixing or not self.testing:
+            yield mod.IfeCqs(
+                ife_id = info['ife_id'],
+                obs_length = info['observed_length'],
+                clashscore = 100,                        # default value for some reason
+                average_rsr = info['average_rsr'],
+                average_rscc = info['average_rscc'],
+                percent_clash = info['percent_clash'],
+                rfree = info['rfree'],
+                resolution = info['resolution'])
+        else:
+            raise core.Skip('Not writing ife_cqs entries yet')
