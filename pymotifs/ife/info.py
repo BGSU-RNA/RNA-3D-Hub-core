@@ -4,6 +4,7 @@ For each PDB id, group chains together into IFEs.
 """
 
 import itertools as it
+from sqlalchemy.orm import aliased
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -52,6 +53,10 @@ class Loader(core.SimpleLoader):
 
         self.logger.info("ife_id: %s" % ife_id)
 
+        if group.length < 2:
+            self.logger.info("Skipping IFE %s because it has fewer than two nucleotides" % ife_id)
+            return
+
         yield mod.IfeInfo(
             ife_id=ife_id,
             pdb_id=group.pdb,
@@ -78,7 +83,11 @@ class Loader(core.SimpleLoader):
                 is_accompanying=accompanying,
                 index=index)
 
+
     def store_many_chains(self, chain_partners, chain_chain_to_count, pdb_id):
+        """
+        Used when one chain has many partners, as in DNA origami structures
+        """
         # make that chain the IFE and skip the rest of this stage
         chain1 = chain_partners[0][0]
         ife_id = "%s|%s|%s" % (pdb_id, 1, chain1)
@@ -150,18 +159,22 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb_id, **kwargs):
 
-        # check for DNA origami structures and if found,
-        # completely skip the usual code
-
         # query for all basepairs in the structure
         # count cWW basepairs within and between chains
+        # join with unit_info to make sure chain_index is not null
         chain_chain_to_count = {}
         with self.session() as session:
             UPI = mod.UnitPairsInteractions2024
+            UI1 = aliased(mod.UnitInfo)
+            UI2 = aliased(mod.UnitInfo)
             query = session.query(UPI.unit_id_1, UPI.unit_id_2).\
+                join(UI1, UPI.unit_id_1 == UI1.unit_id).\
+                join(UI2, UPI.unit_id_2 == UI2.unit_id).\
                 filter(UPI.pdb_id == pdb_id).\
                 filter(UPI.f_lwbp == 'cWW').\
-                filter(UPI.program == 'fr3d')
+                filter(UPI.program == 'fr3d').\
+                filter(UI1.chain_index != None).\
+                filter(UI2.chain_index != None)
 
             for row in query:
                 fields1 = row.unit_id_1.split('|')
@@ -191,6 +204,8 @@ class Loader(core.SimpleLoader):
 
         # make sure the list is not empty ...
         if len(chain_partners) > 0:
+            # check for DNA origami structures and if found,
+            # completely skip the usual code
             # if the chain with the most partners has more than 10 partners,
             if len(chain_partners[0][1]) > 10:
                 # make that chain the IFE and skip the rest of this stage
