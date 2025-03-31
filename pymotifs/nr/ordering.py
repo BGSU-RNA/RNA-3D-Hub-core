@@ -25,7 +25,7 @@ from pymotifs.constants import DATA_FILE_DIRECTORY
 
 from pymotifs.nr.class_rank import Loader as NrClassRankLoader
 from pymotifs.nr.classes import Loader as NrClassLoader
-from pymotifs.nr.cqs import NrQualityLoader
+from pymotifs.nr.cqs import Loader as NrQualityLoader
 from pymotifs.chain_chain.comparison import Loader as SimilarityLoader
 
 
