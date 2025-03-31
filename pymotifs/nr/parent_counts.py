@@ -41,4 +41,10 @@ class Loader(BaseLoader):
         data = self.cached(NR_CACHE_NAME)
         if not data:
             raise core.InvalidState("No grouping loaded")
-        return self.counts(release, data['parent'], data['parent_counts'])
+
+        molecule_parent_current = kwargs.get('nr_molecule_parent_current','')
+        if molecule_parent_current:
+            # manual run, probably DNA, don't save parent counts
+            raise core.Skip('Manual run, skipping parent counts')
+        else:
+            return self.counts(release, data['parent'], data['parent_counts'])
