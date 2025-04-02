@@ -100,7 +100,22 @@ class Exporter(core.Loader):
                    filter(mod.UnitInfo.unit_type_id.in_(molecule_types)).\
                    filter(mod.UnitInfo.pdb_id.in_(pdbs))
 
-            return [(r.pdb_id, str(r.model), r.chain) for r in query if r.pdb_id in pdbs]
+            chains = set([(r.pdb_id, str(r.model), r.chain) for r in query])
+
+        # get a list of all files in directory that end with _protein.pickle.gz
+        directory = os.path.join(DATA_FILE_DIRECTORY,'units')
+        written_chains = set()
+        for f in os.listdir(directory):
+            if f.endswith('_NA_unit_annotations.pickle'):
+                # extract the pdb ids from the files into a set
+                written_chains.add(tuple(f.split('_')[0].split('-')))
+
+        need_to_write = sorted(chains - written_chains)
+
+        if len(need_to_write) == 0:
+            raise core.Skip("No new nucleic acid chains to process")
+
+        return need_to_write
 
 
     def data(self, ichain, **kwargs):
