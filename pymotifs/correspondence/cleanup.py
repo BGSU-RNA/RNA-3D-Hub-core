@@ -28,26 +28,40 @@ class Loader(core.Stage):
         :returns: A list of correspondence ids to process.
         """
 
-        if len(pdbs) < 500:
-            raise core.Skip("Too few pdb files being processed to clean up correspondences")
+        # if len(pdbs) < 500:
+        #     raise core.Skip("Too few pdb files being processed to clean up correspondences")
 
         with self.session() as session:
+            # get correspondence_id values that are in both tables
             position = mod.CorrespondencePositions
-            info = mod.CorrespondenceInfo
             subquery = session.query(position.correspondence_id).\
                 distinct().\
                 subquery()
 
+            info = mod.CorrespondenceInfo
             query = session.query(info).\
                 join(subquery,
-                     subquery.c.correspondence_id == info.correspondence_id)
-            return [result.correspondence_id for result in query]
+                     subquery.c.correspondence_id == info.correspondence_id).\
+                filter(info.good_alignment == False)
+
+            poor_alignment_ids = set([result.correspondence_id for result in query])
+
+        if len(poor_alignment_ids) == 0:
+            raise core.Skip("No poor alignments found")
+
+        return poor_alignment_ids
 
     def should_process(self, corr_id, **kwargs):
         """
         Test if we should process some correspondence. This is done by
         testing if it is not a good alignment. If not then we process,
         otherwise we do not.
+
+        It's slow to check this separately for each correspondence_id
+        identified in to_process, but faster now that to_process only
+        returns those correspondence_id values that have a poor alignment.
+        Once we are confident that it's doing OK, we could have this
+        function always return True, that would be faster.
         """
 
         with self.session() as session:
@@ -56,8 +70,11 @@ class Loader(core.Stage):
 
     def process(self, corr_id, **kwargs):
         """
-        Process the correspodence. This will delete the correspondence positions
-        as this means the correspondence is not a good alignment.
+        Process the correspondence.
+        This will delete the correspondence positions
+        because the correspondence is not a good alignment.
+        But it will leave the entry in correspondence.info so we can
+        see that we tried.
         """
 
         if kwargs.get('dry_run'):
