@@ -59,6 +59,12 @@ class Exporter(core.Loader):
 
 
     def to_process(self, pdbs, **kwargs):
+        """
+        Ignore the list of pdbs passed in.
+        Find all pdb ids with at least one amino acid unit.
+        Find all files in the units directory that end with _protein.pickle.gz.
+        Take the set difference.
+        """
 
         with self.session() as session:
             query = session.query(mod.UnitInfo.pdb_id).\
@@ -76,6 +82,9 @@ class Exporter(core.Loader):
         written_pdb_ids = set([f.split('_')[0] for f in files])
 
         need_to_write = sorted(pdb_ids - written_pdb_ids)
+
+        if len(need_to_write) == 0:
+            raise core.Skip("No new pdb files to process")
 
         return need_to_write
 
