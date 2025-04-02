@@ -55,15 +55,14 @@ class IfeQualityLoader(core.SimpleLoader):
             List of IFEs to process
         """
 
+        # get list of all ifes
         with self.session() as session:
             query = session.query(mod.IfeInfo.ife_id).\
                 filter(mod.IfeInfo.model.isnot(None)).\
                 filter(mod.IfeInfo.new_style == True).\
                 filter(mod.IfeInfo.pdb_id.in_(pdbs))
 
-            ife_list = []
-            for r in query:
-                ife_list.append(r.ife_id)
+            ife_list = set([r.ife_id for r in query])
 
         if len(ife_list) == 0:
             raise core.Skip("No IFEs to process for CQS")
@@ -71,7 +70,18 @@ class IfeQualityLoader(core.SimpleLoader):
         if self.testing:
             print('Found %d IFEs to process' % len(ife_list))
 
-        return sorted(ife_list,reverse=True)
+        # get list of ifes that already have entries in ife_cqs table
+        with self.session() as session:
+            query = session.query(mod.IfeCqs.ife_id)
+
+            ife_processed = set([r.ife_id for r in query])
+
+        need_to_process = ife_list - ife_processed
+
+        if len(need_to_process) == 0:
+            raise core.Skip("No new IFEs to process for CQS")
+
+        return sorted(need_to_process)
 
 
     def query(self, session, ife_id):
@@ -364,7 +374,7 @@ class IfeQualityLoader(core.SimpleLoader):
         e, info['resolution'] = self.resolution(info)
 
         if self.testing or self.fixing:
-            print('Processed %s' % ife_id)
+            # print('Processed %s' % ife_id)
             # load the data from the database if it is there already
             with self.session() as session:
                 query = session.query(mod.IfeCqs).filter(mod.IfeCqs.ife_id==ife_id)
