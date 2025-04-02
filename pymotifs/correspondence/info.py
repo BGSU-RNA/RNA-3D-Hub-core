@@ -37,8 +37,8 @@ class Loader(core.MassLoader):
     allow_no_data = True
     table = CorrespondenceInfo
 
-    exact_cutoff = CORRESPONDENCE_EXACT_CUTOFF                                      ## = 36 """Length cutoff before being matched as small"""
-    huge_cutoff = CORRESPONDENCE_HUGE_CUTOFF                                        ## = 2000 """Length cutoff before being matched as huge"""
+    exact_cutoff = CORRESPONDENCE_EXACT_CUTOFF   ## = 36 """Length cutoff before being matched as small"""
+    huge_cutoff = CORRESPONDENCE_HUGE_CUTOFF     ## = 2000 """Length cutoff before being matched as huge"""
 
 
     # def to_process(self, pdbs, **kwargs):
@@ -71,10 +71,7 @@ class Loader(core.MassLoader):
 
     def look_up_sequences(self, pdb):
         """
-        Return all exp_seq_ids for the given pdb. This only assign the
-        species id from the given pdb.
-
-        We will need to get the taxonomy id from taxid_species_domain table
+        Return exp_seq_id, length, species_taxid, entity_type for the given pdb.
 
         :param str pdb: The pdb id to get all sequences for.
         :returns: A list of dictionaries of unique sequences.
@@ -91,8 +88,10 @@ class Loader(core.MassLoader):
         #         filter(ExpSeqPdb.pdb_id == pdb).\
         #         filter(ExpSeqInfo.was_normalized).\
         #         distinct()
+
         with self.session() as session:
-            query = session.query(ExpSeqPdb.exp_seq_id.label('id'),                 ## There are some label functions, they are here for rename the column to "id", "length", and "species"
+            query = session.query(ExpSeqPdb.exp_seq_id.label('id'),
+                                  ExpSeqPdb.pdb_id,
                                   ExpSeqInfo.normalized_length.label('length'),
                                   TaxidSpeciesDomain.species_taxid.label('taxonomy_id'),
                                   ExpSeqInfo.entity_type.label('entity_type')).\
@@ -104,6 +103,7 @@ class Loader(core.MassLoader):
                           TaxidSpeciesDomain.taxonomy_id == ChainInfo.taxonomy_id).\
                 filter(ExpSeqPdb.pdb_id == pdb).\
                 filter(ExpSeqInfo.was_normalized).\
+                filter(ExpSeqInfo.entity_type != None).\
                 distinct()
 
             if not query.count():
@@ -130,9 +130,17 @@ class Loader(core.MassLoader):
         length_matches : bool
             If the lengths match
         """
+
         if pair[0]['entity_type'] == 'rna':
             smallest = min(p['length'] for p in pair)
             largest = max(p['length'] for p in pair)
+
+            # special cases to deal with data errors or some other weird thing
+            if pair[1]['pdb_id'] == '9GUT':
+                if largest == 3082:   # 9GUT|1|A, sequence was duplicated
+                    if 1100 < smallest < 1600:
+                        # allows it to be aligned to other SSU chains
+                        return True
 
             if smallest < self.exact_cutoff:
                 return smallest == largest
@@ -144,6 +152,8 @@ class Loader(core.MassLoader):
                 lower = self.huge_cutoff
             else:
                 upper = min(upper, self.huge_cutoff)
+
+            # self.logger.info("length match info: %5d %5d %5d %5d" % (lower, smallest, largest, upper))
 
             return lower <= smallest <= largest <= upper
 
@@ -196,7 +206,8 @@ class Loader(core.MassLoader):
         return self._known
 
     def is_known(self, pair):
-        """Determine if this pair has already been computed.
+        """
+        Determine if this pair has already been computed.
 
         :param tuple pair: The pair of sequences.
         :returns: A boolean.
@@ -205,7 +216,8 @@ class Loader(core.MassLoader):
         return (pair[0]['id'], pair[1]['id']) in self.known
 
     def ids_with_column_names(self, pair):
-        """Turn a tuple into a dictionary for the database.
+        """
+        Turn a tuple into a dictionary for the database.
 
         :param tuple pair: The sequence pair.
         :returns: A dictionary.
@@ -218,8 +230,8 @@ class Loader(core.MassLoader):
 
     def unique_sequences(self, sequences):
         """
-        Merge all sequences into unique sequences. It will merge all species
-        into a single set.
+        Merge all sequences into unique sequences.
+        It will merge all species into a single set.
 
         :param list sequences: A list of the sequences loaded from
         `look_up_sequences`.
@@ -229,7 +241,7 @@ class Loader(core.MassLoader):
         mapping = {}
         for seq in sequences:
             sid = seq['id']
-            self.logger.info("seq_id, length, taxid, type: %5s %4s %10s %9s" % (seq["id"], seq["length"],seq["taxonomy_id"],seq["entity_type"]))
+            # self.logger.info("pdb_id, seq_id, length, taxid, type: %s %5s %4s %10s %9s" % (seq["pdb_id"], seq["id"], seq["length"],seq["taxonomy_id"],seq["entity_type"]))
             if sid not in mapping:
                 mapping[sid] = dict(seq)
                 # mapping[sid]['species'] = set([seq['species']])
@@ -259,6 +271,12 @@ class Loader(core.MassLoader):
         :returns: A boolean.
         """
 
+        # self.logger.info('Checking pair %s length %d and %s length %d' % (pair[0]['id'], pair[0]['length'], pair[1]['id'], pair[1]['length']))
+        # self.logger.info('length_match        %s' % self.length_match(pair))
+        # self.logger.info('species_matches     %s' % self.species_matches(pair))
+        # self.logger.info('entity_type_matches %s' % self.entity_type_matches(pair))
+        # self.logger.info('is_known            %s' % self.is_known(pair))
+
         return self.length_match(pair) and \
             self.species_matches(pair) and \
             self.entity_type_matches(pair) and \
@@ -280,10 +298,14 @@ class Loader(core.MassLoader):
             raise core.InvalidState("Found no new sequences")
 
         self.logger.info("Found %i unique sequences", len(seqs))
+
+        # sorting the sequences by id is why all of the pairs have
+        # the lower sequence id first
         return sorted(seqs, key=lambda s: s['id'])
 
     def pairs(self, pdbs):
-        """Compute all pairs for the given pdbs
+        """
+        Compute all pairs for the given pdbs
 
         :param list pdbs: The list pdbs to process.
         :returns: The list pairs
@@ -309,7 +331,8 @@ class Loader(core.MassLoader):
                       key=lambda p: (p[0]['id'], p[1]['id']))
 
     def data(self, pdbs, **kwargs):
-        """Compute all new correspondences pairs.
+        """
+        Compute all new correspondence pairs.
 
         :param list pdbs: The pdbs to process.
         :returns: A list of pairs to store.
@@ -318,17 +341,28 @@ class Loader(core.MassLoader):
         # get all rna pairs, dna pairs, hydrid pairs, and self pairs
         pairs = self.pairs(pdbs)
 
+        if len(pdbs) < 5:
+            for p in pairs:
+                self.logger.info("Original pair: %s with %s" % p)
+
         # keep only the ones that are close enough to align and not already in the table
         pairs = filter(self.is_match, pairs)
 
+        # if len(pdbs) < 5:
+        #     for p in pairs:
+        #         self.logger.info("Matched pair: %s with %s" % p)
+
         # sort the pairs by the sequence ids, only store them in that order
-        pairs = sorted(pairs, key=lambda p: (p[0]['id'], p[1]['id']))
+        # I'm not sure this accomplishes that, instead it seems to sort the
+        # list of pairs by the first id
+        # pairs = sorted(pairs, key=lambda p: (p[0]['id'], p[1]['id']))
 
         # convert the pairs into the database format
-        pairs = map(self.ids_with_column_names, pairs)
+        pairs = map(self.ids_with_column_names, list(pairs))
+
+        # self.logger.info("Pairs database: %s" % pairs)
 
         # convert to list to execute all the steps above
-        self.logger.info("Converting pairs to list")
         pairs = list(pairs)
         self.logger.info("Found %i new correspondence pairs" % len(pairs))
 
