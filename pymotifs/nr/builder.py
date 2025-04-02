@@ -576,7 +576,7 @@ class Builder(core.Base):
         representative entry. In addition, the members will be sorted and
         assigned a rank based upon the sorting. The representative will always
         be placed in the first position and thus have rank 0, the lowest
-        rank.
+        rank. Composite quality score values will be calculated by using_quality.
 
         Parameters
         ----------
@@ -599,6 +599,8 @@ class Builder(core.Base):
         else:
             query_key = 'DNA_'
 
+        # query to find existing nr_class_name values from nr_class_rank table
+        # we can save time by not re-computing these
         with self.session() as session:
             query = session.query(mod.NrClassRank.nr_class_name).\
             filter(mod.NrClassRank.nr_class_name.startswith(query_key)).\
