@@ -4,8 +4,6 @@ This means the chains which are part of an equivalence class.
 This requires that there is cached NR data to store.
 """
 
-# import datetime as dt
-
 from pymotifs import core
 
 from pymotifs import models as mod
