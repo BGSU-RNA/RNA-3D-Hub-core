@@ -96,17 +96,26 @@ class Loader(core.Loader):
             if not query.count():
                 raise core.InvalidState("Could not get sequence for %s" % exp_id)
 
-            for index, result in enumerate(query):
-                seq_id = result.exp_seq_position_id
-                seq = result.normalized_unit or 'N'
-                ids.append(seq_id)
-                sequence.append(seq)
+            # special cases
+            if exp_id == 17843:   # 9GUT|1|A, sequence was duplicated
+                for index, result in enumerate(query):
+                    if index < 1541:  # only use the first half of the sequence
+                        seq_id = result.exp_seq_position_id
+                        seq = result.normalized_unit or 'N'
+                        ids.append(seq_id)
+                        sequence.append(seq)
+            else:
+                for index, result in enumerate(query):
+                    seq_id = result.exp_seq_position_id
+                    seq = result.normalized_unit or 'N'
+                    ids.append(seq_id)
+                    sequence.append(seq)
 
         return {'ids': ids, 'sequence': ''.join(sequence)}
 
     def info(self, corr_id):
         """
-        Look up the sequences used in the given correspondence.
+        Look up the sequence ids used in the given correspondence.
 
         :param int corr_id: The id of the correspondence to lookup.
         :returns: A tuple of experimental sequences used.
@@ -121,7 +130,7 @@ class Loader(core.Loader):
             result = query.one()
             return (result.exp_seq_id_1, result.exp_seq_id_2)
 
-    def align_sequences(self, corr_id, ref, target):
+    def align_sequences(self, corr_id, ref, target, seq_id_1, seq_id_2):
         """
         Run the alignment on two sequences. This will do an alignment and
         return lists that contain the ids for aligned positions only.
@@ -133,29 +142,20 @@ class Loader(core.Loader):
         lists which positions are aligned.
         """
 
-        seq1, seq2 = self.info(corr_id)
-        # self.logger.info('show seq1: %d and seq2: %d'%(seq1,seq2))
-        # self.logger.info('show the corr_id: %d'%corr_id)
         with self.session() as session:
             query = session.query(mod.ExpSeqInfo.entity_type).\
-                filter(mod.ExpSeqInfo.exp_seq_id.in_([seq1,seq2]))
-        # for result in query:
-        #     self.logger.info("show the query result:%s %s %s" % (result.exp_seq_id, result.entity_type, corr_id))
-        #     print(result.entity_type)
-        #     print(result.exp_seq_id)
+                filter(mod.ExpSeqInfo.exp_seq_id.in_([seq_id_1,seq_id_2]))
 
-
-        entity_type_check = set()
-        # this is a double check for entity types because we have checked sequence pairs when we are making sequence pairs.
-        for result in query:
-
-            if result.entity_type == 'rna':
-                entity_type_check.add('rna')
-            elif result.entity_type == 'dna':
-                entity_type_check.add('dna')
-            elif result.entity_type == 'hybrid':
-                entity_type_check.add('hybrid')
-
+            entity_type_check = set()
+            # this is a double check for entity types because we have checked sequence
+            # pairs when we are making sequence pairs.
+            for result in query:
+                if result.entity_type == 'rna':
+                    entity_type_check.add('rna')
+                elif result.entity_type == 'dna':
+                    entity_type_check.add('dna')
+                elif result.entity_type == 'hybrid':
+                    entity_type_check.add('hybrid')
 
         if len(entity_type_check) > 1:
             raise core.InvalidState('The entity types of the sequence pair are not identical')
@@ -205,29 +205,29 @@ class Loader(core.Loader):
     #         result = query.one()
     #         return (result.exp_seq_id_1, result.exp_seq_id_2)
 
-    def align_sequences_old(self, corr_id, ref, target): ## rename !! align_sequences
-        """Run the alignment on two sequences. This will do an alignment are
-        return lists that contain the ids for aligned positions only.
+    # def align_sequences_old(self, corr_id, ref, target):
+    #     """Run the alignment on two sequences. This will do an alignment are
+    #     return lists that contain the ids for aligned positions only.
 
-        :param int corr_id: The correspondence id to use.
-        :param dict ref: The reference sequence.
-        :param dict target: The target sequence.
-        :returns: A list of dictionaries for each position in the alignment. It
-        lists which positions are aligned.
-        """
+    #     :param int corr_id: The correspondence id to use.
+    #     :param dict ref: The reference sequence.
+    #     :param dict target: The target sequence.
+    #     :returns: A list of dictionaries for each position in the alignment. It
+    #     lists which positions are aligned.
+    #     """
 
-        results = align([ref, target])
+    #     results = align([ref, target])
 
-        data = []
-        for index, result in enumerate(results):
+    #     data = []
+    #     for index, result in enumerate(results):
 
-            data.append({
-                'exp_seq_position_id_1': result[0],
-                'exp_seq_position_id_2': result[1],
-                'correspondence_id': corr_id,
-                'index': index
-            })
-        return data
+    #         data.append({
+    #             'exp_seq_position_id_1': result[0],
+    #             'exp_seq_position_id_2': result[1],
+    #             'correspondence_id': corr_id,
+    #             'index': index
+    #         })
+    #     return data
 
 
 
@@ -242,8 +242,7 @@ class Loader(core.Loader):
         exp_id1, exp_id2 = self.info(corr_id)
         sequence1 = self.sequence(exp_id1)
         sequence2 = self.sequence(exp_id2)
-        ## self.logger.info('corr_id: %s  !!!!!!!!!!!!!%s!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'%(corr_id,sequence1))
-        alignment = self.align_sequences(corr_id, sequence1, sequence2)      ###
+        alignment = self.align_sequences(corr_id, sequence1, sequence2, exp_id1, exp_id2)
         ## self.logger.info('alignment %s'%alignment)
         for position in alignment:
             yield mod.CorrespondencePositions(**position)
