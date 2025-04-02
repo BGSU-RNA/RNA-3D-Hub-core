@@ -1,10 +1,9 @@
 import abc
-import operator as op
-
-import numpy as np
+# import numpy as np
+# import operator as op
 
 from sqlalchemy import func
-from sqlalchemy.orm import aliased
+# from sqlalchemy.orm import aliased
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -17,9 +16,6 @@ from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 # from pymotifs.ife.helpers import IfeLoader
 
 from .core import Representative
-
-# import inspect
-# import traceback
 
 
 class QualityBase(Representative):
@@ -472,7 +468,7 @@ class CompScore(QualityBase):
         """
         Developed as part of nr/cqs.py, but moved here where it belongs.
         That code has been used for a long time to populate the nr_cqs table.
-        cqs needs to be calculate here, when an equivalence class is first created.
+        cqs needs to be calculated here, when an equivalence class is first created.
         """
 
         ife_list = [m['id'] for m in members]
@@ -552,11 +548,14 @@ class CompScore(QualityBase):
 
     def compscore(self, member):
         """
-        Look up the quality score from the nr_cqs table, where it should have
-        been computed earlier.
+        Look up the quality score from the nr_cqs table.
         The value of CQS is computed based on fraction observed, which is
         computed based on the largest sequence length in the class.
         So it needs the nr_name available in order to retrieve the CQS.
+
+        Not sure that this function ever gets called, because the
+        structure of the code now is that the data for nr_cqs is computed
+        at the same time that the ranking is being computed for the first time.
         """
 
         quality = member['quality']
