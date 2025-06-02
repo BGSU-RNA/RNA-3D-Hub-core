@@ -93,7 +93,27 @@ class Exporter(core.Loader):
             if not self.write_all_files:
                 query = query.filter(mod.UnitInfo.pdb_id.in_(pdbs))
 
-            return [(r.pdb_id, r.model, r.chain) for r in query]
+            na_chains = set([(r.pdb_id, str(r.model), r.chain) for r in query])
+            self.logger.info('Found %d na chains' % len(na_chains))
+
+        # get a list of all files in directory that end with _NA.pickle
+        directory = os.path.join(DATA_FILE_DIRECTORY,'units')
+        files = [f for f in os.listdir(directory) if f.endswith('_NA.pickle')]
+        written_chains = set()
+        for f in files:
+            written_chains.add(tuple(f.split("_")[0].split('-')))
+
+        self.logger.info('Found %d na chains already written' % len(na_chains))
+
+        if self.write_all_files:
+            need_to_write = na_chains
+        else:
+            need_to_write = sorted(na_chains - written_chains)
+
+        if len(need_to_write) == 0:
+            raise core.Skip("No new pdb files to process")
+
+        return sorted(need_to_write)
 
 
     def has_data(self, entry, *args, **kwargs):
@@ -153,7 +173,7 @@ class Exporter(core.Loader):
                      join(mod.UnitRotations, mod.UnitInfo.unit_id == mod.UnitRotations.unit_id).\
                      filter(mod.UnitCenters.name == 'glycosidic').\
                      filter(mod.UnitInfo.pdb_id == pdb).\
-                     filter(mod.UnitInfo.model == str(mdl)).\
+                     filter(mod.UnitInfo.model == mdl).\
                      filter(mod.UnitInfo.chain == chn).\
                      order_by(mod.UnitInfo.chain_index)
 
