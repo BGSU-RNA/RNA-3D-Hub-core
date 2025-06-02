@@ -12,7 +12,8 @@ from pymotifs.motif_atlas.release import Loader as ReleaseLoader
 
 
 class BaseLoader(core.SimpleLoader):
-    """This is a convience class for the motif atlas loaders other than the
+    """
+    This is a convenience class for the motif atlas loaders other than the
     release loader and cleanup. They all have the same logic to them for
     detecting if we need to update and what to process. Thus we create a base
     class which handles that logic.
@@ -27,9 +28,10 @@ class BaseLoader(core.SimpleLoader):
         super(BaseLoader, self).mark_processed(pair[0], **kwargs)
 
     def to_process(self, pdbs, **kwargs):
-        """Compute the data to process. The input PDB's are ignored and instead
-        the cache is examine for motif data, IL and HL to import. This will
-        produce a list of tuples of the motifs to import.
+        """
+        Compute the data to process. The input PDB's are ignored and instead
+        the cache is examined for motif data to import.
+        This will produce a list of tuples of the motifs to import.
 
         Parameters
         ----------
@@ -38,18 +40,22 @@ class BaseLoader(core.SimpleLoader):
 
         Returns
         -------
-        A list of tuples like [('IL', '1.0'), ('HL', '1.0'] to import.
+        A list of tuples like [('IL', '1.0'), ('HL', '1.0')] to import.
         """
-        current, _ = ReleaseLoader(self.config, self.session).current_id(**kwargs)
+
+        if 'loop_type' in kwargs.get('manual', {}):
+            loop_types = kwargs['manual']['loop_type'].split(',')
+        else:
+            loop_types = ReleaseLoader.types
+
         data = []
-        for loop_type in ReleaseLoader.types:
+        for loop_type in loop_types:
             cached = self.cached(loop_type)
             if not cached:
-                raise core.InvalidState("No cached data")
-            self.logger.info('debug in utils, the loop_type: %s, cached release: %s, and current:%s' % (loop_type, cached['release'], current))
-            if cached['release'] != current:
-                raise core.InvalidState("Caching in utils.py does not match expected ID")
-            data.append((loop_type, current))
+                self.logger.info('No cached data for %s, moving on to the next loop type' % loop_type)
+            else:
+                current = cached['release']
+                data.append((loop_type, current))
         return data
 
     def __self_query__(self, session, pair):
