@@ -1,4 +1,5 @@
-"""Write the loop to motif assignment data. This will populate the ml_loops
+"""
+Write the loop to motif assignment data. This will populate the ml_loops
 table in the database. This will load the cached data to store all motifs into
 the DB.
 """
@@ -8,7 +9,7 @@ from pymotifs import models as mod
 
 from pymotifs.motif_atlas.utils import BaseLoader
 from pymotifs.motif_atlas.info import Loader as InfoLoader
-from pymotifs.loops.extractor import Loader as LoopLoader
+from pymotifs.loops.quality import Loader as LoopLoader
 from pymotifs.motif_atlas.release import Loader as ReleaseLoader
 
 
@@ -20,7 +21,8 @@ class Loader(BaseLoader):
         return mod.MlLoops
 
     def assignments(self, cached):
-        """Compute the assignments of loop to motif.
+        """
+        Compute the assignments of loop to motif.
 
         Parameters
         ----------
@@ -43,7 +45,8 @@ class Loader(BaseLoader):
         return data
 
     def data(self, pair, **kwargs):
-        """Compute the loop to motif data to store.
+        """
+        Compute the loop to motif data to store.
 
         Parameters
         ----------
