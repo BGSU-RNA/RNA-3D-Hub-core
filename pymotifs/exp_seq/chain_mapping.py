@@ -186,10 +186,24 @@ class Loader(core.SimpleLoader):
                      (mod.ChainInfo.sequence == exp.sequence) & (case(simplify_type, value = mod.ChainInfo.entity_macromolecule_type) == exp.entity_type)).\
                 filter(mod.ChainInfo.chain_id == chain_id)
 
-            if query.count() != 1:
-                raise core.InvalidState("There should be exactly one matching"
-                                        " experimental sequence and entity type")
-            return query.one().exp_seq_id
+            # unfortunately, some sequences got more than one exp_seq_id
+            # because they had a NULL entity type.
+            # Added .first()
+            # it's hard to clean that up, because the second exp_seq_id gets
+            # used in so many places.
+            # I suppose you could delete the second exp_seq_id and see what happens,
+            # then the sequence would get mapped to the first exp_seq_id
+            # You would want to delete all the alignments that depend on the
+            # second exp_seq_iq
+
+            # if query.count() != 1:
+            #     raise core.InvalidState("There should be exactly one matching"
+            #                             " experimental sequence and entity type")
+
+            if query.count() == 0:
+                raise core.InvalidState("No matching sequence, that's a problem")
+
+            return query.first().exp_seq_id
 
     def data(self, chain_id, **kwargs):
         """
