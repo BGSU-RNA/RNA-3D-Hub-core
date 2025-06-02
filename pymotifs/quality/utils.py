@@ -60,7 +60,8 @@ class Utils(core.Base):
     """
 
     def filename(self, pdb, compressed=True):
-        """Compute the filename for the given PDB id.
+        """
+        Compute the filename for the given PDB id.
 
         Parameters
         ----------
@@ -170,8 +171,7 @@ class Utils(core.Base):
 
 class Parser(object):
     """
-    A class to parse the results of getting the quality file. Right now it only
-    processes the RsR related data.
+    A class to parse the results of getting the quality file.
 
     Attributes
     ----------
@@ -189,6 +189,8 @@ class Parser(object):
         density_correlation=rn.rename('DCC', maybe_float),
         rscc=rn.rename('rscc', maybe_float),
         rna_score=rn.rename('RNAscore', maybe_float),
+        Q_score=rn.rename('Q_score', maybe_float),
+        residue_inclusion=rn.rename('residue_inclusion', maybe_float)
     )
 
     unit_id_renamer = rn.Renamer(
