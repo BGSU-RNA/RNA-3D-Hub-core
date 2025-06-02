@@ -24,7 +24,7 @@ pymotifs.ife.grouper.
 from pymotifs import core
 
 from pymotifs.ife.info import Loader as InfoLoader
-from pymotifs.ife.cqs import IfeQualityLoader
+from pymotifs.ife.cqs_with_em import IfeQualityLoader
 
 
 class Loader(core.StageContainer):
