@@ -1,4 +1,5 @@
-"""This will create a new motif release and cluster all motifs. This will
+"""
+Create a new motif release and cluster all motifs. This will
 cluster loops from all structure IFE's, that are representatives of their NR
 class and come from X-ray structures. The clustered motifs are not yet stored
 in the database but are just computed and temporary files are written.
@@ -17,9 +18,8 @@ loop_type : str
     The specific loop type to process
 """
 
-import datetime as dt
-import collections as coll
-
+import collections
+import os
 from sqlalchemy import desc
 
 from pymotifs import core
@@ -37,9 +37,9 @@ from pymotifs.nr.release import Loader as NrReleaseLoader
 from pymotifs.nr.loader import Loader as NrLoader
 from pymotifs.loops.loader import Loader as LoopLoader
 
-from compare_and_cluster import main as make_motif_atlas
+# from pymotifs.motif_atlas.compare_and_cluster import main as make_motif_atlas
 
-Releases = coll.namedtuple('Releases', [
+Releases = collections.namedtuple('Releases', [
     'nr',
     'parent',
     'parent_index',
@@ -52,20 +52,31 @@ BLACKLIST = set([
     'HL_3V2F_005',
     'HL_1Y0Q_002',
     'HL_2IL9_002',
-    'HL_2IL9_005'
+    'HL_2IL9_005',
+    'IL_4WF9_111'     # 2025-03-27 much too large, near cWW pairs would split it into a J3
 ])
 
 
 class Loader(core.MassLoader):
-    """A loader to create a motif release as well as process and cache all release
-    data.
+    """
+    A loader to create a motif release as well as process and cache all release data.
     """
 
+    types = ['J3', 'IL', 'HL']
     types = ['HL', 'IL', 'J3']
+    types = ['IL', 'J3', 'HL']
+    types = ['HL', 'IL', 'J3','J4','J5','J6','J7','J8','J9']
+
     dependencies = set([NrLoader, LoopLoader])
+    mark = False       # only works when to_process returns a list of pdb ids
+    use_marks = False  # no need to look for marks of what was already done
+
+    merge_data = True  # allow overwriting previously written release data
 
     def nr_release_id(self, before_date=None, **kwargs):
-        """Get the nr release, if not given manually.
+        """
+        Get the nr release, if not given manually.
+        That is the Representative Set release number.
         If no before_date is given then we get the latest,
         otherwise we get the release for the given date.
         If no release exists for that date then we fail.
@@ -92,7 +103,8 @@ class Loader(core.MassLoader):
 
 
     def get_nr_release_date(self, nr_release_id):
-        """ Get the date of the specified nr release
+        """
+        Get the date of the specified nr release
         """
 
         with self.session() as session:
@@ -106,19 +118,18 @@ class Loader(core.MassLoader):
 
 
     def current_id(self, **kwargs):
-        """Get the current motif release id and the index. If there is no
-        release then the release_id is 0.0 and the index is 0.
-
-        :returns: The current release id and index.
         """
-        # return (2.0, 0)
-        # self.logger.info('need manually get current_id? %s' % (self.read_manual))
-        # self.logger.info('what is current count?(release) %s' % (self.count))
+        Get the current motif release id and the index.
+        That is supposed to be a value of ml_release_id ml_release_id that is
+        already in the database.
+        If there is no release then the release_id is 0.0 and the index is 0.
+
+        :returns: The current release id and index in the ml_releases table
+        """
+
         if 'ml_release_id' in kwargs.get('manual', {}):
-            manual_current_id, _ = kwargs['manual']['ml_release_id'].split(',')
-            # self.read_manual = False
-            # self.count += 1
-            self.logger.info("We manually get the parent ml release id and manual_current_id ml release id: %s" % manual_current_id)
+            manual_current_id, next_id = kwargs['manual']['ml_release_id'].split(",")
+            self.logger.info("We manually get the current ml_release_id: %s" % manual_current_id)
             if manual_current_id == '0.0':
                 return ('0.0', 0)
             else:
@@ -128,7 +139,7 @@ class Loader(core.MassLoader):
                                     mod.MlReleases.index).\
                         order_by(desc(mod.MlReleases.index)).\
                         filter(mod.MlReleases.ml_release_id == manual_current_id).\
-                        filter(mod.MlReleases.type == self.types[0]).\
+                        filter(mod.MlReleases.type == 'HL').\
                         limit(1)
 
                         current = query.one()
@@ -138,6 +149,7 @@ class Loader(core.MassLoader):
                 except Exception:
                     return (manual_current_id, 0)
         else:
+            # get the most recent ml_release_id
             with self.session() as session:
                 query = session.query(mod.MlReleases.ml_release_id,
                                     mod.MlReleases.index).\
@@ -149,27 +161,33 @@ class Loader(core.MassLoader):
                     return ('0.0', 0)
 
                 current = query.one()
-                self.logger.info('current from automatically defined ml_release_id %s and %s' % (current.ml_release_id , current.index))
+                self.logger.info('Current ml_release_id %s and index %s' % (current.ml_release_id , current.index))
                 return (current.ml_release_id, current.index)
 
 
     def next_motif_release_id(self, **kwargs):
-        """Get the next motif id.
+        """
+        Get the next value for ml_release_id, the one we are creating now.
 
         :returns: The next motif id.
         """
         if 'ml_release_id' in kwargs.get('manual', {}):
+            # set the next release id manually
             ml_release_ids = kwargs['manual']['ml_release_id'].split(',')
             return ml_release_ids[1]
-
-        motif_release, index = self.current_id()
-        mode = self.config['release_mode']['motifs']
-        return rel.next_id(motif_release, mode=mode)
+        else:
+            # get the most recent ml_release_id
+            motif_release, index = self.current_id()
+            # look up whether we are incrementing the major or minor index; like 3.90 to 3.91
+            mode = self.config['release_mode']['motifs']
+            return rel.next_id(motif_release, mode=mode)
 
 
     def to_process(self, pdbs, **kwargs):
-        """Determine what to process.
+        """
+        Determine what to process.
         This stage works on a set of nr releases.
+        Ignores pdbs, because we pass in nr_release_id manually or look it up.
 
         Returns
         -------
@@ -179,7 +197,10 @@ class Loader(core.MassLoader):
 
         parent, parent_index = self.current_id(**kwargs)
         next_release = self.next_motif_release_id(**kwargs)
-        print('debug: parent: %s, parent_index: %s, next_release: %s' %(parent,parent_index,next_release))
+
+        print('Motif atlas parent release: %s, parent_index: %s, next_release: %s' % (parent,parent_index,next_release))
+        self.logger.info('Motif atlas parent release: %s, parent_index: %s, next_release: %s' % (parent,parent_index,next_release))
+
         if parent == '0.0':
             parent = next_release
 
@@ -192,27 +213,34 @@ class Loader(core.MassLoader):
 
 
     def has_data(self, *args, **kwargs):
-        """This will always return True because we only want to update if the time
-        difference has been large enough.
         """
+        Return False so the rest of this stage will run.
+        """
+
         return False
 
 
-    def ifes(self, nr_release_id):
-        """Get a listing of all IFE's to use in clustering. The IFE's must be
+    def ifes(self, nr_release_id, molecule_type):
+        """
+        Get a listing of all IFE's to use in clustering. The IFE's must be
         from the given list of structures, the ife must be representative for
         each class and the class should have the given resolution.
         The experimental method must be in MOTIF_ALLOWED_METHODS.
         This gives a subset of a representative set.
+
+        molecule_type can be 'RNA' or 'DNA'
 
         :pdbs: The pdbs to get the best chains and models for.
         :returns: A dictionary mapping from pdb id to a set of the best chains
         and models.
         """
 
+        if molecule_type == 'RNA':
+            class_start = 'NR'
+        elif molecule_type == 'DNA':
+            class_start = 'DNA'
+
         with self.session() as session:
-            # chains = mod.NrChains
-            # 2024/02/08
             # 2024-06-23 add filter on ifes.new_style
             classranks = mod.NrClassRank
             classes = mod.NrClasses
@@ -225,19 +253,28 @@ class Loader(core.MassLoader):
                 filter(classranks.rank == 0).\
                 filter(classes.nr_release_id == nr_release_id).\
                 filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
+                filter(classes.name.like('%s%%' % class_start)).\
                 filter(ifes.new_style == True).\
                 filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
                 order_by(classranks.ife_id)
 
             if not query.count():
-                raise core.InvalidState("No ifes found for nr %s" %
-                                        nr_release_id)
+                raise core.InvalidState("No %s ifes found for nr %s" % (molecule_type,nr_release_id))
 
-            return [result.ife_id for result in query]
+            ife_list = []
+            for result in query:
+                ife_id = result.ife_id
+                if "6CZR" in ife_id:
+                    # erroneously in a separate equivalence class
+                    continue
+                ife_list.append(ife_id)
+
+            return ife_list
 
 
     def loops_to_exclude(self, **kwargs):
-        """Load the loops to exclude. Sometimes for testing usages we want to
+        """
+        Load the loops to exclude. Sometimes for testing we want to
         exclude loops from analysis without updating the loop quality checks.
         This adds such functionality.
         """
@@ -249,78 +286,15 @@ class Loader(core.MassLoader):
         return exclude
 
 
-    def loops(self, loop_type, ifes, size_limit=None,
-              **kwargs):
-        """
-        Deprecated code as of 2022-10-23 since it cannot deal with symmetry operators.
-
-        Get the list of loop ids to use in clustering. These loops must be
-        from IFE's in the given list and marked as valid in the loop quality
-        step.
-        This is where RNA loops with modified nucleotides get excluded.
-
-        Parameters
-        ----------
-        loop_type : str
-            The type of loop to use, eg, IL, HL.
-        ifes : list
-            A list of ife ids to find loops in.
-
-        Returns
-        -------
-        loops: str
-            A list of loop ids to process.
-        """
-
-        exclude = self.loops_to_exclude(**kwargs)
-
-        found = set()
-        with self.session() as session:
-            loops = mod.LoopInfo
-            quality = mod.LoopQa
-            pos = mod.LoopPositions
-            ife_chains = mod.IfeChains
-            chain_info = mod.ChainInfo
-            units = mod.UnitInfo
-            query = session.query(loops.loop_id).\
-                join(quality, quality.loop_id == loops.loop_id).\
-                join(pos, pos.loop_id == loops.loop_id).\
-                join(units, units.unit_id == pos.unit_id).\
-                join(chain_info,
-                     (chain_info.chain_name == units.chain) &
-                     (chain_info.pdb_id == units.pdb_id)).\
-                join(ife_chains,
-                     ife_chains.chain_id == chain_info.chain_id).\
-                filter(quality.status == 1).\
-                filter(loops.type == loop_type).\
-                filter(ife_chains.ife_id.in_(ifes)).\
-                filter(~loops.loop_id.in_(BLACKLIST)).\
-                distinct()
-
-            if size_limit is not None:
-                query = query.filter(loops.length < size_limit)
-
-            # avoid IL with only 4 nucleotides; happens with strange chain breaks
-            if loop_type == "IL":
-                query = query.filter(loops.length > 4)
-
-
-            found.update(r.loop_id for r in query if r.loop_id not in exclude)
-
-        if not found:
-            raise core.InvalidState("No loops to cluster for %s" %
-                                    loop_release_id)
-        return sorted(found)
-
-
-    def loops_and_strands(self, loop_type, ifes, size_limit=None,
-              **kwargs):
+    def loop_position_border_units(self, loop_type, ifes, size_limit=None, **kwargs):
         """
         Get the list of loop ids to use in clustering, along with a
-        list of unit ids for each strand.
+        mapping from position to border and unit id.
         These loops must be from IFE's in the given list and marked as
         valid in the loop quality step.
-        This is where RNA loops with modified nucleotides get excluded.
+        This is where RNA loops with modified nucleotides *used to* get excluded.
+        New on 2024-12-10:  allow status 1 or 3, to allow loops with
+        modified nucleotides explicitly.
 
         Parameters
         ----------
@@ -337,7 +311,6 @@ class Loader(core.MassLoader):
 
         exclude = self.loops_to_exclude(**kwargs)
 
-        found = set()
         with self.session() as session:
             loops = mod.LoopInfo
             quality = mod.LoopQa
@@ -345,7 +318,7 @@ class Loader(core.MassLoader):
             ife_chains = mod.IfeChains
             chain_info = mod.ChainInfo
             units = mod.UnitInfo
-            query = session.query(pos.loop_id,pos.position,pos.border,pos.unit_id).\
+            query = session.query(pos.loop_id,pos.position_2023,pos.position,pos.border,pos.unit_id,units.chain_index).\
                 join(loops, loops.loop_id == pos.loop_id).\
                 join(quality, quality.loop_id == loops.loop_id).\
                 join(units, units.unit_id == pos.unit_id).\
@@ -354,87 +327,120 @@ class Loader(core.MassLoader):
                      (chain_info.pdb_id == units.pdb_id)).\
                 join(ife_chains,
                      ife_chains.chain_id == chain_info.chain_id).\
-                filter(quality.status == 1).\
+                filter(loops.deprecate == 0).\
+                filter(quality.status.in_([1,3])).\
                 filter(loops.type == loop_type).\
                 filter(ife_chains.ife_id.in_(ifes)).\
-                filter(~pos.loop_id.in_(BLACKLIST)).\
                 distinct()
 
             if size_limit is not None:
+                self.logger.info("Applying loop size limit of %d" % size_limit)
                 query = query.filter(loops.length < size_limit)
 
             # avoid IL with only 4 nucleotides; happens with strange chain breaks
             if loop_type == "IL":
                 query = query.filter(loops.length > 4)
 
-            loopdata = {}
             # Execute the query and get the result
             results = query.all()
 
-            # Get the length of the result
-            result_length = len(results)
+            print('Retrieved %s %s loop positions' % (len(results), loop_type))
+            self.logger.info('Retrieved %s %s loop positions' % (len(results), loop_type))
 
-            # Now 'result_length' contains the number of rows in the query result
-            # print(result_length)
-
-            print('debug: the size of query: %s'%(result_length))
-
+            loop_position_to_border_unit_id = {}
+            loop_id_to_border_count = {}
+            # loop_ids_position_changed = set()
             for result in query:
                 loop_id = result.loop_id
-                self.logger.info(loop_id)
                 if not loop_id in exclude:
-                    if not loop_id in loopdata:
-                        loopdata[loop_id] = {}
-                    loopdata[loop_id][result.position] = (result.border,result.unit_id)
-                # if loop_id in ['J3_2RFK_001', 'J3_3HJY_001']:
-                #     self.logger.info('debug info, func loops_and_strands in release.py, query, loop id is %s and loopdata is %s' % (loop_id, loopdata[loop_id]))
+                    if not loop_id in loop_position_to_border_unit_id:
+                        loop_position_to_border_unit_id[loop_id] = {}
+                        loop_id_to_border_count[loop_id] = 0
+                    loop_position_to_border_unit_id[loop_id][result.position_2023] = (result.border,result.unit_id)
+                    loop_id_to_border_count[loop_id] += result.border
 
-            # for result in results:
-            #     loop_id = result.loop_id
-            #     # self.logger.info(loop_id)
-            #     # if not loop_id in exclude:
-            #     #     if not loop_id in loopdata:
-            #     #         loopdata[loop_id] = {}
-            #     #     loopdata[loop_id][result.position] = (result.border,result.unit_id)
-            #     if loop_id in ['J3_2RFK_001', 'J3_3HJY_001']:
-            #         self.logger.info('debug info, func loops_and_strands in release.py, resluts, loop id is %s and loopdata is %s' % (loop_id, (result.position, result.border,result.unit_id)))
+                    # loop_id_to_model_symmetry_chain_index[loop_id]
 
+                    # if not result.position == result.position_2023:
+                    #     loop_position_to_border_unit_id[loop_id]['position'] = 'changed'
+                    #     if not loop_id in loop_ids_position_changed:
+                    #         self.logger.info("Position changed for loop %s" % loop_id)
+                    #         loop_ids_position_changed.add(loop_id)
+
+            # identify and remove loops with empty strands, for whatever reason
+            if loop_type == 'HL':
+                border_requirement = 2
+            elif loop_type == 'IL':
+                border_requirement = 4
+            elif loop_type[0] == 'J':
+                border_requirement = 2 * int(loop_type[1:])
+            for loop_id in list(loop_position_to_border_unit_id.keys()):
+                if loop_id_to_border_count[loop_id] < border_requirement:
+                    self.logger.info("Excluding loop %s, only %d border positions" % (loop_id,loop_id_to_border_count[loop_id]))
+                    for position, data in loop_position_to_border_unit_id[loop_id].items():
+                        if not position == 'position':
+                            self.logger.info("%s\t%2d\t%d\t%s" % (loop_id,position,data[0],data[1]))
+                    del loop_position_to_border_unit_id[loop_id]
 
             # identify and remove loops generated by a single non-trivial symmetry operator
             symmetry_exclusion_counter = 0
-            for loop_id in list(loopdata.keys()):
+            for loop_id in list(loop_position_to_border_unit_id.keys()):
                 default_symmetry_found = False
+                duplicate_chain_index = None
                 symmetries = set()
-                for position in loopdata[loop_id].keys():
-                    unit_id = loopdata[loop_id][position][1]
-                    fields = unit_id.split("|")
-                    if len(fields) < 9:
-                        default_symmetry_found = True
-                    else:
-                        symmetries.add(fields[8])
+                for position in loop_position_to_border_unit_id[loop_id].keys():
+                    if not position == 'position':
+                        unit_id = loop_position_to_border_unit_id[loop_id][position][1]
+                        fields = unit_id.split("|")
+                        if len(fields) < 9:
+                            default_symmetry_found = True
+                        else:
+                            symmetries.add(fields[8])
 
                 if not default_symmetry_found:
                     if len(symmetries) == 1:
                         symmetry = list(symmetries)[0]
                         if not symmetry == "P_1":
                             self.logger.info("Excluding loop %s, all symmetry operation %s" % (loop_id,symmetry))
-                            del loopdata[loop_id]
+                            del loop_position_to_border_unit_id[loop_id]
                             symmetry_exclusion_counter += 1
+
+                if duplicate_chain_index:
+                    self.logger.info("Excluding loop %s because of chain index duplication %s" % (loop_id,duplicate_chain_index))
+                    del loop_position_to_border_unit_id[loop_id]
 
             self.logger.info("Excluding %d loops because of symmetries" % symmetry_exclusion_counter)
 
-            self.logger.info(loopdata)
+            # sort by length of first unit id to keep first strand without symmetries
+            first_unit_id_length = []
+            for loop_id in loop_position_to_border_unit_id.keys():
+                if 1 in loop_position_to_border_unit_id[loop_id]:
+                    unit_id = loop_position_to_border_unit_id[loop_id][1][1]
+                    fields = unit_id.split("|")
+                    first_unit_id_length.append((len(fields),loop_id))
+                    self.logger.info('First unit id length for loop %s is %d' % (loop_id,len(fields)))
 
-            found = loopdata.keys()
+            # make sure we do not have the same loop twice, with different symmetries
+            loop_short_unit_ids = set()
+            for l, loop_id in sorted(first_unit_id_length):
+                short_unit_id = []
+                for position in loop_position_to_border_unit_id[loop_id].keys():
+                    if not position == 'position':
+                        unit_id = loop_position_to_border_unit_id[loop_id][position][1]
+                        fields = unit_id.split("|")
+                        short_unit_id.append("|".join(fields[:5]))
+                short_unit_ids = ",".join(sorted(short_unit_id))
+                if short_unit_ids in loop_short_unit_ids:
+                    self.logger.info("Excluding loop %s because of duplicate short unit ids %s" % (loop_id,short_unit_ids))
+                    del loop_position_to_border_unit_id[loop_id]
+                else:
+                    loop_short_unit_ids.add(short_unit_ids)
 
-        if not found:
-            raise core.InvalidState("No loops to cluster for %s" % loop_release_id)
-
-        # return sorted(found)
-        return loopdata
+        return loop_position_to_border_unit_id
 
     def load_and_cache(self, loop_type, releases, folder):
-        """This will load the result of running the pipeline and cache the
+        """
+        This will load the result of running the pipeline and cache the
         data.
 
         :param str loop_type: The loop type, IL, HL, etc
@@ -448,11 +454,9 @@ class Loader(core.MassLoader):
         self.cache(loop_type, motifs)
 
 
-    def cluster(self, loop_type, releases, ifes, **kwargs):
-        """This will cluster all motifs of the given loop type in the given
-        ifes. It will run the matlab code to cluster all motifs and then the
-        produced data will be loaded into a single data structure and cached
-        for future use.
+    def cluster(self, loop_type, releases, ifes, molecule_type, **kwargs):
+        """
+        Cluster all motifs of the given loop type in the given ifes.
 
         :param str loop_type: The type of loop, ie IL or HL.
         :param Release releases: The named tuple of the type of loops.
@@ -480,64 +484,102 @@ class Loader(core.MassLoader):
 
         #loops = self.loops(loop_type, ifes, size_limit=size_limit, **kwargs)
 
-        loops = self.loops_and_strands(loop_type, ifes, size_limit=size_limit, **kwargs)
+        loop_position_to_border_unit = self.loop_position_border_units(loop_type, ifes, size_limit=size_limit, **kwargs)
 
-        self.logger.info("Found %d %s loops" % (len(loops),loop_type))
-        self.logger.info("Starting to cluster all %s" % loop_type)
+        if len(loop_position_to_border_unit) == 0:
+            self.logger.info("No %s loops found, not clustering" % loop_type)
+            return []
 
-        # The following two lines will call builder and ClusterMotif in cluster.py to run matlab code
+        self.logger.info("Found %d %s loops, starting to cluster them" % (len(loop_position_to_border_unit),loop_type))
+
+        # The following two lines will call builder.py which uses ClusterMotif in cluster.py
+        # which calls main in compare_and_cluster.py.
         builder = Builder(self.config, self.session)
-        motifs = builder(loop_type, releases.parent, releases.current, loops)
+        motifs = builder(loop_type, releases.parent, releases.current, loop_position_to_border_unit, molecule_type)
 
         self.cache(loop_type, motifs)
         self.logger.info("Done clustering %s" % loop_type)
+
         return motifs
 
-    def data(self, releases, **kwargs):
-        """Compute the releases for the given pdbs. This will cluster the
-        motifs in the files as well as write a release. Future motif stages
-        store the clustered data.
+
+    def add_group_id_to_diagnostic_file(self, loop_type, motifs):
+        # change group number in a loop diagnostic into motif group id
+        # this is not a particuarly good place to do this, but this is
+        # one place where the variables are available
+
+        # self.logger.info(motifs)
+
+        cluster_number_to_group_id = {}
+        for cluster_number, motif in enumerate(motifs['motifs']):
+            cluster_number_to_group_id[cluster_number] = motif['motif_id']
+
+        loop_annotation_file = os.path.join(motifs['motifs'][0]['2d'].split('2ds')[0], loop_type + '_similar_pairs.txt')
+
+        self.logger.info('Modifying loop annotation file %s' % loop_annotation_file)
+
+        if os.path.exists(loop_annotation_file):
+            with open(loop_annotation_file, 'rt') as f:
+                loop_annotations = f.readlines()
+
+            # print('found:')
+            # print(loop_annotations)
+
+            with open(loop_annotation_file, 'wt') as f:
+                for line in loop_annotations:
+                    fields = line.strip().split('\t')
+                    fields[2] = cluster_number_to_group_id.get(int(fields[2]), fields[2])
+                    fields[8] = cluster_number_to_group_id.get(int(fields[8]), fields[8])
+                    f.write('\t'.join(fields) + '\n')
+                    print('\t'.join(fields))
+
+
+    def data(self, release, **kwargs):
+        """
+        Compute the release for the loop types specified above.
+
+        Later motif stages store the clustered data.
 
         :param list pdbs: The pdbs to store.
         :returns: A list of new releases, one for each type (eg IL, HL).
         """
 
-        ifes = self.ifes(releases.nr)
-        nr_date = self.get_nr_release_date(releases.nr)
+        molecule_types = ['RNA']
 
-        self.logger.info("Found %d ifes in release %s" % (len(ifes),releases.nr))
-        self.logger.info("Using date %s for release %s" % (nr_date,releases.nr))
+        for molecule_type in molecule_types:
+            # determine which ifes should be in the current release
+            ifes = self.ifes(release.nr,molecule_type)
+            self.logger.info("Found %d %s ifes in release %s" % (len(ifes),molecule_type,release.nr))
 
+            # look up the date of the nr release this motif atlas release
+            # is based on, to store in ml_releases under date
+            # That is not the same as the date on which this code is running.
+            nr_date = self.get_nr_release_date(release.nr)
+            self.logger.info("Using date %s for release %s" % (nr_date,release.nr))
 
-        """
-        if ":" in now:
-            nowstring = dt.strftime(dt.strptime(now, "%Y-%m-%d %H:%M:%S").date(), "%Y%m%d")
-        else:
-            nowstring = now.replace("-","")
-        """
+            # use loop types above, or specify manually
+            if 'loop_type' in kwargs.get('manual', {}):
+                loop_types = kwargs['manual']['loop_type'].split(',')
+            else:
+                loop_types = self.types
 
-        # loop_types = ['HL','IL']
-        loop_types = self.types
-        if 'loop_type' in kwargs.get('manual', {}):
-            loop_types = kwargs['manual']['loop_type'].split(',')
+            data = []
+            for loop_type in loop_types:
+                # the cluster method stores the data in some cache,
+                # which is then read in later stages and put in the database
+                motifs = self.cluster(loop_type, release, ifes, molecule_type, **kwargs)
 
-        data = []
-        for loop_type in loop_types:
-            motifs = self.cluster(loop_type, releases, ifes, **kwargs)
-            # with open(motifs['graph'], 'rb') as raw:
-            #     graphml = raw.read().replace('\n', '')
-            # data.append(mod.MlReleases(ml_release_id=releases.current,
-            #                            parent_ml_release_id=releases.parent,
-            #                            date=nr_date,
-            #                            type=loop_type,
-            #                            index=releases.parent_index + 1,
-            #                            nr_release_id=releases.nr,
-            #                            graphml=graphml))
-            data.append(mod.MlReleases(ml_release_id=releases.current,
-                                       parent_ml_release_id=releases.parent,
-                                       date=nr_date,
-                                       type=loop_type,
-                                       index=releases.parent_index + 1,
-                                       nr_release_id=releases.nr))
+                # this registers that the clustering ran and the release was created
+                # the data is not put into the database until all loop_types are done
+                data.append(mod.MlReleases(ml_release_id=release.current,
+                                        parent_ml_release_id=release.parent,
+                                        date=nr_date,
+                                        type=loop_type,
+                                        index=release.parent_index + 1,
+                                        nr_release_id=release.nr))
+
+                if len(motifs) > 0:
+                    self.add_group_id_to_diagnostic_file(loop_type,motifs)
 
         return data
+
