@@ -3,7 +3,6 @@ This is a loader which will copy the generated motif files into the correct
 directories for the website and JAR3D work.
 """
 import os
-import re
 import shutil
 
 from pprint import pformat
@@ -17,7 +16,8 @@ class Loader(core.Loader):
     dependencies = set([ReleaseLoader])
 
     def to_process(self, pdbs, **kwargs):
-        """Compute the data to process. The input PDB's are ignored and instead
+        """
+        Compute the data to process. The input PDB's are ignored and instead
         the cache is examined for motif data, IL and HL to import. This will
         produce a list of tuples of the motifs to import.
 
@@ -28,21 +28,26 @@ class Loader(core.Loader):
 
         Returns
         -------
-        A list of tuples like [('IL', '1.0'), ('HL', '1.0'] to import.
+        A list of tuples like [('IL', '1.0'), ('HL', '1.0')] to import.
         """
-        current, _ = ReleaseLoader(self.config, self.session).current_id(**kwargs)
+
+        if 'loop_type' in kwargs.get('manual', {}):
+            loop_types = kwargs['manual']['loop_type'].split(',')
+        else:
+            loop_types = ReleaseLoader.types
+
         data = []
-        for loop_type in ReleaseLoader.types:
+        for loop_type in loop_types:
             cached = self.cached(loop_type)
             if not cached:
-                raise core.InvalidState("No cached data")
-            self.logger.info('debug in secondary_structure, the loop_type: %s, cached release: %s, and current:%s' % (loop_type, cached['release'], current))
-            if cached['release'] != current:
-                raise core.InvalidState("Caching in secondary_structure does not match expected ID")
-            data.append((loop_type, current))
+                self.logger.info('No cached data for %s, moving on to the next loop type' % loop_type)
+            else:
+                current = cached['release']
+                data.append((loop_type, current))
         return data
 
     def final_directory(self, loop_type, release):
+        # set in hub-core/conf/bootstrap.json.txt
         return os.path.join(
             self.config['locations']['2ds_destination'],
             loop_type + release
@@ -54,7 +59,6 @@ class Loader(core.Loader):
             self.final_directory(type, release),
             motif['motif_id'] + '.png',
         )
-
 
     def web_directory(self, loop_type, release):
         return os.path.join(
@@ -116,61 +120,58 @@ class Loader(core.Loader):
         if not os.path.isdir(directory):
             self.logger.debug("Failed to create directory %s", directory)
 
-        web_dir = self.web_directory(loop_type, release)
-        self.logger.debug("Web directory: %s", web_dir)
-        if not os.path.isdir(web_dir):
-            os.makedirs(web_dir)
-            self.logger.debug("Needed to create web directory %s", web_dir)
+        # web_dir = self.web_directory(loop_type, release)
+        # self.logger.debug("Web directory: %s", web_dir)
+        # if not os.path.isdir(web_dir):
+        #     os.makedirs(web_dir)
+        #     self.logger.debug("Needed to create web directory %s", web_dir)
 
-        if not os.path.isdir(web_dir):
-            self.logger.debug("Failed to create web directory %s", web_dir)
+        # if not os.path.isdir(web_dir):
+        #     self.logger.debug("Failed to create web directory %s", web_dir)
 
-        mat_fin = self.mat_final_directory(loop_type, release)
-        self.logger.debug("Use directory %s for mat files...", mat_fin)
-        if not os.path.isdir(mat_fin):
-            os.makedirs(mat_fin)
-            self.logger.debug("Needed to create directory %s", mat_fin)
+        # mat_fin = self.mat_final_directory(loop_type, release)
+        # self.logger.debug("Use directory %s for mat files...", mat_fin)
+        # if not os.path.isdir(mat_fin):
+        #     os.makedirs(mat_fin)
+        #     self.logger.debug("Needed to create directory %s", mat_fin)
 
-        if not os.path.isdir(mat_fin):
-            self.logger.debug("Failed to create directory %s", mat_fin)
+        # if not os.path.isdir(mat_fin):
+        #     self.logger.debug("Failed to create directory %s", mat_fin)
 
-        mat_check = 0
+        # mat_check = 0
 
         for motif in cached['motifs']:
-            if mat_check == 0:
-                mat_dir = re.sub('/2ds/.*$','/mat',motif['2d'])
-                self.logger.debug("mat directory: %s", mat_dir)
-                if not os.path.isdir(mat_dir):
-                    os.makedirs(mat_dir)
-                    self.logger.debug("Needed to create mat directory %s", mat_dir)
-                    mat_check = 1
+            # if mat_check == 0:
+            #     mat_dir = re.sub('/2ds/.*$','/mat',motif['2d'])
+            #     self.logger.debug("mat directory: %s", mat_dir)
+            #     if not os.path.isdir(mat_dir):
+            #         os.makedirs(mat_dir)
+            #         self.logger.debug("Needed to create mat directory %s", mat_dir)
+            #         mat_check = 1
 
-                if not os.path.isdir(mat_dir):
-                    self.logger.debug("Failed to create mat directory %s", mat_dir)
+            #     if not os.path.isdir(mat_dir):
+            #         self.logger.debug("Failed to create mat directory %s", mat_dir)
 
             location = self.final_location(release, motif)
-            web_location = self.web_location(release, motif)
-            """
-                # what is motif['2d]???
-                # motif['2d'] = os.path.join(directory, '2ds', name + '.png')
-            """
+            # web_location = self.web_location(release, motif)
+
             for svgorpng in ['png','svg']:
                 if svgorpng == 'png':
                     self.logger.info("Copying motif 2d png %s %s to %s",
                                     motif['motif_id'], motif['2d'], location)
                     shutil.copy(motif['2d'], location)
-                    self.logger.info("Copying motif 2d png %s %s to %s",
-                                    motif['motif_id'], motif['2d'], web_location)
-                    shutil.copy(motif['2d'], web_location)
+                    # self.logger.info("Copying motif 2d png %s %s to %s",
+                    #                 motif['motif_id'], motif['2d'], web_location)
+                    # shutil.copy(motif['2d'], web_location)
                 elif svgorpng == 'svg':
                     svg_file = motif['2d'].replace('png', 'svg')
                     location_svg = location.replace('png', 'svg')
-                    web_location_svg = web_location.replace('png', 'svg')
+                    # web_location_svg = web_location.replace('png', 'svg')
                     self.logger.info("Copying motif 2d svg %s %s to %s",
                                     motif['motif_id'], svg_file, location_svg)
                     shutil.copy(svg_file, location_svg)
-                    self.logger.info("Copying motif 2d svg %s %s to %s",
-                                    motif['motif_id'], svg_file, web_location_svg)
-                    shutil.copy(svg_file, web_location_svg)
-                    
+                    # self.logger.info("Copying motif 2d svg %s %s to %s",
+                    #                 motif['motif_id'], svg_file, web_location_svg)
+                    # shutil.copy(svg_file, web_location_svg)
+
         return None
