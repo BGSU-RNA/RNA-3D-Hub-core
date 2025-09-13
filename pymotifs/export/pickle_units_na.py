@@ -74,7 +74,6 @@ class Exporter(core.Loader):
         Parameters
         ----------
         pdbs : list
-            Ignored.
 
         Returns
         -------
