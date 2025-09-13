@@ -39,6 +39,7 @@ dwsync.xml
 .svn
 publish
 munge
+cif_files
 
 # project specific
 *.m~
