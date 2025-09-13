@@ -22,7 +22,6 @@ from pymotifs.constants import NR_MIN_HOMOGENEOUS_SIZE
 
 from pymotifs.utils import connectedsets as cs
 from pymotifs.utils import correspondence as cr
-from pymotifs.utils.structures import SYNTHETIC
 
 
 def ranking_key(chain):
@@ -148,7 +147,7 @@ class Grouper(core.Base):
 
             grouped = it.groupby(grouped, op.itemgetter('id'))
 
-            ## it.grouped: this function will generate the result like: {'7OOO|1|A+7OOO|1|B':[(***dict variable with clolumn names and values***),(***dict***)]}
+            ## it.grouped: this function will generate the result like: {'7OOO|1|A+7OOO|1|B':[(***dict variable with column names and values***),(***dict***)]}
             ## the output are not necessary have the same type with my example.
             ## the general idea is that ife_id and chains pairs were stored in grouped
 
@@ -173,15 +172,19 @@ class Grouper(core.Base):
                     if name in chain_name_to_chain:
                         chains.append(chain_name_to_chain[name])
                     elif len(chains) > 0:
-                        self.logger.warn("No chain found for %s in %s" % (name, ife_id))
+                        # this can happen when we are making RNA equivalence classes
+                        # but the chain is a DNA chain
+                        self.logger.warn("No %s chain found for %s in %s" % (self.molecule_type, name, ife_id))
                     else:
                         # cannot find first chain at all, simply return
-                        self.logger.warn("No chain found for %s in %s" % (name, ife_id))
+                        # this can happen when we are making RNA equivalence classes
+                        # but the first chain of the IFE is a DNA chain
+                        self.logger.warn("No %s chain found for %s in %s" % (self.molecule_type, name, ife_id))
                         return []
 
 
                 if len(chains) == 0:
-                    self.logger.warn("No chains found for %s with chain_set %s" % (ife_id,str(list(chain_set))))
+                    self.logger.warn("No %s chains found for %s with chain_set %s" % (self.molecule_type, ife_id,str(list(chain_set))))
                     return []
 
                 # use just the first chain for the data here, that's what [0] does
@@ -292,8 +295,8 @@ class Grouper(core.Base):
 
     def are_similar_species(self, group1, group2):
         """
-        Check if the longest chains of the two groups agree. Species are
-        similar if they are the same, or if either one is either synthetic or
+        Check if the longest chains of the two groups agree.
+        Species are similar if they are the same, or if either one is either synthetic or
         None.
 
         :param dict group1: The first group.
@@ -305,9 +308,11 @@ class Grouper(core.Base):
             self.logger.debug("Ignoring species assignments")
             return True
 
+        # entry['species'] is the species_taxid, which is a text string like '562'
         species1 = group1['species']
         species2 = group2['species']
-        if species1 != SYNTHETIC[0] and species2 != SYNTHETIC[0] and \
+        synthetic_species_taxid = '32630'
+        if species1 != synthetic_species_taxid and species2 != synthetic_species_taxid and \
                 species1 is not None and species2 is not None \
                 and species1 != species2:
             self.logger.debug("Splitting %s, %s: Different species (%s, %s)" %
@@ -445,7 +450,8 @@ class Grouper(core.Base):
         self.logger.debug("%i pairs are not connected" % (len(pairs)))
 
     def split_by_species(self, group):
-        """Split a group by species. This will put all members with the same
+        """
+        Split a group by species. This will put all members with the same
         species into their own group. The ones with synthetic or unknown are
         placed with the largest group.
 
@@ -454,16 +460,21 @@ class Grouper(core.Base):
         """
 
         species = coll.defaultdict(list)
+        synthetic_species_taxid = 32630
         for entry in group:
+            # entry['species'] is the species_taxid, which is a text string like '562'
             name = entry['species']
-            if name is None or name == SYNTHETIC_SPECIES_ID:
-                name = SYNTHETIC_SPECIES_ID
+            if name is None or str(name) == str(synthetic_species_taxid) or name == synthetic_species_taxid:
+                name = synthetic_species_taxid
             species[name].append(entry)
+            # self.logger.info("Checking species for entry %s species %s" % (entry['id'],name))
+
+        self.logger.info("Group has %d members at the moment" % len(group))
 
         self.logger.debug("Found groups based on species: %s" %
                           (', '.join(str(s) for s in species.keys())))
         species = dict(species)
-        unknown = species.pop(SYNTHETIC_SPECIES_ID, [])
+        unknown = species.pop(synthetic_species_taxid, [])
         if not species:
             return [group]
 
@@ -472,13 +483,14 @@ class Grouper(core.Base):
         species[largest_group].extend(unknown)
 
         merge = lambda group: ', '.join(g['id'] for g in group)
-        self.logger.debug("Produced %i groups: %s" % (len(species),
+        self.logger.info("Produced %i groups: %s" % (len(species),
                           '; '.join(merge(g) for g in species.values())))
 
         return species.values()
 
     def enforce_species_splitting(self, group):
-        """For groups over the NR_MIN_HOMOGENEOUS_SIZE we require that all
+        """
+        For groups over the NR_MIN_HOMOGENEOUS_SIZE we require that all
         members of the group have the same species (excluding unknown or
         synthetic species of course). We enforce this requirement here. The
         splitting is done in spilt_by_species. If must_enforce_single_species
@@ -543,7 +555,8 @@ class Grouper(core.Base):
         return filter(lambda p: equiv(*p), pairs)
 
     def connections(self, chains, alignments, discrepancies):
-        """Create a graph connections between all chains.
+        """
+        Create a graph of connections between all chains (ifes).
 
         :param list chains: This chains to build connections with.
         :param dict alignments: The alignments to use.
@@ -593,18 +606,25 @@ class Grouper(core.Base):
         :returns: A list of lists of the connected components.
         """
         self.logger.info("group start")
-        mapping = {}
+        ife_id_to_chain_info = {}
         for chain in chains:
-            mapping[chain['id']] = chain            ## actually this is ife ids here. Not sure why it calls chain here. very confusing
+            ife_id_to_chain_info[chain['id']] = chain            ## actually this is ife ids here. Not sure why it calls chain here. very confusing
 
         groups = []
-        graph = self.connections(chains, alignments, discrepancies) ## not sure what is here. It will return valid pairs about ife ids.
-        self.logger.info("connection found, building groups")
+        # note: connections does not make connections when species_taxid values differ
+        # that is based on are_equivalent and are_similar_species
+        graph = self.connections(chains, alignments, discrepancies)
+        self.logger.info("connections found, building groups")
+        # note: using transitivity may join ifes from different species if
+        # connected by a synthetic species_taxid
         all_groups = self.build_groups(graph)
-        self.logger.info("processing all groups")
+        self.logger.info("splitting groups by species if necessary")
         for ids in all_groups:                        ##
             # self.validate(graph, list(ids))                         ## I though this function was doing some specific works, but it just writes log info. Not important at all.
-            group = [mapping[id] for id in ids]                     ##
+
+            # split again by species in case synthetic species have connected distinct
+            # species that should stay apart
+            group = [ife_id_to_chain_info[id] for id in ids]                     ##
             for subgroup in self.enforce_species_splitting(group):
                 groups.append(subgroup)
         self.logger.info("processed all groups")
