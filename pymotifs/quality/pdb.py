@@ -1,10 +1,10 @@
-"""Parse and store validation reports for pdb level information. This will
-process the downloaded validation reports and use them to populate the
-pdb_quality table.
 """
-import os
+Parse and store validation reports for pdb level information.
+This will process the downloaded validation reports and use them
+to populate the pdb_quality table.
+"""
 
-import chardet
+import os
 
 import pymotifs.core as core
 from pymotifs import models as mod
@@ -16,13 +16,15 @@ from pymotifs.quality.download import Loader as Downloader
 
 
 class Loader(core.SimpleLoader):
-    """The loader to fetch and store quality data for structures.
+    """
+    The loader to fetch and store quality data for structures.
     """
 
     dependencies = set([PdbLoader, Downloader])
 
     def to_process(self, pdbs, **kwargs):
-        """Get the pdbs to process. These will be the structures that have an
+        """
+        Get the pdbs to process. These will be the structures that have an
         non-empty validation report downloaded.
 
         Parameters

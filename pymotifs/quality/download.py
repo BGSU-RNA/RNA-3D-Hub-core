@@ -18,7 +18,8 @@ from pymotifs.download import Writer
 
 
 class Loader(core.Loader):
-    """The loader to fetch and store quality data for structures.
+    """
+    The loader to fetch and store quality data for structures.
     """
     dependencies = set()
     saver = Writer
@@ -125,6 +126,20 @@ class Loader(core.Loader):
         try:
             # download from pdb_url and save the .gz file as filename
             urllib.request.urlretrieve(pdb_url, filename)
+
+            # check to see if the file really is gzipped, and if not, rename and gzip it
+            # do not use ut methods here because they may not exist!
+            with open(filename, 'rb') as f:
+                magic_number = f.read(2)
+            if magic_number != b'\x1f\x8b':  # Gzip magic number
+                self.logger.info(f"File {filename} is not gzipped, renaming and gzipping it.")
+                os.rename(filename, filename + '.tmp')
+                import gzip
+                with open(filename + '.tmp', 'rb') as f_in:
+                    with gzip.open(filename, 'wb') as f_out:
+                        f_out.writelines(f_in)
+                os.remove(filename + '.tmp')
+
             return None
             # remote = self.remote(pdb)
             # return self.ftp(remote)
