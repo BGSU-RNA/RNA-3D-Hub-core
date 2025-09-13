@@ -10,6 +10,7 @@ from pymotifs import models as mod
 from pymotifs.utils import row2dict
 
 from pymotifs.constants import COMPSCORE_COEFFICENTS
+from pymotifs.constants import CQS2_COEFFICIENTS
 from pymotifs.constants import MANUAL_IFE_REPRESENTATIVES
 from pymotifs.constants import WORSE_THAN_MANUAL_IFE_REPRESENTATIVES
 
@@ -205,6 +206,9 @@ class CompScore(QualityBase):
     Apparently several of the methods here are no longer used, having
     been replaced by the nr.cqs stage that stores the calculations in the
     nr_cqs table, which is faster.
+
+    Or ... maybe replaced by the ife/cqs stage which stores in ife_cqs table.
+
     Unfortunately, that makes it harder to follow this code.
     """
     method = 'compscore'
@@ -483,7 +487,12 @@ class CompScore(QualityBase):
                 mod.IfeCqs.percent_clash,
                 mod.IfeCqs.rfree,
                 mod.IfeCqs.resolution,
+                mod.IfeCqs.average_Q_score,
+                mod.IfeCqs.average_residue_inclusion,
+                mod.PdbInfo.experimental_technique
                 ).\
+                join(mod.IfeInfo, mod.IfeInfo.ife_id == mod.IfeCqs.ife_id).\
+                join(mod.PdbInfo, mod.PdbInfo.pdb_id == mod.IfeInfo.pdb_id).\
                 filter(mod.IfeCqs.ife_id.in_(ife_list))
 
             ife_id_to_data = {}
@@ -515,17 +524,42 @@ class CompScore(QualityBase):
                 member['fraction_unobserved'] = fraction_unobserved
                 member['percent_observed'] = 1 - fraction_unobserved
 
+                # calculate original composite_quality_score
                 compscore =  COMPSCORE_COEFFICENTS['resolution'] * ife_id_to_data[ife_id]['resolution']
                 compscore += COMPSCORE_COEFFICENTS['percent_clash'] * ife_id_to_data[ife_id]['percent_clash']
+                compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * fraction_unobserved
                 compscore += COMPSCORE_COEFFICENTS['average_rsr'] * ife_id_to_data[ife_id]['average_rsr']
                 compscore += COMPSCORE_COEFFICENTS['average_rscc'] * (1 - ife_id_to_data[ife_id]['average_rscc'])
                 compscore += COMPSCORE_COEFFICENTS['rfree'] * ife_id_to_data[ife_id]['rfree']
-                compscore += COMPSCORE_COEFFICENTS['fraction_unobserved'] * fraction_unobserved
-
-                if compscore < 0:
-                    raise core.InvalidState("Invalid compscore (%s) for %s" % (compscore, member))
 
                 member['composite_quality_score'] = compscore
+
+                # calculate cqs2 using the same code as in ife_fixer.py
+                ife_data = ife_id_to_data[ife_id]
+                cqs2 = CQS2_COEFFICIENTS['resolution'] * ife_data['resolution']
+                cqs2 += CQS2_COEFFICIENTS['percent_clash'] * ife_data['percent_clash']
+                cqs2 += CQS2_COEFFICIENTS['fraction_unobserved'] * fraction_unobserved
+
+                if ife_data['experimental_technique'] in ['ELECTRON MICROSCOPY']:
+                    if ife_data['average_Q_score'] is None:
+                        # match half of the penalty given to non-EM structures missing key data
+                        cqs2 += 150
+                    else:
+                        cqs2 += CQS2_COEFFICIENTS['average_Q_score'] * (1-ife_data['average_Q_score'])
+                    if ife_data['average_residue_inclusion'] is None:
+                        # match half of the penalty given to non-EM structures missing key data
+                        cqs2 += 141
+                    else:
+                        cqs2 += CQS2_COEFFICIENTS['average_residue_inclusion'] * (1-ife_data['average_residue_inclusion'])
+                    cqs2 += CQS2_COEFFICIENTS['constant']
+                else:
+                    # when these are missing from an x-ray or NMR structure, the addition to the
+                    # cqs2 is 6.4*40 + 7*2 + 21*1 = 291
+                    cqs2 += CQS2_COEFFICIENTS['average_rsr'] * ife_data['average_rsr']
+                    cqs2 += CQS2_COEFFICIENTS['average_rscc'] * (1 - ife_data['average_rscc'])
+                    cqs2 += CQS2_COEFFICIENTS['rfree'] * ife_data['rfree']
+
+                member['cqs2'] = cqs2
 
             else:
                 self.logger.info("No data in ife_cqs query for %s" % ife_id)
@@ -538,6 +572,7 @@ class CompScore(QualityBase):
         """
         Sort by computed composite quality score
         """
+        return sorted(members, key=lambda x: x['cqs2'])
         return sorted(members, key=lambda x: x['composite_quality_score'])
 
     def sort_by_quality_old(self, members):
@@ -548,6 +583,8 @@ class CompScore(QualityBase):
 
     def compscore(self, member):
         """
+        Does not seem that this code gets run.
+
         Look up the quality score from the nr_cqs table.
         The value of CQS is computed based on fraction observed, which is
         computed based on the largest sequence length in the class.

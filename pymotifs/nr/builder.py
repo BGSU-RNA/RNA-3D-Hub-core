@@ -29,7 +29,8 @@ from pymotifs.constants import WRITE_ALL_EQUIVALENCE_CLASS_RANKINGS
 
 class Known(core.Base):
     def handles(self, molecule_type):
-        """Return a set of all known handles for the nr set.
+        """
+        Return a set of all known 5-digit handles for the nr set.
         """
         if molecule_type.lower() == 'rna':
             query_key = 'NR_'
@@ -239,7 +240,8 @@ class Known(core.Base):
 
 
 class Builder(core.Base):
-    """Class to build a new nr set. This handles the logic of grouping the ifes
+    """
+    Class to build a new nr set. This handles the logic of grouping the ifes
     into groups, filter them by resolutions, name them using the previous
     release as well as determine the representative.
     """
@@ -281,7 +283,6 @@ class Builder(core.Base):
             molecule_type = molecule_parent_current.split(",")[0]
         else:
             molecule_type = 'rna'
-
 
         grouper = Grouper(self.config, self.session)
 
@@ -677,7 +678,8 @@ class Builder(core.Base):
                 group['members'] = ordered_members
                 for index, member in enumerate(group['members']):
                     member['rank'] = index
-                    self.logger.info('rank %3d CQS %10.4f ife %s' % (index+1, member['composite_quality_score'], member['id']))
+                    self.logger.info('rank %3d CQS  %10.4f ife %s' % (index+1, member['composite_quality_score'], member['id']))
+                    self.logger.info('rank %3d CQS2 %10.4f ife %s' % (index+1, member['cqs2'], member['id']))
 
                 # record how this handle maps to an ordered list of members
                 handle_to_ordered_members[handle] = ordered_members
@@ -751,7 +753,8 @@ class RepresentativeFinder(core.Base):
 
 
     def method(self, name):
-        """Get the method with the given name.
+        """
+        Get the method with the given name.
 
         Parameters
         ----------
@@ -771,7 +774,8 @@ class RepresentativeFinder(core.Base):
 
 
     def __call__(self, group, method=NR_REPRESENTATIVE_METHOD):
-        """Find the representative for the group.
+        """
+        Find the representative for the group.
 
         Parameters
         ----------

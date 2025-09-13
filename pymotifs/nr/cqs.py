@@ -61,6 +61,7 @@ class Loader(BaseLoader):
 
         # loop over equivalence classes
         for group in grouping:
+            self.logger.info('new_nr_cqs_entry is %s for %s' % (group.get('new_nr_cqs_entry',False),group['name']['full']))
             if group.get('new_nr_cqs_entry',False):
                 # loop over ifes in the equivalence class
                 for member in group['members']:
@@ -70,7 +71,8 @@ class Loader(BaseLoader):
                         maximum_experimental_length = member['max_observed'],
                         fraction_unobserved = member['fraction_unobserved'],
                         percent_observed = member['percent_observed'],
-                        composite_quality_score = member['composite_quality_score'])
+                        composite_quality_score = member['composite_quality_score'],
+                        cqs2 = member['cqs2'])
 
         # the field name maximum_experimental_length is poorly chosen,
         # because the value is actually the maximum number of observed nucleotides
