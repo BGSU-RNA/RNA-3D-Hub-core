@@ -16,9 +16,9 @@
 # '4V3P', '4V4G', '5O58', '5O61', '5W3V', '6AWB', '6AWC', '6B0B', '6WLN', '6WLO']
 
 SKIP = {
-      # '4V3P' # big file, 34A; killed 2024-06-22 (CLZ), export.cifatom:Writing cifatom file for 4V3P
+    '4ZPY' # exp_seq.info:Nothing to process, virus, maybe no RNA 2024-06-22 (CLZ)
+    # '4V3P' # big file, 34A; killed 2024-06-22 (CLZ), export.cifatom:Writing cifatom file for 4V3P
     # , '4V4G' # 5 ribosomes, 11.5A; Matlab out of memory 2024-06-22 (CLZ)
-      '4ZPY' # exp_seq.info:Nothing to process, virus, maybe no RNA 2024-06-22 (CLZ)
     # , '5O58' # 2 nt; IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
     # , '5W3V' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
     # , '6AWB' # IPLO 2017-10-25 trial dry run (JJC) Matlab problem 2024-06-22 (CLZ)
@@ -96,7 +96,10 @@ SKIP = {
     # , '226D', '229D', '230D', '2ARG', '2DAU', '2EZD', '2EZE', '2EZF', '2EZG', '2GAT', '2HDC', '2KBD'
     # , '2NEO', '2STT', '2STW', '3GAT', '3KBD', '3REC', '4GAT', '4KBD', '5GAT'
 
-
+    , '8ZZE'  # 2025-05-21 suddenly appears in the query for PDB files, never before, no experimental method
+    , '8ZZJ'  # 2025-05-21 suddenly appears in the query for PDB files, never before, no experimental method
+    , '9A0D'  # 2025-05-21 suddenly appears in the query for PDB files, never before, no experimental method
+    , '9A0V'  # 2025-05-21 suddenly appears in the query for PDB files, never before, no experimental method
 
 }
 
