@@ -11,7 +11,7 @@ nucleotides. The disqualification codes are:
 5 - incomplete nucleotides
 6 - self-complementary internal loop
 7 - Too many symmetry operators
-8 - A fictional loop ... one with too high values of RSRZ
+8 - Too many high values of RSRZ
 9 - A loop with pair outside of the RSRZ range
 """
 
@@ -41,7 +41,7 @@ from pymotifs.exp_seq.mapping import Loader as ExpSeqMappingLoader
 from pymotifs.exp_seq.positions import Loader as ExpSeqPositionLoader
 
 
-class AssessmentData(nt('AssessmentData', ['incomplete', 'pairs', 'rsrz'])):
+class AssessmentData(nt('AssessmentData', ['incomplete', 'pairs', 'rsrz', 'Q_score'])):
     """
     Just a value class to store some assessment related data.
 
@@ -53,7 +53,9 @@ class AssessmentData(nt('AssessmentData', ['incomplete', 'pairs', 'rsrz'])):
         Dict mapping from loop id to nts in the loop that have internal
         interactions
     rsrz : dict
-        Data on rsrz data for all nucleotides
+        rsrz data for all nucleotides
+    Q_score : dict
+        Q_score data for all nucleotides
     """
     pass
 
@@ -114,9 +116,10 @@ class Loader(core.SimpleLoader):
 
         # print('checked_loops already in loop_qa:', sorted(checked_loops))
 
-        # temporary ... ignore all loops that were already checked,
-        # to be able to re-calculate the quality data
-        # checked_loops = set()
+        if False:
+            # ignore all loops that were already checked,
+            # to be able to re-calculate the quality data
+            checked_loops = set()
 
         # get list of loops that have not been checked
         not_checked_loops = all_loops - checked_loops
@@ -126,6 +129,22 @@ class Loader(core.SimpleLoader):
         for loop_id in not_checked_loops:
             fields = loop_id.split('_')
             pdbs_to_check.add(fields[1])
+
+        if False:
+            # get all pdb files solved by EM, to focus on low Q_score loops
+            em_pdbs = set()
+            with self.session() as session:
+                pdbs = mod.PdbInfo
+                query = session.query(pdbs.pdb_id).\
+                    filter(pdbs.experimental_technique == "ELECTRON MICROSCOPY")
+
+                for row in query:
+                    em_pdbs.add(row.pdb_id)
+
+                print('Found %d EM PDB files' % len(em_pdbs))
+
+            # temporary while fixing the motif atlas
+            pdbs_to_check = em_pdbs
 
         if False:
             # get all pdb files that are the basis for the motif atlas
@@ -827,6 +846,42 @@ class Loader(core.SimpleLoader):
                 return None
 
 
+    def Q_score_data(self, pdb):
+        """
+        Load Q_score data for all units in the given structure.
+
+        Parameters
+        ----------
+        pdb : str
+            The PDB id to use.
+
+        Returns
+        -------
+        data : dict
+            A dict mapping from unit id to the Q_score.
+        """
+
+        found_Q_score_value = False
+
+        data = defaultdict(lambda: None)
+        na_types = ['rna','dna','hybrid']
+        with self.session() as session:
+            query = session.query(mod.UnitQuality).\
+                join(mod.UnitInfo,
+                     mod.UnitInfo.unit_id == mod.UnitQuality.unit_id).\
+                filter(mod.UnitInfo.unit_type_id.in_(na_types)).\
+                filter_by(pdb_id=pdb)
+
+            for r in query:
+                if r.Q_score is not None:
+                    found_Q_score_value = True
+                data[r.unit_id] = r.Q_score
+
+            if found_Q_score_value:
+                return data
+            else:
+                return None
+
     def all_high_RSRZ(self, rsrz, loop):
         """
         Detect if all nucleotides in this loop have RSRZ values that are above some cutoff.
@@ -855,6 +910,35 @@ class Loader(core.SimpleLoader):
             return all(rsrz[unit_id] is None or rsrz[unit_id] >= RSRZ_FICTIONAL_CUTOFF for unit_id in loop['unit_ids'])
         else:
             # no rsrz values for this structure, like with cryo-EM and NMR
+            return False
+
+
+    def all_low_Q_score(self, Q_score, loop):
+        """
+        Detect if all nucleotides in this loop have low Q_score.
+        Loops like that do not have enough experimental basis to consider.
+
+        Parameters
+        ----------
+        Q_score : dict
+            A dict mapping from unit id to Q_score.
+        loop : dict
+            A loop dict with a nt entries that contains the list of all unit
+            ids in the loop.
+
+        Returns
+        -------
+        is_fictional : bool
+            True if all nucleotides in the loop have an RSRZ greater than the
+            cutoff.
+        """
+
+        Q_SCORE_FICTIONAL_CUTOFF = 0.4
+
+        if Q_score:
+            self.logger.info('Loop %s Q_score values %s' % (loop['id'], [Q_score[unit_id] for unit_id in loop['unit_ids']]))
+            return all(Q_score[unit_id] is None or Q_score[unit_id] < Q_SCORE_FICTIONAL_CUTOFF for unit_id in loop['unit_ids'])
+        else:
             return False
 
 
@@ -899,6 +983,8 @@ class Loader(core.SimpleLoader):
         if self.is_complementary(loop):
             return 6
         if self.all_high_RSRZ(assess.rsrz, loop):
+            return 8
+        if self.all_low_Q_score(assess.Q_score, loop):
             return 8
         if self.has_modified(loop):
             return 3
@@ -945,7 +1031,8 @@ class Loader(core.SimpleLoader):
     def assessment_data(self, pdb):
         return AssessmentData(incomplete=self.incomplete(pdb),
                               pairs=self.paired(pdb),
-                              rsrz=self.rsrz_data(pdb))
+                              rsrz=self.rsrz_data(pdb),
+                              Q_score=self.Q_score_data(pdb))
 
 
     def data(self, pdb, **kwargs):
