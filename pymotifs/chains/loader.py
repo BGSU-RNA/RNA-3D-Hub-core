@@ -4,9 +4,7 @@
 from pymotifs import core
 
 from pymotifs.chains.info import Loader as InfoLoader
-# from pymotifs.chains.best import BestChainsAndModelsLoader
-#from pymotifs.chains.species import Loader as SpeciesLoader
-
+from pymotifs.chains.taxid_species_domain import Loader as TaxLoader
 
 class Loader(core.StageContainer):
-    stages = set([InfoLoader])
+    stages = set([InfoLoader,TaxLoader])

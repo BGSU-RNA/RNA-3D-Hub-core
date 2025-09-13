@@ -13,11 +13,12 @@ import xml.etree.ElementTree as ET
 from pymotifs import core
 from pymotifs import models as mod
 from pymotifs.utils import WebRequestHelper
-from pymotifs.chains.info import Loader as ChainLoader
+from pymotifs.chains.info import Loader as InfoLoader
 
 
 class Parser(object):
-    """A parser to take the response from a webrequest to the EBI and pull out
+    """
+    A parser to take the response from a webrequest to the EBI and pull out
     the species assignment from the resulting XML document.
     """
 
@@ -74,16 +75,32 @@ class Parser(object):
         taxon = root.find('taxon')
 
         dd = {}
+        dd['domain'] = None
 
         for rank in ['superkingdom','kingdom','phylum','class','order','family','genus','species']:
             species_taxid, rank_value = self.get_rank_data(taxon,rank)
 
+            # get the domain from wherever it is stored
             if rank == 'superkingdom':
                 if rank_value == 'Eukaryota':
                     rank_value = 'Eukarya'
                 dd['domain'] = rank_value
+            elif rank == 'acellular root':
+                dd['domain'] = rank_value
+            elif rank == 'domain':
+                dd['domain'] = rank_value
             else:
                 dd[rank] = rank_value
+
+        if not dd['domain']:
+            # apparently no superkingdom entry, so try other places
+            # https://www.ebi.ac.uk/ena/browser/api/xml/Taxon:3052225&display=xml acellular root
+            # https://www.ebi.ac.uk/ena/browser/api/xml/Taxon:410289&display=xml domain
+            for rank in ['domain','acellular root']:
+                ignore, rank_value = self.get_rank_data(taxon,rank)
+                if rank_value:
+                    dd['domain'] = rank_value
+                    break
 
         dd['species_taxid'] = species_taxid     # taxid of the main species
 
@@ -118,7 +135,7 @@ class Loader(core.SimpleLoader):
     merge_data = True
 
     """The dependencies we require."""
-    dependencies = set([ChainLoader])
+    dependencies = set([InfoLoader])
 
     """The species id will not fit in the pdb id column used to mark"""
     mark = False
@@ -147,12 +164,22 @@ class Loader(core.SimpleLoader):
                 distinct().\
                 order_by(mod.ChainInfo.taxonomy_id)
 
+            # needed_ids is a set of strings
             needed_ids = set()
             for result in query:
                 ids = result.taxonomy_id.split(",")
                 for id in ids:
                     needed_ids.add(id)
 
+        self.logger.info('Found %d tax ids in chain_info' % len(needed_ids))
+
+        self.logger.info(needed_ids)
+
+        # find the taxonomy_id values that are not in taxid_species_domain
+        # We could try to use: filter(mod.TaxidSpeciesDomain.domain != None).\
+        # but when the entry already exists, merge_data = True does not force
+        # an update, it tries to insert, and the stage fails
+        # If you want to update those rows, delete them from the table first
         with self.session() as session:
             query = session.query(mod.TaxidSpeciesDomain.taxonomy_id).\
                 distinct()
@@ -161,12 +188,16 @@ class Loader(core.SimpleLoader):
             for result in query:
                 known_ids.add(result.taxonomy_id)
 
-        look_up = sorted(needed_ids - known_ids, key = lambda x : int(x))
+        self.logger.info('Found %d tax ids that are already in taxid_species_domain with a non-null domain' % len(known_ids))
+
+        self.logger.info(known_ids)
+
+        look_up = needed_ids - known_ids
 
         if len(look_up) == 0:
             raise core.Skip("No taxonomy ids to process")
 
-        return look_up
+        return sorted(look_up, key = lambda x : int(x))
 
     def query(self, session, taxid):
         """
@@ -185,6 +216,13 @@ class Loader(core.SimpleLoader):
         query : Query
             The query.
         """
+
+        # trust to_process, especially since it will help us find entries
+        # where there is missing data
+        # return an empty query
+        return session.query(mod.TaxidSpeciesDomain).\
+            filter_by(taxonomy_id=-243)
+
 
         return session.query(mod.TaxidSpeciesDomain).\
             filter_by(taxonomy_id=taxid)
@@ -238,8 +276,11 @@ class Loader(core.SimpleLoader):
         url = 'https://www.ebi.ac.uk/ena/data/view/Taxon:%s&display=xml'
 
         try:
+            # download from the url and parse using Parser defined above
+            # sometimes the data format changes and you need to update the parser
             helper = WebRequestHelper(parser=Parser())
             result = helper(url % new_taxid)
+            self.logger.info('Got taxonomic information for %s' % new_taxid)
         except Exception as e:
             self.logger.warning("No taxonomic information found for %s" % taxid)
             manual_work = 'manual["%s"] = "" # https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=%s&retmode=xml' % (taxid,taxid)
@@ -249,6 +290,10 @@ class Loader(core.SimpleLoader):
             raise core.Skip("Unable to load some taxonomic information")
 
         result['taxonomy_id'] = taxid
+
+        if not result['domain']:
+            self.logger.warning("No domain information found for %s" % taxid)
+            self.logger.info(result)
 
         if not 'species_taxid' in result:
             self.logger.warning("No taxonomic information found for %s" % taxid)
