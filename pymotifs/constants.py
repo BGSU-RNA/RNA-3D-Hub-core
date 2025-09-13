@@ -188,11 +188,28 @@ deviation of the composite quality score.
 """
 COMPSCORE_COEFFICENTS = {
     'resolution': 1,
-    'average_rsr': 8,
     'percent_clash': 0.6,
+    'fraction_unobserved': 4,
+    'average_rsr': 8,
     'average_rscc': 8,
     'rfree': 18,
-    'fraction_unobserved': 4,
+}
+
+"""
+The coefficients below were set by Craig Zirbel in August 2025 with the
+goal of making each quality indicator contribute equally to the standard
+deviation of the composite quality score.
+"""
+CQS2_COEFFICIENTS = {
+    'resolution': 1,
+    'percent_clash': 1,
+    'fraction_unobserved': 2.9,
+    'rfree': 21,                      # for x-ray only
+    'average_rsr': 6.4,               # for x-ray only
+    'average_rscc': 7,                # for x-ray only
+    'average_Q_score': 7.5,           # for EM only
+    'average_residue_inclusion': 5,   # for EM only
+    'constant': 2.8                   # for EM only
 }
 
 """
