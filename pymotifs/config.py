@@ -72,10 +72,10 @@ def defaults():
             "cache": os.path.join(base, "cache"),
             "cif_files": os.path.join(base, "cif_files"), # where .cif.gz files are saved
             "data": os.path.join(base, "data"),           # output files, temporary files
-            "log_dir": os.path.join(base, "MotifAtlas", "logs"),
-            'quality_reports': os.path.join(base, "MotifAtlas", 'quality',
-                                            'validation-reports'),
+            'quality_reports': os.path.join(base, 'validation-reports'),
             "releases_dir": os.path.join(base, "MotifAtlas", "Releases"),
+
+            "log_dir": os.path.join(base, "MotifAtlas", "logs"), # no longer used
             "fr3d_root": os.path.join(base, "FR3D"),      # no longer used
             "loops_search_dir": os.path.join(base, "MotifAtlas", "aAa"), # no longer used
             "loops_mat_files": os.path.join(base, "MotifAtlas",
