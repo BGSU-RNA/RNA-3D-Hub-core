@@ -1,5 +1,6 @@
 """
-Compute a linear ordering for members of an equivalence set.
+Compute a linear ordering for members of an equivalence class,
+putting those which are geometrically similar closer to each other in the list.
 
 This will go over all NR classes (equivalence sets) and compute an ordering for
 chains that are part of the class. This may skip some chains as we do not
@@ -574,11 +575,11 @@ class Loader(core.SimpleLoader):
             # Size cutoff 140 is still ok
 
 
-            starttime = time.clock()
+            starttime = time.time()
             #distances = self.distances(nr_release_id, class_id, members)
             distances_revised = self.distances_revised(orig_release_id, orig_class_id, members_revised)
 
-            self.logger.info("data: time to read a group of size %3d from database was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
+            self.logger.info("data: time to read a group of size %3d from database was %8.4f seconds" % (len(members_revised),time.time()-starttime))
 
             #self.logger.info("data: distances: %s (class_id %s)" % (str(distances), class_id))
             #self.logger.info("data: distances_revised: %s (class_id %s)" % (str(distances_revised), orig_class_id))
@@ -590,7 +591,7 @@ class Loader(core.SimpleLoader):
             # self.logger.info("large group %s:  reading flat file of discrepancies" % nr_class_name)
             discDict = defaultdict(lambda: None)
             # put discrepancy information into a dictionary
-            starttime = time.clock()
+            starttime = time.time()
             infileNameWithPath = os.path.join(DATA_FILE_DIRECTORY,"IFEdiscrepancy.txt")
             with open(infileNameWithPath,"r") as infile:
                 for line in infile:
@@ -602,7 +603,8 @@ class Loader(core.SimpleLoader):
                     discDict[(ife2,ife1)] = discrepancy
 
             # self.logger.info("large group:  read flat file of discrepancies")
-            self.logger.info("data: time to read a group of size %3d from flat file was %8.4f seconds" % (len(members_revised),time.clock()-starttime))
+            self.logger.info("data: time to read a group of size %3d from flat file was %8.4f seconds" % (len(members_revised),time.time()-starttime))
+            starttime = time.time()
 
             dist = np.zeros((len(members_revised), len(members_revised)))
 
@@ -615,7 +617,7 @@ class Loader(core.SimpleLoader):
             ordering = treePenalizedPathLength(newDist,max(self.trials,len(members_revised)))
 
             ordered_revised = [members_revised[index] for index in ordering]
-            self.logger.info("large group:  produced a new ordering")
+            self.logger.info("large group:  produced a new ordering of %d members in %8.4f seconds" % (len(members_revised),time.time()-starttime))
 
 
         #self.logger.info("data: ordered: %s (class_id %s)" % (str(ordered), class_id))
