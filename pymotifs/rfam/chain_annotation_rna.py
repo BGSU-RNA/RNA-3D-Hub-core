@@ -1,4 +1,5 @@
 """
+This is not the file we are using.  See consensus_name.py instead.
 Temporary stage to add modified nucleotides to loop_positions table
 
 This module contains a loader to load all unit level information into the
@@ -575,7 +576,7 @@ class Loader(core.Loader):
                     rfam_family_dict['property'] = property_val
                     rfam_family_dict['value'] = value
 
-                # Appending dictionairies to the data list
+                # append dictionairies to the data list
                 if len(standardized_name_dict.values()) > 0:
                     data.append(standardized_name_dict)
                     # print(standardized_name_dict)
@@ -589,10 +590,9 @@ class Loader(core.Loader):
                     # self.logger.info(rfam_family_dict)
                     data.append(rfam_family_dict)
 
-        # yielding rows to the chain_property_value table if data is not empty
+        # yield rows to the chain_property_value table if data is not empty
         if len(data) > 0:
             for row in data:
-                # print("IT works!")
                 yield mod.ChainPropertyValue(**row)
         else:
             raise core.Skip("RNA data not found for pdb id %s" % (pdb_id))
