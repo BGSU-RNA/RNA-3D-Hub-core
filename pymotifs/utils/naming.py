@@ -103,11 +103,13 @@ class Namer(core.Base):
         #     return self.same_name(overlap['group']['name'])
         # old code above behaved erratically when the group got smaller
         if self.same_members(group, overlap) == 1:
-
             if False and overlap['group']['name']['full'].startswith('NR') and len(overlap['group']['members']) > 1:
                 # temporarily, on 2025-03-12, for RNA groups with more than
                 # one member, to fix old orderings,
                 # increment the version number even when the IFEs are the same
+                # when moving from release 3.399 to 4.0, also increment the version
+                # The number of updates is counted in group_changes using a different
+                # methodology, so you may want to manually update nr_parent_counts.
                 r = self.updated_name(overlap['group']['name'], 1)
                 # but also signal that the groups are the same
                 r["comment"] = "Exact match"
@@ -192,6 +194,9 @@ class ChangeCounter(core.Base):
         """
         Compute the number of changes at the group level. That is the number
         of added, removed, updated or unchanged groups.
+
+        This way of counting is slightly different from the labeling as
+        exact, updated, etc. and so the counts get a bit off.
         """
 
         as_handle = lambda g: g['name']['handle']
