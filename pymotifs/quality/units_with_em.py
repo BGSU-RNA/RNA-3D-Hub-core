@@ -99,7 +99,7 @@ class Loader(core.SimpleLoader):
                 pdbs_with_data = set([row.pdb_id for row in query])
             pdbs_to_process = set(pdbs) - pdbs_with_data
 
-        print("Found %d pdb_ids to process" % len(pdbs_to_process))
+        # print("Found %d pdb_ids to process" % len(pdbs_to_process))
 
         if len(pdbs_to_process) == 0:
             raise core.Skip("No PDBs to process for quality.units")
