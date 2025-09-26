@@ -22,7 +22,7 @@ class Loader(core.SimpleLoader):
     def to_process(self, pdbs, **kwargs):
         """
         If pdbs is a list of just one pdb id, process that one.
-        Otherwise, find all pdbs that do not have glycosidic
+        Otherwise, find all rna, dna units that do not have glycosidic
         """
 
         if len(pdbs) == 1:
@@ -86,40 +86,9 @@ class Loader(core.SimpleLoader):
 
     def data(self, pdb, **kwargs):
 
-        # with self.session() as session:
-        #     existed_unit_ids = session.query(mod.UnitInfo.unit_id).\
-        #                         filter(mod.UnitInfo.pdb_id == pdb)
-        # unit_ids_list = []
-        # for result in existed_unit_ids:
-        #     unit_ids_list.append(result.unit_id)
-        # print(unit_ids_list)
-
         # load the structure
         structure = self.structure(pdb)
         for residue in structure.residues():
-            # if residue.unit_id() not in unit_ids_list:
-            #     print(residue.unit_id())
-            #     print(residue.pdb)
-            #     print(residue.model)
-            #     print(residue.chain)
-            #     print(residue.sequence)
-            #     print(residue.number)
-            #     print(getattr(residue, 'alt_id', None))
-            #     print(residue.insertion_code)
-            #     print(residue.symmetry)
-            #     print(residue.index)
-            #     print(self.type(residue))
-            #     yield mod.UnitInfo(unit_id=residue.unit_id(),
-            #             pdb_id=residue.pdb,
-            #             model=residue.model,
-            #             chain=residue.chain,
-            #             unit=residue.sequence,
-            #             number=residue.number,
-            #             alt_id=getattr(residue, 'alt_id', None),
-            #             ins_code=residue.insertion_code,
-            #             sym_op=residue.symmetry,
-            #             chain_index=residue.index,
-            #             unit_type_id=self.type(residue))
             for name in residue.centers.definitions():
                 center = residue.centers[name]
                 if len(center) == 3 and name == 'glycosidic':
