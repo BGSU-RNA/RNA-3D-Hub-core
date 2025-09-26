@@ -168,19 +168,25 @@ class Loader(core.SimpleLoader):
 
           currentquery = query.replace("XXXX",pdb)
 
-          # the following line worked on rnatest but not on production
-          #response = requests.post('http://data.rcsb.org/graphql', json={'query': currentquery})
-
-          # here is a different way to do it
-          currenturl = 'https://data.rcsb.org/graphql?query=' + currentquery
-
+          # this is probably more robust than the url way below
           try:
-              response = requests.get(currenturl)
+            response = requests.post('https://data.rcsb.org/graphql', json={'query': currentquery})
           except:
               # sleep for 5 seconds and then try again, because the get failed
               # once but then worked when the pipeline was run again
               time.sleep(5)
-              response = requests.get(currenturl)
+              response = requests.post('https://data.rcsb.org/graphql', json={'query': currentquery})
+
+          # here is a different way to do it
+          # currenturl = 'https://data.rcsb.org/graphql?query=' + currentquery
+
+          # try:
+          #     response = requests.get(currenturl)
+          # except:
+          #     # sleep for 5 seconds and then try again, because the get failed
+          #     # once but then worked when the pipeline was run again
+          #     time.sleep(5)
+          #     response = requests.get(currenturl)
 
           if response.status_code == 200:
               result = response.json()
@@ -205,7 +211,15 @@ class Loader(core.SimpleLoader):
               renamed["pdb_id"]             = pdb
               renamed["chain_name"]         = chain_id
               renamed["entity_name"]        = chain_data["rcsb_polymer_entity_container_identifiers"]["entity_id"]
-              renamed["classification"]     = result["data"]["entry"]["struct_keywords"]["pdbx_keywords"]
+
+              renamed["classification"]     = None
+              # structures like 8ZZS do not have these entries
+              if "struct_keywords" in result["data"]["entry"]:
+                  self.logger.info("struct_keywords: %s" % result["data"]["entry"]["struct_keywords"])
+                  if result["data"]["entry"]["struct_keywords"]:
+                    if "pdbx_keywords" in result["data"]["entry"]["struct_keywords"]:
+                        renamed["classification"]     = result["data"]["entry"]["struct_keywords"]["pdbx_keywords"]
+
               renamed["macromolecule_type"] = chain_data["entity_poly"]["rcsb_entity_polymer_type"]
               renamed["sequence"]           = chain_data["entity_poly"]["pdbx_seq_one_letter_code_can"]
               renamed["chain_length"]       = chain_data["entity_poly"]["rcsb_sample_sequence_length"]
