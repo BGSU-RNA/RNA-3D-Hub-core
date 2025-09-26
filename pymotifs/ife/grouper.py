@@ -455,9 +455,9 @@ class Grouper(core.Base):
             if maximal:
                 maximal_groups.append(group1)
 
-                print('maximal group  %s' % group1.group_id())
+                self.logger.info('maximal group  %s' % group1.group_id())
                 for chain in group1.chains():
-                    print('  chain %s .structured %s .part_of_ife %s' % (chain.chain, chain.is_structured, chain.part_of_ife))
+                    self.logger.info('  chain %s .structured %s .part_of_ife %s' % (chain.chain, chain.is_structured, chain.part_of_ife))
 
         return maximal_groups
 
