@@ -194,28 +194,34 @@ class Loader(core.SimpleLoader):
             currentquery = query.replace("XXXX",pdb)
 
             # the following line worked on rnatest but not on production
-            # response = requests.post('http://data.rcsb.org/graphql', json={'query': currentquery})
+            # trying it again after the url method stopped working on some structures
+            response = requests.post('https://data.rcsb.org/graphql', json={"query": currentquery})
 
             # here is a different way to do it
-            currenturl = 'http://data.rcsb.org/graphql?query=' + currentquery
-            response = requests.get(currenturl)
+            # currenturl = 'https://data.rcsb.org/graphql?query=' + currentquery
+            # response = requests.get(currenturl)
 
             if response.status_code == 200:
                 result = response.json()
             else:
                 self.logger.error("Could not get PDB info for %s" % pdb)
-                raise core.StageFailed("Could not load PDB info for all pdbs")
+                # self.logger.error(currenturl)
+                raise core.StageFailed("Could not get PDB info for %s" % pdb)
 
             renamed = {}
             renamed["pdb_id"] = pdb
             renamed["title"] = result["data"]["entry"]["struct"]["title"]
-            renamed["experimental_technique"] = result["data"]["entry"]["exptl"][0]["method"]
             renamed["deposition_date"] = result["data"]["entry"]["rcsb_accession_info"]["deposit_date"][0:10]
             renamed["release_date"] = result["data"]["entry"]["rcsb_accession_info"]["initial_release_date"][0:10]
             renamed["revision_date"] = result["data"]["entry"]["rcsb_accession_info"]["revision_date"][0:10]
             renamed["ndb_id"] = pdb
             renamed["resolution"] = result["data"]["entry"]["rcsb_entry_info"]["resolution_combined"]
             renamed["authors"] = ", ".join([x["name"] for x in result["data"]["entry"]["audit_author"]])
+            try:
+                renamed["experimental_technique"] = result["data"]["entry"]["exptl"][0]["method"]
+            except:
+                # some structures have no such data because they are some hybrid method, like 8ZZS
+                renamed["experimental_technique"] = "HYBRID"
 
             if renamed['resolution']:
                 try:

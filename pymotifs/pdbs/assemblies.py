@@ -29,7 +29,7 @@ class Loader(core.SimpleLoader):
         in the assembly_info table.
 
         :param list pdbs: The list of pdb ids of interest on this run.
-        :param dict kwargs: The keyword arguments which are ignored.
+        :param dict kwargs: The keyword arguments, which are ignored.
         :returns: A list of pdb ids to process.
         """
 
@@ -75,7 +75,7 @@ class Loader(core.SimpleLoader):
     def query(self, session, pdb):
         """
         Generate a query to find all entries in PDBInfo for the given
-        PDB id.  Added in November 2020 so this can be a SimpleLoader.
+        PDB id.
         Attributes
         ----------
         session : Session
@@ -103,80 +103,118 @@ class Loader(core.SimpleLoader):
         # loop over residues to build the mapping from PDB chain to author chain
         pdb_chain_to_author_chain = {}
         c = 0
-        for atom_site in cif_access.table('atom_site'):
-            pdb_chain = atom_site['label_asym_id']
-            author_chain = atom_site['auth_asym_id']
-            pdb_chain_to_author_chain[pdb_chain] = author_chain
-            c += 1
+        try:
+            for atom_site in cif_access.table('atom_site'):
+                pdb_chain = atom_site['label_asym_id']
+                author_chain = atom_site['auth_asym_id']
+                pdb_chain_to_author_chain[pdb_chain] = author_chain
+                c += 1
+        except:
+            # some structures, like 9A8W, do not have an atom_site block,
+            # but instead have ihm_starting_model_coord
+            pass
 
-        print(sorted(pdb_chain_to_author_chain.items()))
+        # print(sorted(pdb_chain_to_author_chain.items()))
         self.logger.info(sorted(pdb_chain_to_author_chain.items()))
         # print('Processed %d lines of ATOM records' % c)
 
-        # To get the values of oper_expression, read this table:
+        # To get the values of oper_expression, read this table
+        # Unfortunately, some structures do not have this block.
         symmetry_id_to_name = {}
-        operators = cif_access.table('pdbx_struct_oper_list').rows
-        for operator in operators:
-            print(operator)
-            id = operator['id']
-            name = operator.get('name',None)
-            symmetry_id_to_name[id] = name
+        assemblies = []
+        try:
+            operators = cif_access.table('pdbx_struct_oper_list').rows
+            for operator in operators:
+                self.logger.info(operator)
+                id = operator['id']
+                name = operator.get('name',None)
+                symmetry_id_to_name[id] = name
 
-        # print(symmetry_id_to_name)
+            # t.rows is a list of dictionaries with these keys: 'assembly_id', 'oper_expression', 'asym_id_list'
+            assemblies = cif_access.table('pdbx_struct_assembly_gen').rows
 
-        # t.rows is a list of dictionaries with these keys: 'assembly_id', 'oper_expression', 'asym_id_list'
-        assemblies = cif_access.table('pdbx_struct_assembly_gen').rows
+            max_assembly_id = 0
+            for assembly in assemblies:
+                # print("Working on assembly %s in %s" % (assembly,pdb))
 
-        max_assembly_id = 0
-        for assembly in assemblies:
-            print("Working on assembly %s in %s" % (assembly,pdb))
+                pdb_chains = assembly["asym_id_list"].split(",")
 
-            pdb_chains = assembly["asym_id_list"].split(",")
+                try:
+                    assembly_id = int(assembly['assembly_id'])
+                except:
+                    assembly_id = max_assembly_id + 1
 
+                max_assembly_id = max(max_assembly_id, assembly_id)
+
+                if "(" in assembly["oper_expression"] or "P" in assembly["oper_expression"]:
+                    symmetry_ids = assembly["oper_expression"]
+                else:
+                    symmetry_ids = assembly["oper_expression"].split(",")
+
+                chain_symmetry_seen = set()
+
+                for pdb_chain in pdb_chains:
+                    if pdb_chain in pdb_chain_to_author_chain:
+                        author_chain = pdb_chain_to_author_chain[pdb_chain]
+                        self.logger.info("Mapped pdb_chain %s to author_chain %s" % (pdb_chain,author_chain))
+                    else:
+                        self.logger.info("No mapping to author chain for pdb_chain %s" % pdb_chain)
+                        continue
+
+                    data = {}
+                    data["pdb_id"] = pdb
+                    data["chain_name"] = author_chain
+                    data["assembly_id"] = assembly_id
+
+                    if type(symmetry_ids) == list:
+                        for symmetry_id in symmetry_ids:
+                            chain_symmetry = author_chain + "&" + symmetry_id
+                            if not chain_symmetry in chain_symmetry_seen:
+                                # only add each author chain once, even if multiple different pdb chains for it
+                                chain_symmetry_seen.add(chain_symmetry)
+                                data["symmetry_id"] = symmetry_id
+                                data["symmetry"] = symmetry_id_to_name[symmetry_id]
+
+                                self.logger.info(data)
+
+                                yield(mod.AssemblyInfo(**data))
+                    else:
+                        # complex operator expression, just store that as the name of the symmetry
+                        data["symmetry_id"] = '0'
+                        data["symmetry"] = symmetry_ids
+
+                        self.logger.info(data)
+
+                        yield(mod.AssemblyInfo(**data))
+        except:
             try:
-                assembly_id = int(assembly['assembly_id'])
-            except:
-                assembly_id = max_assembly_id + 1
+                ihm = cif_access.table('ihm_struct_assembly_details').rows
+                for row in ihm:
+                    self.logger.info('ihm row %s' % str(row))
 
-            max_assembly_id = max(max_assembly_id, assembly_id)
+                    assembly_id = row["assembly_id"]
+                    # if not assembly_id in ["1",1]:
+                    #     # seems to be working OK
+                    #     self.logger.info('ihm has assembly other than 1, check it')
 
-            if "(" in assembly["oper_expression"] or "P" in assembly["oper_expression"]:
-                symmetry_ids = assembly["oper_expression"]
-            else:
-                symmetry_ids = assembly["oper_expression"].split(",")
+                    pdb_chain = row["asym_id"]
+                    if not pdb_chain_to_author_chain:
+                        author_chain = pdb_chain
+                    elif pdb_chain in pdb_chain_to_author_chain:
+                        author_chain = pdb_chain_to_author_chain[pdb_chain]
+                        self.logger.info("Mapped pdb_chain %s to author_chain %s" % (pdb_chain,author_chain))
+                    else:
+                        self.logger.info("No mapping to author chain for pdb_chain %s" % pdb_chain)
+                        continue
 
-            chain_symmetry_seen = set()
-
-            for pdb_chain in pdb_chains:
-                if pdb_chain in pdb_chain_to_author_chain:
-                    author_chain = pdb_chain_to_author_chain[pdb_chain]
-                    self.logger.info("Mapped pdb_chain %s to author_chain %s" % (pdb_chain,author_chain))
-                else:
-                    self.logger.info("No mapping to author chain for pdb_chain %s" % pdb_chain)
-                    continue
-
-                data = {}
-                data["pdb_id"] = pdb
-                data["chain_name"] = author_chain
-                data["assembly_id"] = max_assembly_id
-
-                if type(symmetry_ids) == list:
-                    for symmetry_id in symmetry_ids:
-                        chain_symmetry = author_chain + "&" + symmetry_id
-                        if not chain_symmetry in chain_symmetry_seen:
-                            # only add each author chain once, even if multiple different pdb chains for it
-                            chain_symmetry_seen.add(chain_symmetry)
-                            data["symmetry_id"] = symmetry_id
-                            data["symmetry"] = symmetry_id_to_name[symmetry_id]
-
-                            print(data)
-
-                            yield(mod.AssemblyInfo(**data))
-                else:
-                    # complex operator expression, just store that as the name of the symmetry
-                    data["symmetry_id"] = '0'
-                    data["symmetry"] = symmetry_ids
-
-                    print(data)
-
+                    data = {}
+                    data["pdb_id"] = pdb
+                    data["assembly_id"] = assembly_id
+                    data["chain_name"] = author_chain
+                    data["symmetry_id"] = '1'
+                    data["symmetry"] = '1_555'
                     yield(mod.AssemblyInfo(**data))
+            except:
+                self.logger.info('Not able to get assembly information for %d' % pdb)
+                raise core.Skip("Not able to get assembly information, try again later")
+
