@@ -258,16 +258,7 @@ class Loader(core.SimpleLoader):
 
         if len(pdbs) < 500:
             GeneratePickleFiles = False
-            self.logger.info('Not generating pickle files for small number of pdbs')
-
-        if molecule_type == 'dna':
-            GeneratePickleFiles = False
-            self.logger.info('Not generating pickle files for DNA because that should be done year by year')
-            self.logger.info('Run chain_chain.comparison for each year, then fill in the releases')
-            self.logger.info('Or run chain_chain.comparison up to the current date, then fill in the releases')
-
-            GeneratePickleFiles = True
-            self.logger.info('Actually, generating pickle files because we are doing multiple years now')
+            self.logger.info('Not generating pickle files for a small number of pdbs')
 
         if GeneratePickleFiles:
             self.logger.info('Getting the unit_id to experimental sequence position table')
@@ -382,43 +373,52 @@ class Loader(core.SimpleLoader):
         if GeneratePickleFiles:
             # took about 6.5 minutes on production in December 2020
             # took about 22 minutes on production in June 2024
-            # Maybe it would be faster to update incrementally, only getting new correspondences
+            # took 53 minutes with all RNA, DNA up to date on 2025-09-22
+            # Maybe it would be faster to update incrementally, only getting new correspondences,
+            # but it is hard to see how to do that.
+            # Plan: save a copy of the .pickle file (done)
+            #   in a later week, write code that will read the old .pickle file,
+            #   loop through the exp_seq_position_id_1 values to see what we already have,
+            #   then loop over chunks to query what exp_seq_position_id_1 values are new,
+            #   and only query for those
+            #   At any rate, only
             self.logger.info('Getting the position to position mappings')
 
             position_to_position = defaultdict(list)                                                            ## A dictionary-like object. It will not raise error. It will provides a default value for the key does not exist. In this case, it will return a empty list object if the key does not exist.
             count = 0
-
             i = 0
             j = 1
             chunk_size = 100000
             newcount = 1
             found_lines = False
 
+            self.logger.info('Total of %10d position to position correspondences, id up to %10d' % (0,0))
+
             while j < 9999:
                 if newcount == 0 and found_lines:
                     # already found data, but then got an empty set of data
-                    j = 9999            # this will be the last query, check for very large numbers
+                    j = 9999            # this will be the last query, check for very large ids
                 else:
                     j = i+1
 
                 with self.session() as session:
                     CP = mod.CorrespondencePositions
                     query = session.query(CP.exp_seq_position_id_1,CP.exp_seq_position_id_2).\
-                    select_from(CP).\
                     filter(CP.exp_seq_position_id_1 < chunk_size*j).\
-                    filter(CP.exp_seq_position_id_1 >= chunk_size*i)
+                    filter(CP.exp_seq_position_id_1 >= chunk_size*i).\
+                    yield_per(100000)
 
                     newcount = 0
-                    for r in query:
-                        position_to_position[r.exp_seq_position_id_1].append(r.exp_seq_position_id_2)                       ## the result is like: defaultdict(list, {'aaa': ['bbb', 'fff'], 'ccc': ['ddd']})
-                        count += 1
+                    for id1,id2 in query:
+                        position_to_position[id1].append(id2)
                         newcount += 1
+
+                    if newcount > 0:
+                        count += newcount
+                        found_lines = True
 
                     print('Total of %10d position to position correspondences, id up to %10d' % (count,chunk_size*j))
                     self.logger.info('Total of %10d position to position correspondences, id up to %10d' % (count,chunk_size*j))
-
-                    if newcount > 0:
-                        found_lines = True
 
                 i = i + 1
 
