@@ -1021,7 +1021,6 @@ class Loader(core.Loader):
                     self.logger.info('rfam_family %s' % rfam_family)
                     self.logger.info('chain_triple %s' % chain_triple)
 
-
                     # get starting sequence position of this chain in the alignment
                     starting_position = None
                     ending_position = None
@@ -1035,8 +1034,8 @@ class Loader(core.Loader):
                     if starting_position and ending_position:
                         chain_list.append(chain_triple)
 
-                        self.logger.info('range and dictionary %s' % chain_to_range_to_best_mapping.get(chain_triple,{}))
-                        self.logger.info('start %s end %s' % (starting_position,ending_position))
+                        # self.logger.info('range and dictionary %s' % chain_to_range_to_best_mapping.get(chain_triple,{}))
+                        # self.logger.info('start %s end %s' % (starting_position,ending_position))
 
                         # process the PDB sequence on this line of the combined alignment
                         combined_column_to_sequence_position, combined_sequence_position_to_column = self.map_sequence_position_to_column(sequence,starting_position,ending_position)
