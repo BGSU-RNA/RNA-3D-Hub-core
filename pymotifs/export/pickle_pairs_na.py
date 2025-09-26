@@ -1,9 +1,8 @@
 """
 Module for export of pairs data in pickle format for FR3D.
-Takes about 20 minutes to export 8000 files.
+Takes about 17 minutes to export 20,000 files.
 Files are stored in hub-core/data/pairs
 Runs on just the current files in the PDB query.
-
 """
 
 from collections import defaultdict
@@ -29,20 +28,22 @@ class Exporter(core.Loader):
     mark = False
     dependencies = set([ChainLoader, InteractionLoader, IfeInfoLoader])
 
-    def has_data(self, pdb, *args, **kwargs):
 
-        filename = self.filename(pdb)
+    # def to_process(self, pdbs, **kwargs):
+    #     """
+    #     Comment this out for weekly use!
 
-        if os.path.exists(filename):
-            self.logger.info("Filename %s exists" % filename)
-            return True
-        else:
-            self.logger.info("Filename %s is missing" % filename)
-            return False
+    #     Return *all* PDB ids which have pairwise annotations.
+    #     :param list pdbs: The list of pdb ids of interest on this run, ignored.
+    #     :returns: A list of pdb ids to process.
+    #     """
 
+    #     with self.session() as session:
+    #         query = session.query(mod.UnitPairsInteractions2024.pdb_id).\
+    #         distinct()
+    #         pdb_id_all = set([result.pdb_id for result in query])
 
-    def remove():
-        pass
+    #     return sorted(pdb_id_all)
 
 
     def filename(self, pdb, **kwargs):
@@ -65,21 +66,20 @@ class Exporter(core.Loader):
         return os.path.join(DATA_FILE_DIRECTORY,'pairs',filename)
 
 
-    # def to_process(self, pdbs, **kwargs):
-    #     """
-    #     Comment this out for weekly use!
+    def has_data(self, pdb, *args, **kwargs):
 
-    #     Return *all* PDB ids which have pairwise annotations.
-    #     :param list pdbs: The list of pdb ids of interest on this run, ignored.
-    #     :returns: A list of pdb ids to process.
-    #     """
+        filename = self.filename(pdb)
 
-    #     with self.session() as session:
-    #         query = session.query(mod.UnitPairsInteractions2024.pdb_id).\
-    #         distinct()
-    #         pdb_id_all = set([result.pdb_id for result in query])
+        if os.path.exists(filename):
+            self.logger.info("Filename %s exists" % filename)
+            return True
+        else:
+            self.logger.info("Filename %s is missing" % filename)
+            return False
 
-    #     return sorted(pdb_id_all)
+
+    def remove():
+        pass
 
 
     def data(self, pdb, **kwargs):
@@ -120,6 +120,7 @@ class Exporter(core.Loader):
             interactionToPair = defaultdict(list)
 
             category_list = ['f_lwbp_detail', 'f_stacks', 'f_bphs', 'f_brbs', 'f_so', 'f_coplanar', 'f_sugar_ribose', 'f_bss', 'f_covalent']
+            c = 0
             for result in query:
                 unit_id_1 = result.unit_id_1
                 unit_id_2 = result.unit_id_2
@@ -133,6 +134,9 @@ class Exporter(core.Loader):
                         interactionToPair[interaction].append((unit_id_1, unit_id_2, result.f_crossing))
                         # self.logger.info("Recording: %s %s %s %s %s" % (category,unit_id_1, interaction, unit_id_2, result.f_crossing))
                         # print("Recording: %s %s %s %s %s" % (category,unit_id_1, interaction, unit_id_2, result.f_crossing))
+                        c += 1
+
+            self.logger.info("Recording %5d pairs from %s" % (c,pdb))
 
             return interactionToPair
 
