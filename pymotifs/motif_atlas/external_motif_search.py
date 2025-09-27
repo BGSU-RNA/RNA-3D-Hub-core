@@ -22,25 +22,16 @@ else:
     from urllib.request import urlretrieve as urlretrieve
     from urllib.request import urlopen
 
+from pymotifs.motif_atlas.fr3d_interactions import get_fr3d_pair_to_interaction_list
+from pymotifs.motif_atlas.compare_and_cluster import *  # used to be specific but copilot added things that weren't there
+from pymotifs.motif_atlas.test_motif_atlas_code import add_bulged_nucleotides
 
-# this section gives us access to import things from the pythoncode folder
-#wd = path[0] # current working directory "~/Dropbox/MotifAtlas"
-#place = wd.rfind("\\")
-#otherFolder = wd[:place] + "\\2018 FR3D Intersecting Pairs\\pythoncode"
-#path.insert(1, otherFolder)
+DATAPATHLOOPS =   '/usr/local/pipeline/hub-core/MotifAtlas/tier2/loops'
+DATAPATHRESULTS = '/usr/local/pipeline/hub-core/MotifAtlas/tier2/search_results'
 
-# add the search folder to the Python path
-sys.path.append('search')
-
-from fr3d_configuration import DATAPATHUNITS, DATAPATHRESULTS, DATAPATHLOOPS, SERVER
-from fr3d_interactions import get_fr3d_pair_to_interaction_list
-from compare_and_cluster import *  # used to be specific but copilot added things that weren't there
-from test_motif_atlas_code import add_bulged_nucleotides
-
-
-'''
+"""
 All stacks and basepairs:
-'''
+"""
 bptypes = {'cWW', 'tWW', 'cWH', 'tWH', 'cWS', 'tWS', 'cHH', 'tHH', 'cHS', 'tHS',\
                    'cSS', 'tSS','cHW','tHW','cSW','tSW','cSH','tSH'}
 near_bptypes = {'ntHS', 'ntSH', 'ntWH', 'ncHS', 'ncSH', 'ncWW', 'ncHH', 'ntWW', 'ntSS',\
@@ -85,9 +76,9 @@ def wFred(Q, ifedata, listOfPairs):
 
 
 def print_discrepancy_matrix(matrix, all_loops_ids):
-    '''
+    """
     Helper function
-    '''
+    """
     df = pd.DataFrame(matrix, index = all_loops_ids)
     with pd.option_context('display.max_rows', None,
                        'display.max_columns', None,
@@ -126,47 +117,34 @@ def show_discrepancy(search_results, targets, loops_of_interest):
         print("Highest disc:{}, Average disc:{}".format(highest_disc, average_disc))
 
 
-def startup_external_dictionaries(external_loops):
-    '''
-    Loop over the loop ids and extract the PDB IDs and store them in a set
-    maybe also pass in "molecule type" for use in Q['requiredMoleculeType']
-    '''
+def convert_csv_to_loop_data(file, loop):
+    """
+    special treatment for structures not found in the motif atlas (continued)
+    """
 
-    all_structures = []
+    # go to the beginning of the file
+    file.seek(0)
+    position_to_border_unit_id = {}
 
-    for loop_id in external_loops:
-            fields = loop_id.split("_")
-            all_structures.append(fields[1])
+    for line in file:
+        if loop in line:
+            loop_nts_and_borders = line.strip("\"").replace("\"\n", "").split("\",\"")
+            borders = loop_nts_and_borders[2].split(",")
+            nts = loop_nts_and_borders[1].split(",")
+            for index in range(len(nts)):
+                position_to_border_unit_id[index + 1] = (int(borders[index]), nts[index])
 
-    # here is where we will do file checking
-    loops_and_strands = make_external_loops_and_strands(all_structures, external_loops)
-
-    pair_to_interaction_list = defaultdict(list)
-    for pdb_id in set(all_structures):
-        returned_pair_to_interaction_list, returned_pair_to_crossing_number = get_fr3d_pair_to_interaction_list(pdb_id)
-        returned_pair_to_interaction_list = strip_symmetry_from_pair_to_interaction(returned_pair_to_interaction_list)
-        pair_to_interaction_list.update(returned_pair_to_interaction_list)
-
-
-
-    # Loop over each loop id to identify and store the unit ids in each strand
-    # loops will be a list of dictionaries, one for each loop
-    # This adds a key called "strand"
-
-    loops = strandify(loops_and_strands, all_structures) # problem
-    loops = add_bulged_nucleotides(loops, pair_to_interaction_list)
-
-
-    # return(loops, pair_to_interaction_list)
-    return loops
+            return position_to_border_unit_id
 
 
 def make_external_loops_and_strands(all_structures, external_loops):
-    '''
-    special treatment for structures from files likely external to the motif atlas
-    '''
+    """
 
-    loops_and_strands = {}
+    special treatment for structures from files likely external to the motif atlas
+    Better to call them "tier 2" than "external"
+    """
+
+    loop_position_to_border_unit_id = {}
 
     if not os.path.exists(DATAPATHLOOPS):
         os.mkdir(DATAPATHLOOPS)
@@ -177,36 +155,49 @@ def make_external_loops_and_strands(all_structures, external_loops):
         pathAndFileName = os.path.join(DATAPATHLOOPS, filename)
         if not os.path.isfile(pathAndFileName):
             print("Downloading " + structure + " file...")
-            urlretrieve("http://rna.bgsu.edu/rna3dhub/loops/download_with_breaks/" + structure, pathAndFileName)
-            print("link: http://rna.bgsu.edu/rna3dhub/loops/download_with_breaks/" + structure)
+            urlretrieve("https://rna.bgsu.edu/rna3dhub/loops/download_with_breaks/" + structure, pathAndFileName)
+            print("link: https://rna.bgsu.edu/rna3dhub/loops/download_with_breaks/" + structure)
             print("downoading TO: ", pathAndFileName)
         with open(pathAndFileName, "r") as file:
             # this next line says "for each external_loop found in this structure"
             for loop in list(filter(lambda found_loop: structure in found_loop, external_loops)):
-                # Adam im expecting this to be cumbersome
-                loops_and_strands[loop] = convert_csv_to_loop_data(file, loop)
+                loop_position_to_border_unit_id[loop] = convert_csv_to_loop_data(file, loop)
 
-    return(loops_and_strands)
+    return loop_position_to_border_unit_id
 
 
-def convert_csv_to_loop_data(file, loop):
-    '''
-    special treatment for structures not found in the motif atlas (continued)
-    '''
+def startup_external_dictionaries(external_loops):
+    """
+    external_loops is a list of loop ids that we want to map to the motif atlas.
+    They could be referred to as "tier 2" loops.
+    Loop over the loop ids and extract the PDB IDs and store them in a set
+    maybe also pass in "molecule type" for use in Q['requiredMoleculeType']
+    Example loop_id values are IL_4V9F_127
+    """
 
-    # go to the beginning of the file
-    file.seek(0)
-    internal_dict = {}
+    all_structures = set()
 
-    for line in file:
-        if loop in line:
-            loop_nts_and_borders = line.strip("\"").replace("\"\n", "").split("\",\"")
-            borders = loop_nts_and_borders[2].split(",")
-            nts = loop_nts_and_borders[1].split(",")
-            for index in range(len(nts)):
-                internal_dict[index + 1] = (int(borders[index]), nts[index])
+    for loop_id in external_loops:
+        fields = loop_id.split("_")
+        all_structures.add(fields[1])
 
-            return(internal_dict)
+    #
+    loop_position_to_border_unit_id = make_external_loops_and_strands(all_structures, external_loops)
+
+    pair_to_interaction_list = defaultdict(list)
+    for pdb_id in set(all_structures):
+        returned_pair_to_interaction_list, returned_pair_to_crossing_number = get_fr3d_pair_to_interaction_list(pdb_id,near=False,standard=True)
+        returned_pair_to_interaction_list = strip_symmetry_from_pair_to_interaction(returned_pair_to_interaction_list)
+        pair_to_interaction_list.update(returned_pair_to_interaction_list)
+
+    # Loop over each loop id to identify and store the unit ids in each strand
+    # loops will be a list of dictionaries, one for each loop
+    # This adds a key called "strand"
+
+    loops = identify_strands(loop_position_to_border_unit_id)
+    loops = add_bulged_nucleotides(loops, pair_to_interaction_list)
+
+    return loops
 
 
 def read_results(search_results, cutoff_value = 1, require_no_dq_code = True, report_only_best_match = False):
@@ -416,11 +407,11 @@ def write_results_manual(search_results, cutoff_value = 1, require_no_dq_code = 
 
 
 def filter_to_only_best_chains(current_chains = []):
-    '''
+    """
     narrowing down our chains of interest by composite quality score.
     If 2 of the chains here are in the same equivalence class, the one with
     less quality should be omitted
-    '''
+    """
 
     chain_to_equiv_class = read_equiv_class_csv_into_dict()
     equiv_class_to_chains = {}
@@ -449,23 +440,22 @@ def filter_to_only_best_chains(current_chains = []):
 
 
 def make_list_of_all_loops_in(structure, number_of_strands = 0, max_size = None):
-    '''
+    """
     fetches/opens a file of all the loops in a given structure, then does a filtered read
     based on the number of strands that we care about, to return only the loops with that
     many strands participating (IE: 2 strands = internal loops, 1 strand = hairpin loops)
 
-    structure is also allowed to be a chain id or IFE
-    example: structure = 6XU8|1|A5+6XU8|1|A8
-    works =]
-    '''
+    structure is allowed to be a chain id or IFE
+    example: structure = '6XU8|1|A5+6XU8|1|A8'
+    """
 
     loops = []
     structures = structure.split('+')
 
     chain_names = set([chain.split("|")[2] for chain in structures])
 
-    if not os.path.exists(DATAPATHUNITS):
-        os.mkdir(DATAPATHUNITS) # if there's an error here, find the value of DATAPATHUNITS and manually make it
+    if not os.path.exists(DATAPATHLOOPS):
+        os.mkdir(DATAPATHLOOPS)
 
     if number_of_strands == 1:
         prefix = "HL_"
@@ -482,7 +472,7 @@ def make_list_of_all_loops_in(structure, number_of_strands = 0, max_size = None)
     pathAndFileName = os.path.join(DATAPATHLOOPS, filename)
     if not os.path.isfile(pathAndFileName):
         print("Downloading " + pdb_id + " file...")
-        urlretrieve("http://rna.bgsu.edu/rna3dhub/loops/download_with_breaks/" + pdb_id, pathAndFileName)
+        urlretrieve("https://rna.bgsu.edu/rna3dhub/loops/download_with_breaks/" + pdb_id, pathAndFileName)
 
     with open(pathAndFileName, "r") as file:
         # add a clause here where if no loops found
@@ -504,12 +494,12 @@ def make_list_of_all_loops_in(structure, number_of_strands = 0, max_size = None)
     return list(set(loops))
 
 
-# IL_6ZMI_0048 has missing nts, IL_6ZMI_195 has incomplete nts. http://rna.bgsu.edu/rna3dhub/pdb/6ZMI/motifs
-def main(loop_ids_of_interest = ["IL_6ZMI_008", "IL_6ZMI_007", "IL_6ZMI_048", "IL_6ZMI_195", "IL_4YAZ_008"], save_path = os.path.join(DATAPATHRESULTS,"for_annotation"), load_previous_result = True):
-    '''
+# IL_6ZMI_0048 has missing nts, IL_6ZMI_195 has incomplete nts. https://rna.bgsu.edu/rna3dhub/pdb/6ZMI/motifs
+def main(loop_ids_of_interest = ["IL_6ZMI_008", "IL_6ZMI_007", "IL_6ZMI_048", "IL_6ZMI_195", "IL_4YAZ_008"], save_path = DATAPATHRESULTS, load_previous_result = True):
+    """
     it will try to align all of the loop_ids_of_interest to the
     loops in the motif atlas
-    '''
+    """
 
     from search import FR3D_search, matrix_discrepancy_cutoff
     from file_reading import readNAPairsFile
@@ -526,9 +516,7 @@ def main(loop_ids_of_interest = ["IL_6ZMI_008", "IL_6ZMI_007", "IL_6ZMI_048", "I
     # Keys are loop ids, then positions and maybe an indication of what strand they are in
     # (1, '6DVK|1|H|G|28') means that G28 is on the border of a single-stranded region
     # Then A29,
-    # http://rna.bgsu.edu/rna3dhub/loops/view/IL_6DVK_003
-
-    from IL_3_57_loops_and_strands import loops_and_strands
+    # https://rna.bgsu.edu/rna3dhub/loops/view/IL_6DVK_003
 
     timer_data = myTimer('Setup')
 
@@ -544,18 +532,8 @@ def main(loop_ids_of_interest = ["IL_6ZMI_008", "IL_6ZMI_007", "IL_6ZMI_048", "I
     tier_2_search_spaces = {}
     tier_2_flanking_bp_queries = {}
 
-    # THIS IS VERY TEMPORARY #################################################################
-    # PROOF OF CONCEPT FOR STRUCTURE VS STRUCTURE:
-    # new_filtered = {}
-    # for loop in loops_and_strands:
-    #     if("7RQB" in loop):
-    #         new_filtered[loop] = loops_and_strands[loop]
-
-    #loops_and_strands = new_filtered
-    ###########################################################################################
-
     # timer_data = myTimer('dicts')
-    tier_1_loops, trash = startup_list_of_dictionaries(loops_and_strands)
+    tier_1_loops, trash = startup_list_of_dictionaries(loops_and_strands)  # not sure what this is based on now
     # tier_1_loops, trash = startup_list_of_dictionaries(new_filtered)
     tier_2_loops = startup_external_dictionaries(loop_ids_of_interest)
     # breakpoint()
