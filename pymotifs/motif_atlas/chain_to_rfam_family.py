@@ -1,19 +1,67 @@
-import os, csv, gzip, time, sys #, wget
+"""
+"""
+import csv
+import gzip
+import os
+import sys
+
 sys.path.append('search')
-from fr3d_configuration import DATAPATHATLAS
-# need to get rid of wget
 if sys.version_info[0] < 3:
     from urllib import urlretrieve as urlretrieve
 else:
     from urllib.request import urlretrieve as urlretrieve
 
+RFAMDATAPATH = '/usr/local/pipeline/alignments'
+
+
+def read_equiv_class_csv_into_dict(release = "current", break_ifes = False, cutoff = "all"):
+    """
+    Download the current representative set and equivalence classes at "all" resolution
+    returns a dictionary of dict[chain]['equivalence class'] = 'NR_all_29909.1'
+                            dict[chain]['quality rank'] = quality_rank = 1
+    """
+
+    member_to_equiv_class = {}
+
+    filename = "nrlist_%s_%s.csv" % (release,cutoff)
+    path_and_filename = os.path.join(RFAMDATAPATH, filename)
+
+    print("read_equiv_class_csv_into_dict: Downloading " + filename + " to " + path_and_filename)
+    try:
+        urlretrieve("https://rna.bgsu.edu/rna3dhub/nrlist/download/" + str(release) + "/all/csv", filename = path_and_filename)
+    except:
+        print("Download of equivalence class csv failed. Check internet connection.")
+        return {}
+
+    with open(path_and_filename) as file:
+        rows = csv.reader(file, delimiter = ",")
+
+        # for line in file:
+        for row in rows:
+            equiv_class = row[0]
+            representative = row[1] # not used
+            members = row[2].split(",")
+            if break_ifes == False:
+                for index, member in enumerate(members):
+                    member_to_equiv_class[member] = {}
+                    member_to_equiv_class[member]['equivalence class'] = equiv_class
+                    member_to_equiv_class[member]['quality rank'] = index + 1
+            if break_ifes == True:
+                for index, member in enumerate(members):
+                    for chain in member.split("+"):
+                        member_to_equiv_class[chain] = {}
+                        member_to_equiv_class[chain]['equivalence class'] = equiv_class
+                        member_to_equiv_class[chain]['quality rank'] = index + 1
+
+    return member_to_equiv_class
+
 
 def open_and_format_file(file_str, url, delim):
-    '''
+    """
     This function checks to see if the string specified file from rfam
     exists, if not then download the file from rfam. Once the file is
     present this program reads and returns the tab separated file from rfam
-    '''
+    """
     file_content = None
     if not os.path.exists(file_str):
         gz = None
@@ -21,36 +69,35 @@ def open_and_format_file(file_str, url, delim):
             if file_str == "Rfam.pdb":
                 # gz = wget.download("{}{}".format(url,"Rfam.pdb.gz")) #need to instantiate url
                 # ungzipped_file = gzip.open("Rfam.pdb.gz", "r") # added
-                gz = urlretrieve("{}{}{}".format(url, file_str, ".gz"), os.path.join(DATAPATHATLAS, "Rfam.pdb.gz"))
-                ungzipped_file = gzip.open(os.path.join(DATAPATHATLAS, "Rfam.pdb.gz"), "r")
+                gz = urlretrieve("{}{}{}".format(url, file_str, ".gz"), os.path.join(RFAMDATAPATH, "Rfam.pdb.gz"))
+                ungzipped_file = gzip.open(os.path.join(RFAMDATAPATH, "Rfam.pdb.gz"), "r")
             elif file_str == "family.txt":
                 # gz = wget.download("{}{}".format(url,"database_files/{}.gz".format(file_str)))
                 # ungzipped_file = gzip.open("family.text.gz", "r") # added
-                gz = urlretrieve("{}{}{}".format(url, "database_files/", file_str, ".gz"), os.path.join(DATAPATHATLAS, ))
-                ungzipped_file = gzip.open(os.path.join(DATAPATHATLAS, "family.text.gz"), "r")
+                gz = urlretrieve("{}{}{}".format(url, "database_files/", file_str, ".gz"), os.path.join(RFAMDATAPATH, ))
+                ungzipped_file = gzip.open(os.path.join(RFAMDATAPATH, "family.text.gz"), "r")
             # ungzipped_file = gzip.open("{}.gz".format(file_str), "rb") # original
             # ungzipped_file = gzip.open("family.text.gz", "r")
             file_content = csv.reader(ungzipped_file.readlines(), delimiter=delim)
-        elif url == "http://rna.bgsu.edu/rna3dhub/nrlist/download/3.248/all/csv":
+        elif url == "https://rna.bgsu.edu/rna3dhub/nrlist/download/3.248/all/csv":
             # equivalence_class_file = wget.download("{}".format(url))
             # equivalence_class_csv = open(equivalence_class_file, "r")
-            equivalence_class_file = urlretrieve("{}".format(url), os.path.join(DATAPATHATLAS,"nr_list.3.248.csv"))
-            equivalence_class_csv = open(os.path.join(DATAPATHATLAS, "nr_list_3.248.csv"), "r")
+            equivalence_class_file = urlretrieve("{}".format(url), os.path.join(RFAMDATAPATH,"nr_list.3.248.csv"))
+            equivalence_class_csv = open(os.path.join(RFAMDATAPATH, "nr_list_3.248.csv"), "r")
             file_content = csv.reader(equivalence_class_csv, delimiter=delim) # for each row in equivalence_class_csv:: index 0: format equivalence class id , index 1: represeantative IFE, index 2: all members
     else:
         text_file = open(file_str, "r")
         file_content = csv.reader(text_file.readlines(), delimiter=delim)
     return file_content
-###
 
 
 def map_chains_to_rfam_data(dict, rfam_pdb_list, rfam_family_list): # 4 spaces if this is blank
-    '''
+    """
     This function maps chains to rfam data. Must run map_chains_to_equivalence_class
     for correct output. See example below.
     input: 1FFK|1|9 -> NR_all_25303.2, 4V9F|1|9
     output: 1FFK|1|9 -> NR_all_25303.2, 4V9F|1|9, RF0001, 5S ribosomal RNA, 1, 121
-    '''
+    """
     # 1st. Looop over the pdb list and add the rfam family
     # and start and end nodes to the dictionary
     chain_to_rfamily_id = {}  # chain -> RF0001, chain start, chain end
@@ -112,7 +159,7 @@ def update_chain_to_rfamily_csv():
         except:
             # print("something went wrong updating chain_to_fram_family.csv")
             # print("please manually update it")
-            raise UserWarning("something went wrong updating chain_to_fram_family.csv\nplease manually update it")
+            raise UserWarning("something went wrong updating chain_to_rfam_family.csv\nplease manually update it")
 
         # reading files into individual arrays
         rfam_family_txt_arr = [line[:4] for line in rfam_family_txt]
@@ -136,62 +183,6 @@ def update_chain_to_rfamily_csv():
 #### Past this point used to be a separate script called "proof of concept rfam interactions"
 #########################################################################################
 
-def read_equiv_class_csv_into_dict(newest_version = "current", break_ifes = False, cutoff = "all"):
-    '''
-    returns a dictionary of dict[chain]['equivalence class'] = 'NR_all_29909.1'
-                            dict[chain]['quality rank'] = quality_rank = 1
-    '''
-
-    month_and_year = time.strftime("%b_%Y", time.gmtime()) # ex: "Sep_2023"
-
-    # if not os.path.isfile("chain_to_rfam_family%s.csv".format(month_and_year)):
-    #     update_chain_to_rfamily_csv()
-
-    member_to_equiv_class = {}
-
-    # by adding month and year suffix to filename, it will update monthly
-    # filename = "nrlist_%s_all.csv" % (month_and_year)
-    filename = "nrlist_%s.csv" % cutoff
-    path_and_filename = os.path.join(DATAPATHATLAS, filename)
-
-    # if not os.path.isfile(path_and_filename):
-    if not False:
-        print("Downloading " + filename + " to " + path_and_filename)
-        try:
-            urlretrieve("http://rna.bgsu.edu/rna3dhub/nrlist/download/" + str(newest_version) + "/all/csv", filename = path_and_filename)
-        except:
-            print("Download of equivalence class csv failed. Check internet connection.")
-            return({})
-
-
-
-    with open(path_and_filename) as file:
-        rows = csv.reader(file, delimiter = ",")
-
-        # for line in file:
-        for row in rows:
-            equiv_class = row[0]
-            representative = row[1] # not used
-            members = row[2].split(",")
-            if break_ifes == False:
-                for index, member in enumerate(members):
-                    member_to_equiv_class[member] = {}
-                    member_to_equiv_class[member]['equivalence class'] = equiv_class
-                    member_to_equiv_class[member]['quality rank'] = index + 1
-            if break_ifes == True:
-                for index, member in enumerate(members):
-                    for chain in member.split("+"):
-                        member_to_equiv_class[chain] = {}
-                        member_to_equiv_class[chain]['equivalence class'] = equiv_class
-                        member_to_equiv_class[chain]['quality rank'] = index + 1
-
-
-    return member_to_equiv_class
-
-
-
-# member_to_equiv_class = read_equiv_class_csv_into_dict(newest_version = 3.257)
-
 def read_chain_to_rfam():
     chain_to_rfam = {}
 
@@ -208,9 +199,9 @@ def read_chain_to_rfam():
     # print("{}: {}".format(key, value))
 
 def which_rfam(loop):
-    '''
+    """
     finding rfam family for each strand of this loop
-    '''
+    """
     # chain_to_rfam[chain] example of return:
     # ['RF00001', '5S ribosomal RNA', '1', '119']
 
@@ -227,13 +218,13 @@ def which_rfam(loop):
         except KeyError: #else:
             filtered_chain_to_rfam[chain] = {"family": "no rfam family"}
 
-    return(filtered_chain_to_rfam)
+    return filtered_chain_to_rfam
 
 
 def which_rfam_and_equiv(loop, chain_to_rfam, member_to_equiv_class):
-    '''
+    """
     finding rfam family and equivalence class for each strand of this loop
-    '''
+    """
     # chain_to_rfam[chain] example of return:
     # ['RF00001', '5S ribosomal RNA', '1', '119']
 
@@ -258,7 +249,7 @@ def which_rfam_and_equiv(loop, chain_to_rfam, member_to_equiv_class):
         except KeyError: #else
             filtered_chain_to_rfam[chain]["equiv_class"] = "no equivalence class"
 
-    return(filtered_chain_to_rfam)
+    return filtered_chain_to_rfam
 
 def do_rfam_pools_match(loop1, loop2):
     # loops are expected to have the structure
@@ -274,10 +265,10 @@ def do_rfam_pools_match(loop1, loop2):
     for chain in loop2.values():
         rfam_pool2.append(chain['family'])
 
-    if(set(rfam_pool1) == set(rfam_pool2)):
-        return(True)
+    if set(rfam_pool1) == set(rfam_pool2):
+        return True
     else:
-        return(False)
+        return False
 
 
 def do_equiv_pools_match(loop1, loop2):
@@ -294,10 +285,10 @@ def do_equiv_pools_match(loop1, loop2):
     for chain in loop2.values():
         equiv_pool2.append(chain["equiv_class"])
 
-    if(set(equiv_pool1) == set(equiv_pool2)):
-        return(True)
+    if set(equiv_pool1) == set(equiv_pool2):
+        return True
     else:
-        return(False)
+        return False
 
 
 def rfam_pool(loop):
@@ -306,7 +297,7 @@ def rfam_pool(loop):
     for chain in loop.values():
         rfam_pool.append(chain['family'])
 
-    return(rfam_pool)
+    return rfam_pool
 
 
 def equiv_pool(loop):
@@ -315,30 +306,30 @@ def equiv_pool(loop):
     for chain in loop.values():
         rfam_pool.append(chain['equiv_class'])
 
-    return(rfam_pool)
+    return rfam_pool
 
 
 def organize_equiv_per_chain(loop):
-    '''
+    """
     this function is just to reorganize some parts
     of a dictionary for writing to csv
-    '''
+    """
     output_dict = {}
 
     for chain in loop:
         output_dict[chain] = loop[chain]['family']
 
-    return(output_dict)
+    return output_dict
 
 
 def organize_family_per_chain(loop):
-    '''
+    """
     this function is just to reorganize some parts
     of a dictionary for writing to csv
-    '''
+    """
     output_dict = {}
 
     for chain in loop:
         output_dict[chain] = loop[chain]['equiv_class']
 
-    return(output_dict)
+    return output_dict
