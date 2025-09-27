@@ -1,4 +1,5 @@
-"""Load the motif info data.
+"""
+Load the motif info data.
 
 This will load the cached data to store all motifs into the DB.
 """
