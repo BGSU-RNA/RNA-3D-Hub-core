@@ -3,10 +3,10 @@ import pickle
 import sys
 import urllib
 from collections import defaultdict
-sys.path.append('search')
-from fr3d_configuration import DATAPATHPAIRS
 
-def get_fr3d_interaction_to_pair_list(pdb_id):
+DATAPATHPAIRS = '/usr/local/pipeline/hub-core/data/pairs/'
+
+def get_fr3d_interaction_to_pair_list(pdb_id, standard = False):
     """
     This method downloads FR3D annotations if necessary,
     then reads the .pickle data file and returns a dictionary
@@ -15,11 +15,13 @@ def get_fr3d_interaction_to_pair_list(pdb_id):
     make the given interaction and the number of nested cWW
     basepairs which the interaction crosses.
     The third element of the triple is the crossing number / range.
+    When standard = True, annotations like cWWa and cWw are
+    converted to standard ones like cWW.
     """
 
     pdb_id = pdb_id.upper()
 
-    fr3d_interaction_file = "%s_RNA_pairs.pickle" % pdb_id
+    fr3d_interaction_file = "%s_NA_pairs.pickle" % pdb_id
     fr3d_interaction_path_file = os.path.join(DATAPATHPAIRS, fr3d_interaction_file)
 
     if not os.path.exists(DATAPATHPAIRS):
@@ -27,7 +29,7 @@ def get_fr3d_interaction_to_pair_list(pdb_id):
 
     if not os.path.isfile(fr3d_interaction_path_file):
         print("Downloading %s" % fr3d_interaction_file)
-        url = "http://rna.bgsu.edu/pairs/%s" % fr3d_interaction_file
+        url = "https://rna.bgsu.edu/pairs/%s" % fr3d_interaction_file
         if sys.version_info[0] < 3:
             urllib.urlretrieve(url, fr3d_interaction_path_file)  # python 2
         else:
@@ -48,9 +50,31 @@ def get_fr3d_interaction_to_pair_list(pdb_id):
     with open(fr3d_interaction_path_file, 'rb') as opener1:
         fr3d_interaction_to_pair_list = pickle.load(opener1)
 
+    if standard:
+        edges = ['W','w','H','h','S','s','B','b']
+        # convert annotations like cWWa and cWw to standard ones like cWW
+        for interaction in list(fr3d_interaction_to_pair_list.keys()):
+            if interaction == 'cp' or interaction == 'ncp':
+                continue
+
+            new_interaction = ''
+            if interaction[0] in ['c','t'] and interaction[1] in edges and interaction[2] in edges:
+                # true basepair like cWW or tSs or cWB
+                new_interaction = interaction[0]+interaction[1].upper()+interaction[2].upper()
+            elif interaction[0] == 'n' and interaction[1] in ['c','t'] and interaction[2] in edges and interaction[3] in edges:
+                # near basepair like ncHW or ncWw
+                new_interaction = interaction[0]+interaction[1]+interaction[2].upper()+interaction[3].upper()
+
+            if new_interaction and new_interaction != interaction:
+                if interaction in fr3d_interaction_to_pair_list:
+                    fr3d_interaction_to_pair_list[new_interaction] += fr3d_interaction_to_pair_list[interaction]
+                else:
+                    fr3d_interaction_to_pair_list[new_interaction] = fr3d_interaction_to_pair_list[interaction]
+                del fr3d_interaction_to_pair_list[interaction]
+
     return fr3d_interaction_to_pair_list
 
-def get_fr3d_pair_to_basepair_type(pdb_id, near = True):
+def get_fr3d_pair_to_basepair_type(pdb_id, near = True, standard = False):
     """
     Returns a dictionary mapping pairs of unit ids to the
     basepair or near basepair they make, if any.
@@ -60,7 +84,7 @@ def get_fr3d_pair_to_basepair_type(pdb_id, near = True):
 
     all_bptypes= ['cWW', 'tWW', 'cWH', 'tWH', 'cWS', 'tWS', 'cHH', 'tHH', 'cHS', 'tHS', 'cSS', 'tSS']
 
-    fr3d_interaction_to_pair_list = get_fr3d_interaction_to_pair_list(pdb_id)
+    fr3d_interaction_to_pair_list = get_fr3d_interaction_to_pair_list(pdb_id, standard)
 
     fr3d_pair_to_basepair_type = defaultdict(str)
 
@@ -115,7 +139,7 @@ def get_fr3d_pair_to_basepair_or_stack(pdb_id, near_basepair = True, near_stack 
             near_reversed_bp_type="n"+reversed_bp_type
             for(u1,u2,c) in fr3d_interaction_to_pair_list[near_bp_type]:
                 fr3d_pair_to_basepair_stack[(u2,u1)]=near_reversed_bp_type
-    
+
     for stack in all_stacks:
         # add the stack in the specified order
         for (u1,u2,c) in fr3d_interaction_to_pair_list[stack]:
@@ -135,7 +159,7 @@ def get_fr3d_pair_to_basepair_or_stack(pdb_id, near_basepair = True, near_stack 
                 fr3d_pair_to_basepair_stack[(u2,u1)]=near_stack
     return fr3d_pair_to_basepair_stack
 
-def get_fr3d_pair_to_interaction_list(pdb_id, near = True):
+def get_fr3d_pair_to_interaction_list(pdb_id, near = True, standard = False):
     """
     Returns a dictionary mapping pairs of unit ids to a list
     of all interactions they make, including base pairing,
@@ -147,10 +171,11 @@ def get_fr3d_pair_to_interaction_list(pdb_id, near = True):
     Note that 0BPh can be made as a self interaction between
     a nucleotide and itself.
     If the pair makes no interaction, an empty list is returned.
-
+    When standard = True, annotations like cWWa and cWw are
+    converted to standard ones like cWW.
     """
 
-    fr3d_interaction_to_pair_list = get_fr3d_interaction_to_pair_list(pdb_id)
+    fr3d_interaction_to_pair_list = get_fr3d_interaction_to_pair_list(pdb_id,standard)
 
     fr3d_pair_to_interaction_list = defaultdict(list)
     fr3d_pair_to_crossing_number = defaultdict(list)
@@ -159,12 +184,14 @@ def get_fr3d_pair_to_interaction_list(pdb_id, near = True):
         return {}, {}
 
     for interaction_type in fr3d_interaction_to_pair_list.keys():
+        if not near and interaction_type[0] == 'n':
+            continue
         for (u1,u2,c) in fr3d_interaction_to_pair_list[interaction_type]:
             fr3d_pair_to_interaction_list[(u1,u2)].append(interaction_type)
             fr3d_pair_to_crossing_number[(u1,u2)].append(c)
 
-
     return fr3d_pair_to_interaction_list, fr3d_pair_to_crossing_number
+
 
 def demonstrate():
     # examples of using the methods above
@@ -173,11 +200,14 @@ def demonstrate():
     print("Pairs making a cHH interaction and their crossing number:")
     print(fr3d_interaction_to_pair_list["cHH"])
 
-    fr3d_pair_to_basepair_type = get_fr3d_pair_to_basepair_type("4V9F",False)
+    fr3d_pair_to_basepair_type = get_fr3d_pair_to_basepair_type("4V9F",True)
     print("Interaction between 4V9F|1|0|A|1742 and 4V9F|1|0|G|2033 is %s" % fr3d_pair_to_basepair_type[('4V9F|1|0|A|1742', '4V9F|1|0|G|2033')])
+
+    fr3d_pair_to_basepair_type = get_fr3d_pair_to_basepair_type("4V9F",False)
+    print("True interaction between 4V9F|1|0|A|1742 and 4V9F|1|0|G|2033 is %s" % fr3d_pair_to_basepair_type[('4V9F|1|0|A|1742', '4V9F|1|0|G|2033')])
     print("Interaction between 1ABC|1|0|A|1742 and 1ABC|1|0|G|2033 is %s" % fr3d_pair_to_basepair_type[('1ABC|1|0|A|1742', '1ABC|1|0|G|2033')])
 
-    fr3d_pair_to_interaction_list = get_fr3d_pair_to_interaction_list("4V9F")
+    fr3d_pair_to_interaction_list, fr3d_pair_to_crossing_number = get_fr3d_pair_to_interaction_list("4V9F",False,True)
 
     print("Pairs of nucleotides that make 3 or more interactions:")
     for a,b in fr3d_pair_to_interaction_list.items():
@@ -187,4 +217,5 @@ def demonstrate():
     print("Interactions between 4V9F|1|0|G|64 and 4V9F|1|0|A|70 are %s" % fr3d_pair_to_interaction_list[('4V9F|1|0|G|64', '4V9F|1|0|A|70')])
     print("Interactions between 1ABC|1|0|G|64 and 1ABC|1|0|A|70 are %s" % fr3d_pair_to_interaction_list[('1ABC|1|0|G|64', '1ABC|1|0|A|70')])
 
-#demonstrate()
+if __name__ == '__main__':
+    demonstrate()
