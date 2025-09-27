@@ -1,7 +1,7 @@
 """
 Create a new motif release and cluster all motifs. This will
 cluster loops from all structure IFE's, that are representatives of their NR
-class and come from X-ray structures. The clustered motifs are not yet stored
+class and come from X-ray or EM structures. The clustered motifs are not yet stored
 in the database but are just computed and temporary files are written.
 
 Manual Options
@@ -21,6 +21,7 @@ loop_type : str
 import collections
 import os
 from sqlalchemy import desc
+from sqlalchemy import or_, and_
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -36,8 +37,6 @@ from pymotifs.nr.release import Loader as NrReleaseLoader
 
 from pymotifs.nr.loader import Loader as NrLoader
 from pymotifs.loops.loader import Loader as LoopLoader
-
-# from pymotifs.motif_atlas.compare_and_cluster import main as make_motif_atlas
 
 Releases = collections.namedtuple('Releases', [
     'nr',
@@ -75,8 +74,7 @@ class Loader(core.MassLoader):
 
     def nr_release_id(self, before_date=None, **kwargs):
         """
-        Get the nr release, if not given manually.
-        That is the Representative Set release number.
+        Get the Representative Set release number, if not given manually.
         If no before_date is given then we get the latest,
         otherwise we get the release for the given date.
         If no release exists for that date then we fail.
@@ -195,7 +193,10 @@ class Loader(core.MassLoader):
             A Release object describing all releases to use.
         """
 
+        # get the most recent existing motif atlas release id
         parent, parent_index = self.current_id(**kwargs)
+
+        # us that information to generate the name of the next motif atlas release id
         next_release = self.next_motif_release_id(**kwargs)
 
         print('Motif atlas parent release: %s, parent_index: %s, next_release: %s' % (parent,parent_index,next_release))
@@ -204,13 +205,27 @@ class Loader(core.MassLoader):
         if parent == '0.0':
             parent = next_release
 
-        return [Releases(
-            self.nr_release_id(**kwargs),
-            parent,
-            parent_index,
-            next_release,
-        )]
+        current_nr_release_id = self.nr_release_id(**kwargs)
 
+        nr_release_id_major = int(current_nr_release_id.split(".")[0])
+        nr_release_id_minor = int(current_nr_release_id.split(".")[1])
+        next_motif_atlas_release_major = int(next_release.split(".")[0])
+        next_motif_atlas_release_minor = int(next_release.split(".")[1])
+
+        print("Representative set release %s" % current_nr_release_id)
+        self.logger.info("Representative set release %s" % current_nr_release_id)
+
+        # only create a release when major numbers agree and representative
+        # set minor number is four times the motif atlas minor number
+        if nr_release_id_major == next_motif_atlas_release_major and next_motif_atlas_release_minor * 4 == nr_release_id_minor:
+            return [Releases(
+                current_nr_release_id,
+                parent,
+                parent_index,
+                next_release,
+            )]
+        else:
+            raise core.InvalidState("This is not a week to produce a motif atlas release")
 
     def has_data(self, *args, **kwargs):
         """
@@ -220,8 +235,65 @@ class Loader(core.MassLoader):
         return False
 
 
+    # def ifes_x_ray_only(self, nr_release_id, molecule_type):
+    #     """
+    #     For releases up to 3.99.
+
+    #     Get a listing of all IFE's to use in clustering. The IFE's must be
+    #     from the given list of structures, the ife must be representative for
+    #     each class and the class should have the given resolution.
+    #     The experimental method must be in MOTIF_ALLOWED_METHODS.
+    #     This gives a subset of a representative set.
+
+    #     molecule_type can be 'RNA' or 'DNA'
+
+    #     :pdbs: The pdbs to get the best chains and models for.
+    #     :returns: A dictionary mapping from pdb id to a set of the best chains
+    #     and models.
+    #     """
+
+    #     if molecule_type == 'RNA':
+    #         class_start = 'NR'
+    #     elif molecule_type == 'DNA':
+    #         class_start = 'DNA'
+
+    #     with self.session() as session:
+    #         # 2024-06-23 add filter on ifes.new_style
+    #         classranks = mod.NrClassRank
+    #         classes = mod.NrClasses
+    #         ifes = mod.IfeInfo
+    #         pdbs = mod.PdbInfo
+    #         query = session.query(classranks).\
+    #             join(classes, classes.name == classranks.nr_class_name).\
+    #             join(ifes, ifes.ife_id == classranks.ife_id).\
+    #             join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
+    #             filter(classranks.rank == 0).\
+    #             filter(classes.nr_release_id == nr_release_id).\
+    #             filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
+    #             filter(classes.name.like('%s%%' % class_start)).\
+    #             filter(ifes.new_style == True).\
+    #             filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
+    #             order_by(classranks.ife_id)
+
+    #         if not query.count():
+    #             raise core.InvalidState("No %s ifes found for nr %s" % (molecule_type,nr_release_id))
+
+    #         ife_list = []
+    #         for result in query:
+    #             ife_id = result.ife_id
+    #             if "6CZR" in ife_id:
+    #                 # erroneously in a separate equivalence class
+    #                 continue
+    #             ife_list.append(ife_id)
+
+    #         return ife_list
+
+
     def ifes(self, nr_release_id, molecule_type):
         """
+        Allow EM structures with very good resolution.
+        Allow X-ray structures with good resolution.
+
         Get a listing of all IFE's to use in clustering. The IFE's must be
         from the given list of structures, the ife must be representative for
         each class and the class should have the given resolution.
@@ -235,39 +307,55 @@ class Loader(core.MassLoader):
         and models.
         """
 
+        # focus the search on ranks within these thresholds
         if molecule_type == 'RNA':
-            class_start = 'NR'
+            em_class_start = 'NR_2.0'
+            xray_class_start = 'NR_3.5'
         elif molecule_type == 'DNA':
-            class_start = 'DNA'
+            em_class_start = 'DNA_2.0'
+            xray_class_start = 'DNA_3.5'
 
+        # new for release 4.0: allow EM structures with res <= 2.0, cqs2 <= 9
+        # new for release 4.0: restrict x-ray to cqs2 <= 15
+        # new for release 4.0: take the highest-ranked EM or x-ray to meet the criteria
         with self.session() as session:
-            # 2024-06-23 add filter on ifes.new_style
             classranks = mod.NrClassRank
             classes = mod.NrClasses
+            cqs = mod.NrCqs
             ifes = mod.IfeInfo
             pdbs = mod.PdbInfo
             query = session.query(classranks).\
                 join(classes, classes.name == classranks.nr_class_name).\
                 join(ifes, ifes.ife_id == classranks.ife_id).\
                 join(pdbs, pdbs.pdb_id == ifes.pdb_id).\
-                filter(classranks.rank == 0).\
+                join(cqs, cqs.ife_id == ifes.ife_id).\
                 filter(classes.nr_release_id == nr_release_id).\
-                filter(classes.resolution == MOTIF_RESOLUTION_CUTOFF).\
-                filter(classes.name.like('%s%%' % class_start)).\
                 filter(ifes.new_style == True).\
-                filter(pdbs.experimental_technique.in_(MOTIF_ALLOWED_METHODS)).\
-                order_by(classranks.ife_id)
+                filter(
+                    or_(
+                        and_(pdbs.experimental_technique == "ELECTRON MICROSCOPY", classes.name.like('%s%%' % em_class_start), cqs.cqs2 <= 9),
+                        and_(pdbs.experimental_technique != "ELECTRON MICROSCOPY", classes.name.like('%s%%' % xray_class_start), cqs.cqs2 <= 15)
+                    )
+                ).\
+                order_by(classranks.rank)
 
             if not query.count():
                 raise core.InvalidState("No %s ifes found for nr %s" % (molecule_type,nr_release_id))
 
             ife_list = []
+            handles = set()
             for result in query:
-                ife_id = result.ife_id
-                if "6CZR" in ife_id:
-                    # erroneously in a separate equivalence class
-                    continue
-                ife_list.append(ife_id)
+                # track the 5-digit code to identify an equivalence class
+                handle = result.nr_class_name.split("_")[2].split(".")[0]
+                if not handle in handles:
+                    handles.add(handle)
+                    ife_id = result.ife_id
+                    if "6CZR" in ife_id:
+                        # erroneously in a separate equivalence class
+                        continue
+                    ife_list.append(ife_id)
+                    if not result.rank == 0:
+                        self.logger.info('Using %s from %s with rank %d' % (ife_id,result.nr_class_name,result.rank))
 
             return ife_list
 
@@ -563,6 +651,7 @@ class Loader(core.MassLoader):
             else:
                 loop_types = self.types
 
+            # do all the loop types before returning any data or writing anything to the database
             data = []
             for loop_type in loop_types:
                 # the cluster method stores the data in some cache,
