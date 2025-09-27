@@ -1,6 +1,7 @@
-#from loops_and_strands2 import all_structures, loops, pair_to_interaction_list
-import fr3d_interactions
+
 from collections import defaultdict
+
+from pymotifs.motif_atlas.fr3d_interactions import get_fr3d_pair_to_basepair_or_stack
 
 all_bptypes = {'cWW', 'tWW', 'cWH', 'tWH', 'cWS', 'tWS', 'cHH', 'tHH', 'cHS', 'tHS',\
                    'cSS', 'tSS','cHW','tHW','cSW','tSW','cSH','tSH'}
@@ -17,6 +18,8 @@ def add_bulged_nucleotides(loops_lst, inter_lst):
     {id: HL_4V9F_003, strands: [[4V9F|1|0|G|421,4V9F|1|0|G|422,4V9F|1|0|C|423]],bulged: [4V9F|1|0|G|422]}
     """
     non_bulged_interactions = all_bptypes | near_bptypes | stacks | near_stacks
+
+    # print('old',sorted(non_bulged_interactions))
 
     for loop in loops_lst:
 
@@ -212,7 +215,7 @@ def main():
 
     # pair_stack_list is a dictionary of pair and stacking interactions
     for pdb_id in all_structures:
-        pair_stack_list.update(fr3d_interactions.get_fr3d_pair_to_basepair_or_stack(pdb_id))
+        pair_stack_list.update(get_fr3d_pair_to_basepair_or_stack(pdb_id))
 
     (aAa_searches,loop_ids) = pretend_aAa_searches(loops,pair_to_interaction_list)
     aAa_searches = annotate_pair_stack_conflicts(aAa_searches,pair_stack_list)
