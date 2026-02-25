@@ -58,27 +58,33 @@ class Loader(core.SimpleLoader):
         self.logger.info("Reading %s annotations from CSV file" % loop_type)
         print("annotations.py reading %s loop annotations" % loop_type)
 
-        with open("/usr/local/pipeline/hub-core/%s_annotations.csv" % loop_type, "r") as annotations:
-            entries = csv.reader(annotations, delimiter = ',')
+        with open("/usr/local/pipeline/hub-core/%s_annotations.tsv" % loop_type, "r") as annotations:
+            # entries = csv.reader(annotations, delimiter = ',')
+            raw_entries = annotations.readlines()
 
-            # ['IL_48459.1', 'IL_4R0D_018', 'Isolated non-canonical cWW pair', '', 'sree', '2021-03-23']
-            # sort entries so ones without specified loops come in the first group,
-            # and entries with specified loops come in the second group
-            # within the group that has specific loops, sort by increasing date in column 5
-            # so later dates overwrite earlier ones
-            # within the group that does not have specific loops, sort by decreasing date,
-            # so that later dates do not overwrite earlier ones
+        entries = []
+        for line in raw_entries:
+            entry = line.rstrip("\n").split("\t")
+            entries.append(entry)
 
-            specific_loops = []
-            motif_groups = []
-            for e in entries:
-                if len(e[1]) > 5:
-                    specific_loops.append(e)
-                else:
-                    motif_groups.append(e)
-            specific_loops.sort(key=lambda x: x[5])
-            motif_groups.sort(key=lambda x: x[5], reverse=True)
-            sorted_entries = motif_groups + specific_loops
+        # ['IL_48459.1', 'IL_4R0D_018', 'Isolated non-canonical cWW pair', '', 'sree', '2021-03-23']
+        # sort entries so ones without specified loops come in the first group,
+        # and entries with specified loops come in the second group
+        # within the group that has specific loops, sort by increasing date in column 5
+        # so later dates overwrite earlier ones
+        # within the group that does not have specific loops, sort by decreasing date,
+        # so that later dates do not overwrite earlier ones
+
+        specific_loops = []
+        motif_groups = []
+        for e in entries:
+            if len(e[1]) > 5:
+                specific_loops.append(e)
+            else:
+                motif_groups.append(e)
+        specific_loops.sort(key=lambda x: x[5])
+        motif_groups.sort(key=lambda x: x[5], reverse=True)
+        sorted_entries = motif_groups + specific_loops
 
         # process all entries, with later entries overwriting earlier ones
         changed_group_annotations = []
