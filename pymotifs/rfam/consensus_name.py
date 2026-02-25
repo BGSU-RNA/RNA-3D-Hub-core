@@ -203,7 +203,7 @@ class Loader(core.Loader):
         if "mitochond".upper() in title.upper() or "mitoriboso".upper() in title.upper():
             checks.add("Mitochondria")
             from_title = True
-        elif "chloroplast".upper() in title.upper():
+        elif "chloroplast".upper() in title.upper() or "chlororibo".upper() in title.upper():
             checks.add("Chloroplast")
             from_title = True
 
