@@ -157,6 +157,9 @@ class Loader(core.SimpleLoader):
                     if pdb_chain in pdb_chain_to_author_chain:
                         author_chain = pdb_chain_to_author_chain[pdb_chain]
                         self.logger.info("Mapped pdb_chain %s to author_chain %s" % (pdb_chain,author_chain))
+                        if not author_chain:
+                            self.logger.info("author_chain is null, so skip this one")
+                            continue
                     else:
                         self.logger.info("No mapping to author chain for pdb_chain %s" % pdb_chain)
                         continue
@@ -215,6 +218,6 @@ class Loader(core.SimpleLoader):
                     data["symmetry"] = '1_555'
                     yield(mod.AssemblyInfo(**data))
             except:
-                self.logger.info('Not able to get assembly information for %d' % pdb)
+                self.logger.info('Not able to get assembly information for %s' % pdb)
                 raise core.Skip("Not able to get assembly information, try again later")
 
