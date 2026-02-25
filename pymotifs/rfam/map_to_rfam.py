@@ -23,7 +23,6 @@ import gzip
 import os
 import requests
 
-# from pymotifs.constants import DATA_FILE_DIRECTORY
 import pymotifs.core as core
 from pymotifs import models as mod
 from sqlalchemy import or_
@@ -676,7 +675,7 @@ class Loader(core.Loader):
 
         # when you need to re-align everything, you can use this list
         # most of the time this should be "if False:"
-        if False:
+        if True:
             rfam_families_to_align = set()
             for chain in chain_to_range_to_best_mapping.keys():
                 for range_string in chain_to_range_to_best_mapping[chain].keys():
@@ -957,14 +956,29 @@ class Loader(core.Loader):
         return column_to_sequence_position, sequence_position_to_column
 
 
-    def map_rfam_seed_columns_to_unit_ids(self,rfam_family):
+    def map_rfam_seed_columns_to_unit_ids(self,rfam_family,source='rfam'):
+        """
+        Needs to work either with original Rfam seed alignments or with CaCoFold seed alignments.
+        Logic is the same after that.
 
-        rfam_seed_alignment_filename = os.path.join("/usr/local/pipeline/alignments/alignments",rfam_family+"_rfam_seed.sto")
+        """
+
+        if source == 'rfam':
+            rfam_seed_alignment_filename = os.path.join("/usr/local/pipeline/alignments/alignments",rfam_family+"_rfam_seed.sto")
+        else:
+            rfam_seed_alignment_filename = os.path.join("/usr/local/pipeline/alignments/alignments",rfam_family+"_cacofold.sto")
+
         if not os.path.exists(rfam_seed_alignment_filename):
+            self.logger.info('Cannot find %s' % rfam_seed_alignment_filename)
             return
 
-        combined_alignment_filename  = os.path.join("/usr/local/pipeline/alignments/alignments",rfam_family+"_combined_seed.fa.gz")
+        if source == 'rfam':
+            combined_alignment_filename  = os.path.join("/usr/local/pipeline/alignments/alignments",rfam_family+"_combined_seed.fa.gz")
+        else:
+            combined_alignment_filename  = os.path.join("/usr/local/pipeline/alignments/alignments",rfam_family+"_combined_cacofold.fa.gz")
+
         if not os.path.exists(combined_alignment_filename):
+            self.logger.info('Cannot find %s' % combined_alignment_filename)
             return
 
         id_to_header, id_to_sequence, id_list_sequence, id_list_pdb = self.read_stockholm_file(rfam_seed_alignment_filename)
@@ -999,8 +1013,8 @@ class Loader(core.Loader):
                         print('Disagreement about seed column %d' % seed_column)
                         input("Press Enter")
 
-        for seed_column, combined_column in sorted(seed_column_to_combined_column.items()):
-            print('Seed column %3d corresponds to combined column %3d in %s' % (seed_column,combined_column,rfam_family))
+        # for seed_column, combined_column in sorted(seed_column_to_combined_column.items()):
+        #     print('Seed column %3d corresponds to combined column %3d in %s' % (seed_column,combined_column,rfam_family))
 
         # read pdb_chain_to_best_rfam.txt to know what PDB chain sequence position the alignment starts at
         chain_to_range_to_best_mapping = self.read_mapping(os.path.join(RFAM_ALIGNMENT_DIRECTORY,'pdb_chain_to_best_rfam.txt'))
@@ -1069,13 +1083,16 @@ class Loader(core.Loader):
                                 sequence_position = combined_column_to_sequence_position[combined_column]
                                 if sequence_position in sequence_position_to_unit_id:
                                     unit_id = sequence_position_to_unit_id[sequence_position]
-                                    print('Seed column %d to combined column %d to sequence position %d to unit id %s in %s' % (seed_column,combined_column,sequence_position,unit_id,rfam_family))
+                                    # print('Seed column %d to combined column %d to sequence position %d to unit id %s in %s' % (seed_column,combined_column,sequence_position,unit_id,rfam_family))
                             if not seed_column in seed_column_to_unit_ids:
                                 seed_column_to_unit_ids[seed_column] = []
                             seed_column_to_unit_ids[seed_column].append(unit_id)
 
         # write out a file mapping seed column to unit ids
-        output_filename  = os.path.join("/usr/local/pipeline/alignments/alignments","%s_%s_column_to_unit_id.txt" % (rfam_family,rfam_release))
+        if source == 'rfam':
+            output_filename  = os.path.join("/usr/local/pipeline/alignments/alignments","%s_%s_column_to_unit_id.txt" % (rfam_family,rfam_release))
+        else:
+            output_filename  = os.path.join("/usr/local/pipeline/alignments/alignments","%s_%s_CCF_column_to_unit_id.txt" % (rfam_family,rfam_release))
 
         with open(output_filename,'wt') as f:
             t = "%s\t%s\n" % (rfam_family,"\t".join(chain_list))
@@ -1288,45 +1305,49 @@ class Loader(core.Loader):
 
         family_id = rfam_fields[0]  # e.g., LSU, RF02543
 
-        if len(rfam_fields) > 1:
-            # first listed family is the covariance model to align to
-            model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'covariance_models','%s.cm' % (rfam_fields[1]))
-        else:
-            model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'covariance_models','%s.cm' % rfam_family)
-
-        cmalign_location = os.path.join(INFERNAL_LOCATION,'src','cmalign')
+        pdb_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_PDB_chains.sto' % family_id)
         alimerge_location = os.path.join(INFERNAL_LOCATION,'easel','miniapps','esl-alimerge')
 
-        if not os.path.exists(model_file):
-            # extract the covariance models that will be needed
-            self.extract_covariance_models([rfam_family])
+        align_pdb_chains = True
+
+        if align_pdb_chains:
+            if len(rfam_fields) > 1:
+                # first listed family is the covariance model to align to
+                model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'covariance_models','%s.cm' % (rfam_fields[1]))
+            else:
+                model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'covariance_models','%s.cm' % rfam_family)
+
+            cmalign_location = os.path.join(INFERNAL_LOCATION,'src','cmalign')
 
             if not os.path.exists(model_file):
-                raise core.Skip("Covariance model for %s is not found" % (rfam_family))
+                # extract the covariance models that will be needed
+                self.extract_covariance_models([rfam_family])
 
-        pdb_chain_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_PDB_chains.fa' % family_id)
-        if not os.path.exists(pdb_chain_file):
-            raise core.Skip("PDB chain file for %s is not found" % (rfam_family))
+                if not os.path.exists(model_file):
+                    raise core.Skip("Covariance model for %s is not found" % (rfam_family))
 
-        # align PDB chains mapped to this Rfam family
-        self.logger.info("Aligning PDB chains mapped to %s using Infernal cmalign" % rfam_family)
-        print("Aligning PDB chains mapped to %s using Infernal cmalign" % rfam_family)
+            pdb_chain_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_PDB_chains.fa' % family_id)
+            if not os.path.exists(pdb_chain_file):
+                raise core.Skip("PDB chain file for %s is not found" % (rfam_family))
 
-        # run infernal cmalign to align PDB chain sequences to the model
-        # default mxsize is 128, 1200 covers most big alignments
-        # LSU pdb chains got to 13.2 GB on 2024-09-12, about 10 minutes into a 13-minute run
-        # LSU pdb chains killed on 2025-05-21
-        # SSU pdb chains segmentation fault on 2025-05-21
-        pdb_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_PDB_chains.sto' % family_id)
+            # align PDB chains mapped to this Rfam family
+            self.logger.info("Aligning PDB chains mapped to %s using Infernal cmalign" % rfam_family)
+            print("Aligning PDB chains mapped to %s using Infernal cmalign" % rfam_family)
 
-        if family_id in ['LSU','SSU']:
-            # use progressive alignment
-            command = self.align_progressive(family_id,model_file,pdb_chain_file,pdb_alignment_file_sto)
-        else:
-            command = '%s --mxsize 1200 --noprob --outformat Pfam %s %s > %s' % (cmalign_location,model_file,pdb_chain_file,pdb_alignment_file_sto)
-            self.logger.info('Running command: %s' % command)
-            print('Running command: %s' % command)
-            os.system(command)
+            # run infernal cmalign to align PDB chain sequences to the model
+            # default mxsize is 128, 1200 covers most big alignments
+            # LSU pdb chains got to 13.2 GB on 2024-09-12, about 10 minutes into a 13-minute run
+            # LSU pdb chains killed on 2025-05-21
+            # SSU pdb chains segmentation fault on 2025-05-21
+
+            if family_id in ['LSU','SSU']:
+                # use progressive alignment
+                command = self.align_progressive(family_id,model_file,pdb_chain_file,pdb_alignment_file_sto)
+            else:
+                command = '%s --mxsize 1200 --noprob --outformat Pfam %s %s > %s' % (cmalign_location,model_file,pdb_chain_file,pdb_alignment_file_sto)
+                self.logger.info('Running command: %s' % command)
+                print('Running command: %s' % command)
+                os.system(command)
 
         # even if Infernal fails, the .sto alignment file will be created, so then a .gz version will be made
         # check to see that Infernal really produced an alignment
@@ -1347,120 +1368,135 @@ class Loader(core.Loader):
 
             combined_sto = ""
             if len(rfam_fields) == 1:
-                # check to see if Rfam seed alignment file is downloaded
-                seed_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_rfam_seed.sto' % rfam_family)
+                # combine PDB chain alignment with seed alignments from Rfam, CaCoFold
+                # for source in ['rfam','cacofold']:
+                for source in ['cacofold']:
+                    # check to see if Rfam seed alignment file is downloaded
+                    if source == 'rfam':
+                        seed_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_rfam_seed.sto' % rfam_family)
+                        if not os.path.exists(seed_alignment_file_sto):
+                            self.logger.info("Downloading Rfam seed alignment for %s" % rfam_family)
+                            print("Downloading Rfam seed alignment for %s" % rfam_family)
 
-                if not os.path.exists(seed_alignment_file_sto):
-                    self.logger.info("Downloading Rfam seed alignment for %s" % rfam_family)
-                    print("Downloading Rfam seed alignment for %s" % rfam_family)
+                            url = "https://rfam.org/family/%s/alignment/stockholm" % rfam_family
 
-                    url = "https://rfam.org/family/%s/alignment/stockholm" % rfam_family
+                            response = requests.get(url)
 
-                    response = requests.get(url)
+                            if response.status_code == 200:
+                                with open(seed_alignment_file_sto, "wt") as file:
+                                    file.write(response.text)
+                            else:
+                                self.logger.info('Could not download from %s' % url)
 
-                    if response.status_code == 200:
-                        with open(seed_alignment_file_sto, "wt") as file:
-                            file.write(response.text)
                     else:
-                        self.logger.info('Could not download from %s' % url)
+                        seed_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_cacofold.sto' % rfam_family)
+                        # if we don't have the file, there is no way to recover here
 
-                if os.path.exists(seed_alignment_file_sto):
-                    # merge PDB chain alignment with Rfam seed alignment
-                    combined_seed_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined_seed.sto' % family_id)
+                    if os.path.exists(seed_alignment_file_sto):
+                        # merge PDB chain alignment with Rfam seed alignment
+                        if source == 'rfam':
+                            combined_seed_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined_seed.sto' % family_id)
+                        else:
+                            combined_seed_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined_cacofold.sto' % family_id)
 
-                    command = '%s --outformat pfam -o %s %s %s' % (alimerge_location,combined_seed_sto,pdb_alignment_file_sto,seed_alignment_file_sto)
-                    self.logger.info('Combining PDB chain and Rfam seed alignments')
-                    print('Combining PDB chain and Rfam seed alignments')
+                        command = '%s --outformat pfam -o %s %s %s' % (alimerge_location,combined_seed_sto,pdb_alignment_file_sto,seed_alignment_file_sto)
+                        self.logger.info('Combining PDB chain and Rfam seed alignments')
+                        print('Combining PDB chain and Rfam seed alignments')
+                        print('Running command: %s' % command)
+                        os.system(command)
+
+                        # read combined alignment file, put sequence all on one line, replace leading and trailing - with .
+                        self.logger.info("Rectifying alignment of PDB chains and seed")
+                        print("Rectifying alignment of PDB chains and seed")
+                        if source == 'rfam':
+                            seed_alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined_seed.fa' % family_id)
+                        else:
+                            seed_alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined_cacofold.fa' % family_id)
+                        header_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_headers.txt' % family_id)
+                        self.rectify_alignment_file(combined_seed_sto,header_filename,seed_alignment_file_fa+".gz")
+
+                        # map columns of the Rfam seed alignment to unit ids
+                        self.map_rfam_seed_columns_to_unit_ids(rfam_family,source)
+
+                if False:
+
+                    # check to see if sequences from Rfam full family are already collected; if not, note that
+                    sequence_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_rfam_sequences.fa' % rfam_family)
+                    sequence_file_gz = sequence_file + ".gz"
+
+                    if not os.path.exists(sequence_file) and not os.path.exists(sequence_file_gz):
+                        # note that the sequence file is needed for this Rfam family
+                        rfam_sequence_file_needed = set()
+                        sequence_needed_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'rfam_sequence_file_needed.txt')
+                        # read list of Rfam families that need sequence files
+                        if os.path.exists(sequence_needed_filename):
+                            with open(sequence_needed_filename,'rt') as f:
+                                for line in f.readlines():
+                                    rfam_sequence_file_needed.add(line.replace('\n',''))
+                        rfam_sequence_file_needed.add(rfam_family)
+                        # write list of Rfam families that need sequence files
+                        with open(sequence_needed_filename,'wt') as f:
+                            for rf in sorted(rfam_sequence_file_needed):
+                                f.write('%s\n' % rf)
+
+                        # self.logger.info('No sequence file %s found for %s' % (sequence_file,rfam_family))
+                        print('No sequence file found for %s' % rfam_family)
+                        raise core.Skip("Rfam sequence file %s for %s is not found; check again on the next run" % (sequence_file,rfam_family))
+
+                    # check to see if sequences from Rfam full family are already aligned; if not, align them
+                    seq_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_rfam_sequences.sto' % rfam_family)
+                    seq_alignment_file_sto_gz = seq_alignment_file_sto + ".gz"
+
+                    if not os.path.exists(seq_alignment_file_sto) and not os.path.exists(seq_alignment_file_sto_gz):
+                        self.logger.info("Aligning sequences from %s full family using Infernal cmalign" % rfam_family)
+                        print("Aligning sequences from %s full family using Infernal cmalign" % rfam_family)
+
+                        # some Rfam families have so many sequences, or such long sequences, that they need a different approach
+                        if rfam_family in ['RF00005','RF02541','RF02543']:
+                            model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'covariance_models','%s.cm' % rfam_family)
+                            sequence_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_rfam_sequences.fa.gz' % rfam_family)
+                            self.align_progressive(rfam_family,model_file,sequence_file,seq_alignment_file_sto)
+
+                        else:
+                            if not os.path.exists(sequence_file):
+                                os.system("gunzip -f %s" % (sequence_file_gz))
+
+                            # run infernal; default mxsize is 128, 1200 covers most big alignments
+                            # command = '%s --mxsize 1200 --noprob %s %s > %s' % (cmalign_location,model_file,sequence_file,alignment_file)
+                            command = '%s --mxsize 1200 --noprob --outformat Pfam %s %s > %s' % (cmalign_location,model_file,sequence_file,seq_alignment_file_sto)
+                            print('Running command: %s' % command)
+                            os.system(command)
+
+                            # zip the raw sequence file again
+                            os.system("gzip -f %s" % (sequence_file))
+
+                            # even if Infernal fails, the alignment file will be created
+                            # check to see that Infernal really produced an alignment
+                            # if not, remove
+                            if os.path.exists(seq_alignment_file_sto) and os.path.getsize(seq_alignment_file_sto) == 0:
+                                os.remove(seq_alignment_file_sto)
+                                self.logger.info('Infernal failed to align %s' % sequence_file)
+                                print('Infernal failed to align %s' % sequence_file)
+                                raise core.Skip("Something went wrong with aligning sequences for %s; try again next time" % (rfam_family))
+
+                    # merge the PDB chain alignment and the Rfam sequence alignment
+                    combined_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined.sto' % family_id)
+
+                    if not os.path.exists(seq_alignment_file_sto):
+                        os.system("gunzip -f %s" % (seq_alignment_file_sto_gz))
+
+                    command = '%s --outformat pfam -o %s %s %s' % (alimerge_location,combined_sto,pdb_alignment_file_sto,seq_alignment_file_sto)
+                    self.logger.info('Combining PDB chain and Rfam sequence alignments')
+                    print('Combining PDB chain and Rfam sequence alignments')
                     print('Running command: %s' % command)
                     os.system(command)
 
                     # read combined alignment file, put sequence all on one line, replace leading and trailing - with .
-                    self.logger.info("Rectifying alignment of PDB chains and seed")
-                    print("Rectifying alignment of PDB chains and seed")
-                    seed_alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined_seed.fa' % family_id)
+                    self.logger.info("Rectifying full alignment")
+                    print("Rectifying alignment")
+                    alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined.fa' % family_id)
                     header_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_headers.txt' % family_id)
-                    self.rectify_alignment_file(combined_seed_sto,header_filename,seed_alignment_file_fa+".gz")
-
-                    # map columns of the Rfam seed alignment to unit ids
-                    self.map_rfam_seed_columns_to_unit_ids(rfam_family)
-
-                # check to see if sequences from Rfam full family are already collected; if not, note that
-                sequence_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_rfam_sequences.fa' % rfam_family)
-                sequence_file_gz = sequence_file + ".gz"
-
-                if not os.path.exists(sequence_file) and not os.path.exists(sequence_file_gz):
-                    # note that the sequence file is needed for this Rfam family
-                    rfam_sequence_file_needed = set()
-                    sequence_needed_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'rfam_sequence_file_needed.txt')
-                    # read list of Rfam families that need sequence files
-                    if os.path.exists(sequence_needed_filename):
-                        with open(sequence_needed_filename,'rt') as f:
-                            for line in f.readlines():
-                                rfam_sequence_file_needed.add(line.replace('\n',''))
-                    rfam_sequence_file_needed.add(rfam_family)
-                    # write list of Rfam families that need sequence files
-                    with open(sequence_needed_filename,'wt') as f:
-                        for rf in sorted(rfam_sequence_file_needed):
-                            f.write('%s\n' % rf)
-
-                    # self.logger.info('No sequence file %s found for %s' % (sequence_file,rfam_family))
-                    print('No sequence file found for %s' % rfam_family)
-                    raise core.Skip("Rfam sequence file %s for %s is not found; check again on the next run" % (sequence_file,rfam_family))
-
-                # check to see if sequences from Rfam full family are already aligned; if not, align them
-                seq_alignment_file_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_rfam_sequences.sto' % rfam_family)
-                seq_alignment_file_sto_gz = seq_alignment_file_sto + ".gz"
-
-                if not os.path.exists(seq_alignment_file_sto) and not os.path.exists(seq_alignment_file_sto_gz):
-                    self.logger.info("Aligning sequences from %s full family using Infernal cmalign" % rfam_family)
-                    print("Aligning sequences from %s full family using Infernal cmalign" % rfam_family)
-
-                    # some Rfam families have so many sequences, or such long sequences, that they need a different approach
-                    if rfam_family in ['RF00005','RF02541','RF02543']:
-                        model_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'covariance_models','%s.cm' % rfam_family)
-                        sequence_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_rfam_sequences.fa.gz' % rfam_family)
-                        self.align_progressive(rfam_family,model_file,sequence_file,seq_alignment_file_sto)
-
-                    else:
-                        if not os.path.exists(sequence_file):
-                            os.system("gunzip -f %s" % (sequence_file_gz))
-
-                        # run infernal; default mxsize is 128, 1200 covers most big alignments
-                        # command = '%s --mxsize 1200 --noprob %s %s > %s' % (cmalign_location,model_file,sequence_file,alignment_file)
-                        command = '%s --mxsize 1200 --noprob --outformat Pfam %s %s > %s' % (cmalign_location,model_file,sequence_file,seq_alignment_file_sto)
-                        print('Running command: %s' % command)
-                        os.system(command)
-
-                        # zip the raw sequence file again
-                        os.system("gzip -f %s" % (sequence_file))
-
-                        # even if Infernal fails, the alignment file will be created
-                        # check to see that Infernal really produced an alignment
-                        # if not, remove
-                        if os.path.exists(seq_alignment_file_sto) and os.path.getsize(seq_alignment_file_sto) == 0:
-                            os.remove(seq_alignment_file_sto)
-                            self.logger.info('Infernal failed to align %s' % sequence_file)
-                            print('Infernal failed to align %s' % sequence_file)
-                            raise core.Skip("Something went wrong with aligning sequences for %s; try again next time" % (rfam_family))
-
-                # merge the PDB chain alignment and the Rfam sequence alignment
-                combined_sto = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined.sto' % family_id)
-
-                if not os.path.exists(seq_alignment_file_sto):
-                    os.system("gunzip -f %s" % (seq_alignment_file_sto_gz))
-
-                command = '%s --outformat pfam -o %s %s %s' % (alimerge_location,combined_sto,pdb_alignment_file_sto,seq_alignment_file_sto)
-                self.logger.info('Combining PDB chain and Rfam sequence alignments')
-                print('Combining PDB chain and Rfam sequence alignments')
-                print('Running command: %s' % command)
-                os.system(command)
-
-                # read combined alignment file, put sequence all on one line, replace leading and trailing - with .
-                self.logger.info("Rectifying full alignment")
-                print("Rectifying alignment")
-                alignment_file_fa = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'alignments','%s_combined.fa' % family_id)
-                header_filename = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_headers.txt' % family_id)
-                self.rectify_alignment_file(combined_sto,header_filename,alignment_file_fa+".gz")
+                    self.rectify_alignment_file(combined_sto,header_filename,alignment_file_fa+".gz")
 
             # read the current list of Rfam families that need to be aligned
             rfam_families_to_align = set()
@@ -1479,6 +1515,7 @@ class Loader(core.Loader):
             if len(combined_sto) > 0:
                 os.remove(combined_sto)
             os.remove(pdb_alignment_file_sto)
-            if len(rfam_fields) == 1:
+
+            if False and len(rfam_fields) == 1:
                 os.system("gzip -f %s" % (seq_alignment_file_sto))
 
