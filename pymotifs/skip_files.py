@@ -42,7 +42,7 @@ SKIP = {
     , '1E6T' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1E7X' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1EOR' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
-    , '1FJF' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
+    , '1FJF' # missing pdbx_struct_oper_list block 2017-11-07 (JJC), also PDB query unsuccessful
     , '1GKV' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1GKW' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
     , '1H8J' # missing pdbx_struct_oper_list block 2017-11-07 (JJC)
