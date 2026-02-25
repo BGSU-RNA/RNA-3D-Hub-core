@@ -23,6 +23,7 @@ class Loader(core.SimpleLoader):
     use_marks = False
 
     # check for units that were missed and fill them in
+    fill_in_missing = True
     fill_in_missing = False
 
     def query(self, session, pdb):
@@ -67,7 +68,7 @@ class Loader(core.SimpleLoader):
         return units.component_type(unit)
 
 
-    def as_unit(self, nt):
+    def as_unit(self, nt, unit_id="", symmetry=""):
         """
         Turn a `Component` into a `UnitInfo`.
 
@@ -83,7 +84,13 @@ class Loader(core.SimpleLoader):
         """
         # self.logger.info("unit_id: %s, pdb: %s, model: %s, chain: %s, unit: %s, number: %s, alt_id: %s, ins_code: %s, sym_op: %s, chain_index: %s, unit_type_id: %s" % (nt.unit_id(), nt.pdb, nt.model, nt.chain, nt.sequence, nt.number, getattr(nt, 'alt_id', None), nt.insertion_code, nt.symmetry, nt.index, self.type(nt)))
 
-        return mod.UnitInfo(unit_id=nt.unit_id(),
+        if not unit_id:
+            unit_id = nt.unit_id()
+
+        if not symmetry:
+            symmetry = nt.symmetry
+
+        return mod.UnitInfo(unit_id=unit_id,
                             pdb_id=nt.pdb,
                             model=nt.model,
                             chain=nt.chain,
@@ -91,9 +98,20 @@ class Loader(core.SimpleLoader):
                             number=nt.number,
                             alt_id=getattr(nt, 'alt_id', None),
                             ins_code=nt.insertion_code,
-                            sym_op=nt.symmetry,
+                            sym_op=symmetry,
                             chain_index=nt.index,
                             unit_type_id=self.type(nt))
+
+
+    def convert_symmetry(self,u,old_prefix,new_prefix):
+        # convert ASM_ to P_ for saving in the database
+        if old_prefix:
+            f = u.split("|")
+            if len(f) == 9:
+                if f[8].startswith(old_prefix):
+                    f[8] = f[8].replace(old_prefix,new_prefix)
+                    u = "|".join(f)
+        return u
 
 
     def data(self, pdb, **kwargs):
@@ -113,10 +131,23 @@ class Loader(core.SimpleLoader):
             An iterable over all units in the structure.
         """
 
+        old_prefix = ""
+        new_prefix = ""
+
         if self.fill_in_missing:
+            # identify unit ids and symmetry operators already present
             with self.session() as session:
                 query = session.query(mod.UnitInfo).filter_by(pdb_id=pdb)
-            existing = set([u.unit_id for u in query])
+                existing = set([u.unit_id for u in query])
+
+                database_symmetry = set([u.sym_op.split("_")[0] for u in query])
+                self.logger.info('database_symmetry is %s' % database_symmetry)
+
+                if 'P' in database_symmetry and not 'ASM' in database_symmetry:
+                    old_prefix = "ASM_"
+                    new_prefix = "P_"
+                    self.logger.info('Changing unit ids being added from %s to %s' % (old_prefix,new_prefix))
+
         else:
             existing = set()
 
@@ -124,10 +155,15 @@ class Loader(core.SimpleLoader):
 
         entries = []
         for unit in structure.residues():
-            if not unit.unit_id() in existing:
+            u = unit.unit_id()
+            s = unit.symmetry
+            if old_prefix:
+                u = self.convert_symmetry(u,old_prefix,new_prefix)
+                s = s.replace(old_prefix,new_prefix)
+            if not u in existing:
                 if self.fill_in_missing:
-                    self.logger.info("Filling in missing unit %s" % (unit.unit_id()))
-                entries.append(self.as_unit(unit))
+                    self.logger.info("Filling in missing unit %s with symmetry %s" % (u,s))
+                entries.append(self.as_unit(unit,u,s))
 
         self.logger.info("Found %4d new units for %s" % (len(entries), pdb))
 
