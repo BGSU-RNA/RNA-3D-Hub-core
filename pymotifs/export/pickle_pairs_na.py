@@ -2,7 +2,7 @@
 Module for export of pairs data in pickle format for FR3D.
 Takes about 17 minutes to export 20,000 files.
 Files are stored in hub-core/data/pairs
-Runs on just the current files in the PDB query.
+Runs on just the current files in the PDB query, or uncomment the to_process method for all
 """
 
 from collections import defaultdict
