@@ -24,6 +24,12 @@ class Loader(core.SimpleLoader):
     modified_only = False
     modified_only = True
 
+    modified_list = []
+    modified_list = ['DU','DI','A1EFN','B4P','A1MA9','A1L89','A1L82','A1L3P','A1B8A','ZDU','USM']
+    modified_list = ['GUN','ADE','URA','TDR','A1I5K','CYT','A1CEB','A1IF9','A1L3O','A1BT7']
+    modified_list = ['29G','29H','3AW','3AY','5AZ','6AP','6GU','A2F','ANG','CMG','HPA','Q44','ZZR','ZZS']
+    modified_list = ['2BP','6GO','7PD','9QC','A1LXN','DX4','H4B','N6M','NPR','OXG']
+
     def to_process(self, pdbs, **kwargs):
         """
         If pdbs is a list of just one pdb id, process that one.
@@ -68,7 +74,7 @@ class Loader(core.SimpleLoader):
                 with self.session() as session:
                     query = session.query(mod.UnitInfo.unit_id).\
                                     filter(mod.UnitInfo.unit_type_id.in_(['rna','dna'])).\
-                                    filter(mod.UnitInfo.unit.in_(['DU','DI','A1EFN','B4P','A1MA9','A1L89','A1L82','A1L3P','A1B8A','ZDU','USM']))
+                                    filter(mod.UnitInfo.unit.in_(self.modified_list))
                     na_units = set([r.unit_id for r in query])
                     self.logger.info('Found %d modified na units' % len(na_units))
             else:
@@ -79,17 +85,18 @@ class Loader(core.SimpleLoader):
                     na_units = set([r.unit_id for r in query])
                 self.logger.info('Found %d na units' % len(na_units))
 
-            # find all unit ids with glycosidic centers
-            # takes almost 3 minutes
+            # find all unit ids with glycosidic centers, from among the ones above
             with self.session() as session:
                 query = session.query(mod.UnitCenters.unit_id).\
-                               filter(mod.UnitCenters.name == 'glycosidic')
+                               filter(mod.UnitCenters.name == 'glycosidic').\
+                               filter(mod.UnitCenters.unit_id.in_(na_units))
                 glycosidic_units = set([r.unit_id for r in query])
                 self.logger.info('Found %d units with glycosidic centers' % len(glycosidic_units))
 
             # find all unit ids with rotation matrices
             with self.session() as session:
-                query = session.query(mod.UnitRotations.unit_id)
+                query = session.query(mod.UnitRotations.unit_id).\
+                               filter(mod.UnitRotations.unit_id.in_(na_units))
 
                 rotation_units = set([r.unit_id for r in query])
                 self.logger.info('Found %d units with rotation matrices' % len(rotation_units))
@@ -122,6 +129,8 @@ class Loader(core.SimpleLoader):
             raise core.Skip("No pdbs need glycosidic center or rotation matrices added")
 
         self.logger.info('Found %d pdb files with missing glycosidic center and/or rotation matrix' % len(pdb_to_units))
+
+        self.logger.info(sorted(pdb_to_units.keys()))
 
         # return (pdb,units) tuples to process, starting with most recent PDB files
         return sorted(pdb_to_units.items(),reverse=True)
