@@ -97,7 +97,25 @@ class Exporter(core.Loader):
                 query = query.filter(mod.UnitInfo.pdb_id.in_(pdbs))
 
             na_chains = set([(r.pdb_id, str(r.model), r.chain) for r in query])
-            self.logger.info('Found %d na chains' % len(na_chains))
+            self.logger.info('Found %d nucleic acid chains in unit_info' % len(na_chains))
+
+        na_type_list = ['Polydeoxyribonucleotide (DNA)','Polyribonucleotide (RNA)','DNA/RNA Hybrid','polyribonucleotide','polydeoxyribonucleotide','polydeoxyribonucleotide/polyribonucleotide hybrid']
+
+        with self.session() as session:
+            query = session.query(
+                       mod.ChainInfo.pdb_id,
+                       mod.ChainInfo.chain_name).\
+                   filter(mod.ChainInfo.entity_macromolecule_type.in_(na_type_list)).\
+                   distinct()
+
+            if not self.write_all_files and not self.consider_all_files:
+                query = query.filter(mod.ChainInfo.pdb_id.in_(pdbs))
+
+            na_chains_table = set([(r.pdb_id, "1", r.chain_name) for r in query])
+            self.logger.info('Found %d nucleic acid chains in chain_info' % len(na_chains_table))
+
+        na_chains |= na_chains_table
+        self.logger.info('Found %d nucleic acid chains in all' % len(na_chains))
 
         # get a list of all files in directory that end with _NA.pickle
         directory = os.path.join(DATA_FILE_DIRECTORY,'units')
@@ -106,7 +124,7 @@ class Exporter(core.Loader):
         for f in files:
             written_chains.add(tuple(f.split("_")[0].split('-')))
 
-        self.logger.info('Found %d na chains already written' % len(na_chains))
+        self.logger.info('Found %d na chains already written' % len(written_chains))
 
         if self.write_all_files:
             need_to_write = na_chains
@@ -229,13 +247,14 @@ class Exporter(core.Loader):
         **kwargs : dict
             Generic keyword arguments.
         """
-        if len(self.data(entry)[0]) != 0:
+        # if len(self.data(entry)[0]) != 0:
+        # write the file even if the list is empty, to assert that no nucleotides have centers
+        # 9Z80 is an example, where all nucleotides are UNK.  9Q3G has all N.
+        filename = self.filename(entry)
 
-            filename = self.filename(entry)
+        uinfo = self.data(entry)
 
-            uinfo = self.data(entry)
-
-            with open(filename, 'wb') as fh:
-                # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
-                pickle.dump(uinfo, fh, 2)
+        with open(filename, 'wb') as fh:
+            # Use 2 for "HIGHEST_PROTOCOL" for Python 2.3+ compatibility.
+            pickle.dump(uinfo, fh, 2)
 
