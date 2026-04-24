@@ -15,6 +15,7 @@ class Loader(core.SimpleLoader):
 
     merge_data = True
     allow_no_data = True
+    # recompute = True  # force recompute of data; slow but thorough; deletes previous data
 
     dependencies = set([Downloader, InfoLoader])
 
@@ -125,17 +126,17 @@ class Loader(core.SimpleLoader):
         try:
             operators = cif_access.table('pdbx_struct_oper_list').rows
             for operator in operators:
-                self.logger.info(operator)
                 id = operator['id']
                 name = operator.get('name',None)
                 symmetry_id_to_name[id] = name
+                self.logger.info(operator)
 
             # t.rows is a list of dictionaries with these keys: 'assembly_id', 'oper_expression', 'asym_id_list'
             assemblies = cif_access.table('pdbx_struct_assembly_gen').rows
 
             max_assembly_id = 0
             for assembly in assemblies:
-                # print("Working on assembly %s in %s" % (assembly,pdb))
+                self.logger.info("Working on assembly %s in %s" % (assembly,pdb))
 
                 pdb_chains = assembly["asym_id_list"].split(",")
 
