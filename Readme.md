@@ -4,33 +4,28 @@ RNA-3D-Hub-core is the backend for the [RNA 3D Hub](http://rna.bgsu.edu/rna3dhub
 
 RNA-3D-Hub-core contains:
 
-1. [FR3D](https://github.com/BGSU-RNA/FR3D) is included as a submodule.
-
-2. Matlab code for extracting and clustering RNA 3D motifs.
-
-3. Python code responsible for importing non-redundant lists and motif atlas
-   releases into the database, and id assignment to motifs and non-redundant
-   equivalence classes.
+1. Code to download, annotate, analyze, and organize RNA- and DNA-containing 3D structures from the PDB each week.  The weekly pipeline run generates equivalence classes of RNA structures representative sets of RNA 3D structures.  As of release 4.0 on 2025-08-13, all code is written in Python 3; for earlier Matlab code see the "master" branch.
+2. Every four weeks, code that generates the RNA 3D Motif Atlas is run.  This code was updated considerably shortly before release 4.0.
+3. [fr3d-python](https://github.com/BGSU-RNA/fr3d-python) is included as a submodule.  This is an all-python implementation that reads 3D structures, computes symmetry-generated coordinates, and classifies pairwise interactions.
 
 ## Documentation
 
 Detailed documentation on this can be found at [readthedocs](http://rna-3d-hub-core.readthedocs.io/).
 
 ## Requirements
-* python 2.7 or newer (not tested with Python 3)
-* matlab R2007b or newer
+* python 3.6 or newer
 * MySQL server
 * SQLAlchemy for connecting to the database
 * [fr3d.py](https://github.com/BGSU-RNA/fr3d-python)
-* _optional_: py.test for running Python unit tests
+* _optional_: py.test for running Python unit tests, but they have not been updated for years
 
-## Installation
+## Installation - very old instructions
 
 1. Download the source code:
 
     $ git clone https://github.com/AntonPetrov/RNA-3D-Hub-core.git
 
-2. Install Matlab
+2. [blank]
 
 3. Create a config file, using the template found in:
    `conf/motifatlas.json.txt`. By default the pipeline will read the config file
@@ -67,21 +62,13 @@ $ py.test
 Python logging is configurable. See the section on Configuration for details on
 how to define the file to log to. By default logging goes to stdout.
 
-Matlab programs add their log messages to a file:
-
-    MotifAtlas/logs/rna3dhub_log.txt
-
 The log file is refreshed each time the programs are run.
-
-Some programs email this log file using the information specified in the email
-section of the config file.
 
 ## Directory structure
 
-All python code is stored in `pymotifs/`. The FR3D submodule is stored in `FR3D/`.
-The folder `FR3D/PDBFiles` is used to store all downloaded cif files. In
-addition, any cached files will be stored there as well. `FR3DMotifs` contains
-matlab code needed to process motifs. `MotifAtlas` is used to store motif atlas
+All python code is stored in `pymotifs/`. 
+The folder `cif_files` is used to store all downloaded cif files. In
+addition, any cached files will be stored there as well. `MotifAtlas` is used to store motif atlas
 specific files.
 
 ## Usage
