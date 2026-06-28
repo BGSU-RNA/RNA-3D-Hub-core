@@ -1,5 +1,9 @@
 # About
 
+The "master" branch contains code that became obsolete by 2025-08-13.  It relied on Matlab code for some operations, especially generation of the RNA 3D Motif Atlas.  Please see the python3 branch, which was set as the default branch on 2026-06-28.
+
+# Historical documentation
+
 RNA-3D-Hub-core is the backend for the [RNA 3D Hub](http://rna.bgsu.edu/rna3dhub).
 
 RNA-3D-Hub-core contains:
