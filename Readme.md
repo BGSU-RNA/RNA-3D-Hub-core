@@ -92,3 +92,8 @@ An example crontab file that runs the update every friday can be found in
 ## Configuration
 
 This requires that any firewall you are using allow passive FTP connections.
+
+## License
+
+Source code: MIT License
+Documentation and published data: Creative Commons Attribution 4.0 International (CC BY 4.0)
