@@ -4,6 +4,8 @@ Stage to search loops in one structure (or chains in the structure) against loop
 """
 
 from sqlalchemy import func
+from sqlalchemy import desc
+from sqlalchemy import or_, and_
 
 from pymotifs import core
 from pymotifs import models as mod
@@ -40,7 +42,8 @@ class Loader(core.SimpleLoader):
     def to_process(self, pdbs, **kwargs):
         """
         This method creates a list of things for this stage to work on.
-        It returns a list of tuples.
+        It returns a list of tuples to process in the data method.
+        Tuples are (chain,suggested_annotated_chains,release,current_loop_count_in_motif_atlas)
         """
 
         # control what representative set release we compare to
@@ -68,24 +71,37 @@ class Loader(core.SimpleLoader):
 
         self.logger.info('Found %d Rfam families with PDB chains' % len(all_rfam_families))
 
-        # get pdbs that are x-ray diffraction and 3.5 angstroms or better
-        # these are the ones that the motif atlas is based on
-        trusted_pdbs = []
+        # get the pdb ids that make up the current release of the RNA 3D Motif Atlas
+        # map loops in new structures to those
+        # This is safest because the criteria for membershif in the motif atlas change over time,
+        # and when a new structure is released that will soon be part of the motif atlas,
+        # we want to map it to the existing release of the motif atlas
+        motif_atlas_pdbs = set()
+
+        # find the most recent motif atlas release
         with self.session() as session:
-            trusted_pdb_query = session.query(mod.PdbInfo.pdb_id).\
-                filter(mod.PdbInfo.experimental_technique.like("X-RAY%")).\
-                filter(mod.PdbInfo.resolution <= 3.5)
+            query = session.query(mod.MlReleases.ml_release_id,
+                                mod.MlReleases.index).\
+                order_by(desc(mod.MlReleases.index)).\
+                filter(mod.MlReleases.type == 'HL').\
+                limit(1)
+            current = query.one()
+            ml_release_id = current.ml_release_id
+            print('Current ml_release_id %s and index %s' % (current.ml_release_id , current.index))
 
-            for row in trusted_pdb_query:
-                trusted_pdbs.append(row.pdb_id)
+        # get all loop ids in the current motif atlas release
+        with self.session() as session:
+            query = session.query(mod.MlLoops.loop_id).\
+                filter(mod.MlLoops.ml_release_id == ml_release_id)
 
-        self.logger.info('Found %d trusted PDBs' % len(trusted_pdbs))
+            for row in query:
+                fields = row.loop_id.split("_")
+                if len(fields) == 3:
+                    motif_atlas_pdbs.add(fields[1])
 
-        # this would be where to also append trusted cryo-em structures
-        # then append them to trusted_pdbs list
+        motif_atlas_pdbs = sorted(motif_atlas_pdbs)
 
-        # alternatively, process the list of loops in the release of the motif atlas
-        # and use those PDBs
+        self.logger.info('Mapping to the appropriate chains in these PDB ids from release %s of the motif atlas %s' % (ml_release_id,str(motif_atlas_pdbs)))
 
         # map from chain/ife to equivalence class to representative
         chain_to_equiv_class_data = read_equiv_class_csv_into_dict(release = release, break_ifes = True)
@@ -95,7 +111,7 @@ class Loader(core.SimpleLoader):
             if values['quality rank'] == 1:
                 ec = values['equivalence class']
 
-                if chain.split("|")[0] in trusted_pdbs:
+                if chain.split("|")[0] in motif_atlas_pdbs:
                     if not equiv_class_to_representatives.get(ec):
                         equiv_class_to_representatives[ec] = [chain]
                     else:
@@ -157,16 +173,20 @@ class Loader(core.SimpleLoader):
 
                 current_rfam_chains = []
                 for row in chains_of_rfam_query:
-                    # this line is useful later
+                    # this list is useful later
                     chains_with_rfam_family.append("|".join([row.pdb_id, "1", row.chain]))
                     if row.pdb_id not in SKIP:
                         full_chain_id = "|".join([row.pdb_id, "1", row.chain])
                         current_rfam_chains.append(full_chain_id)
+
+                        # if row.pdb_id == '9EHO':
+                        #     print('chain_to_equiv_class_data[%s] is %s' % (full_chain_id,chain_to_equiv_class_data.get(full_chain_id)))
+
                         if chain_to_equiv_class_data.get(full_chain_id):
                             equiv_class_of_chain = chain_to_equiv_class_data[full_chain_id]["equivalence class"]
-                            # print("chains: %s, ec: %s" % (full_chain_id, equiv_class_of_chain))
+                            # print("chain: %s, equivalence class: %s" % (full_chain_id, equiv_class_of_chain))
                             if equiv_class_of_chain not in equiv_classes_in_this_rfam_family:
-                                # print(equiv_class_of_chain, equiv_class_to_representatives.get(equiv_class_of_chain), full_chain_id)
+                                # print("chain:",equiv_class_of_chain, "rep:", equiv_class_to_representatives.get(equiv_class_of_chain), "full_chain_id:", full_chain_id)
                                 equiv_classes_in_this_rfam_family.append(equiv_class_of_chain)
 
             equiv_classes_in_this_rfam_family = sorted(equiv_classes_in_this_rfam_family)
@@ -175,23 +195,31 @@ class Loader(core.SimpleLoader):
             # list of strings (strings are chains. IFEs are split and have the same quality rank for each chain)
             representatives_of_equiv_classes_in_this_rfam_family = []
             for equiv_class in equiv_classes_in_this_rfam_family:
+
+                print('  equiv_class: %s' % equiv_class)
+
                 if equiv_class in equiv_class_to_representatives:
                     for chain in equiv_class_to_representatives[equiv_class]:
+
+                        print('  chain:       %s' % chain)
                         # with IFEs, there may be multiple chains here, include them all
                         if chain in current_rfam_chains:
+
+                            print('  appended:    %s' % chain)
                             representatives_of_equiv_classes_in_this_rfam_family.append(chain)
+
+            print('  representatives_of_equiv_classes_in_this_rfam_family',representatives_of_equiv_classes_in_this_rfam_family)
+            print('  current_rfam_chains', current_rfam_chains)
 
             # study RF02543
             # if current_rfam == "RF02543":
             #     #print("current_rfam_chains: %s" % current_rfam_chains)
             #     for crc in current_rfam_chains:
-            #         if "5TBW" in crc:
-            #             print("5TBW in current_rfam_chains: %s" % crc)
-            #     print("equiv_class_to_representatives['NR_all_90506.65']: %s" % equiv_class_to_representatives["NR_all_90506.65"])
+            #         if "9EHO" in crc:
+            #             print("9EHO in current_rfam_chains: %s" % crc)
+            #     # print("equiv_class_to_representatives['NR_all_90506.65']: %s" % equiv_class_to_representatives["NR_all_90506.65"])
             #     print("equiv_classes_in_this_rfam_family: %s" % equiv_classes_in_this_rfam_family)
             #     print("representatives_of_equiv_classes_in_this_rfam_family: %s" % representatives_of_equiv_classes_in_this_rfam_family)
-
-            #     time.sleep(15)
 
             arguments = [] # should get populated with tuples of (unannotated_chain, [trusted_chains])
 
@@ -207,17 +235,19 @@ class Loader(core.SimpleLoader):
                     for trusted_chain in representatives_of_equiv_classes_in_this_rfam_family:
                         if len(pdbs) == 1 and pdbs[0] in unannotated_chain:
                             # we are specifically running on one pdb id, so process it
-                            arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family))
+                            arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family, 2))
                             break
                         elif chain_to_previous_mappings.get(unannotated_chain):
                             # we have already annotated this chain before, but maybe we should try it again
-                            if motif_atlas_loop_count > chain_to_motif_atlas_size.get(unannotated_chain,0) + 50:
-                                arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family))
+                            if motif_atlas_loop_count > chain_to_motif_atlas_size.get(unannotated_chain,0) + 100:
+                                # motif atlas size is much larger now
+                                arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family, 3))
                                 self.logger.info("Mapping chain %s again; previously %s loops, now %d in Motif Atlas" % (unannotated_chain,chain_to_motif_atlas_size.get(unannotated_chain,0),motif_atlas_loop_count))
                                 break
                             if trusted_chain not in chain_to_previous_mappings[unannotated_chain]:
-                                arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family))
-                                break # exits trusted_chain loop, to go to next "unannotated_chain in current_rfam_chains"
+                                # we have not seen this trusted_chain before
+                                arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family, 3))
+                                break
                         else:
                             # if we have no mapping info about this chain yet, check if it has valid loops
                             with self.session() as session:
@@ -228,18 +258,15 @@ class Loader(core.SimpleLoader):
 
                             if valid_loops_from_u_chain > 0:
                                 self.logger.info("Mapping chain %s because it is not in chain_to_previous_mappings" % (unannotated_chain))
-                                arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family))
-                            # else:
-                                # print("skipped chain %s due to no valid loops" % unannotated_chain)
-                                # sys.exit()
-                            break # exits trusted_chain loop, to go to next "chain in current_rfam_chains"
+                                arguments.append((unannotated_chain, representatives_of_equiv_classes_in_this_rfam_family, 1))
+                            break
 
             chains_added = set()
-            for uc, reps in sorted(arguments):
+            for uc, reps, priority in arguments:
                 if not uc in chains_added:
                     chains_added.add(uc)
                     chains_added.update(reps)
-                    list_to_work_on.append((uc,reps,release,motif_atlas_loop_count))
+                    list_to_work_on.append((uc,reps,release,motif_atlas_loop_count,priority))
                     print("From Rfam family %s processing chains %s" % (current_rfam, uc))
                     self.logger.info("From Rfam family %s processing chains %s" % (current_rfam, uc))
 
@@ -258,7 +285,7 @@ class Loader(core.SimpleLoader):
                     highest_loop_count = chain_to_motif_atlas_size.get(full_chain_id,0)
                     if len(pdbs) == 1 and pdbs[0] in full_chain_id:
                         # we are specifically running on one pdb id, so process it
-                        arguments.append((full_chain_id, [], release, motif_atlas_loop_count))
+                        arguments.append((full_chain_id, [], release, motif_atlas_loop_count, 2))
                         print("Mapping chain %s; previously %s loops, now %d in Motif Atlas" % (full_chain_id,highest_loop_count,motif_atlas_loop_count))
                         self.logger.info("Mapping chain %s; previously %s loops, now %d in Motif Atlas" % (full_chain_id,highest_loop_count,motif_atlas_loop_count))
                     elif full_chain_id in chain_to_previous_mappings or full_chain_id in chain_to_motif_atlas_size:
@@ -267,13 +294,13 @@ class Loader(core.SimpleLoader):
                         # run again
 
                         # we have already annotated this chain before, but maybe we should try it again
-                        if motif_atlas_loop_count > highest_loop_count + 50:
-                            arguments.append((full_chain_id, [], release, motif_atlas_loop_count))
+                        if motif_atlas_loop_count > highest_loop_count + 100:
+                            arguments.append((full_chain_id, [], release, motif_atlas_loop_count, 3))
                             print("Mapping chain %s again; previously %s loops, now %d in Motif Atlas" % (full_chain_id,highest_loop_count,motif_atlas_loop_count))
                             self.logger.info("Mapping chain %s again; previously %s loops, now %d in Motif Atlas" % (full_chain_id,highest_loop_count,motif_atlas_loop_count))
 
                     else:
-                        arguments.append((full_chain_id, [], release, motif_atlas_loop_count))
+                        arguments.append((full_chain_id, [], release, motif_atlas_loop_count, 1))
                         print("Have not mapped chain %s before" % full_chain_id)
                         self.logger.info("Have not mapped chain %s before" % full_chain_id)
 
@@ -295,11 +322,8 @@ class Loader(core.SimpleLoader):
 
         print("number of mappings to run: %s" % len(list_to_work_on))
 
-        # sort chains in alphabetical order
-        list_to_work_on = sorted(list_to_work_on, key=lambda x: x[0])
-
-        # sort chains in reverse alphabetical order, to process the most recent PDB files first
-        list_to_work_on = sorted(list_to_work_on, key=lambda x: x[0], reverse=True)
+        # sort to put new chains first, bigger motif atlas triggers last
+        list_to_work_on = sorted(list_to_work_on, key=lambda x: (x[4],x[0]))
 
 
         """
