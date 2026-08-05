@@ -165,6 +165,8 @@ class Loader(core.SimpleLoader):
                     self.logger.info("Filling in missing unit %s with symmetry %s" % (u,s))
                 entries.append(self.as_unit(unit,u,s))
 
+                # self.logger.info('Adding %s' % u)
+
         self.logger.info("Found %4d new units for %s" % (len(entries), pdb))
 
         return entries
