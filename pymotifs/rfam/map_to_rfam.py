@@ -675,7 +675,7 @@ class Loader(core.Loader):
 
         # when you need to re-align everything, you can use this list
         # most of the time this should be "if False:"
-        if True:
+        if False:
             rfam_families_to_align = set()
             for chain in chain_to_range_to_best_mapping.keys():
                 for range_string in chain_to_range_to_best_mapping[chain].keys():
@@ -1418,7 +1418,8 @@ class Loader(core.Loader):
                         # map columns of the Rfam seed alignment to unit ids
                         self.map_rfam_seed_columns_to_unit_ids(rfam_family,source)
 
-                if False:
+                if True:
+                    # this was turned off around 2025-11-06 and turned back on on 2026-07-01
 
                     # check to see if sequences from Rfam full family are already collected; if not, note that
                     sequence_file = os.path.join(RFAM_ALIGNMENT_DIRECTORY,'sequences','%s_rfam_sequences.fa' % rfam_family)
